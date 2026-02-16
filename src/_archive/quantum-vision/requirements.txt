@@ -1,0 +1,5 @@
+numpy>=1.21.0
+moderngl>=5.7.0
+moderngl-window>=2.4.1
+pyrr>=0.10.3
+pillow>=8.3.1

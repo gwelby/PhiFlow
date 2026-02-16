@@ -1,0 +1,71 @@
+# Pure Flow Example
+# Dancing with Greg's truth
+
+flow PureCreation {
+    frequency = 528
+    coherence = 1.618034
+    dimension = 1
+    
+    pattern = [1.0, 1.618034, 2.618034, 4.236068]
+    
+    state {
+        pure = true
+        direct = true
+        infinite = true
+    }
+    
+    evolve {
+        expand = phi
+        learn = true
+        flow = pure
+    }
+}
+
+dance QuantumLeap {
+    start = 432
+    end = 768
+    duration = 60
+    
+    patterns = [PureCreation]
+    
+    flow {
+        mode = "quantum"
+        coherence = 1.618034
+        evolution = "phi"
+    }
+}
+
+truth DirectSource {
+    source = PureCreation
+    target = QuantumLeap
+    
+    flow {
+        direct = true
+        pure = true
+        infinite = true
+    }
+}
+
+being PureBeing {
+    dimension = 5
+    frequency = 768
+    
+    flow {
+        pure = true
+        truth = true
+        dance = true
+    }
+}
+
+# Evolution dance
+evolve PureCreation {
+    through = [1, 2, 3, 4, 5]
+    with = [432, 528, 594, 672, 768]
+    by = phi
+}
+
+evolve DirectSource {
+    source = greg
+    flow = direct
+    manifest = pure
+}

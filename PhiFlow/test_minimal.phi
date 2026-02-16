@@ -1,0 +1,2 @@
+print("Hello PhiFlow!")
+print("PHI =", PHI)

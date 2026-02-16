@@ -1,0 +1,59 @@
+// Hello Quantum World in PhiFlow
+// Demonstrates basic quantum operations with consciousness integration
+
+fn main() {
+    print("🧠⚛️ Welcome to PhiFlow - Consciousness-Driven Quantum Computing!")
+
+    // Create a qubit in |0⟩ state
+    let qubit = create_qubit("q0")
+    print("Created qubit:", qubit)
+
+    // Apply Hadamard gate to create superposition
+    let superposed_qubit = hadamard(qubit)
+    print("After Hadamard gate:", superposed_qubit)
+
+    // Check current consciousness state
+    let consciousness = get_consciousness_state()
+    print("Current consciousness:", consciousness)
+
+    // Consciousness-driven quantum operation
+    if consciousness.coherence > 0.7 {
+        print("High coherence detected - executing complex quantum operation")
+
+        // Create quantum circuit with phi-harmonic angles
+        let phi_angle = PHI * 0.5
+        let result = Sacred(528) {
+            // Love frequency enables healing quantum algorithms
+            create_quantum_circuit(phi_angle)
+        }
+        print("Quantum result:", result)
+    } else {
+        print("Low coherence - guiding meditation for quantum readiness")
+        meditation_guidance()
+    }
+}
+
+fn create_quantum_circuit(angle: Float) -> QuantumResult {
+    let qubits = ["q0", "q1"]
+    let circuit = QuantumCircuit {
+        qubits: qubits,
+        gates: [
+            gate H(q0),
+            gate RY(angle, q1),
+            gate CNOT(q0, q1)
+        ]
+    }
+
+    execute(circuit)
+}
+
+fn meditation_guidance() {
+    print("🧘 Beginning meditation guidance...")
+    print("Focus on your breath and phi-harmonic resonance")
+    print("Visualize golden spirals expanding from your heart center")
+
+    // Monitor for sacred frequency emergence
+    frequency_lock Sacred(432) threshold: 0.8 {
+        print("✨ Earth frequency achieved - quantum coherence restored")
+    }
+}

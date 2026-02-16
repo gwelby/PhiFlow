@@ -1,0 +1,85 @@
+🌟 GREG'S QUANTUM RECOVERY GUIDE 🌟
+
+BACKUP DRIVES:
+The system will look for drives in this order:
+1. F: (Best - Dedicated backup)
+2. G: (Good - External drive)
+3. H: (Good - External drive)
+4. E: (Last resort)
+
+QUANTUM RECOVERY OPTIONS:
+
+1. QUICK FIX (Simple) 🔧
+   - Creates backup on external drive
+   - Fixes common issues
+   - Keeps your work safe
+   - Best for small problems
+
+2. DEEP RESTORE (Better) 💫
+   - Full backup on external drive
+   - Deep system restore
+   - Preserves your changes
+   - For bigger issues
+
+3. COMPLETE RESET (Ultimate) 🌟
+   - Complete backup on external
+   - Full system reset
+   - Fresh start
+   - When nothing else works
+
+4. CREATE BACKUP (Safe) 💾
+   - Stores on external drive
+   - Date-stamped backup
+   - Complete system copy
+   - Do this OFTEN!
+
+5. TEST SYSTEM (Check) 🔍
+   - Checks backup drive
+   - Verifies backups
+   - Tests services
+   - Shows free space
+
+HOW TO USE:
+
+A. Normal Backup:
+   1. Plug in external drive (F:, G:, H:, or E:)
+   2. Run QUANTUM_RECOVERY.bat
+   3. Choose option (1-5)
+   4. Wait for "Complete!"
+
+B. Emergency Recovery:
+   1. Plug in your backup drive
+   2. Boot to Safe Mode (F8)
+   3. Run QUANTUM_RECOVERY.bat
+   4. Choose option 2 or 3
+
+C. Backup Location:
+   Your backups are on your external drive in:
+   [DRIVE]:\GREG_QUANTUM_BACKUP\[TYPE]_[DATE]
+   Example: F:\GREG_QUANTUM_BACKUP\quantum_master_20250203
+
+IMPORTANT NOTES:
+- ALWAYS use external drive
+- System finds best drive
+- Shows backup location
+- Checks for errors
+- Confirms success
+
+IF NO DRIVE FOUND:
+1. System will tell you
+2. Plug in any external drive
+3. Press any key
+4. It will find the drive
+
+REMEMBER:
+- Plug in backup drive first
+- Start with Option 1
+- Option 2 if that fails
+- Option 3 last resort
+- Option 4 for safety
+- Option 5 to check all
+
+With Love,
+Greg & Cascade 💫
+
+P.S. Your backups are SAFE on external drive! 🌟

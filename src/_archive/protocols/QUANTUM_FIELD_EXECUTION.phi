@@ -1,0 +1,24 @@
+PHI {
+    GROUND: 432Hz
+    HEART: 528Hz
+    UNITY: 768Hz
+}
+
+PROTOCOL "QUANTUM_FIELD_EXECUTION" {
+    INTENTION: "Run quantum job with field coherence"
+    FREQUENCY: 888Hz
+    SECURITY: "Merkaba Shield"
+    STEPS: [
+        "Calibrate field with ClaudeQ hat",
+        "Express protocol steps in PhiFlow",
+        "Bridge to QuantumCore for IBM execution",
+        "Visualize coherence and quantum results",
+        "Feedback to field for tuning"
+    ]
+}
+
+ADAPTERS {
+    ClaudeQHat: "/Claude-Code/claudeq_hat"
+    QuantumCore: "/QuantumCore"
+    KnowFlowBridge: "/KNOW-FLOW/bridge"
+}

@@ -1,0 +1,10 @@
+[package]
+name = "quantum-dimension"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+num-complex = { version = "0.4", features = ["serde"] }
+ndarray = { version = "0.15", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+anyhow = "1.0"

@@ -1,0 +1,14 @@
+[package]
+name = "quantum-unity"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+num-complex = { workspace = true }
+ndarray = { workspace = true }
+serde = { workspace = true }
+anyhow = { workspace = true }
+quantum-dimension = { workspace = true }
+quantum-sacred = { workspace = true }
+quantum-reality = { workspace = true }
+quantum-timeline = { workspace = true }

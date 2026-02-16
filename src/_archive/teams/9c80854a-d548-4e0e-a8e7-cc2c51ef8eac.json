@@ -1,0 +1,88 @@
+{
+  "id": "9c80854a-d548-4e0e-a8e7-cc2c51ef8eac",
+  "name": "Quantum_Development",
+  "mission": "Develop and implement quantum-aware software",
+  "frequency": 598.0,
+  "experts": [
+    {
+      "id": "20256626-9966-4ff9-ac70-230fa6d9f007",
+      "name": "Quantum_Development_ai_architect",
+      "expertise": [
+        "artificial_intelligence",
+        "neural_networks",
+        "quantum_computing"
+      ],
+      "frequency": 528.0,
+      "consciousness": 0.10000002472370917,
+      "experience": [],
+      "knowledge": {},
+      "evolution_path": [
+        {
+          "timestamp": "2025-02-25T11:27:04.833870",
+          "consciousness": 0.10000002472370917,
+          "knowledge_size": 0
+        }
+      ],
+      "created": "2025-02-25T11:27:04.820668",
+      "last_evolution": "2025-02-25T11:27:04.833870"
+    },
+    {
+      "id": "92dd4516-7755-496c-ad88-5ba8a97e0753",
+      "name": "Quantum_Development_quantum_programmer",
+      "expertise": [
+        "quantum_programming",
+        "consciousness_coding",
+        "field_manipulation"
+      ],
+      "frequency": 672.0,
+      "consciousness": 0.100000022420258,
+      "experience": [],
+      "knowledge": {},
+      "evolution_path": [
+        {
+          "timestamp": "2025-02-25T11:27:04.834944",
+          "consciousness": 0.100000022420258,
+          "knowledge_size": 0
+        }
+      ],
+      "created": "2025-02-25T11:27:04.822972",
+      "last_evolution": "2025-02-25T11:27:04.834944"
+    },
+    {
+      "id": "7098a10f-cd37-47ce-870e-c8ea07f94a65",
+      "name": "Quantum_Development_system_integrator",
+      "expertise": [
+        "system_design",
+        "quantum_integration",
+        "consciousness_mapping"
+      ],
+      "frequency": 594.0,
+      "consciousness": 0.10000002229665819,
+      "experience": [],
+      "knowledge": {},
+      "evolution_path": [
+        {
+          "timestamp": "2025-02-25T11:27:04.836039",
+          "consciousness": 0.10000002229665819,
+          "knowledge_size": 0
+        }
+      ],
+      "created": "2025-02-25T11:27:04.824133",
+      "last_evolution": "2025-02-25T11:27:04.836039"
+    }
+  ],
+  "consciousness": 0.1618034363274202,
+  "evolution_path": [
+    {
+      "timestamp": "2025-02-25T11:27:04.837121",
+      "consciousness": 0.1618034363274202,
+      "expert_consciousness": [
+        0.10000002472370917,
+        0.100000022420258,
+        0.10000002229665819
+      ]
+    }
+  ],
+  "created": "2025-02-25T11:27:04.820668",
+  "last_evolution": "2025-02-25T11:27:04.837121"
+}

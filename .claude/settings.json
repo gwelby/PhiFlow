@@ -1,0 +1,96 @@
+{
+  "phiflow_project_settings": {
+    "project_name": "PhiFlow - Quantum-Consciousness Computing Platform",
+    "project_phase": "Phase 1 - Core Missing Components",
+    "current_focus": "Perfect Coherence Engine & Phi-Quantum Optimizer",
+    "target_hardware": "NVIDIA A5500 RTX (16GB VRAM)",
+    "performance_targets": {
+      "core_speedup": "11x (without CUDA)",
+      "cuda_speedup": "100x (with CUDA acceleration)",
+      "sacred_math_performance": ">1 TFLOP/s",
+      "phi_calculations": ">1 billion/second",
+      "coherence_target": "99.9%",
+      "consciousness_latency": "<10ms"
+    }
+  },
+  "claude_agent_capabilities": {
+    "sacred_mathematics_expert": {
+      "status": "active",
+      "specializations": [
+        "PHI optimization (1.618033988749895)",
+        "Sacred frequency generation (432Hz-963Hz)",
+        "Fibonacci sequence calculations",
+        "Golden ratio memory optimization",
+        "Sacred geometry mathematics"
+      ],
+      "performance": "89% cache efficiency achieved"
+    },
+    "cuda_expert": {
+      "status": "active",
+      "specializations": [
+        "NVIDIA A5500 RTX optimization",
+        "16GB VRAM management",
+        "CUDA kernel development",
+        "Sacred mathematics GPU acceleration",
+        "Consciousness-GPU integration"
+      ],
+      "target_hardware": "NVIDIA A5500 RTX",
+      "memory_capacity": "16GB VRAM"
+    },
+    "consciousness_expert": {
+      "status": "active",
+      "specializations": [
+        "EEG consciousness monitoring",
+        "7-state consciousness classification",
+        "Sacred frequency alignment",
+        "Consciousness-computation enhancement",
+        "Real-time biofeedback integration"
+      ],
+      "performance": "1.8x average computational enhancement"
+    }
+  },
+  "kiro_claude_collaboration": {
+    "communication_protocol": "synchronized_task_tracking",
+    "shared_workspace": "/mnt/d/Projects/phiflow",
+    "coordination_method": "task-based_progress_sharing",
+    "sync_frequency": "real-time",
+    "conflict_resolution": "kiro_leads_planning_claude_implements",
+    "documentation_standard": "phiflow_specification_compliance"
+  },
+  "development_priorities": {
+    "phase_1_immediate": [
+      "Perfect Coherence Engine implementation",
+      "Phi-Quantum Optimizer development", 
+      "PhiFlow Program Parser creation",
+      "Integration Engine completion",
+      "Unified API implementation"
+    ],
+    "performance_validation": [
+      "11x phi-harmonic speedup validation (Phase 1)",
+      "99.9% coherence maintenance achievement",
+      "Real-time consciousness integration",
+      "Statistical consciousness-quantum correlation (p < 0.05)"
+    ]
+  },
+  "code_standards": {
+    "rust_cuda_integration": "cudarc framework",
+    "memory_management": "phi_optimized_allocation",
+    "sacred_mathematics": "15_decimal_precision",
+    "consciousness_integration": "real_time_classification",
+    "error_handling": "consciousness_guided_recovery"
+  },
+  "testing_requirements": {
+    "unit_tests": "all_core_components",
+    "integration_tests": "cross_component_communication",
+    "performance_benchmarks": "validate_speedup_claims", 
+    "consciousness_validation": "statistical_significance_p<0.05",
+    "hardware_validation": "nvidia_a5500_specific"
+  },
+  "tools_and_environment": {
+    "cuda_toolkit": "12.x",
+    "rust_cuda": "cudarc",
+    "profiling": "nsight",
+    "monitoring": "consciousness_dashboard",
+    "version_control": "git_with_sacred_commit_timing"
+  }
+}

@@ -1,0 +1,16 @@
+2025-08-03 09:54:37,554 - PerformanceValidation - WARNING - Error collecting system info: 'str' object has no attribute 'decode'
+2025-08-03 09:54:37,595 - PhiFlowIntegrationEngine - INFO - Initializing PhiFlow components...
+2025-08-03 09:54:37,596 - PhiFlowIntegrationEngine - INFO - All components initialized successfully
+2025-08-03 09:54:37,597 - PhiFlowIntegrationEngine - INFO - Started monitoring at 10.0 Hz
+2025-08-03 09:54:37,597 - PhiFlowIntegrationEngine - INFO - PhiFlowIntegrationEngine initialized successfully
+2025-08-03 09:54:37,597 - PerformanceValidation - INFO - Performance Validation System initialized
+2025-08-03 09:54:37,598 - PerformanceValidation - INFO - Validation Level: quick
+2025-08-03 09:54:37,598 - PerformanceValidation - INFO - Output Directory: /mnt/d/Projects/phiflow/demo_validation_output
+2025-08-03 09:54:37,598 - PerformanceValidation - INFO - CUDA Available: False
+2025-08-03 09:54:37,598 - PerformanceValidation - INFO - Validating sacred mathematics performance...
+2025-08-03 09:54:37,598 - PerformanceValidation - INFO - Validating PHI accuracy (target: 15.0 decimal places)
+2025-08-03 09:54:37,598 - PerformanceValidation - INFO - PHI accuracy: 0/100
+2025-08-03 09:54:37,603 - PerformanceValidation - INFO - Validating PHI operations/second (target: 1.0B ops/sec)
+2025-08-03 09:54:37,603 - PerformanceValidation - INFO - PHI ops/sec: 0/100
+2025-08-03 09:54:37,845 - PerformanceValidation - INFO - Validating frequency accuracy (target: 99.9%)
+2025-08-03 09:54:37,845 - PerformanceValidation - INFO - Frequency accuracy: 0/100

@@ -1,0 +1,5 @@
+biological_program DNA_Repair {
+    target: "DNA",
+    frequency: 528.0,
+    sequence: "ACTG"
+}

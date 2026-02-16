@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quantum Flow Font Test</title>
+    <style>
+        @font-face {
+            font-family: 'QuantumFlow';
+            src: url('builds/QuantumFlow-528hz.otf') format('opentype');
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            font-family: 'QuantumFlow', sans-serif;
+        }
+        
+        .size-test {
+            margin: 20px 0;
+        }
+        
+        .size-72 { font-size: 72px; }
+        .size-48 { font-size: 48px; }
+        .size-36 { font-size: 36px; }
+        .size-24 { font-size: 24px; }
+        
+        .controls {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        label {
+            display: block;
+            margin: 10px 0;
+            color: #BA55D3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="font-family: 'QuantumFlow', sans-serif;">Quantum Flow Font Test</h1>
+        
+        <div class="test-section">
+            <div class="size-72">A</div>
+            <div class="size-48">ABCDEFG</div>
+            <div class="size-36">HIJKLMNOP</div>
+            <div class="size-24">QRSTUVWXYZ</div>
+        </div>
+        
+        <div class="controls">
+            <label>
+                Font Size:
+                <input type="range" min="12" max="120" value="48" 
+                       oninput="document.getElementById('sizeTest').style.fontSize = this.value + 'px'">
+            </label>
+            
+            <div id="sizeTest" class="test-section" style="font-size: 48px;">
+                A B C D E F G
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Your Feedback</h2>
+            <p>Please let me know:</p>
+            <ol>
+                <li>How do you like the flow lines in the letters?</li>
+                <li>Should the quantum energy patterns be stronger or more subtle?</li>
+                <li>What other symbols or patterns would you like to see?</li>
+                <li>Any specific improvements you'd like?</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>

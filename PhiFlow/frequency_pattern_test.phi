@@ -1,0 +1,5 @@
+frequency_pattern {
+    base_frequency: 432.0,
+    harmonics: [864.0, 1296.0],
+    phi_scaling: true
+}

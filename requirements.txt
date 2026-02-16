@@ -1,0 +1,42 @@
+# PhiFlow Requirements
+# Sacred Geometry Programming Language Dependencies
+
+# Core Dependencies
+matplotlib>=3.5.0,<4.0.0    # Sacred geometry visualization and pattern generation
+numpy>=1.21.0,<2.0.0        # Mathematical computations and phi calculations
+Pillow>=8.3.0,<11.0.0       # Image processing and generation
+
+# Optional Dependencies (install with pip install phiflow[extra])
+
+# Development Dependencies
+# Install with: pip install phiflow[dev]
+pytest>=6.0.0              # Testing framework
+pytest-cov>=3.0.0          # Coverage reporting
+pytest-mock>=3.6.0         # Enhanced mocking
+pytest-benchmark>=3.4.0    # Performance benchmarking
+pytest-timeout>=2.1.0      # Test timeout handling
+pytest-xdist>=2.5.0        # Parallel test execution
+pytest-html>=3.1.0         # HTML test reports
+black>=21.0.0               # Code formatting
+flake8>=3.9.0               # Linting
+mypy>=0.910                 # Type checking
+sphinx>=4.0.0               # Documentation generation
+sphinx-rtd-theme>=0.5.0     # Documentation theme
+coverage>=6.0.0             # Coverage analysis
+psutil>=5.8.0               # System monitoring for tests
+
+# Jupyter Integration
+# Install with: pip install phiflow[jupyter]
+jupyter>=1.0.0              # Jupyter notebook support
+ipywidgets>=7.6.0           # Interactive widgets
+notebook>=6.4.0             # Notebook interface
+
+# Performance Enhancements
+# Install with: pip install phiflow[performance]
+numba>=0.56.0               # JIT compilation for faster math
+scipy>=1.7.0                # Advanced mathematical functions
+
+# Audio Integration
+# Install with: pip install phiflow[audio]
+sounddevice>=0.4.0          # Audio output for frequency generation
+librosa>=0.8.0              # Audio analysis and processing 

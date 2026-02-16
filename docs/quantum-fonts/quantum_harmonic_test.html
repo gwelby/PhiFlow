@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quantum Harmonic Font</title>
+    <style>
+        @font-face {
+            font-family: 'QuantumHarmonic';
+            src: url('quantum_font/QuantumHarmonic.otf') format('opentype');
+        }
+        
+        body {
+            background: linear-gradient(135deg, #000000, #1a1a2e);
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .quantum-letter {
+            font-family: 'QuantumHarmonic', sans-serif;
+            font-size: 120px;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255,255,255,0.2);
+            margin: 20px;
+            animation: quantum-pulse 4s infinite;
+        }
+        
+        @keyframes quantum-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .freq-info {
+            font-size: 24px;
+            color: #BA55D3;
+            margin: 10px;
+            text-align: center;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .quantum-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(138,43,226,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .quantum-cell:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 30px rgba(138,43,226,0.4);
+        }
+    </style>
+</head>
+<body>
+    <h1 style="font-size: 36px; margin-bottom: 40px; text-align: center;">
+        Quantum Harmonic Font System<br>
+        <span style="font-size: 24px; color: #64ffda;">Sacred Geometry + Frequency Harmonics</span>
+    </h1>
+    
+    <div class="grid">
+        <div class="quantum-cell">
+            <div class="quantum-letter">A</div>
+            <div class="freq-info">432 Hz<br>Physical Foundation</div>
+        </div>
+        <div class="quantum-cell">
+            <div class="quantum-letter">B</div>
+            <div class="freq-info">528 Hz<br>DNA Repair</div>
+        </div>
+        <div class="quantum-cell">
+            <div class="quantum-letter">C</div>
+            <div class="freq-info">594 Hz<br>Heart Connection</div>
+        </div>
+        <div class="quantum-cell">
+            <div class="quantum-letter">D</div>
+            <div class="freq-info">672 Hz<br>Voice Expression</div>
+        </div>
+        <div class="quantum-cell">
+            <div class="quantum-letter">E</div>
+            <div class="freq-info">720 Hz<br>Crown Awakening</div>
+        </div>
+        <div class="quantum-cell">
+            <div class="quantum-letter">F</div>
+            <div class="freq-info">768 Hz<br>Unity Consciousness</div>
+        </div>
+    </div>
+</body>
+</html>
