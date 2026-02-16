@@ -1,0 +1,60 @@
+# Rust
+/target/
+/PhiFlow/target/
+**/*.rs.bk
+Cargo.lock
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.iml
+
+# Build Artifacts (Large)
+/src/target3/
+/src/target2/
+/src/target_quantum/
+/src/target_temp/
+/PhiFlow/target/
+/target/
+**/target/
+src/obj/
+obj/
+bin/
+src/bin/Debug/
+src/tests/quantum_env/
+
+# Large Binaries
+*.exe
+*.tar.gz
+*.csv
+*.zip
+*.7z
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+dist/
+build/
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+
+# Node
+node_modules/
+npm-debug.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.iml

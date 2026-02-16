@@ -1,0 +1,5 @@
+quantum_field MyField {
+    field_type: "Consciousness",
+    dimensions: [3, 4, 5],
+    coherence_target: 0.99
+}

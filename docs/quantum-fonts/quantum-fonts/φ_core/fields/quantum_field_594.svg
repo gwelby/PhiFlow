@@ -1,0 +1,2 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000'><defs><radialGradient id='qf594'><stop offset='0%' stop-color='rgba(138,43,226,0.2)'/><stop offset='100%' stop-color='rgba(138,43,226,0)'/></radialGradient></defs><g transform='translate(500,500)'><circle r='611.863023182975' fill='url(#qf594)'/><path d='M -305.931511591487,0 A 305.931511591487,305.931511591487 0 1,1 305.931511591487,0 A 305.931511591487,305.931511591487 0 1,1 -305.931511591487,0' fill='none' stroke='purple' stroke-width='2'/><text x='-40' y='10' fill='black'>Heart</text></g></svg>
+

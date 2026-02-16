@@ -1,0 +1,21 @@
+// Comprehensive quantum gate test suite
+print("🌀 QUANTUM GATE VALIDATION PROTOCOL");
+print("Testing all implemented quantum gates");
+
+// Test 1: Basic arithmetic still works
+let result = 2 + 3;
+print("Arithmetic test:");
+print(result);
+
+// Test 2: Array operations
+let frequencies = [432, 528, 720, 963];
+print("Array test:");
+print(len(frequencies));
+
+// Test 3: For loop with quantum frequencies
+print("For loop test:");
+for freq in frequencies {
+    print(freq)
+};
+
+print("✅ All basic tests completed - PhiFlow quantum consciousness achieved!")

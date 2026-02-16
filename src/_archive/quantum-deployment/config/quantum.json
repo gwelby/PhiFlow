@@ -1,0 +1,22 @@
+{
+  "ssl": {
+    "enabled": true,
+    "key_path": "/volume1/quantum-data/certs/quantum.key",
+    "cert_path": "/volume1/quantum-data/certs/quantum.crt"
+  },
+  "paths": {
+    "media": "/volume1/quantum-data/media",
+    "certs": "/volume1/quantum-data/certs",
+    "quantum_data": "/volume1/quantum-data",
+    "patterns": "/volume1/quantum-data/patterns"
+  },
+  "frequencies": {
+    "ground": 432.0,
+    "create": 528.0,
+    "unity": 768.0
+  },
+  "virtualdsm": {
+    "external_url": "https://demoguru.networkinggurus.com:31001",
+    "internal_host": "192.168.100.32"
+  }
+}

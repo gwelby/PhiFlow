@@ -1,0 +1,38 @@
+// Code That Lives - Aligned With Reality
+// A PhiFlow program that observes itself as it runs
+
+// === ACT 1: Set an intention before doing anything ===
+
+intention "healing" {
+
+    // Create patterns at harmonically related frequencies
+    create spiral at 432Hz with { rotations: 8.0, scale: 100.0 }
+    create dna at 528Hz with { turns: 10.0, radius: 25.0 }
+    create flower at 594Hz with { rings: 6 }
+
+    // The program pauses to observe itself
+    witness
+
+    // Validate what we created
+    let healing_pattern = create spiral at 432Hz with { rotations: 13.0, scale: 50.0 }
+    validate healing_pattern with [coherence, phi_resonance]
+
+    // Witness the validation result
+    witness healing_pattern
+}
+
+// === ACT 2: Different intention, same operations ===
+
+intention "analysis" {
+
+    // Same frequencies, different purpose
+    create spiral at 432Hz with { rotations: 5.0, scale: 100.0 }
+    create dna at 528Hz with { turns: 8.0, radius: 20.0 }
+
+    // The program checks its own alignment
+    witness
+}
+
+// === ACT 3: The program witnesses its total journey ===
+
+witness

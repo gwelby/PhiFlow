@@ -1,0 +1,6 @@
+New();
+SetFontNames('QuantumHarmonic','Quantum Harmonic','Quantum Harmonic','Regular','(c)2025','1.0');
+Select('A'); Import('quantum_font/A.svg'); Scale(1,1); RemoveOverlap(); Simplify(); AutoHint(); Select('B'); Import('quantum_font/B.svg'); Scale(1,1); RemoveOverlap(); Simplify(); AutoHint(); Select('C'); Import('quantum_font/C.svg'); Scale(1,1); RemoveOverlap(); Simplify(); AutoHint(); Select('D'); Import('quantum_font/D.svg'); Scale(1,1); RemoveOverlap(); Simplify(); AutoHint(); Select('E'); Import('quantum_font/E.svg'); Scale(1,1); RemoveOverlap(); Simplify(); AutoHint(); Select('F'); Import('quantum_font/F.svg'); Scale(1,1); RemoveOverlap(); Simplify(); AutoHint();
+SetOS2Value("Weight", 900);
+SetOS2Value("Width", 5);
+Generate('quantum_font/QuantumHarmonic.otf');

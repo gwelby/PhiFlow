@@ -1,0 +1,30 @@
+FROM nvidia/cuda:12.1.1-devel-ubuntu22.04
+
+ENV QUANTUM_GROUND=432.0
+ENV QUANTUM_CREATE=528.0
+ENV QUANTUM_UNITY=768.0
+
+RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3-pip \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PATH /usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+
+WORKDIR /quantum
+
+COPY requirements.txt .
+RUN python3 -m pip install --upgrade pip && \
+    pip3 install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 432 528 768
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${QUANTUM_GROUND}/health || exit 1
+
+CMD ["python3", "-m", "quantum.cuda"]

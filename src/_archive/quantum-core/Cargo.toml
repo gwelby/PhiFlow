@@ -1,0 +1,33 @@
+[package]
+name = "quantum-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+quantum-cuda = { path = "../quantum-cuda" }
+anyhow.workspace = true
+tokio.workspace = true
+structopt.workspace = true
+num-complex.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+ndarray.workspace = true
+image.workspace = true
+rayon.workspace = true
+parking_lot.workspace = true
+chrono.workspace = true
+plotters.workspace = true
+plotters-svg.workspace = true
+reqwest.workspace = true
+
+[[bin]]
+name = "quantum_photo_flow"
+path = "src/bin/quantum_photo_flow.rs"
+
+[[bin]]
+name = "phiflow"
+path = "src/bin/phiflow.rs"
+
+[[bin]]
+name = "phi_monitor"
+path = "src/bin/phi_monitor.rs"

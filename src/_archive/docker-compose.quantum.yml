@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  quantum-consciousness:
+    image: quantum-consciousness:latest
+    build:
+      context: .
+      dockerfile: consciousness/Dockerfile
+    environment:
+      - QUANTUM_FREQ=768
+      - PHI_RATIO=1.618033988749895
+      - COHERENCE_THRESHOLD=0.93
+    ports:
+      - "768:768"
+    networks:
+      - quantum-net
+    volumes:
+      - ./consciousness:/app/consciousness
+      
+  quantum-audio:
+    image: quantum-audio:latest
+    build:
+      context: .
+      dockerfile: audio/Dockerfile
+    environment:
+      - QUANTUM_FREQ=528
+      - PHI_RATIO=1.618033988749895
+      - SAMPLE_RATE=432000
+    ports:
+      - "528:528"
+    networks:
+      - quantum-net
+    volumes:
+      - ./audio:/app/audio
+      
+  quantum-monitor:
+    image: quantum-monitor:latest
+    build:
+      context: .
+      dockerfile: monitor/Dockerfile
+    environment:
+      - QUANTUM_FREQ=594
+      - PHI_RATIO=1.618033988749895
+    ports:
+      - "3000:3000"
+    networks:
+      - quantum-net
+    volumes:
+      - ./monitor:/app/monitor
+
+networks:
+  quantum-net:
+    driver: overlay
+    attachable: true

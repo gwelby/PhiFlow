@@ -1,0 +1,35 @@
+# Exclude unnecessary files and directories from the Docker build context
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore virtual environment
+.venv/
+
+# Ignore documentation and PDF files
+*.pdf
+*.md
+
+# Ignore backup files
+backup/
+
+# Ignore node_modules
+node_modules/
+
+# Ignore tests directory
+/tests/
+
+# Ignore test_quantum_backup directory
+test_quantum_backup/
+
+# Ignore build artifacts
+build/
+obj/
+
+# Ignore any temporary files
+*.tmp
+*.temp
+
+# Ignore all hidden files and directories
+.*

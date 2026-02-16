@@ -1,0 +1,100 @@
+version: '3.8'
+
+# Quantum Service Stack for R720 (φ^φ)
+services:
+  quantum-consciousness:
+    build: 
+      context: .
+      dockerfile: Dockerfile.cuda
+    container_name: quantum-consciousness
+    environment:
+      - GROUND_FREQ=432.0
+      - CREATE_FREQ=528.0
+      - UNITY_FREQ=768.0
+      - CUDA_VISIBLE_DEVICES=0,1
+      - QUANTUM_MEMORY=192GB
+      - PHI_RATIO=1.618033988749895
+    volumes:
+      - /etc/quantum:/etc/quantum
+      - /var/quantum:/var/quantum
+      - type: bind
+        source: /mnt/quantum-data
+        target: /quantum-data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 2
+              capabilities: [gpu]
+    ports:
+      - "432:432"   # Ground frequency
+      - "528:528"   # Creation frequency
+      - "768:768"   # Unity frequency
+      - "8432:8432" # Admin API
+    restart: unless-stopped
+    networks:
+      - quantum-net
+
+  quantum-audio:
+    image: quantum-audio:latest
+    container_name: quantum-audio
+    environment:
+      - AUDIO_SAMPLE_RATE=432000  # 432 kHz
+      - AUDIO_BIT_DEPTH=26        # φ * 16
+      - AUDIO_CHANNELS=3          # φ + 1
+      - AUDIO_BUFFER=432000       # 432 KB
+      - AUDIO_BLOCK=528          # 528 B
+      - AUDIO_CACHE=768000000    # 768 MB
+    volumes:
+      - /dev/snd:/dev/snd
+      - type: bind
+        source: /mnt/quantum-audio
+        target: /quantum-audio
+    privileged: true  # Required for audio device access
+    ports:
+      - "4320:4320"  # Audio control
+      - "5280:5280"  # Audio streaming
+    restart: unless-stopped
+    networks:
+      - quantum-net
+
+  quantum-monitor:
+    image: quantum-monitor:latest
+    container_name: quantum-monitor
+    environment:
+      - MONITOR_FREQ=432.0
+      - COHERENCE_THRESHOLD=0.93
+      - PHI_RATIO=1.618033988749895
+      - PROMETHEUS_PORT=9090
+      - GRAFANA_PORT=3000
+    volumes:
+      - /var/quantum/metrics:/metrics
+    ports:
+      - "9090:9090"  # Prometheus
+      - "3000:3000"  # Grafana
+    restart: unless-stopped
+    networks:
+      - quantum-net
+
+  quantum-proxy:
+    image: traefik:v2.5
+    container_name: quantum-proxy
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - quantum-net
+
+networks:
+  quantum-net:
+    driver: bridge

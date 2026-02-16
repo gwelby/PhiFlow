@@ -1,0 +1,1 @@
+New();SetFontNames("Quantum","Quantum","Quantum","Regular","(c)2025","1.0");Select("A");Import("A.svg");Scale(10,10);RemoveOverlap();Simplify();AutoHint();Generate("fonts/builds/Quantum.otf");

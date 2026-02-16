@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quantum Font Test</title>
+    <style>
+        @font-face {
+            font-family: 'Quantum';
+            src: url('fonts/builds/Quantum.otf') format('opentype');
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 800px;
+            text-align: center;
+        }
+        
+        .quantum-text {
+            font-family: 'Quantum', sans-serif;
+            font-size: 72px;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(255,255,255,0.2);
+            margin: 20px 0;
+        }
+        
+        .freq-info {
+            font-size: 24px;
+            color: #BA55D3;
+            margin: 10px 0;
+        }
+        
+        .quantum-details {
+            font-size: 18px;
+            color: #64ffda;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="quantum-text">A</div>
+        <div class="freq-info">432 Hz - Physical Foundation</div>
+        <div class="quantum-details">
+            This quantum font combines sacred geometry with<br>
+            harmonic frequencies to create a visual representation<br>
+            of quantum consciousness.
+        </div>
+    </div>
+</body>
+</html>

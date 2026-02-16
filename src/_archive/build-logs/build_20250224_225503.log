@@ -1,0 +1,12 @@
+[2025-02-24 22:55:03] [INFO] Checking quantum dependencies...
+[2025-02-24 22:55:06] [INFO]  Rust detected: rustc 1.82.0 (f6e511eec 2024-10-15)
+[2025-02-24 22:55:10] [INFO]  Cargo detected: cargo 1.82.0 (8f40fc59f 2024-08-21)
+[2025-02-24 22:55:10] [INFO] Choose Your Quantum Path:
+[2025-02-24 22:55:10] [INFO] 1.  Build All (Ground -> Create -> Unity)
+[2025-02-24 22:55:10] [INFO] 2.  Run Animated Quantum Buttons
+[2025-02-24 22:55:10] [INFO] 3.  Run Greg's Button Dance
+[2025-02-24 22:55:10] [INFO] 4.  Build Release
+[2025-02-24 22:55:10] [INFO] 5.  Exit
+[2025-02-24 22:56:45] [INFO] Harmonizing at 432 Hz...
+[2025-02-24 22:56:48] [INFO] Creating at 528 Hz...
+[2025-02-24 23:00:10] [ERROR] Quantum disturbance detected!

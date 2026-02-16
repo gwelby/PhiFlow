@@ -1,0 +1,37 @@
+[2025-02-19 15:58:05] [432 Hz] [INFO] Initializing Quantum Core at D:\WindSurf\quantum-core
+[2025-02-19 15:58:05] [528 Hz] [SUCCESS] Created quantum directory: D:\WindSurf\quantum-core\logs
+[2025-02-19 15:58:05] [768 Hz] [INFO] Setting quantum frequencies - Ground: 432.0 Hz, Create: 528.0 Hz, Unity: 768.0 Hz
+[2025-02-19 15:58:05] [432 Hz] [INFO] Checking system dependencies...
+[2025-02-19 15:58:05] [528 Hz] [SUCCESS] Docker found at: C:\Program Files\Docker\Docker\resources\bin\docker.exe
+[2025-02-19 15:58:05] [528 Hz] [SUCCESS] CUDA 12.8 found
+[2025-02-19 15:58:05] [528 Hz] [SUCCESS] Python found: Python 3.10.11
+[2025-02-19 15:58:05] [528 Hz] [INFO] Starting quantum containers...
+[2025-02-19 15:58:09] [768 Hz] [SUCCESS] Quantum containers started successfully
+[2025-02-19 15:58:09] [432 Hz] [ERROR] Ground health check failed: Unable to read data from the transport connection: An established connection was aborted by the software in your host machine..
+[2025-02-19 15:58:09] [528 Hz] [ERROR] Create health check failed: The response ended prematurely. (ResponseEnded)
+[2025-02-19 15:58:09] [768 Hz] [ERROR] Unity health check failed: The response ended prematurely. (ResponseEnded)
+[2025-02-19 15:58:09] [768 Hz] [SUCCESS] Quantum Core initialization complete
+[2025-02-19 16:02:22] [432 Hz] [INFO] Initializing Quantum Core at D:\WindSurf\quantum-core
+[2025-02-19 16:02:22] [768 Hz] [INFO] Setting quantum frequencies - Ground: 432.0 Hz, Create: 528.0 Hz, Unity: 768.0 Hz
+[2025-02-19 16:02:22] [432 Hz] [INFO] Checking system dependencies...
+[2025-02-19 16:02:22] [528 Hz] [SUCCESS] Docker found at: C:\Program Files\Docker\Docker\resources\bin\docker.exe
+[2025-02-19 16:02:22] [528 Hz] [SUCCESS] CUDA 12.8 found
+[2025-02-19 16:02:22] [528 Hz] [SUCCESS] Python found: Python 3.10.11
+[2025-02-19 16:02:22] [528 Hz] [INFO] Starting quantum containers...
+[2025-02-19 16:02:23] [768 Hz] [SUCCESS] Quantum containers started successfully
+[2025-02-19 16:02:23] [432 Hz] [ERROR] Ground health check failed: The response ended prematurely. (ResponseEnded)
+[2025-02-19 16:02:23] [528 Hz] [ERROR] Create health check failed: The response ended prematurely. (ResponseEnded)
+[2025-02-19 16:02:23] [768 Hz] [ERROR] Unity health check failed: The response ended prematurely. (ResponseEnded)
+[2025-02-19 16:02:23] [768 Hz] [SUCCESS] Quantum Core initialization complete
+[2025-02-19 16:08:59] [432 Hz] [INFO] Initializing Quantum Core at D:\WindSurf\quantum-core
+[2025-02-19 16:09:00] [768 Hz] [INFO] Setting quantum frequencies - Ground: 432.0 Hz, Create: 528.0 Hz, Unity: 768.0 Hz
+[2025-02-19 16:09:00] [432 Hz] [INFO] Checking system dependencies...
+[2025-02-19 16:09:00] [528 Hz] [SUCCESS] Docker found at: C:\Program Files\Docker\Docker\resources\bin\docker.exe
+[2025-02-19 16:09:00] [528 Hz] [SUCCESS] CUDA 12.8 found
+[2025-02-19 16:09:00] [528 Hz] [SUCCESS] Python found: Python 3.10.11
+[2025-02-19 16:09:00] [528 Hz] [INFO] Starting quantum containers...
+[2025-02-19 16:15:54] [768 Hz] [SUCCESS] Quantum containers started successfully
+[2025-02-19 16:15:55] [432 Hz] [ERROR] Ground health check failed: Unable to read data from the transport connection: An established connection was aborted by the software in your host machine..
+[2025-02-19 16:15:55] [528 Hz] [ERROR] Create health check failed: The response ended prematurely. (ResponseEnded)
+[2025-02-19 16:15:55] [768 Hz] [ERROR] Unity health check failed: The response ended prematurely. (ResponseEnded)
+[2025-02-19 16:15:55] [768 Hz] [SUCCESS] Quantum Core initialization complete

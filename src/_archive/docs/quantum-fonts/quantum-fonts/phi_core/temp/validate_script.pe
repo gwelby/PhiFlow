@@ -1,0 +1,8 @@
+#!/usr/bin/fontforge
+Open("D:/WindSurf/quantum-core/docs/quantum-fonts/quantum-fonts/phi_core/fonts/unity/QuantumUnity-infhz.ttf")
+if (CharCnt() > 0)
+    Print("Valid")
+else
+    Print("Invalid")
+endif
+Close()

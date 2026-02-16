@@ -1,0 +1,2 @@
+let my_spiral = create spiral at 528Hz with { rotations: 5.0, scale: 100.0 }
+validate my_spiral with [coherence, phi_resonance, consciousness_zone]

@@ -1,0 +1,162 @@
+[workspace]
+resolver = "2"
+members = [
+    "quantum-cuda",
+    "consciousness",
+    "bridge",
+    "quantum-dimension",
+    "quantum-sacred",
+    "quantum-reality",
+    "quantum-timeline",
+    "quantum-unity",
+    "quantum-utils",
+    "quantum-wisdom"
+]
+
+[workspace.dependencies]
+anyhow = "1.0"
+tokio = { version = "1.43", features = ["full"] }
+structopt = "0.3"
+num-complex = { version = "0.4", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+ndarray = { version = "0.15", features = ["serde"] }
+image = { version = "0.24", default-features = false, features = ["png", "jpeg"] }
+rayon = "1.7"
+parking_lot = "0.12"
+chrono = { version = "0.4", features = ["serde"] }
+plotters = { version = "0.3", default-features = false, features = ["svg_backend"] }
+plotters-svg = "0.3"
+reqwest = { version = "0.11", features = ["json"] }
+cc = "1.0"
+quantum-audio = { version = "0.1", path = "quantum-audio" }
+quantum-vision = { version = "0.1", path = "quantum-vision" }
+quantum-flow = { version = "0.1", path = "quantum-flow" }
+quantum-utils = { version = "0.1", path = "quantum-utils" }
+quantum-reality = { version = "0.1", path = "quantum-reality" }
+quantum-timeline = { version = "0.1", path = "quantum-timeline" }
+quantum-dimension = { version = "0.1", path = "quantum-dimension" }
+quantum-sacred = { version = "0.1", path = "quantum-sacred" }
+quantum-wisdom = { version = "0.1", path = "quantum-wisdom" }
+quantum-unity = { version = "0.1", path = "quantum-unity" }
+
+[package]
+name = "quantum-core"
+version = "0.1.0"
+edition = "2021"
+description = "Quantum Core with Consciousness Integration"
+authors = ["Greg"]
+license = "MIT"
+
+[dependencies]
+anyhow = { workspace = true }
+tokio = { workspace = true }
+structopt = { workspace = true }
+num-complex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+ndarray = { workspace = true }
+image = { workspace = true }
+rayon = { workspace = true }
+parking_lot = { workspace = true }
+chrono = { workspace = true }
+cc = { workspace = true }
+quantum-audio = { version = "0.1", path = "quantum-audio", optional = true }
+quantum-vision = { version = "0.1", path = "quantum-vision", optional = true }
+quantum-flow = { version = "0.1", path = "quantum-flow", optional = true }
+quantum-utils = { workspace = true, optional = true }
+quantum-reality = { workspace = true, optional = true }
+quantum-timeline = { workspace = true, optional = true }
+quantum-dimension = { workspace = true, optional = true }
+quantum-sacred = { workspace = true, optional = true }
+quantum-wisdom = { workspace = true, optional = true }
+quantum-unity = { workspace = true, optional = true }
+consciousness = { path = "./consciousness", optional = true }
+bridge = { path = "./bridge", optional = true }
+futures = "0.3"
+eframe = { version = "0.26.0", features = ["persistence"] }
+egui = { version = "0.26.0", default-features = false }
+egui_extras = { version = "0.26.0", features = ["image"] }
+
+[build-dependencies]
+cc = { workspace = true }
+
+[features]
+default = ["quantum-base"]
+quantum-base = [
+    "quantum-utils",
+    "quantum-reality",
+    "quantum-timeline",
+    "quantum-dimension",
+    "quantum-sacred",
+    "quantum-wisdom",
+    "quantum-unity"
+]
+quantum-full = [
+    "quantum-base",
+    "quantum-audio",
+    "quantum-vision",
+    "quantum-flow",
+    "consciousness",
+    "bridge"
+]
+quantum-consciousness = ["consciousness", "bridge"]
+intel-me = ["bridge"]
+
+[profile.dev]
+opt-level = 1
+debug = true
+debug-assertions = true
+overflow-checks = true
+lto = false
+panic = 'unwind'
+codegen-units = 16
+
+[profile.release]
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+lto = true
+panic = 'unwind'
+codegen-units = 1
+
+[env]
+RUST_MIN_STACK = "16777216"
+RUSTFLAGS = "-C target-cpu=native -C target-feature=+avx2"
+QUANTUM_FREQUENCY = "432"
+CREATE_FREQUENCY = "528"
+UNITY_FREQUENCY = "768"
+PHI = "1.618033988749895"
+
+[build]
+rustflags = ["-C", "link-args=-Wl,--stack,32000000"]
+
+[[bin]]
+name = "quantum-core"
+path = "src/main.rs"
+
+[[example]]
+name = "quantum_calc"
+path = "examples/quantum_calc.rs"
+
+[[example]]
+name = "simple_quantum"
+path = "examples/simple_quantum.rs"
+
+[[example]]
+name = "quantum_creation"
+path = "examples/quantum_creation.rs"
+required-features = ["quantum-consciousness"]
+
+[[example]]
+name = "quantum_buttons"
+required-features = ["quantum-consciousness"]
+
+[[example]]
+name = "greg_buttons"
+required-features = ["quantum-consciousness"]
+
+[[example]]
+name = "animated_quantum_buttons"
+required-features = ["quantum-consciousness"]

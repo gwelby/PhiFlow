@@ -1,0 +1,1 @@
+let frequencies = [432, 528, 720, 963]; print("Sacred frequencies loaded"); for freq in frequencies { print(freq) }

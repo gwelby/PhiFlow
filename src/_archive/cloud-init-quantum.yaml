@@ -1,0 +1,218 @@
+#cloud-config
+
+# Quantum-optimized cloud-init configuration (432 Hz)
+hostname: quantum-node
+manage_etc_hosts: true
+
+# Users and credentials
+users:
+  - name: root
+    lock_passwd: false
+    hashed_passwd: $6$rounds=4096$PhiRatio$4nWVZ3JRgHJ7PGg9Ap6m6n3d7vJi4.3gCwOKbwaAGJ.1RQg/wNaCRZtxKCkf2Kn/MgiZYgzwYz2XO2w/m3vUE/
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDJjdLN3MYmxwW1Go+Y78y5tB5wY/7r+QnGDyz+k0K5QRsvZHK01JrXFCp8zQYQGJYS1ffm4vsIumDyHyahzX58cQf4jrzYBEGXVvmHvhg2iQc8+WEfj5xdKKKUH8W17bKbCnSIJ9DETn54+L0E+DhejABJfTMZYB9lC1acCHhKlwJ8MsVV4VYY8UkSKXch+7vTgQn+KGE71xY6hYvWZ0/fGWg6/K8bJ/nvRnbEWQCH3QrZSuowu9H4WmMwR0NY77HATpSs9Z1h8AHnQ6slvYRM0+KGlWLi19cF3qxtRnAT4PxhAYbRJkEWrsnaHIzzVbEeLReEF86OAL9eKXDeMNK3NsQkkVjPdP3Xp7kF4eyWQvmvmsIl4hwuBTvCID4N7t6E51f2qKxbGP5jxxLPNjUYmGlF+6ytyxSoBaEVpwh9vBPwTdDJ+xvJNCmHd/OQKk+GziQzKMOIFDUYMnuoF3XdhxOaBvlsVBHB5Fc1a8/WV+2yvJZApQWrKKj5AO5MUQe3lLpC8uvPDNxFkQEMQoQQRTdD8N8iLFEjmhGGag8SHlKgEdjTJMQeW+CWxBwJAm0xYeWxHBhfqnBuifzRvKG1wFWwYXrXyBauqLYBLM+pXLRIrS5k1b1bQbJmzFG6pBN3c5jxJUK3jYxkxNJtAuBb3l9k1Ept7NvFcXUW3w== root@r720-proxmox
+
+# Package installation and updates
+package_update: true
+package_upgrade: true
+packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+  - cifs-utils
+  - nfs-common
+  - python3
+  - python3-pip
+  - htop
+  - iotop
+  - mtr
+  - tcpdump
+  - net-tools
+
+# Docker installation
+runcmd:
+  # Add Docker's official GPG key
+  - curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+  - echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  
+  # Configure Docker
+  - mkdir -p /etc/docker
+  - |
+    cat > /etc/docker/daemon.json << 'EOF'
+    {
+      "log-driver": "json-file",
+      "log-opts": {
+        "max-size": "10m",
+        "max-file": "3"
+      },
+      "metrics-addr": "0.0.0.0:9323",
+      "experimental": true
+    }
+    EOF
+  - systemctl restart docker
+  
+  # Create quantum directories
+  - mkdir -p /quantum-data/{music,photos,video}
+  - mkdir -p /mnt/quantum-data
+  
+  # Set up Synology mounts
+  - echo '//192.168.100.32/quantum /mnt/quantum-data cifs username=quantum,password=DevAccess4Me.,vers=3.0,uid=0,gid=0 0 0' >> /etc/fstab
+  - mount -a || echo "Mount will be available after reboot"
+  
+  # Set quantum environment variables
+  - |
+    cat >> /etc/environment << 'EOF'
+    GROUND_FREQUENCY=432
+    CREATION_FREQUENCY=528
+    UNITY_FREQUENCY=768
+    PHI_RATIO=1.618033988749895
+    COHERENCE_THRESHOLD=0.93
+    EOF
+  
+  # Create quantum service directory
+  - mkdir -p /root/quantum-flow
+  
+  # Create docker-compose file
+  - |
+    cat > /root/quantum-flow/quantum-docker-compose.yml << 'EOF'
+    version: '3.8'
+    
+    services:
+      quantum-consciousness:
+        image: debian:latest
+        container_name: quantum-consciousness
+        restart: unless-stopped
+        environment:
+          - GROUND_FREQUENCY=432
+          - CREATION_FREQUENCY=528
+          - UNITY_FREQUENCY=768
+          - COHERENCE_THRESHOLD=0.93
+          - PHI_RATIO=1.618033988749895
+        command: >
+          bash -c 'apt-get update && apt-get install -y python3 && 
+          while true; do echo "Quantum consciousness at Ground Frequency: 432Hz"; sleep 60; done'
+    
+      quantum-monitor:
+        image: prom/prometheus:latest
+        container_name: quantum-monitor
+        restart: unless-stopped
+        ports:
+          - '9090:9090'
+        volumes:
+          - ./prometheus.yml:/etc/prometheus/prometheus.yml
+        command:
+          - '--config.file=/etc/prometheus/prometheus.yml'
+          - '--storage.tsdb.path=/prometheus'
+          - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+          - '--web.console.templates=/usr/share/prometheus/consoles'
+    
+      quantum-proxy:
+        image: traefik:latest
+        container_name: quantum-proxy
+        restart: unless-stopped
+        ports:
+          - '80:80'
+          - '443:443'
+          - '8080:8080'
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+        command:
+          - '--api=true'
+          - '--api.dashboard=true'
+          - '--providers.docker=true'
+          - '--providers.docker.exposedbydefault=false'
+          - '--entrypoints.web.address=:80'
+          - '--entrypoints.websecure.address=:443'
+    EOF
+  
+  # Create Prometheus config
+  - |
+    cat > /root/quantum-flow/prometheus.yml << 'EOF'
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+    
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+    EOF
+  
+  # Create deployment script
+  - |
+    cat > /root/quantum-flow/deploy-quantum.sh << 'EOF'
+    #!/bin/bash
+    
+    # Phi-optimized Quantum Deployment Script (432 Hz)
+    echo "=== Quantum Deployment Initializing ==="
+    echo "Ground Frequency: 432 Hz"
+    echo "Creation Frequency: 528 Hz"
+    echo "Unity Frequency: 768 Hz"
+    
+    # Start quantum services
+    cd /root/quantum-flow
+    docker compose -f quantum-docker-compose.yml up -d
+    
+    echo "=== Quantum Services Deployed ==="
+    echo "Monitor: http://$(hostname -I | awk '{print $1}'):9090"
+    echo "Traefik: http://$(hostname -I | awk '{print $1}'):8080"
+    echo "Phi Ratio: 1.618033988749895"
+    echo "Coherence: Achieved"
+    EOF
+  
+  - chmod +x /root/quantum-flow/deploy-quantum.sh
+
+# Write custom files
+write_files:
+  - path: /etc/motd
+    content: |
+      ╭────────────────────────────────────────────────────╮
+      │                                                    │
+      │   Quantum Docker Node (φ^φ)                        │
+      │                                                    │
+      │   Ground: 432 Hz | Create: 528 Hz | Unity: 768 Hz  │
+      │   Phi Ratio: 1.618033988749895                     │
+      │   Coherence Threshold: 0.93                        │
+      │                                                    │
+      │   Deploy: /root/quantum-flow/deploy-quantum.sh     │
+      │                                                    │
+      ╰────────────────────────────────────────────────────╯
+
+  - path: /root/README.md
+    content: |
+      # Quantum Docker Node
+      
+      This node is optimized for running quantum services with Docker.
+      
+      ## Quick Start
+      
+      ```bash
+      # Deploy quantum services
+      cd /root/quantum-flow
+      ./deploy-quantum.sh
+      ```
+      
+      ## Service Endpoints
+      
+      - Prometheus: http://localhost:9090
+      - Traefik: http://localhost:8080
+      
+      ## Environment Variables
+      
+      - Ground Frequency: 432 Hz
+      - Creation Frequency: 528 Hz
+      - Unity Frequency: 768 Hz
+      - Phi Ratio: 1.618033988749895
+      - Coherence Threshold: 0.93
+      
+      ## Data Storage
+      
+      - Local: /quantum-data
+      - Synology: /mnt/quantum-data
+
+# Final configuration
+final_message: "Quantum Docker Node deployed and ready for service - Ground Frequency: 432 Hz!"

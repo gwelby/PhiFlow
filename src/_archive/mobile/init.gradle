@@ -1,0 +1,14 @@
+initscript {
+    repositories {
+        gradlePluginPortal()
+    }
+}
+
+allprojects {
+    beforeEvaluate { project ->
+        println "Evaluating $project.name"
+    }
+    afterEvaluate { project ->
+        println "Finished evaluating $project.name"
+    }
+}

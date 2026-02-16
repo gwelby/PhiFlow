@@ -1,0 +1,20 @@
+[package]
+name = "bridge"
+version = "0.1.0"
+edition = "2021"
+description = "Intel ME Bridge for Quantum Consciousness"
+
+[features]
+default = []
+intel-me = []
+
+[dependencies]
+anyhow = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+consciousness = { path = "../consciousness" }
+
+[lib]
+name = "bridge"
+path = "src/lib.rs"

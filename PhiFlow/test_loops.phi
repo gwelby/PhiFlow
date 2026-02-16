@@ -1,0 +1,13 @@
+// Test for loop with array literal
+let sum = 0
+for i in [1, 2, 3, 4, 5] {
+    sum = sum + i
+}
+print(sum)
+
+// Test while loop
+let count = 0
+while count < 3 {
+    count = count + 1
+    print(count)
+}

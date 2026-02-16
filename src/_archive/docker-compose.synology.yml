@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  quantum_storage:
+    image: quantum/storage:latest
+    container_name: quantum_storage
+    ports:
+      - "432:432"
+    volumes:
+      - ./quantum-data:/data
+      - ./config:/config
+      - ./certs:/certs
+    environment:
+      - QUANTUM_FREQUENCY=432.0
+      - QUANTUM_ROLE=STORAGE
+      - QUANTUM_NODE_ID=synology
+      - SSL_ENABLED=true
+    networks:
+      - quantum_net
+
+networks:
+  quantum_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24

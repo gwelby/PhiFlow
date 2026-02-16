@@ -1,0 +1,14 @@
+// Test user-defined functions
+fn add(x: f64, y: f64) -> f64 {
+    x + y
+}
+
+fn greet(name: string) -> string {
+    "Hello, " + name + "!"
+}
+
+let result = add(2, 3)
+print(result)
+
+let greeting = greet("Alice")
+print(greeting)

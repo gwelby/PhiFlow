@@ -1,0 +1,2 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000'><defs><radialGradient id='qf432'><stop offset='0%' stop-color='rgba(138,43,226,0.2)'/><stop offset='100%' stop-color='rgba(138,43,226,0)'/></radialGradient></defs><g transform='translate(500,500)'><circle r='444.991289587618' fill='url(#qf432)'/><path d='M -222.495644793809,0 A 222.495644793809,222.495644793809 0 1,1 222.495644793809,0 A 222.495644793809,222.495644793809 0 1,1 -222.495644793809,0' fill='none' stroke='purple' stroke-width='2'/><text x='-40' y='10' fill='black'>Physical</text></g></svg>
+
