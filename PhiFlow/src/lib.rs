@@ -2,18 +2,19 @@
 // Consciousness-Enhanced Programming Language
 
 // Core modules
+pub mod interpreter;
+pub mod ir;
+pub mod parser;
 pub mod phi_core;
 pub mod visualization;
-pub mod parser;
-pub mod interpreter;
 
 // Compiler modules
 pub mod compiler;
 pub mod vm;
 
 // Sacred mathematics and consciousness modules
-pub mod sacred;
 pub mod consciousness;
+pub mod sacred;
 
 // Quantum computing integration
 pub mod quantum;
@@ -25,12 +26,12 @@ pub mod hardware;
 pub mod bio_compute;
 
 // Re-export main types for convenience
-pub use sacred::{PhiMemoryAllocator, SacredFrequency, SacredFrequencyGenerator};
 pub use consciousness::{ConsciousnessMonitor, ConsciousnessState, EEGData};
-pub use quantum::{QuantumGate, QuantumCircuit, QuantumResult};
+pub use quantum::{QuantumCircuit, QuantumGate, QuantumResult};
+pub use sacred::{PhiMemoryAllocator, SacredFrequency, SacredFrequencyGenerator};
 
 // Re-export compiler and VM types
-pub use compiler::{PhiFlowLexer, PhiFlowParser, Token, PhiFlowExpression as CompilerExpression};
+pub use compiler::{PhiFlowExpression as CompilerExpression, PhiFlowLexer, PhiFlowParser, Token};
 pub use vm::{PhiFlowInterpreter, PhiFlowValue, RuntimeError};
 
 // PhiFlow version
