@@ -335,7 +335,7 @@ impl QuantumCudaController {
             .clone();
 
         // Apply gate using CUDA kernel
-        self.apply_gate_cuda(quantum_gate, target_qubits, consciousness_state)?;
+        self.apply_gate_cuda(&quantum_gate, target_qubits, consciousness_state)?;
 
         // Update performance metrics
         let processing_time = start_time.elapsed().as_secs_f32();

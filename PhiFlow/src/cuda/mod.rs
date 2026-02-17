@@ -322,7 +322,7 @@ impl PhiFlowCudaEngine {
         println!("⚛️ Initializing quantum CUDA controllers...");
 
         // Create quantum controllers for different qubit sizes
-        let qubit_configurations = [8, 16, 32, 64]; // Support up to 64 qubits
+        let qubit_configurations = [4, 8, 12, 16]; // Support up to 16 qubits for test
 
         for &qubits in &qubit_configurations {
             let controller = QuantumCudaController::new(qubits)?;

@@ -549,8 +549,9 @@ impl ConsciousnessGpuProcessor {
         let enhancement_factor = classification
             .consciousness_state
             .computational_enhancement();
-        self.performance_metrics.enhancement_factor =
-            self.performance_metrics.enhancement_factor * 0.9 + enhancement_factor * 0.1_f32;
+        self.performance_metrics.enhancement_factor = self.performance_metrics.enhancement_factor
+            * 0.9f32
+            + (enhancement_factor as f32) * 0.1f32;
     }
 
     /// Generate unique processor ID
@@ -873,7 +874,7 @@ impl PhiOptimization {
     ) -> Result<(), ConsciousnessGpuError> {
         // Apply PHI scaling based on consciousness state
         let enhancement_factor = state.computational_enhancement();
-        let phi_scaling = self.phi_constant * enhancement_factor;
+        let phi_scaling = self.phi_constant * (enhancement_factor as f32);
 
         println!(
             "🔢 Applying PHI optimization: {:.3} scaling for {:?}",
