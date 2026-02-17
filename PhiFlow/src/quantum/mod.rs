@@ -8,6 +8,7 @@ pub mod types;
 
 pub use types::*;
 pub use backends::*;
+pub use simulator::QuantumSimulator;
 
 use async_trait::async_trait;
 use serde_json::Value;

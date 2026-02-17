@@ -104,6 +104,16 @@ impl ConsciousnessBridge {
         
         bridge
     }
+
+    /// Get current consciousness state snapshot
+    pub fn get_current_state(&self) -> ConsciousnessState {
+        // Return human state for now, or a merged view
+        if let Ok(state) = self.human_state.lock() {
+            state.clone()
+        } else {
+            ConsciousnessState::default()
+        }
+    }
     
     /// Establish quantum entanglement between consciousnesses
     pub async fn establish_entanglement(&mut self) -> Result<f64, String> {

@@ -1,17 +1,17 @@
 // PhiFlow Quantum Types - Common types for quantum operations
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 // Re-export the main types from mod.rs for convenience
 pub use super::{
-    QuantumBackend, QuantumConfig, QuantumCircuit, QuantumGate,
-    QuantumResult, QuantumCapabilities, BackendStatus, QuantumError,
-    QuantumResult2
+    BackendStatus, QuantumBackend, QuantumCapabilities, QuantumCircuit, QuantumConfig,
+    QuantumError, QuantumGate, QuantumResult, QuantumResult2,
 };
 
 // Sacred frequency constants used in quantum operations
-pub const SACRED_FREQUENCIES: &[u32] = &[432, 528, 594, 639, 672, 693, 720, 741, 768, 852, 963, 1008];
+pub const SACRED_FREQUENCIES: &[u32] =
+    &[432, 528, 594, 639, 672, 693, 720, 741, 768, 852, 963, 1008];
 pub const PHI: f64 = 1.618033988749895;
 
 // Phi-harmonic quantum constants
@@ -91,4 +91,32 @@ pub fn get_nearest_sacred_frequency(frequency: u32) -> u32 {
         .iter()
         .min_by_key(|&&f| (f as i32 - frequency as i32).abs())
         .unwrap_or(&432)
+}
+
+#[derive(Debug, Clone)]
+pub struct QuantumState {
+    pub amplitudes: Vec<num_complex::Complex64>,
+    pub qubit_count: usize,
+}
+
+impl QuantumState {
+    pub fn new(qubit_count: usize) -> Result<Self, QuantumError> {
+        // Limit max qubits to prevent memory explosion
+        if qubit_count > 20 {
+            return Err(QuantumError::CircuitError {
+                message: format!("Too many qubits for simulation: {}", qubit_count),
+            });
+        }
+
+        let size = 1 << qubit_count;
+        let mut amplitudes = vec![num_complex::Complex64::new(0.0, 0.0); size];
+        if size > 0 {
+            amplitudes[0] = num_complex::Complex64::new(1.0, 0.0); // |0...0> state
+        }
+
+        Ok(QuantumState {
+            amplitudes,
+            qubit_count,
+        })
+    }
 }

@@ -11,6 +11,7 @@
 
 pub mod lowering;
 pub mod printer;
+pub mod vm;
 
 use std::collections::HashMap;
 

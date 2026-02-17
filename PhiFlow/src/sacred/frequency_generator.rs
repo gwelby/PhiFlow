@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 use std::collections::HashMap;
 
 /// Sacred frequencies with their consciousness effects
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum SacredFrequency {
     EarthResonance = 432,    // Grounding, stability, foundation
     DNARepair = 528,         // Healing, transformation, creation

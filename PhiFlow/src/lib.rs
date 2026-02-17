@@ -20,6 +20,7 @@ pub mod sacred;
 pub mod quantum;
 
 // Hardware integration
+pub mod cuda;
 pub mod hardware;
 
 // Biological computation
