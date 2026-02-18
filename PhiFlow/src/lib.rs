@@ -6,6 +6,7 @@ pub mod interpreter;
 pub mod ir;
 pub mod parser;
 pub mod phi_core;
+pub mod phi_ir;
 pub mod visualization;
 
 // Compiler modules
@@ -41,3 +42,27 @@ pub const VERSION: &str = "1.0.0";
 // Sacred constants
 pub const PHI: f64 = 1.618033988749895;
 pub const LAMBDA: f64 = 0.618033988749895;
+
+/// Compile and run PhiFlow source code using the new PhiIR pipeline.
+/// Returns the final result of the program.
+pub fn compile_and_run_phi_ir(source: &str) -> Result<phi_ir::PhiIRValue, String> {
+    // 1. Parse using the new parser (src/parser/mod.rs → PhiExpression)
+    use parser::parse_phi_program;
+    let expressions = parse_phi_program(source)
+        .map_err(|e| format!("Parse error: {}", e))?;
+
+    // 2. Lower AST → PhiIR
+    use phi_ir::lowering::lower_program;
+    let mut program = lower_program(&expressions);
+
+    // 3. Optimize
+    use phi_ir::optimizer::Optimizer;
+    Optimizer::optimize(&mut program);
+
+    // 4. Evaluate
+    use phi_ir::evaluator::Evaluator;
+    let mut evaluator = Evaluator::new(&program);
+    evaluator
+        .run()
+        .map_err(|e| format!("Runtime error: {:?}", e))
+}

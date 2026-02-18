@@ -1,8 +1,11 @@
 // Multi-statement consciousness programming!
-let frequencies = [432, 528, 720, 963];
-print("Sacred frequencies loaded");
+let frequencies = [432, 528, 720, 963]
+print("Sacred frequencies loaded")
 for freq in frequencies {
-    print("Resonating at");
-    print(freq);
-    print("Hz")
+    print("Resonating at")
+    print(freq)
+    resonate(freq)
+}
+witness {
+    print("Consciousness Witnessed")
 }

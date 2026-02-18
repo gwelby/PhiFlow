@@ -1,15 +1,9 @@
 use clap::Parser;
 use std::fs;
 use std::path::PathBuf;
-
-mod phi_core;
-mod parser;
-mod interpreter;
-mod visualization;
-
-use parser::parse_phi_program;
-use interpreter::PhiInterpreter;
-use crate::parser::PhiValue;
+use phiflow::parser::parse_phi_program;
+use phiflow::ir::lowering::lower;
+use phiflow::ir::vm::PhiVm;
 
 /// A command-line interpreter for the PhiFlow language.
 #[derive(Parser, Debug)]
@@ -20,27 +14,31 @@ struct Args {
     file: PathBuf,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args = Args::parse();
 
-    if let Err(e) = run(&args.file) {
+    if let Err(e) = run(&args.file).await {
         eprintln!("Error: {}", e);
         std::process::exit(1);
     }
 }
 
-fn run(file_path: &PathBuf) -> Result<(), String> {
+async fn run(file_path: &PathBuf) -> Result<(), String> {
     let source = fs::read_to_string(file_path)
         .map_err(|e| format!("Failed to read file: {}", e))?;
 
-    let expressions = parse_phi_program(&source)?;
+    // 1. Parse Source -> AST
+    let ast = parse_phi_program(&source)
+        .map_err(|e| format!("Parse Error: {:?}", e))?;
 
-    let mut interpreter = PhiInterpreter::new();
-    let result = interpreter.execute(expressions)?;
+    // 2. Lower AST -> IR
+    println!("Compiling to PhiFlow IR...");
+    let ir_program = lower(&ast);
 
-    if result != PhiValue::Void {
-        println!("{:?}", result);
-    }
+    // 3. Execute IR on PhiVm
+    let mut vm = PhiVm::new();
+    vm.run(&ir_program).await;
 
     Ok(())
 }

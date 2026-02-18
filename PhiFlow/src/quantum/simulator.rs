@@ -10,6 +10,7 @@ use super::types::*;
 
 pub struct QuantumSimulator {
     max_qubits: u32,
+    shots: u32,
     capabilities: QuantumCapabilities,
 }
 
@@ -17,6 +18,7 @@ impl QuantumSimulator {
     pub fn new() -> Self {
         QuantumSimulator {
             max_qubits: 32,
+            shots: 1024,
             capabilities: QuantumCapabilities {
                 max_qubits: 32,
                 gate_set: vec![
@@ -245,8 +247,9 @@ impl QuantumSimulator {
         }
 
         // Simulate measurements
+        // Simulate measurements
         let mut counts = HashMap::new();
-        let shots = 1024; // Default number of shots
+        let shots = self.shots;
         
         for _shot in 0..shots {
             let mut bitstring = String::new();
@@ -285,6 +288,7 @@ impl QuantumBackend for QuantumSimulator {
     async fn initialize(&mut self, config: QuantumConfig) -> Result<(), QuantumError> {
         info!("🧮 Initializing quantum simulator with {} qubits", config.max_qubits);
         self.max_qubits = config.max_qubits;
+        self.shots = config.shots;
         self.capabilities.max_qubits = config.max_qubits;
         Ok(())
     }

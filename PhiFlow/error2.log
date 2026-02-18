@@ -1,0 +1,1122 @@
+    Checking phiflow v0.1.0 (D:\Projects\PhiFlow-compiler\PhiFlow)
+warning: unused imports: `CREATION_FREQUENCY` and `VOICE_FLOW_FREQUENCY`
+ --> src\interpreter\mod.rs:4:135
+  |
+4 | ..._helix_points, validate_pattern_consciousness, CREATION_FREQUENCY, VOICE_FLOW_FREQUENCY};
+  |                                                   ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `Label`
+ --> src\ir\lowering.rs:8:37
+  |
+8 | use super::{FunctionDef, IrProgram, Label, Opcode};
+  |                                     ^^^^^
+
+warning: unused import: `PhiValue`
+ --> src\ir\lowering.rs:9:52
+  |
+9 | use crate::parser::{BinaryOperator, PhiExpression, PhiValue, UnaryOperator};
+  |                                                    ^^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+  --> src\ir\lowering.rs:10:5
+   |
+10 | use std::collections::HashMap;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `QuantumConfig`
+ --> src\ir\vm.rs:8:38
+  |
+8 | use crate::quantum::{QuantumBackend, QuantumConfig, QuantumSimulator};
+  |                                      ^^^^^^^^^^^^^
+
+warning: unused import: `ConsciousnessState`
+ --> src\ir\vm.rs:9:49
+  |
+9 | use crate::consciousness::{ConsciousnessBridge, ConsciousnessState};
+  |                                                 ^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Arc` and `Mutex`
+  --> src\ir\vm.rs:11:17
+   |
+11 | use std::sync::{Arc, Mutex};
+   |                 ^^^  ^^^^^
+
+warning: unused imports: `BlockId`, `PhiIRBlock`, and `PhiInstruction`
+ --> src\phi_ir\optimizer.rs:8:5
+  |
+8 |     BlockId, Operand, PhiIRBinOp, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRUnOp, PhiIRValue,
+  |     ^^^^^^^                       ^^^^^^^^^^
+9 |     PhiInstruction,
+  |     ^^^^^^^^^^^^^^
+
+warning: unused import: `crate::compiler::lexer::Token`
+  --> src\phi_ir\mod.rs:18:5
+   |
+18 | use crate::compiler::lexer::Token; // Re-using Token if needed, or defining own types
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `PhiFlowLexer`
+ --> src\compiler\parser.rs:4:37
+  |
+4 | use crate::compiler::lexer::{Token, PhiFlowLexer};
+  |                                     ^^^^^^^^^^^^
+
+warning: unused imports: `BrainwaveType`, `ComparisonOperator`, `ConsciousnessCondition`, `ConsciousnessConfig`, `LogicalOperator`, `MatchArm`, `Pattern`, and `QuantumConfig`
+  --> src\compiler\parser.rs:7:36
+   |
+7  |     BinaryOperator, UnaryOperator, ComparisonOperator, LogicalOperator,
+   |                                    ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^
+8  |     ConsciousnessCondition, ConsciousnessMetric, BrainwaveType,
+   |     ^^^^^^^^^^^^^^^^^^^^^^                       ^^^^^^^^^^^^^
+9  |     PhiFlowType, Parameter, MatchArm, Pattern,
+   |                             ^^^^^^^^  ^^^^^^^
+10 |     ConsciousnessConfig, QuantumConfig
+   |     ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+  --> src\compiler\parser.rs:12:5
+   |
+12 | use std::collections::HashMap;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `LogicalOperator` and `PhiFlowType`
+ --> src\vm\interpreter.rs:7:49
+  |
+7 |     ConsciousnessCondition, ComparisonOperator, LogicalOperator,
+  |                                                 ^^^^^^^^^^^^^^^
+8 |     PhiFlowType
+  |     ^^^^^^^^^^^
+
+warning: unused import: `std::process::Command`
+ --> src\consciousness\muse_integration.rs:5:5
+  |
+5 | use std::process::Command;
+  |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `SystemTime`
+ --> src\consciousness\monitor.rs:6:36
+  |
+6 | use std::time::{Duration, Instant, SystemTime};
+  |                                    ^^^^^^^^^^
+
+warning: unused imports: `Arc` and `Mutex`
+ --> src\consciousness\monitor.rs:7:17
+  |
+7 | use std::sync::{Arc, Mutex};
+  |                 ^^^  ^^^^^
+
+warning: unused import: `GlobalAlloc`
+ --> src\sacred\phi_memory.rs:6:18
+  |
+6 | use std::alloc::{GlobalAlloc, Layout};
+  |                  ^^^^^^^^^^^
+
+warning: unused import: `async_trait::async_trait`
+ --> src\quantum\backends.rs:3:5
+  |
+3 | use async_trait::async_trait;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `error`
+  --> src\quantum\ibm_quantum.rs:10:27
+   |
+10 | use tracing::{info, warn, error, debug};
+   |                           ^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> src\quantum\types.rs:4:5
+  |
+4 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Duration`
+ --> src\cuda\consciousness_gpu.rs:8:17
+  |
+8 | use std::time::{Duration, Instant};
+  |                 ^^^^^^^^
+
+warning: unused import: `std::sync::Arc`
+ --> src\cuda\sacred_math_kernels.rs:6:5
+  |
+6 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+
+warning: unused imports: `Arc` and `Mutex`
+ --> src\cuda\frequency_synthesis.rs:9:17
+  |
+9 | use std::sync::{Arc, Mutex};
+  |                 ^^^  ^^^^^
+
+warning: unnecessary parentheses around assigned value
+   --> src\cuda\frequency_synthesis.rs:228:34
+    |
+228 |             let phi_modulation = (phi_phase.sin() * 0.1 + 1.0); // 10% modulation depth
+    |                                  ^                           ^
+    |
+    = note: `#[warn(unused_parens)]` on by default
+help: remove these parentheses
+    |
+228 -             let phi_modulation = (phi_phase.sin() * 0.1 + 1.0); // 10% modulation depth
+228 +             let phi_modulation = phi_phase.sin() * 0.1 + 1.0; // 10% modulation depth
+    |
+
+warning: unused imports: `Arc` and `Mutex`
+ --> src\cuda\memory_management.rs:9:17
+  |
+9 | use std::sync::{Arc, Mutex};
+  |                 ^^^  ^^^^^
+
+warning: unused import: `QuantumGate`
+ --> src\cuda\quantum_cuda.rs:7:22
+  |
+7 | use crate::quantum::{QuantumGate, QuantumState};
+  |                      ^^^^^^^^^^^
+
+warning: unused imports: `Arc` and `Mutex`
+ --> src\cuda\quantum_cuda.rs:9:17
+  |
+9 | use std::sync::{Arc, Mutex};
+  |                 ^^^  ^^^^^
+
+warning: unused import: `std::sync::Arc`
+  --> src\cuda\mod.rs:28:5
+   |
+28 | use std::sync::Arc;
+   |     ^^^^^^^^^^^^^^
+
+warning: unused import: `crate::consciousness::consciousness_math::ConsciousnessState`
+ --> src\hardware\device_mapping.rs:3:5
+  |
+3 | use crate::consciousness::consciousness_math::ConsciousnessState;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> src\bio_compute\dna_interface.rs:5:5
+  |
+5 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `pattern`
+   --> src\ir\vm.rs:276:33
+    |
+276 |                     if let Some(pattern) = self.stack.pop() {
+    |                                 ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_pattern`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `phi`
+   --> src\consciousness\bridge.rs:209:13
+    |
+209 |         let phi = 1.618033988749895;
+    |             ^^^ help: if this is intentional, prefix it with an underscore: `_phi`
+
+warning: unused variable: `command_rx`
+   --> src\consciousness\muse_integration.rs:121:30
+    |
+121 |         let (command_tx, mut command_rx) = mpsc::channel::<ConsciousnessCommand>(100);
+    |                              ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_command_rx`
+
+warning: unused variable: `muse_tx`
+   --> src\consciousness\muse_integration.rs:122:14
+    |
+122 |         let (muse_tx, muse_rx) = mpsc::channel::<MuseData>(100);
+    |              ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_muse_tx`
+
+warning: variable does not need to be mutable
+   --> src\consciousness\muse_integration.rs:109:13
+    |
+109 |         let mut child = AsyncCommand::new("python3")
+    |             ----^^^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` on by default
+
+warning: variable does not need to be mutable
+   --> src\consciousness\muse_integration.rs:121:26
+    |
+121 |         let (command_tx, mut command_rx) = mpsc::channel::<ConsciousnessCommand>(100);
+    |                          ----^^^^^^^^^^
+    |                          |
+    |                          help: remove this `mut`
+
+warning: unreachable pattern
+   --> src\interpreter\mod.rs:481:21
+    |
+481 |                     _ => Err(format!("Binary operator {:?} not yet implemented", operator))
+    |                     ^ no value can reach this
+    |
+note: multiple earlier patterns match some of the same values
+   --> src\interpreter\mod.rs:481:21
+    |
+371 |                     BinaryOperator::Add => {
+    |                     ------------------- matches some of the same values
+...
+378 |                     BinaryOperator::Subtract => {
+    |                     ------------------------ matches some of the same values
+...
+385 |                     BinaryOperator::Multiply => {
+    |                     ------------------------ matches some of the same values
+...
+392 |                     BinaryOperator::Divide => {
+    |                     ---------------------- matches some of the same values
+...
+481 |                     _ => Err(format!("Binary operator {:?} not yet implemented", operator))
+    |                     ^ ...and 10 other patterns collectively make this unreachable
+    = note: `#[warn(unreachable_patterns)]` on by default
+
+warning: unreachable pattern
+   --> src\interpreter\mod.rs:518:21
+    |
+518 |                     _ => Err(format!("Unary operator {:?} not yet implemented", operator))
+    |                     ^ no value can reach this
+    |
+note: multiple earlier patterns match some of the same values
+   --> src\interpreter\mod.rs:518:21
+    |
+507 |                     UnaryOperator::Negate => {
+    |                     --------------------- matches some of the same values
+...
+514 |                     UnaryOperator::Not => {
+    |                     ------------------ matches some of the same values
+...
+518 |                     _ => Err(format!("Unary operator {:?} not yet implemented", operator))
+    |                     ^ collectively making this unreachable
+
+warning: unused variable: `parameters`
+   --> src\interpreter\mod.rs:242:48
+    |
+242 |             PhiExpression::FunctionDef { name, parameters, return_type, body } => {
+    |                                                ^^^^^^^^^^ help: try ignoring the field: `parameters: _`
+
+warning: unused variable: `return_type`
+   --> src\interpreter\mod.rs:242:60
+    |
+242 |             PhiExpression::FunctionDef { name, parameters, return_type, body } => {
+    |                                                            ^^^^^^^^^^^ help: try ignoring the field: `return_type: _`
+
+warning: unused variable: `body`
+   --> src\interpreter\mod.rs:242:73
+    |
+242 |             PhiExpression::FunctionDef { name, parameters, return_type, body } => {
+    |                                                                         ^^^^ help: try ignoring the field: `body: _`
+
+warning: unused variable: `immediate_action`
+   --> src\interpreter\mod.rs:726:57
+    |
+726 |             PhiExpression::EmergencyProtocol { trigger, immediate_action, notification } => {
+    |                                                         ^^^^^^^^^^^^^^^^ help: try ignoring the field: `immediate_action: _`
+
+warning: unused variable: `name`
+   --> src\parser\mod.rs:752:34
+    |
+752 |             PhiToken::Identifier(name) => {
+    |                                  ^^^^ help: if this is intentional, prefix it with an underscore: `_name`
+
+warning: variable `intention` is assigned to, but never used
+    --> src\parser\mod.rs:1603:17
+     |
+1603 |         let mut intention = String::new();
+     |                 ^^^^^^^^^
+     |
+     = note: consider using `_intention` instead
+
+warning: value assigned to `intention` is never read
+    --> src\parser\mod.rs:1631:21
+     |
+1631 |                     intention = self.expect_string()?;
+     |                     ^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+     = note: `#[warn(unused_assignments)]` on by default
+
+warning: unused variable: `device_type`
+    --> src\parser\mod.rs:1664:17
+     |
+1664 |         let mut device_type = String::new();
+     |                 ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_device_type`
+
+warning: variable does not need to be mutable
+    --> src\parser\mod.rs:1664:13
+     |
+1664 |         let mut device_type = String::new();
+     |             ----^^^^^^^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: unused variable: `protocol_name`
+    --> src\parser\mod.rs:1695:13
+     |
+1695 |         let protocol_name = self.expect_identifier()?;
+     |             ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_protocol_name`
+
+warning: unused variable: `program_name`
+    --> src\parser\mod.rs:1832:13
+     |
+1832 |         let program_name = self.expect_identifier()?;
+     |             ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_program_name`
+
+warning: unused variable: `bridge_name`
+    --> src\parser\mod.rs:1857:13
+     |
+1857 |         let bridge_name = self.expect_identifier()?;
+     |             ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_bridge_name`
+
+warning: unused variable: `i`
+  --> src\phi_ir\printer.rs:30:18
+   |
+30 |             for (i, instr) in block.instructions.iter().enumerate() {
+   |                  ^ help: if this is intentional, prefix it with an underscore: `_i`
+
+warning: unused variable: `delta_ratio`
+   --> src\consciousness\monitor.rs:157:13
+    |
+157 |         let delta_ratio = self.delta_power / total_power;
+    |             ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_delta_ratio`
+
+warning: unused variable: `modulation`
+   --> src\consciousness\monitor.rs:325:13
+    |
+325 |         let modulation = self.frequency_generator.create_consciousness_frequency_modulation(coherence);
+    |             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_modulation`
+
+warning: unused variable: `pool_size`
+   --> src\sacred\phi_memory.rs:175:14
+    |
+175 |         for (pool_size, pool) in &self.phi_pools {
+    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_pool_size`
+
+warning: unused variable: `algorithm`
+   --> src\cuda\consciousness_gpu.rs:834:21
+    |
+834 |         if let Some(algorithm) = self.enhancement_algorithms.get(&state) {
+    |                     ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_algorithm`
+
+warning: unused variable: `err`
+  --> src\cuda\mod.rs:13:13
+   |
+13 |     fn from(err: crate::quantum::QuantumError) -> Self {
+   |             ^^^ help: if this is intentional, prefix it with an underscore: `_err`
+
+warning: unused variable: `target_qubits`
+   --> src\cuda\quantum_cuda.rs:356:9
+    |
+356 |         target_qubits: &[u32],
+    |         ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_target_qubits`
+
+warning: unused variable: `gate`
+   --> src\cuda\quantum_cuda.rs:393:9
+    |
+393 |         gate: &CudaQuantumGate,
+    |         ^^^^ help: if this is intentional, prefix it with an underscore: `_gate`
+
+warning: unused variable: `msg`
+   --> src\cuda\quantum_cuda.rs:854:40
+    |
+854 |     pub fn InvalidQuantumConfiguration(msg: String) -> Self {
+    |                                        ^^^ help: if this is intentional, prefix it with an underscore: `_msg`
+
+warning: unused variable: `kernel`
+   --> src\cuda\mod.rs:349:13
+    |
+349 |         let kernel = self
+    |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_kernel`
+
+warning: unused variable: `device`
+   --> src\hardware\consciousness_detection.rs:125:51
+    |
+125 |             ConsciousnessSource::KeyboardRhythm { device, optimal_interval_ms, recent_intervals } => {
+    |                                                   ^^^^^^ help: try ignoring the field: `device: _`
+
+warning: unused variable: `displays`
+   --> src\hardware\consciousness_detection.rs:150:55
+    |
+150 |             ConsciousnessSource::MonitorFrequencies { displays, sync_level } => {
+    |                                                       ^^^^^^^^ help: try ignoring the field: `displays: _`
+
+warning: unused variable: `resonance_frequencies`
+   --> src\bio_compute\dna_interface.rs:109:13
+    |
+109 |         let resonance_frequencies = self.calculate_phi_harmonic_frequencies(dna_strand, repair_intent);
+    |             ^^^^^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_resonance_frequencies`
+
+warning: unused variable: `dna`
+   --> src\bio_compute\dna_interface.rs:232:50
+    |
+232 |     fn calculate_phi_harmonic_frequencies(&self, dna: &str, intent: &str) -> Vec<f64> {
+    |                                                  ^^^ help: if this is intentional, prefix it with an underscore: `_dna`
+
+warning: fields `pattern_analyzer` and `audio_synthesizer` are never read
+  --> src\interpreter\mod.rs:14:5
+   |
+8  | pub struct PhiInterpreter {
+   |            -------------- fields in this struct
+...
+14 |     pattern_analyzer: PatternAnalyzer,
+   |     ^^^^^^^^^^^^^^^^
+15 |     audio_synthesizer: AudioSynthesizer,
+   |     ^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: method `intention_aligns_with` is never used
+   --> src\interpreter\mod.rs:847:8
+    |
+33  | impl PhiInterpreter {
+    | ------------------- method in this implementation
+...
+847 |     fn intention_aligns_with(&self, operation: &str) -> bool {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `call_stack` is never read
+  --> src\ir\vm.rs:23:5
+   |
+14 | pub struct PhiVm {
+   |            ----- field in this struct
+...
+23 |     call_stack: Vec<Frame>,
+   |     ^^^^^^^^^^
+
+warning: fields `return_ip` and `locals` are never read
+  --> src\ir\vm.rs:44:5
+   |
+43 | struct Frame {
+   |        ----- fields in this struct
+44 |     return_ip: usize,
+   |     ^^^^^^^^^
+45 |     locals: HashMap<String, PhiValue>,
+   |     ^^^^^^
+
+warning: field `scope` is never read
+  --> src\phi_ir\lowering.rs:41:5
+   |
+26 | struct LoweringContext {
+   |        --------------- field in this struct
+...
+41 |     scope: HashMap<String, Operand>,
+   |     ^^^^^
+
+warning: field `left_expr` is never read
+  --> src\vm\interpreter.rs:83:9
+   |
+79 |     BinaryOp {
+   |     -------- field in this variant
+...
+83 |         left_expr: Option<PhiFlowExpression>,
+   |         ^^^^^^^^^
+   |
+   = note: `EvaluationFrame` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `operand_expr` is never read
+  --> src\vm\interpreter.rs:89:9
+   |
+86 |     UnaryOp {
+   |     ------- field in this variant
+...
+89 |         operand_expr: Option<PhiFlowExpression>,
+   |         ^^^^^^^^^^^^
+   |
+   = note: `EvaluationFrame` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `operation_expr` is never read
+  --> src\vm\interpreter.rs:94:9
+   |
+91 |     SacredFrequency {
+   |     --------------- field in this variant
+...
+94 |         operation_expr: Option<PhiFlowExpression>,
+   |         ^^^^^^^^^^^^^^
+   |
+   = note: `EvaluationFrame` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: fields `content` and `target_expr` are never read
+   --> src\vm\interpreter.rs:128:9
+    |
+127 |     Intention {
+    |     --------- fields in this variant
+128 |         content: String,
+    |         ^^^^^^^
+129 |         target_expr: PhiFlowExpression,
+    |         ^^^^^^^^^^^
+    |
+    = note: `EvaluationFrame` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `target_expr` is never read
+   --> src\vm\interpreter.rs:133:9
+    |
+132 |     Witness {
+    |     ------- field in this variant
+133 |         target_expr: PhiFlowExpression,
+    |         ^^^^^^^^^^^
+    |
+    = note: `EvaluationFrame` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `quantum_backend` is never read
+   --> src\vm\interpreter.rs:203:5
+    |
+199 | pub struct PhiFlowInterpreter {
+    |            ------------------ field in this struct
+...
+203 |     quantum_backend: Arc<Mutex<QuantumBackend>>,
+    |     ^^^^^^^^^^^^^^^
+
+warning: multiple methods are never used
+    --> src\vm\interpreter.rs:737:8
+     |
+210  | impl PhiFlowInterpreter {
+     | ----------------------- methods in this implementation
+...
+737  |     fn evaluate_expression_simple(&self, expr: &PhiFlowExpression) -> RuntimeResult<PhiFlowValue> {
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+808  |     async fn evaluate_binary_op(
+     |              ^^^^^^^^^^^^^^^^^^
+...
+838  |     async fn evaluate_unary_op(
+     |              ^^^^^^^^^^^^^^^^^
+...
+887  |     async fn evaluate_sacred_frequency(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+897  |     async fn evaluate_frequency_lock(&mut self, target_frequency: u32, threshold: f64, action: &PhiFlowExpression) -> RuntimeResult<PhiFl...
+     |              ^^^^^^^^^^^^^^^^^^^^^^^
+...
+917  |     async fn evaluate_consciousness_binding(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+938  |     async fn evaluate_consciousness_monitor(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+979  |     async fn evaluate_consciousness_condition(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+996  |     fn check_consciousness_condition(&self, condition: &ConsciousnessCondition) -> RuntimeResult<bool> {
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+1031 |     async fn evaluate_quantum_circuit(
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+1061 |     async fn evaluate_quantum_gate(
+     |              ^^^^^^^^^^^^^^^^^^^^^
+...
+1078 |     fn apply_quantum_gate(
+     |        ^^^^^^^^^^^^^^^^^^
+...
+1194 |     fn apply_hadamard_gate(&self, amplitudes: &mut [num_complex::Complex64], qubit_index: usize) {
+     |        ^^^^^^^^^^^^^^^^^^^
+...
+1210 |     fn apply_pauli_x_gate(&self, amplitudes: &mut [num_complex::Complex64], qubit_index: usize) {
+     |        ^^^^^^^^^^^^^^^^^^
+...
+1219 |     fn apply_phase_gate(&self, amplitudes: &mut [num_complex::Complex64], phase: f64) {
+     |        ^^^^^^^^^^^^^^^^
+...
+1226 |     fn apply_pauli_y_gate(&self, amplitudes: &mut [num_complex::Complex64], qubit_index: usize) {
+     |        ^^^^^^^^^^^^^^^^^^
+...
+1240 |     fn apply_pauli_z_gate(&self, amplitudes: &mut [num_complex::Complex64], qubit_index: usize) {
+     |        ^^^^^^^^^^^^^^^^^^
+...
+1249 |     fn apply_rotation_y_gate(&self, amplitudes: &mut [num_complex::Complex64], qubit_index: usize, angle: f64) {
+     |        ^^^^^^^^^^^^^^^^^^^^^
+...
+1272 |     fn apply_rotation_z_gate(&self, amplitudes: &mut [num_complex::Complex64], qubit_index: usize, angle: f64) {
+     |        ^^^^^^^^^^^^^^^^^^^^^
+...
+1285 |     fn apply_cnot_gate(&self, amplitudes: &mut [num_complex::Complex64], control_index: usize, target_index: usize) {
+     |        ^^^^^^^^^^^^^^^
+
+warning: fields `base_frequency`, `strength`, and `patterns` are never read
+  --> src\consciousness\bridge.rs:74:5
+   |
+72 | pub struct PhiHarmonicField {
+   |            ---------------- fields in this struct
+73 |     /// Base frequency (usually 432 Hz for grounding)
+74 |     base_frequency: f64,
+   |     ^^^^^^^^^^^^^^
+...
+80 |     strength: f64,
+   |     ^^^^^^^^
+...
+83 |     patterns: HashMap<String, Vec<f64>>,
+   |     ^^^^^^^^
+   |
+   = note: `PhiHarmonicField` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `frequencies` is never read
+  --> src\consciousness\sacred_geometry.rs:15:5
+   |
+10 | pub struct SacredGeometryGenerator {
+   |            ----------------------- field in this struct
+...
+15 |     frequencies: Vec<f64>,
+   |     ^^^^^^^^^^^
+
+warning: fields `sample_rate` and `coherence_threshold` are never read
+   --> src\consciousness\monitor.rs:214:5
+    |
+208 | pub struct ConsciousnessMonitor {
+    |            -------------------- fields in this struct
+...
+214 |     sample_rate: u32,
+    |     ^^^^^^^^^^^
+215 |     history_size: usize,
+216 |     coherence_threshold: f64,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: fields `base_size`, `phi_scaled_sizes`, and `cache_line_alignment` are never read
+  --> src\sacred\phi_memory.rs:36:5
+   |
+35 | pub struct PhiMemoryPool {
+   |            ------------- fields in this struct
+36 |     base_size: usize,
+   |     ^^^^^^^^^
+37 |     phi_scaled_sizes: Vec<usize>,
+   |     ^^^^^^^^^^^^^^^^
+38 |     allocated_blocks: Vec<PhiMemoryBlock>,
+39 |     cache_line_alignment: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `PhiMemoryPool` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: field `harmonic_cache` is never read
+  --> src\sacred\frequency_generator.rs:67:5
+   |
+61 | pub struct SacredFrequencyGenerator {
+   |            ------------------------ field in this struct
+...
+67 |     harmonic_cache: HashMap<SacredFrequency, Vec<f64>>,
+   |     ^^^^^^^^^^^^^^
+
+warning: field `phi_timing_enabled` is never read
+   --> src\sacred\frequency_generator.rs:308:5
+    |
+305 | pub struct SacredFrequencyScheduler {
+    |            ------------------------ field in this struct
+...
+308 |     phi_timing_enabled: bool,
+    |     ^^^^^^^^^^^^^^^^^^
+
+warning: field `confidence_threshold` is never read
+  --> src\cuda\consciousness_gpu.rs:50:5
+   |
+46 | pub struct ClassificationPipeline {
+   |            ---------------------- field in this struct
+...
+50 |     confidence_threshold: f32,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `name`, `feature_type`, `window_size_ms`, `phi_enhancement`, and `gpu_accelerated` are never read
+  --> src\cuda\consciousness_gpu.rs:56:5
+   |
+55 | pub struct FeatureExtractor {
+   |            ---------------- fields in this struct
+56 |     name: String,
+   |     ^^^^
+57 |     feature_type: FeatureType,
+   |     ^^^^^^^^^^^^
+58 |     window_size_ms: u32,
+   |     ^^^^^^^^^^^^^^
+59 |     phi_enhancement: bool,
+   |     ^^^^^^^^^^^^^^^
+60 |     gpu_accelerated: bool,
+   |     ^^^^^^^^^^^^^^^
+
+warning: fields `target_frequency`, `correlation_window`, `coherence_threshold`, `phi_modulation`, and `gpu_buffer` are never read
+  --> src\cuda\consciousness_gpu.rs:77:5
+   |
+76 | pub struct FrequencyCorrelator {
+   |            ------------------- fields in this struct
+77 |     target_frequency: SacredFrequency,
+   |     ^^^^^^^^^^^^^^^^
+78 |     correlation_window: u32,
+   |     ^^^^^^^^^^^^^^^^^^
+79 |     coherence_threshold: f32,
+   |     ^^^^^^^^^^^^^^^^^^^
+80 |     phi_modulation: bool,
+   |     ^^^^^^^^^^^^^^
+81 |     gpu_buffer: Option<*mut f32>,
+   |     ^^^^^^^^^^
+
+warning: fields `classifier_type`, `model_parameters`, `confidence_threshold`, and `sacred_frequency_weights` are never read
+  --> src\cuda\consciousness_gpu.rs:86:5
+   |
+85 | pub struct StateClassifier {
+   |            --------------- fields in this struct
+86 |     classifier_type: ClassifierType,
+   |     ^^^^^^^^^^^^^^^
+87 |     model_parameters: Vec<f32>,
+   |     ^^^^^^^^^^^^^^^^
+88 |     confidence_threshold: f32,
+   |     ^^^^^^^^^^^^^^^^^^^^
+89 |     sacred_frequency_weights: HashMap<SacredFrequency, f32>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `name`, `target_state`, `enhancement_factor`, `sacred_frequencies`, `phi_scaling`, and `gpu_kernels` are never read
+   --> src\cuda\consciousness_gpu.rs:125:5
+    |
+124 | pub struct EnhancementAlgorithm {
+    |            -------------------- fields in this struct
+125 |     name: String,
+    |     ^^^^
+126 |     target_state: ConsciousnessState,
+    |     ^^^^^^^^^^^^
+127 |     enhancement_factor: f32,
+    |     ^^^^^^^^^^^^^^^^^^
+128 |     sacred_frequencies: Vec<SacredFrequency>,
+    |     ^^^^^^^^^^^^^^^^^^
+129 |     phi_scaling: f32,
+    |     ^^^^^^^^^^^
+130 |     gpu_kernels: Vec<String>,
+    |     ^^^^^^^^^^^
+
+warning: fields `lambda_constant`, `fibonacci_sequence`, `golden_ratio_scaling`, and `harmonic_enhancement` are never read
+   --> src\cuda\consciousness_gpu.rs:136:5
+    |
+134 | pub struct PhiOptimization {
+    |            --------------- fields in this struct
+135 |     phi_constant: f32,
+136 |     lambda_constant: f32,
+    |     ^^^^^^^^^^^^^^^
+137 |     fibonacci_sequence: Vec<u32>,
+    |     ^^^^^^^^^^^^^^^^^^
+138 |     golden_ratio_scaling: bool,
+    |     ^^^^^^^^^^^^^^^^^^^^
+139 |     harmonic_enhancement: bool,
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `synthesis_buffer`, `sample_rate`, `phi_modulation`, and `consciousness_synchronized` are never read
+   --> src\cuda\consciousness_gpu.rs:145:5
+    |
+143 | pub struct SacredFrequencyGenerator {
+    |            ------------------------ fields in this struct
+144 |     current_frequency: SacredFrequency,
+145 |     synthesis_buffer: Vec<f32>,
+    |     ^^^^^^^^^^^^^^^^
+146 |     sample_rate: f32,
+    |     ^^^^^^^^^^^
+147 |     phi_modulation: bool,
+    |     ^^^^^^^^^^^^^^
+148 |     consciousness_synchronized: bool,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `left_frequency`, `right_frequency`, and `phi_enhanced` are never read
+   --> src\cuda\consciousness_gpu.rs:153:5
+    |
+152 | pub struct BinauralBeatGenerator {
+    |            --------------------- fields in this struct
+153 |     left_frequency: f32,
+    |     ^^^^^^^^^^^^^^
+154 |     right_frequency: f32,
+    |     ^^^^^^^^^^^^^^^
+...
+157 |     phi_enhanced: bool,
+    |     ^^^^^^^^^^^^
+
+warning: fields `amplification_factor`, `sacred_frequency_resonance`, and `phi_harmonic_enhancement` are never read
+   --> src\cuda\consciousness_gpu.rs:163:5
+    |
+161 | pub struct CoherenceAmplifier {
+    |            ------------------ fields in this struct
+162 |     target_coherence: f32,
+163 |     amplification_factor: f32,
+    |     ^^^^^^^^^^^^^^^^^^^^
+164 |     sacred_frequency_resonance: bool,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+165 |     phi_harmonic_enhancement: bool,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `sacred_frequency_alignment` and `enhancement_active` are never read
+   --> src\cuda\consciousness_gpu.rs:173:5
+    |
+169 | pub struct CoherenceTracker {
+    |            ---------------- fields in this struct
+...
+173 |     sacred_frequency_alignment: HashMap<SacredFrequency, f32>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+174 |     enhancement_active: bool,
+    |     ^^^^^^^^^^^^^^^^^^
+
+warning: fields `device_properties` and `memory_manager` are never read
+  --> src\cuda\sacred_math_kernels.rs:32:5
+   |
+30 | pub struct SacredMathKernels {
+   |            ----------------- fields in this struct
+31 |     kernel_cache: HashMap<String, CudaKernelInfo>,
+32 |     device_properties: CudaDeviceProperties,
+   |     ^^^^^^^^^^^^^^^^^
+33 |     memory_manager: SacredMemoryManager,
+   |     ^^^^^^^^^^^^^^
+
+warning: fields `total_allocated`, `peak_usage`, and `allocation_count` are never read
+  --> src\cuda\sacred_math_kernels.rs:69:5
+   |
+67 | pub struct SacredMemoryManager {
+   |            ------------------- fields in this struct
+68 |     phi_aligned_pools: HashMap<String, PhiAlignedMemoryPool>,
+69 |     total_allocated: usize,
+   |     ^^^^^^^^^^^^^^^
+70 |     peak_usage: usize,
+   |     ^^^^^^^^^^
+71 |     allocation_count: u64,
+   |     ^^^^^^^^^^^^^^^^
+   |
+   = note: `SacredMemoryManager` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: field `buffer_size` is never read
+  --> src\cuda\frequency_synthesis.rs:16:5
+   |
+12 | pub struct FrequencyGpuSynthesizer {
+   |            ----------------------- field in this struct
+...
+16 |     buffer_size: usize,
+   |     ^^^^^^^^^^^
+
+warning: fields `sine_wave_kernel`, `sacred_harmonic_kernel`, `phi_modulation_kernel`, `consciousness_sync_kernel`, and `waveform_mixing_kernel` are never read
+  --> src\cuda\frequency_synthesis.rs:26:5
+   |
+25 | pub struct SynthesisKernels {
+   |            ---------------- fields in this struct
+26 |     sine_wave_kernel: String,
+   |     ^^^^^^^^^^^^^^^^
+27 |     sacred_harmonic_kernel: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+28 |     phi_modulation_kernel: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+29 |     consciousness_sync_kernel: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+30 |     waveform_mixing_kernel: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `phi_modulation` and `consciousness_enhancement` are never read
+  --> src\cuda\frequency_synthesis.rs:39:5
+   |
+34 | pub struct WaveformGenerator {
+   |            ----------------- fields in this struct
+...
+39 |     phi_modulation: bool,
+   |     ^^^^^^^^^^^^^^
+40 |     consciousness_enhancement: bool,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `phi_scaling` is never read
+  --> src\cuda\frequency_synthesis.rs:49:5
+   |
+44 | pub struct ConsciousnessSyncEngine {
+   |            ----------------------- field in this struct
+...
+49 |     phi_scaling: bool,
+   |     ^^^^^^^^^^^
+
+warning: fields `input_buffer`, `output_buffer`, `synthesis_buffer`, and `harmonic_buffer` are never read
+  --> src\cuda\frequency_synthesis.rs:54:5
+   |
+53 | pub struct FrequencyGpuBuffers {
+   |            ------------------- fields in this struct
+54 |     input_buffer: *mut f32,
+   |     ^^^^^^^^^^^^
+55 |     output_buffer: *mut f32,
+   |     ^^^^^^^^^^^^^
+56 |     synthesis_buffer: *mut f32,
+   |     ^^^^^^^^^^^^^^^^
+57 |     harmonic_buffer: *mut f32,
+   |     ^^^^^^^^^^^^^^^
+
+warning: fields `consciousness_state` and `enhancement_factor` are never read
+  --> src\cuda\memory_management.rs:40:5
+   |
+39 | pub struct ConsciousnessMemoryPool {
+   |            ----------------------- fields in this struct
+40 |     consciousness_state: ConsciousnessState,
+   |     ^^^^^^^^^^^^^^^^^^^
+41 |     base_pool: CudaMemoryPool,
+42 |     enhancement_factor: f32,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: field `sacred_frequency` is never read
+  --> src\cuda\memory_management.rs:50:5
+   |
+49 | pub struct FrequencyMemoryPool {
+   |            ------------------- field in this struct
+50 |     sacred_frequency: SacredFrequency,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: fields `compaction_strategy`, `automatic_cleanup`, and `optimization_interval_ms` are never read
+  --> src\cuda\memory_management.rs:80:5
+   |
+78 | pub struct MemoryOptimizationEngine {
+   |            ------------------------ fields in this struct
+79 |     defragmentation_threshold: f32,
+80 |     compaction_strategy: CompactionStrategy,
+   |     ^^^^^^^^^^^^^^^^^^^
+81 |     pool_rebalancing: bool,
+82 |     automatic_cleanup: bool,
+   |     ^^^^^^^^^^^^^^^^^
+83 |     optimization_interval_ms: u64,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `rt_core_optimization` and `ampere_specific_features` are never read
+  --> src\cuda\memory_management.rs:92:5
+   |
+87 | pub struct A5500MemoryOptimizer {
+   |            -------------------- fields in this struct
+...
+92 |     rt_core_optimization: bool,
+   |     ^^^^^^^^^^^^^^^^^^^^
+93 |     ampere_specific_features: AmpereMemoryFeatures,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `buffer_ptr` and `size` are never read
+   --> src\cuda\memory_management.rs:140:5
+    |
+139 | pub struct CoherenceBuffer {
+    |            --------------- fields in this struct
+140 |     buffer_ptr: *mut f32,
+    |     ^^^^^^^^^^
+141 |     size: usize,
+    |     ^^^^
+
+warning: fields `buffer_ptr` and `size` are never read
+   --> src\cuda\memory_management.rs:146:5
+    |
+145 | pub struct ClassificationBuffer {
+    |            -------------------- fields in this struct
+146 |     buffer_ptr: *mut f32,
+    |     ^^^^^^^^^^
+147 |     size: usize,
+    |     ^^^^
+
+warning: fields `buffer_ptr` and `size` are never read
+   --> src\cuda\memory_management.rs:152:5
+    |
+151 | pub struct PatternBuffer {
+    |            ------------- fields in this struct
+152 |     buffer_ptr: *mut f32,
+    |     ^^^^^^^^^^
+153 |     size: usize,
+    |     ^^^^
+
+warning: fields `buffer_ptr`, `size`, and `sample_rate` are never read
+   --> src\cuda\memory_management.rs:158:5
+    |
+157 | pub struct WaveformBuffer {
+    |            -------------- fields in this struct
+158 |     buffer_ptr: *mut f32,
+    |     ^^^^^^^^^^
+159 |     size: usize,
+    |     ^^^^
+160 |     sample_rate: f32,
+    |     ^^^^^^^^^^^
+
+warning: fields `buffer_ptr` and `size` are never read
+   --> src\cuda\memory_management.rs:164:5
+    |
+163 | pub struct HarmonicBuffer {
+    |            -------------- fields in this struct
+164 |     buffer_ptr: *mut f32,
+    |     ^^^^^^^^^^
+165 |     size: usize,
+    |     ^^^^
+
+warning: fields `buffer_ptr` and `size` are never read
+   --> src\cuda\memory_management.rs:170:5
+    |
+169 | pub struct SynthesisBuffer {
+    |            --------------- fields in this struct
+170 |     buffer_ptr: *mut f32,
+    |     ^^^^^^^^^^
+171 |     size: usize,
+    |     ^^^^
+
+warning: fields `buffer_ptr` and `size` are never read
+   --> src\cuda\memory_management.rs:176:5
+    |
+175 | pub struct PhiModulationBuffer {
+    |            ------------------- fields in this struct
+176 |     buffer_ptr: *mut f32,
+    |     ^^^^^^^^^^
+177 |     size: usize,
+    |     ^^^^
+
+warning: field `quantum_state` is never read
+  --> src\cuda\quantum_cuda.rs:15:5
+   |
+12 | pub struct QuantumCudaController {
+   |            --------------------- field in this struct
+...
+15 |     quantum_state: QuantumState,
+   |     ^^^^^^^^^^^^^
+
+warning: multiple fields are never read
+  --> src\cuda\quantum_cuda.rs:26:5
+   |
+25 | pub struct CudaQuantumKernels {
+   |            ------------------ fields in this struct
+26 |     state_initialization_kernel: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+27 |     gate_application_kernel: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+28 |     measurement_kernel: String,
+   |     ^^^^^^^^^^^^^^^^^^
+29 |     entanglement_kernel: String,
+   |     ^^^^^^^^^^^^^^^^^^^
+30 |     consciousness_modulation_kernel: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+31 |     phi_enhancement_kernel: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+32 |     superposition_kernel: String,
+   |     ^^^^^^^^^^^^^^^^^^^^
+33 |     decoherence_kernel: String,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: field `phi_quantum_enhancement` is never read
+  --> src\cuda\quantum_cuda.rs:43:5
+   |
+37 | pub struct ConsciousnessQuantumBridge {
+   |            -------------------------- field in this struct
+...
+43 |     phi_quantum_enhancement: bool,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `state_buffer`, `amplitude_buffer`, `phase_buffer`, `measurement_buffer`, and `entanglement_matrix` are never read
+  --> src\cuda\quantum_cuda.rs:48:5
+   |
+47 | pub struct QuantumMemoryManager {
+   |            -------------------- fields in this struct
+48 |     state_buffer: *mut f32,
+   |     ^^^^^^^^^^^^
+49 |     amplitude_buffer: *mut f32,
+   |     ^^^^^^^^^^^^^^^^
+50 |     phase_buffer: *mut f32,
+   |     ^^^^^^^^^^^^
+51 |     measurement_buffer: *mut f32,
+   |     ^^^^^^^^^^^^^^^^^^
+52 |     entanglement_matrix: *mut f32,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: associated constant `Void` should have an upper case name
+   --> src\interpreter\mod.rs:896:15
+    |
+896 |     pub const Void: PhiValue = PhiValue::Number(0.0); // Using Number(0.0) as a simple void placeholder
+    |               ^^^^ help: convert the identifier to upper case: `VOID`
+    |
+    = note: `#[warn(non_upper_case_globals)]` on by default
+
+warning: method `InvalidQuantumConfiguration` should have a snake case name
+   --> src\cuda\quantum_cuda.rs:854:12
+    |
+854 |     pub fn InvalidQuantumConfiguration(msg: String) -> Self {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `invalid_quantum_configuration`
+    |
+    = note: `#[warn(non_snake_case)]` on by default
+
+warning: method `QuantumGateNotFound` should have a snake case name
+   --> src\cuda\quantum_cuda.rs:858:12
+    |
+858 |     pub fn QuantumGateNotFound(gate_name: String) -> Self {
+    |            ^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `quantum_gate_not_found`
+
+warning: `phiflow` (lib) generated 117 warnings (run `cargo fix --lib -p phiflow` to apply 33 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.22s
