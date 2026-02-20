@@ -91,7 +91,9 @@ impl LoweringContext {
                 | PhiIRNode::ListNew(_)
                 | PhiIRNode::ListGet { .. }
                 | PhiIRNode::CreatePattern { .. }
-                | PhiIRNode::DomainCall { .. } // Assume domain calls might return something
+                | PhiIRNode::DomainCall { .. }
+                | PhiIRNode::Witness { .. }     // returns coherence score (0.0–1.0)
+                | PhiIRNode::CoherenceCheck // returns coherence score (0.0–1.0)
         );
 
         let (result_op, ret_op) = if produces_value {
@@ -192,7 +194,14 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
 
         // Variables
         PhiExpression::Variable(name) => {
-            let op = ctx.emit(PhiIRNode::LoadVar(name.clone()));
+            // Disambiguation rule:
+            // - `coherence` with no in-scope binding is the language keyword -> CoherenceCheck.
+            // - If user explicitly bound a variable named `coherence`, treat it like any variable.
+            let op = if name == "coherence" && !ctx.scope.contains_key(name) {
+                ctx.emit(PhiIRNode::CoherenceCheck)
+            } else {
+                ctx.emit(PhiIRNode::LoadVar(name.clone()))
+            };
             LowerResult::Value(op)
         }
         PhiExpression::LetBinding { name, value, .. } => {
@@ -207,6 +216,7 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
                 name: name.clone(),
                 value: val,
             });
+            ctx.scope.insert(name.clone(), val);
             LowerResult::None
         }
 
@@ -410,7 +420,7 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             // THEN Block
             ctx.set_current_block(then_block_id);
             lower_expr(ctx, then_branch);
-            if !ctx.is_terminated(then_block_id) {
+            if !ctx.is_terminated(ctx.current_block) {
                 ctx.terminate(PhiIRNode::Jump(merge_block_id));
             }
 
@@ -419,13 +429,60 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             if let Some(else_expr) = else_branch {
                 lower_expr(ctx, else_expr);
             }
-            if !ctx.is_terminated(else_block_id) {
+            if !ctx.is_terminated(ctx.current_block) {
                 ctx.terminate(PhiIRNode::Jump(merge_block_id));
             }
 
             // Resume in Merge Block
             ctx.set_current_block(merge_block_id);
             LowerResult::None // If expressions merge values, we need Phi nodes. Skipping for now.
+        }
+
+        PhiExpression::WhileLoop { condition, body } => {
+            let header_block = ctx.new_block("while_header");
+            let body_block = ctx.new_block("while_body");
+            let exit_block = ctx.new_block("while_exit");
+
+            // Jump to header from current
+            ctx.terminate(PhiIRNode::Jump(header_block));
+
+            // Header: check condition
+            ctx.set_current_block(header_block);
+            let res = lower_expr(ctx, condition);
+            let cond_op = unwrap_val(ctx, res);
+            ctx.terminate(PhiIRNode::Branch {
+                condition: cond_op,
+                then_block: body_block,
+                else_block: exit_block,
+            });
+
+            // Body: execute statements, then jump back to header
+            ctx.set_current_block(body_block);
+            lower_expr(ctx, body);
+            if !ctx.is_terminated(ctx.current_block) {
+                ctx.terminate(PhiIRNode::Jump(header_block));
+            }
+
+            // Continue in exit block
+            ctx.set_current_block(exit_block);
+            LowerResult::None
+        }
+
+        PhiExpression::ForLoop {
+            variable,
+            iterable,
+            body,
+        } => {
+            // For loops need desugaring.
+            // Simplified lowering for Range (start..end) if iterable is a specific structure
+            // For now, we'll mark it as unimplemented or attempt a basic desugar if we assume iterable is a range.
+            // Since we lack a dedicated Range expression, we'll emit a comment/placeholder.
+            // TODO: generic iterator support.
+            let header_block = ctx.new_block("for_header"); // Placeholder to link flow
+            ctx.terminate(PhiIRNode::Jump(header_block));
+            ctx.set_current_block(header_block);
+            // ... implementation pending iterable definition ...
+            LowerResult::None
         }
 
         PhiExpression::Block(exprs) => {

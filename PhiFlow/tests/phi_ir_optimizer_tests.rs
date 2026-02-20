@@ -20,7 +20,7 @@ fn test_constant_folding_basic() {
         phiflow::phi_ir::printer::PhiIRPrinter::print(&program)
     );
 
-    Optimizer::optimize(&mut program);
+    Optimizer::new(phiflow::phi_ir::optimizer::OptimizationLevel::Basic).optimize(&mut program);
 
     println!("After Optimization:");
     println!(
@@ -76,7 +76,7 @@ fn test_dead_code_elimination() {
     ];
 
     let mut program = lower_program(&exprs);
-    Optimizer::optimize(&mut program);
+    Optimizer::new(phiflow::phi_ir::optimizer::OptimizationLevel::Basic).optimize(&mut program);
 
     println!(
         "{}",
@@ -110,7 +110,7 @@ fn test_dead_code_elimination() {
     ];
 
     let mut prog_dce = lower_program(&exprs_dce);
-    Optimizer::optimize(&mut prog_dce);
+    Optimizer::new(phiflow::phi_ir::optimizer::OptimizationLevel::Basic).optimize(&mut prog_dce);
 
     let block = &prog_dce.blocks[0];
 
@@ -163,7 +163,7 @@ fn test_dead_code_elimination() {
     // `lower_program` hardcodes `Return(0)`.
     // So Ops > 0 should be DCE'able if unused.
 
-    Optimizer::optimize(&mut prog);
+    Optimizer::new(phiflow::phi_ir::optimizer::OptimizationLevel::Basic).optimize(&mut prog);
 
     // Check that `2+3` is gone.
     // 2+3 involves: Const(2), Const(3), BinOp.

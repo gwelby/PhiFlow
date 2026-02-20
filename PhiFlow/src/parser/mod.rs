@@ -756,7 +756,7 @@ impl PhiParser {
             },
             // Bare expressions as statements (numbers, strings, booleans, parens)
             PhiToken::Number(_) | PhiToken::String(_) | PhiToken::Boolean(_)
-            | PhiToken::LeftParen | PhiToken::Minus | PhiToken::Not => {
+            | PhiToken::LeftParen | PhiToken::Minus | PhiToken::Not | PhiToken::Coherence => {
                 self.parse_expression_statement()
             }
             _ => {
@@ -1171,6 +1171,10 @@ impl PhiParser {
             PhiToken::Boolean(b) => {
                 self.advance();
                 PhiExpression::Boolean(b)
+            }
+            PhiToken::Coherence => {
+                self.advance();
+                PhiExpression::Variable("coherence".to_string())
             }
             PhiToken::Create => {
                 // Handle create statements as expressions

@@ -111,6 +111,7 @@ fn format_instr(node: &PhiIRNode) -> String {
             )
         }
         PhiIRNode::Jump(block) => format!("Jump {}", block),
+        PhiIRNode::Sleep { duration } => format!("Sleep %{}", duration),
         PhiIRNode::Fallthrough => "Fallthrough".to_string(),
 
         _ => format!("{:?}", node),

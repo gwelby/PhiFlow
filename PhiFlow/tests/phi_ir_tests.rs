@@ -1,6 +1,8 @@
-use phiflow::parser::{BinaryOperator, PhiExpression};
+use phiflow::parser::{parse_phi_program, BinaryOperator, PhiExpression};
+use phiflow::phi_ir::evaluator::Evaluator;
 use phiflow::phi_ir::lowering::lower_program;
 use phiflow::phi_ir::printer::PhiIRPrinter;
+use phiflow::phi_ir::PhiIRValue;
 
 #[test]
 fn test_lower_number() {
@@ -71,4 +73,21 @@ fn test_lower_create_pattern() {
     // Check for CreatePattern
     assert!(output.contains("CreatePattern Flower @"));
     assert!(output.contains("Number(432.0)"));
+}
+
+#[test]
+fn test_source_coherence_lowers_to_node_and_evaluates() {
+    let expressions = parse_phi_program("coherence").expect("source parse failed");
+    let program = lower_program(&expressions);
+    let output = PhiIRPrinter::print(&program);
+
+    assert!(
+        output.contains("CoherenceCheck"),
+        "expected lowered IR to contain CoherenceCheck, got:\n{}",
+        output
+    );
+
+    let mut evaluator = Evaluator::new(&program);
+    let result = evaluator.run().expect("evaluator failed");
+    assert_eq!(result, PhiIRValue::Number(0.0));
 }

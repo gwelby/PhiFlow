@@ -10,10 +10,13 @@
 //! 2. **First-Class Consciousness**: Witness, Intention, Resonate, and Coherence are native nodes.
 //! 3. **Backend Agnostic**: No WASM types, no Qubit registers, no HAL traits here.
 
+pub mod emitter;
 pub mod evaluator;
 pub mod lowering;
 pub mod optimizer;
 pub mod printer;
+pub mod vm;
+pub mod wasm;
 
 use crate::compiler::lexer::Token; // Re-using Token if needed, or defining own types
 
@@ -208,6 +211,10 @@ pub enum PhiIRNode {
 
     /// Evaluate program coherence NOW using backend-appropriate method.
     CoherenceCheck,
+
+    /// Pause execution for a specified duration (healing/stabilization).
+    /// duration: Operand (value in milliseconds)
+    Sleep { duration: Operand },
 
     /// Create a sacred geometry pattern at a given frequency.
     CreatePattern {

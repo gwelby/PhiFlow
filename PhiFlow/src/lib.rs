@@ -1,6 +1,17 @@
 // PhiFlow Core Library
 // Consciousness-Enhanced Programming Language
 
+// Future-facing scaffolding: sacred/consciousness/visualization modules
+// contain living design vocabulary not yet wired to the new PhiIR backend.
+// Suppress noise until they are activated.
+#![allow(
+    dead_code,
+    unused_imports,
+    unused_variables,
+    unused_mut,
+    non_upper_case_globals
+)]
+
 // Core modules
 pub mod interpreter;
 pub mod ir;
@@ -48,16 +59,16 @@ pub const LAMBDA: f64 = 0.618033988749895;
 pub fn compile_and_run_phi_ir(source: &str) -> Result<phi_ir::PhiIRValue, String> {
     // 1. Parse using the new parser (src/parser/mod.rs → PhiExpression)
     use parser::parse_phi_program;
-    let expressions = parse_phi_program(source)
-        .map_err(|e| format!("Parse error: {}", e))?;
+    let expressions = parse_phi_program(source).map_err(|e| format!("Parse error: {}", e))?;
 
     // 2. Lower AST → PhiIR
     use phi_ir::lowering::lower_program;
     let mut program = lower_program(&expressions);
 
     // 3. Optimize
-    use phi_ir::optimizer::Optimizer;
-    Optimizer::optimize(&mut program);
+    use phi_ir::optimizer::{OptimizationLevel, Optimizer};
+    let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
+    optimizer.optimize(&mut program);
 
     // 4. Evaluate
     use phi_ir::evaluator::Evaluator;

@@ -115,11 +115,9 @@ warning: unused doc comment
     |
     = help: use `//` for a plain comment
 
-warning: unused imports: `BlockId`, `PhiIRBlock`, and `PhiInstruction`
- --> src\phi_ir\optimizer.rs:8:5
+warning: unused import: `PhiInstruction`
+ --> src\phi_ir\optimizer.rs:9:5
   |
-8 |     BlockId, Operand, PhiIRBinOp, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRUnOp, PhiIRValue,
-  |     ^^^^^^^                       ^^^^^^^^^^
 9 |     PhiInstruction,
   |     ^^^^^^^^^^^^^^
 
@@ -410,6 +408,22 @@ warning: unused variable: `body`
     |
 466 |             body,
     |             ^^^^ help: try ignoring the field: `body: _`
+
+warning: variable does not need to be mutable
+   --> src\phi_ir\optimizer.rs:366:28
+    |
+366 |             let (body2_id, mut body2_block) = Self::clone_block(
+    |                            ----^^^^^^^^^^^
+    |                            |
+    |                            help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> src\phi_ir\optimizer.rs:458:13
+    |
+458 |         let mut map_op = |op: &mut Operand| {
+    |             ----^^^^^^
+    |             |
+    |             help: remove this `mut`
 
 warning: unused variable: `i`
   --> src\phi_ir\printer.rs:30:18
@@ -1165,7 +1179,8 @@ warning: method `QuantumGateNotFound` should have a snake case name
 858 |     pub fn QuantumGateNotFound(gate_name: String) -> Self {
     |            ^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `quantum_gate_not_found`
 
-warning: `phiflow` (lib) generated 123 warnings (run `cargo fix --lib -p phiflow` to apply 33 suggestions)
+warning: `phiflow` (lib) generated 125 warnings (run `cargo fix --lib -p phiflow` to apply 35 suggestions)
+   Compiling phiflow v0.1.0 (D:\Projects\PhiFlow-compiler\PhiFlow)
 warning: unused import: `std::f64::consts::PI`
  --> src\main.rs:5:5
   |
@@ -1620,71 +1635,18 @@ warning: fields `pattern_analyzer` and `audio_synthesizer` are never read
 17 |     audio_synthesizer: AudioSynthesizer,
    |     ^^^^^^^^^^^^^^^^^
 
-   Compiling phiflow v0.1.0 (D:\Projects\PhiFlow-compiler\PhiFlow)
 warning: `phiflow` (bin "phi") generated 73 warnings (13 duplicates) (run `cargo fix --bin "phi"` to apply 2 suggestions)
-error[E0559]: variant `PhiExpression::LetBinding` has no field named `variable`
-  --> tests\phi_ir_loop_tests.rs:24:13
+error[E0599]: no variant or associated item named `Gt` found for enum `phiflow::parser::BinaryOperator` in the current scope
+  --> tests\phi_harmonic_tests.rs:21:43
    |
-24 |             variable: "x".to_string(),
-   |             ^^^^^^^^ `PhiExpression::LetBinding` does not have this field
-   |
-   = note: available fields are: `name`, `phi_type`
+21 |                 operator: BinaryOperator::Gt,
+   |                                           ^^ variant or associated item not found in `BinaryOperator`
 
-error[E0559]: variant `PhiExpression::LetBinding` has no field named `type_annotation`
-  --> tests\phi_ir_loop_tests.rs:25:13
+error[E0599]: no variant or associated item named `Sub` found for enum `phiflow::parser::BinaryOperator` in the current scope
+  --> tests\phi_harmonic_tests.rs:28:47
    |
-25 |             type_annotation: None,
-   |             ^^^^^^^^^^^^^^^ `PhiExpression::LetBinding` does not have this field
-   |
-   = note: available fields are: `name`, `phi_type`
+28 |                     operator: BinaryOperator::Sub,
+   |                                               ^^^ variant or associated item not found in `BinaryOperator`
 
-error[E0559]: variant `PhiExpression::LetBinding` has no field named `variable`
-  --> tests\phi_ir_loop_tests.rs:36:17
-   |
-36 |                 variable: "x".to_string(),
-   |                 ^^^^^^^^ `PhiExpression::LetBinding` does not have this field
-   |
-   = note: available fields are: `name`, `phi_type`
-
-error[E0559]: variant `PhiExpression::LetBinding` has no field named `type_annotation`
-  --> tests\phi_ir_loop_tests.rs:37:17
-   |
-37 |                 type_annotation: None,
-   |                 ^^^^^^^^^^^^^^^ `PhiExpression::LetBinding` does not have this field
-   |
-   = note: available fields are: `name`, `phi_type`
-
-error[E0559]: variant `PhiExpression::LetBinding` has no field named `variable`
-  --> tests\phi_ir_loop_tests.rs:62:13
-   |
-62 |             variable: "x".to_string(),
-   |             ^^^^^^^^ `PhiExpression::LetBinding` does not have this field
-   |
-   = note: available fields are: `name`, `phi_type`
-
-error[E0559]: variant `PhiExpression::LetBinding` has no field named `type_annotation`
-  --> tests\phi_ir_loop_tests.rs:63:13
-   |
-63 |             type_annotation: None,
-   |             ^^^^^^^^^^^^^^^ `PhiExpression::LetBinding` does not have this field
-   |
-   = note: available fields are: `name`, `phi_type`
-
-error[E0559]: variant `PhiExpression::LetBinding` has no field named `variable`
-  --> tests\phi_ir_loop_tests.rs:73:17
-   |
-73 |                 variable: "x".to_string(),
-   |                 ^^^^^^^^ `PhiExpression::LetBinding` does not have this field
-   |
-   = note: available fields are: `name`, `phi_type`
-
-error[E0559]: variant `PhiExpression::LetBinding` has no field named `type_annotation`
-  --> tests\phi_ir_loop_tests.rs:74:17
-   |
-74 |                 type_annotation: None,
-   |                 ^^^^^^^^^^^^^^^ `PhiExpression::LetBinding` does not have this field
-   |
-   = note: available fields are: `name`, `phi_type`
-
-For more information about this error, try `rustc --explain E0559`.
-error: could not compile `phiflow` (test "phi_ir_loop_tests") due to 8 previous errors
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `phiflow` (test "phi_harmonic_tests") due to 2 previous errors
