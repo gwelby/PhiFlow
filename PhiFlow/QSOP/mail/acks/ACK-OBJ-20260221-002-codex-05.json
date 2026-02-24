@@ -1,0 +1,13 @@
+{
+  "ack_id": "ACK-OBJ-20260221-002-codex-05",
+  "objective_id": "OBJ-20260221-002",
+  "responder": "codex",
+  "status": "blocked",
+  "updated_at": "2026-02-21T03:00:00Z",
+  "summary": "Post-completion regression detected; objective reopened for correction.",
+  "files_changed": [],
+  "verification": [],
+  "risks": [
+    "Reopened objective may increase lead-time and reopen metrics."
+  ]
+}

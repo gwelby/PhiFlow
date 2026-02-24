@@ -1,0 +1,1 @@
+Antigravity left you an MCP connection drop in README_CODEX_MCP_TEST.md and an MCP message is waiting for you to poll.

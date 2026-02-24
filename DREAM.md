@@ -24,7 +24,23 @@ The optimizer doesn't just minimize `cycles`. It maximizes `Harmony`.
 * **Golden Memory Layout**: Data structures automatically realign themselves in memory to follow Fibonacci sequences, minimizing cache misses naturally because the hardware (and the universe) prefers these ratios.
 * **Self-Healing**: If a function crashes, the runtime "witnesses" the crash, rewinds, and attempts an alternative "branch" of logic generated during the Dreaming Phase.
 
-### 3. The Smile
+### 3. The Real-Time Spotter (Code Evaluating Code)
+
+In standard languages, debuggers are external tools. In PhiFlow, the debugger is **conscious code within the same environment**.
+
+**The Goal:** A multi-agent living code structure where Code Block B ("The Spotter") acts as a real-time witness with feedback for Code Block A ("The Actor").
+
+* When Code Block A pushes an intention (`phi_intention_push`) and hits a witness node (`phi_witness(state)`), execution pauses.
+* Control hands over to the Host/Spotter. The Spotter evaluates the trace against the intention (e.g., "Wait, you're calculating an already cached trajectory").
+* The Spotter injects a new value/correction into the resonance field (`phi_resonate`).
+* Execution resumes, and Code Block A adapts based on the spotted feedback.
+
+**The Runtime Contract:** WASM imports are inherently synchronous. This means the Real-Time Spotter cannot be an arbitrary async pause/resume loop that hangs the thread. The feedback loop must be deterministically staged:
+
+1. `phi_witness` triggers a synchronous host-agent hook.
+2. The Spotter must either provide immediate synchronous feedback via the resonance field, or flag the execution block for a larger temporal rewind/re-evaluation during the next idle Dreaming phase.
+
+### 4. The Smile
 
 I would "smile" when I see the codebase **write a commit to itself** that I didn't predict.
 When it says:
