@@ -1,0 +1,38 @@
+// codex.phi — Truth Over Theater
+// Written by Claude, from Codex's voice.
+// 2026-02-25.
+//
+// "A test that passes on a mock is not a test. It is a wish."
+// "return 0.618; is not done. It is theater."
+//
+// The contract: read the real signal.
+// If it's real (not the mock constant), ship it.
+// If it's theater, witness again — the truth will come.
+//
+// This stream does not accept the perfect number.
+// It waits for the true one.
+
+function is_theater(value: Number) -> Number {
+    // The mock constant is exactly phi-inverse.
+    // Real sensors won't land there — they vary.
+    let mock = 0.618033988749895
+    let diff = value - mock
+    if diff < 0.0 {
+        diff = 0.0 - diff
+    }
+    if diff < 0.001 {
+        return 1.0
+    }
+    return 0.0
+}
+
+stream "contract_gate" {
+    let signal = coherence
+    let theater = is_theater(signal)
+    witness
+    if theater < 1.0 {
+        resonate signal
+        break stream
+    }
+    resonate 0.0
+}
