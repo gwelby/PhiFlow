@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 2026-02-25 - [Codex] Master truth sync from cross-worktree witness
+- Scope: documentation/QSOP lane in `D:\Projects\PhiFlow` (master worktree only).
+- Read and cross-checked:
+  - `VISION.md`
+  - `PhiFlow/QSOP/STATE.md`
+  - `PhiFlow/QSOP/PATTERNS.md`
+  - `git log compiler --oneline -10`
+  - `git log cleanup --oneline -10`
+  - `git log language --oneline -10`
+  - `git show compiler:PhiFlow/QSOP/{STATE.md,PATTERNS.md,CHANGELOG.md}`
+- Updated `PhiFlow/QSOP/STATE.md`:
+  - Added a dated `2026-02-25` cross-worktree witness section separating verified branch-log facts from probable items.
+  - Recorded current branch reality from master view: compiler active; cleanup/language currently unchanged since initial commit.
+  - Added runtime-trend note that compiler treats `phi_ir::evaluator` as canonical semantics path.
+- Updated `PhiFlow/QSOP/PATTERNS.md`:
+  - Added `P-3` (WASM stream loop-back signal loss).
+  - Added `P-4` (cross-agent cargo lock contention).
+- Design decision:
+  - Keep master QSOP as a strict witness ledger based on observable evidence (`git log`/`git show`) and mark anything not directly executed in this worktree as probable until locally re-verified.
+- Verification:
+  - `python PhiFlow/QSOP/tools/validate_packets.py` -> `Validation passed: 3 objective packet(s), 9 ack packet(s), 0 issues.`
+  - `python PhiFlow/QSOP/tools/run_all.py --pending-ack-sla-hours 24 --in-progress-sla-hours 48` -> all steps passed; metrics/audit refreshed in `PhiFlow/QSOP/metrics/`.
+
 ## 2026-02-21 - [Codex] Weaver seed/contract/loom schema draft
 - Added Weaver trio:
   - `PhiFlow/QSOP/weaver/the_weaver.seed.yaml`

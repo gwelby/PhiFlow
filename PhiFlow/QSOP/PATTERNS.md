@@ -18,6 +18,22 @@
 - **Invalidates if**: Semicolons added as statement terminators
 - **Promoted to STATE**: No
 
+### P-3: WASM stream loop-back signal loss
+- **What happens**: WASM execution path can lose stream loop break semantics, so host-side streaming may hang or require manual stop conditions.
+- **Instances**: 1 (Phase 10 stream-output lane, compiler branch log on 2026-02-23)
+- **Root cause**: Host expected a native `break stream` signal from WASM output that was not reliably surfaced.
+- **Fix**: Use bounded host loop with explicit cycle cap and emit `stream_broken` marker in stream snapshots.
+- **Invalidates if**: WASM lowering/runtime contract emits a stable loop-break signal directly.
+- **Promoted to STATE**: No
+
+### P-4: Cross-agent cargo target lock contention
+- **What happens**: Parallel agents running cargo in the same workspace can deadlock/wait on shared target locks and appear hung.
+- **Instances**: 1 (Phase 10 multi-agent lane execution, compiler branch log on 2026-02-23)
+- **Root cause**: Shared default `target/` directory under concurrent long-running runs/tests.
+- **Fix**: Use per-agent `CARGO_TARGET_DIR` isolation when running heavy parallel loops.
+- **Invalidates if**: agents are isolated to separate clones/containers or cargo lock behavior changes.
+- **Promoted to STATE**: No
+
 ## Active Patterns (Successes)
 
 ### S-1: Four constructs map to QSOP operations
