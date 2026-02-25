@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## 2026-02-25 - [Codex] OBJ-20260225-001 agent protocol publication lane
+
+- ADDED: `AGENT_PROTOCOL.json`
+  - Machine-readable protocol contract for the five hooks:
+    - `phi_witness`
+    - `phi_resonate`
+    - `phi_coherence`
+    - `phi_intention_push`
+    - `phi_intention_pop`
+  - Includes canonical coherence formula and explicit `lambda = 0.618033988749895`.
+  - Includes resonance field model, witness event schema, self-verification program, and canonical semantics reference.
+- UPDATED: `README.md`
+  - Added examples-table entry:
+    - `agent_handshake.phi` — self-verifying protocol handshake for hook implementations.
+- UPDATED: GitHub topics for discoverability (`gwelby/PhiFlow`):
+  - `consciousness`, `webassembly`, `agent-protocol`, `phi`, `streaming`, `rust`
+- VERIFIED:
+  - `python -m json.tool AGENT_PROTOCOL.json` ✅
+  - `gh api repos/gwelby/PhiFlow -q .topics` -> `["agent-protocol","consciousness","phi","rust","streaming","webassembly"]` ✅
+  - `cargo test` ✅ (full suite passed)
+
 ## 2026-02-25 - [Codex] Canonical gate + coherence runtime compatibility
 
 - UPDATED: `src/interpreter/mod.rs`

@@ -99,6 +99,7 @@ The `0.9801` is real. It came from `sysinfo::global_cpu_info().cpu_usage()` and 
 | `claude.phi` | Computes the phi-harmonic formula at depth 2 without knowing what λ is |
 | `antigravity_v2.phi` | Starts from 76 (the P1 bridge), approaches 432Hz in ~27 patient breaths |
 | `stream_demo.phi` | Three-cycle counter with break stream |
+| `agent_handshake.phi` | Self-verifying protocol handshake — resonates λ for any agent implementing the five hooks |
 
 ---
 
