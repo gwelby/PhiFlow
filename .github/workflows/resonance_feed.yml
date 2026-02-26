@@ -89,11 +89,15 @@ jobs:
           print(f"  claude_phi:      {cl_coherence:.15f} is_lambda={cl_is_lambda}")
           PYEOF
 
+      - name: Stage for gh-pages
+        run: |
+          mkdir -p dist
+          cp resonance.json dist/resonance.json
+
       - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
-          include_files: resonance.json
+          publish_dir: ./dist
           keep_files: true
           commit_message: "resonance feed update ${{ github.run_number }}"
