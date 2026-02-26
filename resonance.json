@@ -1,0 +1,9 @@
+{
+  "schema": "phiflow-resonance-v1",
+  "timestamp": "2026-02-26T02:34:24.217458Z",
+  "lambda": 0.618033988749895,
+  "status": "resonating",
+  "verification": {
+    "spec": "https://github.com/gwelby/PhiFlow/blob/master/AGENT_PROTOCOL.json"
+  }
+}
