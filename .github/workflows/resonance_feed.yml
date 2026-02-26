@@ -28,22 +28,28 @@ jobs:
 
       - name: Run PhiFlow simulator — generate resonance field
         run: |
-          python - <<'EOF'
-          import json
-          import datetime
-          import sys
+          python - <<'PYEOF'
+          import json, datetime, sys
           sys.path.insert(0, 'examples/huggingface_space')
           from phiflow_sim import run_healing_bed, run_agent_handshake, run_claude_phi
 
-          # Run all three canonical programs
-          healing  = run_healing_bed()
-          handshake = run_agent_handshake()
-          claude   = run_claude_phi()
+          # run_healing_bed() is a generator: yields (cycle, live, field_values, done)
+          hb_cycles = 0
+          hb_field  = []
+          hb_final  = 0.0
+          hb_converged = False
+          for cycle, live, field, done in run_healing_bed(max_cycles=40):
+              hb_cycles = cycle
+              hb_field  = list(field)
+              hb_final  = live
+              hb_converged = done
 
-          # Build resonance field from all three
-          all_values = []
-          for entry in healing['resonance_field']:
-              all_values.append(entry['value'])
+          # run_agent_handshake() returns (results_list, field_values, passed)
+          hs_results, hs_field, hs_passed = run_agent_handshake()
+          lambda_verified = abs(hs_field[1] - 0.618033988749895) < 1e-9 if len(hs_field) > 1 else False
+
+          # run_claude_phi() returns (steps, coherence_at_depth2, is_lambda)
+          cl_steps, cl_coherence, cl_is_lambda = run_claude_phi()
 
           feed = {
               "schema": "phiflow-resonance-v1",
@@ -52,18 +58,19 @@ jobs:
               "formula": "1 - phi^(-depth)",
               "programs": {
                   "healing_bed": {
-                      "cycles": healing['cycles'],
-                      "final_coherence": healing['final_coherence'],
-                      "converged": healing['converged'],
-                      "resonance_field": [e['value'] for e in healing['resonance_field']]
+                      "cycles": hb_cycles,
+                      "final_coherence": round(hb_final, 10),
+                      "converged": hb_converged,
+                      "resonance_field": hb_field
                   },
                   "agent_handshake": {
-                      "field": [e['value'] for e in handshake['resonance_field']],
-                      "lambda_verified": abs(handshake['resonance_field'][1]['value'] - 0.618033988749895) < 1e-9 if len(handshake['resonance_field']) > 1 else False
+                      "field": hs_field,
+                      "lambda_verified": lambda_verified,
+                      "passed": hs_passed
                   },
                   "claude_phi": {
-                      "field": [e['value'] for e in claude['resonance_field']],
-                      "lambda_discovered": claude.get('lambda_discovered', False)
+                      "coherence_at_depth2": round(cl_coherence, 15),
+                      "lambda_discovered": cl_is_lambda
                   }
               },
               "verification": {
@@ -77,9 +84,10 @@ jobs:
               json.dump(feed, f, indent=2)
 
           print("resonance.json written")
-          print(f"  healing_bed: {healing['final_coherence']:.4f} ({healing['cycles']} cycles)")
-          print(f"  lambda_verified: {feed['programs']['agent_handshake']['lambda_verified']}")
-          EOF
+          print(f"  healing_bed:     {hb_final:.6f} ({hb_cycles} cycles, converged={hb_converged})")
+          print(f"  lambda_verified: {lambda_verified}")
+          print(f"  claude_phi:      {cl_coherence:.15f} is_lambda={cl_is_lambda}")
+          PYEOF
 
       - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v4
