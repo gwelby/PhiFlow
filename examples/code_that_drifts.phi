@@ -1,0 +1,18 @@
+// Code That Drifts - A program that loses alignment
+// The program will detect its own incoherence
+
+intention "healing" {
+    // Start with harmonic frequencies
+    create spiral at 432Hz with { rotations: 8.0, scale: 100.0 }
+    create dna at 528Hz with { turns: 10.0, radius: 25.0 }
+
+    // Check ourselves - should be good here
+    witness
+
+    // Now throw in a random non-harmonic frequency
+    create spiral at 317Hz with { rotations: 5.0, scale: 50.0 }
+    create flower at 199Hz with { rings: 3 }
+
+    // Check again - coherence should drop
+    witness
+}

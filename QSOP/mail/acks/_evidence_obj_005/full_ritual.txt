@@ -1,0 +1,17 @@
+=== [validate_packets] ===
+[PASS] OBJ-20260221-001.json: ok
+[PASS] OBJ-20260223-001.json: ok
+[PASS] OBJ-20260223-002.json: ok
+[PASS] OBJ-20260223-003.json: ok
+[PASS] ACK-OBJ-20260221-001-codex.json: ok (legacy schema)
+[PASS] ACK-OBJ-20260223-001-codex.json: ok (modern schema)
+[PASS] ACK-OBJ-20260223-002-codex.json: ok (modern schema)
+[PASS] ACK-OBJ-20260223-003-codex.json: ok (modern schema)
+[PASS] ACK-OBJ-20260223-004-codex.json: ok (modern schema)
+=== [weekly_qsop_audit] ===
+[OK] OBJ-20260223-005: pending queue age 0.20h <= 24h
+[OK] OBJ-20260221-001: corresponding ack exists
+[OK] OBJ-20260223-001: corresponding ack exists
+[OK] OBJ-20260223-002: corresponding ack exists
+[OK] OBJ-20260223-003: corresponding ack exists
+RITUAL COMPLETE: outside_zero conditions met

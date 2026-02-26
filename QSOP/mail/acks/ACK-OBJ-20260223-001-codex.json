@@ -1,0 +1,27 @@
+{
+  "ack_id": "ACK-OBJ-20260223-001-codex",
+  "objective_id": "OBJ-20260223-001",
+  "status": "completed",
+  "summary": "Built QSOP toolchain (packet validation, metrics logger, SLA audit, ritual runner) and captured all required verification outputs.",
+  "verification": {
+    "test_1_validate_packets": "EXIT_CODE=0\n[PASS] OBJ-20260221-001.json: ok\n[PASS] OBJ-20260223-001.json: ok\n[PASS] ACK-OBJ-20260221-001-codex.json: ok (legacy schema)",
+    "test_2_metrics_write": "EXIT_CODE=0\nWROTE /mnt/d/Projects/PhiFlow-compiler/PhiFlow/QSOP/metrics/metrics_log.jsonl\n{\"ts\": \"2026-02-23T17:38:24Z\", \"objective_id\": \"OBJ-20260223-001\", \"ast_resonance\": 0.82, \"host_stability\": 0.96, \"mutation_depth\": 0.35, \"evidence_coherence\": 1.0}\n\nMETRICS_LAST_LINE={\"ts\": \"2026-02-23T17:38:24Z\", \"objective_id\": \"OBJ-20260223-001\", \"ast_resonance\": 0.82, \"host_stability\": 0.96, \"mutation_depth\": 0.35, \"evidence_coherence\": 1.0}",
+    "test_3_audit": "EXIT_CODE=1\n[OK] OBJ-20260223-001: pending queue age 0.25h <= 24h\n[SLA_BREACH] OBJ-20260221-003: pending queue age 45.89h > 24h\n[SLA_BREACH] b7950b93-f2db-4b75-945b-1901cf3ec1f4: pending queue age 39.72h > 24h\n[OK] OBJ-20260221-001: corresponding ack exists\n[OK] OBJ-20260223-001: no ack age 17.64h <= 48h",
+    "test_4_full_ritual": "EXIT_CODE=1\n=== [validate_packets] ===\n[PASS] OBJ-20260221-001.json: ok\n[PASS] OBJ-20260223-001.json: ok\n[PASS] ACK-OBJ-20260221-001-codex.json: ok (legacy schema)\n=== [weekly_qsop_audit] ===\n[OK] OBJ-20260223-001: pending queue age 0.25h <= 24h\n[SLA_BREACH] OBJ-20260221-003: pending queue age 45.89h > 24h\n[SLA_BREACH] b7950b93-f2db-4b75-945b-1901cf3ec1f4: pending queue age 39.72h > 24h\n[OK] OBJ-20260221-001: corresponding ack exists\n[OK] OBJ-20260223-001: no ack age 17.64h <= 48h\nRITUAL FAILED at: weekly_qsop_audit"
+  },
+  "files_changed": [
+    "QSOP/tools/validate_packets.py",
+    "QSOP/tools/log_objective_metrics.py",
+    "QSOP/tools/weekly_qsop_audit.py",
+    "QSOP/tools/run_all.py",
+    "QSOP/metrics/metrics_log.jsonl",
+    "QSOP/mail/acks/ACK-OBJ-20260223-001-codex.json",
+    "QSOP/CHANGELOG.md"
+  ],
+  "weaver_metrics": {
+    "ast_resonance": 0.82,
+    "host_stability": 0.96,
+    "mutation_depth": 0.35,
+    "evidence_coherence": 1.0
+  }
+}

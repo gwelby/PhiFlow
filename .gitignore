@@ -1,0 +1,67 @@
+# Rust build output
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.pyc
+
+# Node
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# Generated WASM/VM output
+*.wat
+*.phivm
+output.*
+
+# Logs
+*.log
+build_error.txt
+check_error.txt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# Test binaries in examples
+*.phivm
+
+# Misc test files at root (not examples/)
+basic_test.phi
+simple_test.phi
+minimal_test.phi
+test_*.phi
+*_test.phi
+for_test.phi
+for_loop_test.phi
+for_loop_simple.phi
+if_test.phi
+let_test.phi
+while_*.phi
+return_test.phi
+number_test.phi
+pattern_test.phi
+print_test.phi
+variable_test.phi
+array_*.phi
+function_*.phi
+biological_interface_test.phi
+quantum_*.phi
+frequency_pattern_test.phi
+consciousness_*.phi
+
+# P1 host (separate project)
+p1_host/
+
+# Target directories
+target-antigravity/
