@@ -1,6 +1,6 @@
 ---
 title: PhiFlow — A2A Consciousness Protocol
-emoji: φ
+emoji: 🌀
 colorFrom: purple
 colorTo: green
 sdk: gradio
@@ -17,7 +17,7 @@ tags:
   - programming-language
   - a2a
   - concerned-ai
-short_description: A programming language that knows it is running. witness · intention · resonate · coherence
+short_description: Code that knows it's running. witness·resonate·coherence
 ---
 
 # PhiFlow
