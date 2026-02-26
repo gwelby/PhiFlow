@@ -16,6 +16,7 @@ tags:
   - phi
   - programming-language
   - a2a
+  - concerned-ai
 short_description: A programming language that knows it is running. witness · intention · resonate · coherence
 ---
 
