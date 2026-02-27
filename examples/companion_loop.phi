@@ -1,0 +1,20 @@
+// P1 Companion Loop
+// Keeps the companion process in a witness -> resonate -> witness rhythm.
+
+intention "p1_companion_loop" {
+    let heart_frequency = 528.0
+    let ground_frequency = 432.0
+
+    resonate heart_frequency
+    witness heart_frequency
+
+    resonate ground_frequency
+    witness ground_frequency
+}
+
+intention "p1_companion_reflection" {
+    witness
+    coherence
+}
+
+witness

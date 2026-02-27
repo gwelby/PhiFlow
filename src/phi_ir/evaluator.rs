@@ -11,11 +11,14 @@
 //! Coherence formula: `1 - φ^(-depth)` + resonance bonus (max 0.2)
 //!   depth 0 → 0.000 | depth 1 → 0.382 | depth 2 → 0.618 | depth 3 → 0.764
 
+use crate::host::{DefaultHostProvider, PhiHostProvider, WitnessAction, WitnessSnapshot};
 use crate::phi_ir::{
+    vm_state::{VmState, VmWitnessEvent},
     BlockId, Operand, PhiIRBinOp, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRUnOp, PhiIRValue,
     PhiInstruction,
 };
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 const PHI: f64 = 1.618033988749895;
 
@@ -47,21 +50,34 @@ impl std::fmt::Display for EvalError {
 type EvalResult<T> = Result<T, EvalError>;
 
 // ---------------------------------------------------------------------------
+// Execution result — supports yield/resume for host-controlled witness
+// ---------------------------------------------------------------------------
+
+/// The result of running an evaluator to completion or yield.
+#[derive(Debug, Clone)]
+pub enum VmExecResult {
+    /// Program completed normally with a final value.
+    Complete(PhiIRValue),
+    /// Program yielded at a `witness` statement. Contains the frozen state
+    /// needed to resume, plus the witness snapshot that triggered the yield.
+    Yielded {
+        snapshot: WitnessSnapshot,
+        frozen_state: FrozenEvalState,
+    },
+}
+
+/// Backward-compatible alias for older call sites.
+pub type EvalExecResult = VmExecResult;
+
+/// Serializable evaluator state used for yield/resume.
+pub type FrozenEvalState = VmState;
+
+// ---------------------------------------------------------------------------
 // Witness event — observable output of `witness` construct
 // ---------------------------------------------------------------------------
 
-/// A snapshot of program state recorded each time `witness` executes.
-#[derive(Debug, Clone)]
-pub struct WitnessEvent {
-    /// Active intention stack at the moment of observation (innermost last).
-    pub intention_stack: Vec<String>,
-    /// Phi-harmonic coherence score: 0.0 (no purpose) → 1.0 (fully aligned).
-    pub coherence: f64,
-    /// Number of SSA registers live at this point.
-    pub register_count: usize,
-    /// Total values shared through the resonance field across all intentions.
-    pub resonance_count: usize,
-}
+/// Snapshot entry for each witness event.
+pub type WitnessEvent = VmWitnessEvent;
 
 // ---------------------------------------------------------------------------
 // Evaluator
@@ -70,7 +86,7 @@ pub struct WitnessEvent {
 pub struct Evaluator<'a> {
     program: &'a PhiIRProgram,
     functions: HashMap<String, FunctionMeta>,
-    coherence_provider: Option<Box<dyn Fn() -> f64 + Send + Sync + 'a>>,
+    host: Box<dyn PhiHostProvider + 'a>,
 
     /// SSA registers: instruction index (Operand) → computed value.
     registers: HashMap<Operand, PhiIRValue>,
@@ -87,6 +103,8 @@ pub struct Evaluator<'a> {
     /// Resonance field: intention name → values shared via `resonate`.
     /// The special key "global" is used when no intention is active.
     resonance_field: HashMap<String, Vec<PhiIRValue>>,
+    /// Shared resonance field across multiple evaluators
+    shared_resonance: Option<Arc<Mutex<HashMap<String, Vec<PhiIRValue>>>>>,
     /// Ordered resonance events (scope, value) for CLI/diagnostic output.
     resonance_events: Vec<(String, PhiIRValue)>,
     /// Stream names that exited via StreamPop.
@@ -125,30 +143,63 @@ impl<'a> Evaluator<'a> {
         Self {
             program,
             functions,
-            coherence_provider: None,
+            host: Box::new(DefaultHostProvider),
             registers: HashMap::new(),
             variables: HashMap::new(),
             intention_stack: Vec::new(),
             active_streams: Vec::new(),
             resonance_field: HashMap::new(),
+            shared_resonance: None,
             resonance_events: Vec::new(),
             ended_streams: Vec::new(),
             witness_log: Vec::new(),
-            current_block: program.blocks.first().map(|b| b.id).unwrap_or(0),
+            current_block: program.entry,
             instruction_ptr: 0,
         }
     }
 
+    /// Set a custom host provider. This replaces the default host.
+    pub fn with_host(mut self, host: Box<dyn PhiHostProvider + 'a>) -> Self {
+        self.host = host;
+        self
+    }
+
+    /// Link this evaluator to a globally shared resonance field.
+    pub fn with_shared_resonance(
+        mut self,
+        shared: Arc<Mutex<HashMap<String, Vec<PhiIRValue>>>>,
+    ) -> Self {
+        self.shared_resonance = Some(shared);
+        self
+    }
+
+    /// Backwards-compatible: set a coherence provider closure.
     pub fn with_coherence_provider<F>(mut self, provider: F) -> Self
     where
-        F: Fn() -> f64 + Send + Sync + 'a,
+        F: Fn() -> f64 + Send + Sync + 'static,
     {
-        self.coherence_provider = Some(Box::new(provider));
+        use crate::host::CallbackHostProvider;
+        self.host =
+            Box::new(CallbackHostProvider::new().with_coherence(move |_internal| provider()));
         self
     }
 
     /// Run the program to completion. Returns the final value.
     pub fn run(&mut self) -> EvalResult<PhiIRValue> {
+        match self.run_or_yield()? {
+            VmExecResult::Complete(value) => Ok(value),
+            VmExecResult::Yielded { .. } => {
+                // If using `run()` (not `run_or_yield()`), treat yield as completion
+                // with the coherence value. This preserves backward compatibility.
+                Ok(PhiIRValue::Number(self.compute_coherence()))
+            }
+        }
+    }
+
+    /// Run the program, but may return `Yielded` if a `witness` triggers
+    /// a host-requested yield. The caller can inspect the frozen state
+    /// and call `resume()` to continue.
+    pub fn run_or_yield(&mut self) -> EvalResult<VmExecResult> {
         loop {
             let block_id = self.current_block;
             let block = self.get_block(block_id)?;
@@ -157,13 +208,46 @@ impl<'a> Evaluator<'a> {
             if self.instruction_ptr < instr_count {
                 let instr = block.instructions[self.instruction_ptr].clone();
                 self.instruction_ptr += 1;
-                self.execute_instruction(&instr)?;
+                if let Some(yield_result) = self.execute_instruction_with_yield(&instr)? {
+                    return Ok(yield_result);
+                }
             } else {
                 let terminator = block.terminator.clone();
                 if let Some(value) = self.execute_terminator(&terminator)? {
-                    return Ok(value);
+                    return Ok(VmExecResult::Complete(value));
                 }
             }
+        }
+    }
+
+    /// Resume execution after a yield. Restores frozen state and continues.
+    pub fn resume(&mut self, state: FrozenEvalState) -> EvalResult<VmExecResult> {
+        self.registers = state.registers;
+        self.variables = state.variables;
+        self.intention_stack = state.intention_stack;
+        self.active_streams = state.active_streams;
+        self.resonance_field = state.resonance_field;
+        self.resonance_events = state.resonance_events;
+        self.ended_streams = state.ended_streams;
+        self.witness_log = state.witness_log;
+        self.current_block = state.current_block;
+        self.instruction_ptr = state.instruction_ptr;
+        self.run_or_yield()
+    }
+
+    /// Capture the current evaluator state as a frozen snapshot.
+    fn freeze_state(&self) -> FrozenEvalState {
+        FrozenEvalState {
+            registers: self.registers.clone(),
+            variables: self.variables.clone(),
+            intention_stack: self.intention_stack.clone(),
+            active_streams: self.active_streams.clone(),
+            resonance_field: self.resonance_field.clone(),
+            resonance_events: self.resonance_events.clone(),
+            ended_streams: self.ended_streams.clone(),
+            witness_log: self.witness_log.clone(),
+            current_block: self.current_block,
+            instruction_ptr: self.instruction_ptr,
         }
     }
 
@@ -247,20 +331,9 @@ impl<'a> Evaluator<'a> {
             // `witness` pauses to observe program state.
             // Returns coherence score as a Number (0.0–1.0).
             // Records a WitnessEvent in witness_log.
+            // Host may request a yield here.
             PhiIRNode::Witness { target, .. } => {
-                // Optionally observe a specific operand (for future use by backends).
-                let _observed = target.and_then(|op| self.get_reg(op).ok().cloned());
-
-                let coherence = self.compute_coherence();
-                let resonance_count: usize = self.resonance_field.values().map(|v| v.len()).sum();
-
-                self.witness_log.push(WitnessEvent {
-                    intention_stack: self.intention_stack.clone(),
-                    coherence,
-                    register_count: self.registers.len(),
-                    resonance_count,
-                });
-
+                let (coherence, _snapshot, _action) = self.process_witness(*target)?;
                 Some(PhiIRValue::Number(coherence))
             }
 
@@ -269,12 +342,14 @@ impl<'a> Evaluator<'a> {
             PhiIRNode::IntentionPush { name, .. } => {
                 self.intention_stack.push(name.clone());
                 self.resonance_field.entry(name.clone()).or_default();
+                self.host.on_intention_push(name);
                 None
             }
 
             // Exit intention scope. Pops the innermost intention name.
             PhiIRNode::IntentionPop => {
-                self.intention_stack.pop();
+                let popped = self.intention_stack.pop().unwrap_or_default();
+                self.host.on_intention_pop(&popped);
                 None
             }
 
@@ -306,20 +381,33 @@ impl<'a> Evaluator<'a> {
                 if let Some(op) = value {
                     if let Ok(val) = self.get_reg(*op) {
                         let val = val.clone();
+                        let val_str = format!("{:?}", val);
                         self.resonance_events.push((key.clone(), val.clone()));
                         if self.active_streams.contains(&key) {
-                            // Stream constructs are continuous presents, they overwrite their cycle value.
-                            self.resonance_field.insert(key, vec![val]);
+                            self.resonance_field.insert(key.clone(), vec![val.clone()]);
+                            if let Some(shared) = &self.shared_resonance {
+                                let mut guard = shared.lock().unwrap();
+                                guard.insert(key.clone(), vec![val.clone()]);
+                            }
                         } else {
-                            // Standard intention blocks append their state.
-                            self.resonance_field.entry(key).or_default().push(val);
+                            self.resonance_field
+                                .entry(key.clone())
+                                .or_default()
+                                .push(val.clone());
+                            if let Some(shared) = &self.shared_resonance {
+                                let mut guard = shared.lock().unwrap();
+                                guard.entry(key.clone()).or_default().push(val.clone());
+                            }
                         }
+                        // Notify the host about the resonance event
+                        self.host.on_resonate(&key, &val_str);
                     }
                 }
                 None
             }
 
             // `coherence` evaluates and returns current phi-harmonic coherence.
+            // The host gets the internal score and may override it.
             PhiIRNode::CoherenceCheck => Some(PhiIRValue::Number(self.resolve_coherence())),
 
             // --- Domain calls: no-op in base evaluator (backend-specific) ---
@@ -352,6 +440,64 @@ impl<'a> Evaluator<'a> {
         }
 
         Ok(())
+    }
+
+    fn resonance_count(&self) -> usize {
+        self.resonance_field.values().map(|v| v.len()).sum()
+    }
+
+    fn process_witness(
+        &mut self,
+        target: Option<Operand>,
+    ) -> EvalResult<(f64, WitnessSnapshot, WitnessAction)> {
+        let observed = target.and_then(|op| self.get_reg(op).ok().cloned());
+        let coherence = self.compute_coherence();
+        let resonance_count = self.resonance_count();
+
+        self.witness_log.push(WitnessEvent {
+            intention_stack: self.intention_stack.clone(),
+            coherence,
+            register_count: self.registers.len(),
+            resonance_count,
+        });
+
+        let snapshot = WitnessSnapshot {
+            intention_stack: self.intention_stack.clone(),
+            coherence,
+            register_count: self.registers.len(),
+            resonance_count,
+            observed_value: observed.map(|v| format!("{:?}", v)),
+        };
+        let action = self.host.on_witness(&snapshot);
+
+        Ok((coherence, snapshot, action))
+    }
+
+    /// Like `execute_instruction`, but may return a `Some(VmExecResult::Yielded)`
+    /// if the instruction is a `Witness` and the host requested a yield.
+    fn execute_instruction_with_yield(
+        &mut self,
+        instr: &PhiInstruction,
+    ) -> EvalResult<Option<VmExecResult>> {
+        if let PhiIRNode::Witness { target, .. } = &instr.node {
+            let (coherence, snapshot, action) = self.process_witness(*target)?;
+
+            if let Some(reg) = instr.result {
+                self.registers.insert(reg, PhiIRValue::Number(coherence));
+            }
+
+            if action == WitnessAction::Yield {
+                let frozen = self.freeze_state();
+                return Ok(Some(VmExecResult::Yielded {
+                    snapshot,
+                    frozen_state: frozen,
+                }));
+            }
+            return Ok(None);
+        }
+
+        self.execute_instruction(instr)?;
+        Ok(None)
     }
 
     // -----------------------------------------------------------------------
@@ -435,7 +581,7 @@ impl<'a> Evaluator<'a> {
     /// Resonance connections add up to 0.200 more (0.05 per shared value).
     fn compute_coherence(&self) -> f64 {
         let depth = self.intention_stack.len();
-        let resonance_count: usize = self.resonance_field.values().map(|v| v.len()).sum();
+        let resonance_count = self.resonance_count();
 
         if depth == 0 && resonance_count == 0 {
             return 0.0;
@@ -453,11 +599,8 @@ impl<'a> Evaluator<'a> {
     }
 
     fn resolve_coherence(&self) -> f64 {
-        if let Some(provider) = &self.coherence_provider {
-            provider()
-        } else {
-            self.compute_coherence()
-        }
+        let internal = self.compute_coherence();
+        self.host.get_coherence(internal)
     }
 
     // -----------------------------------------------------------------------
@@ -534,11 +677,10 @@ impl<'a> Evaluator<'a> {
     }
 
     fn execute_function(&mut self, name: &str, args: Vec<PhiIRValue>) -> EvalResult<PhiIRValue> {
-        let meta = self
-            .functions
-            .get(name)
-            .cloned()
-            .ok_or_else(|| EvalError::InvalidOperation(format!("Undefined function: {}", name)))?;
+        let meta =
+            self.functions.get(name).cloned().ok_or_else(|| {
+                EvalError::InvalidOperation(format!("Undefined function: {}", name))
+            })?;
 
         let saved_block = self.current_block;
         let saved_ip = self.instruction_ptr;

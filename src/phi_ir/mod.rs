@@ -16,6 +16,7 @@ pub mod lowering;
 pub mod optimizer;
 pub mod printer;
 pub mod vm;
+pub mod vm_state;
 pub mod wasm;
 
 use crate::compiler::lexer::Token; // Re-using Token if needed, or defining own types
@@ -114,7 +115,7 @@ pub struct Param {
 
 /// Values that can appear as constants in the IR.
 /// Backends lower these to their own representations.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum PhiIRValue {
     Number(f64), // WASM: f64, Hardware: f32, Quantum: f64
     String(u32), // index into string_table

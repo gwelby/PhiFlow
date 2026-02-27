@@ -4,8 +4,9 @@
 //! 1. Existing regression tests (arithmetic via lowering pipeline).
 //! 2. New direct-IR tests proving Witness, Intention, Resonate, CoherenceCheck.
 
+use phiflow::host::{CallbackHostProvider, WitnessAction};
 use phiflow::parser::{parse_phi_program, BinaryOperator, PhiExpression};
-use phiflow::phi_ir::evaluator::Evaluator;
+use phiflow::phi_ir::evaluator::{EvalExecResult, Evaluator, FrozenEvalState};
 use phiflow::phi_ir::lowering::lower_program;
 use phiflow::phi_ir::optimizer::{OptimizationLevel, Optimizer};
 use phiflow::phi_ir::{
@@ -13,7 +14,7 @@ use phiflow::phi_ir::{
 };
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 // ---------------------------------------------------------------------------
 // Helper: build a single-block program directly from instruction list
@@ -233,6 +234,135 @@ fn test_witness_records_event_in_log() {
     assert!(event.coherence > 0.0);
 }
 
+#[test]
+fn test_witness_callback_called_once_per_instruction() {
+    let prog = single_block(
+        vec![instr(
+            Some(0),
+            PhiIRNode::Witness {
+                target: None,
+                collapse_policy: CollapsePolicy::Deferred,
+            },
+        )],
+        0,
+    );
+
+    let calls = Arc::new(AtomicUsize::new(0));
+    let calls_ref = Arc::clone(&calls);
+    let host = CallbackHostProvider::new().with_witness(move |_| {
+        calls_ref.fetch_add(1, Ordering::SeqCst);
+        WitnessAction::Continue
+    });
+
+    let mut eval = Evaluator::new(&prog).with_host(Box::new(host));
+    let result = eval.run_or_yield().expect("evaluation failed");
+    assert!(
+        matches!(result, EvalExecResult::Complete(PhiIRValue::Number(_))),
+        "expected completion result, got {:?}",
+        result
+    );
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn test_witness_yield_preserves_observed_value_snapshot() {
+    let prog = single_block(
+        vec![
+            instr(Some(0), PhiIRNode::Const(PhiIRValue::Number(432.0))),
+            instr(
+                Some(1),
+                PhiIRNode::Witness {
+                    target: Some(0),
+                    collapse_policy: CollapsePolicy::Deferred,
+                },
+            ),
+        ],
+        1,
+    );
+
+    let calls = Arc::new(AtomicUsize::new(0));
+    let calls_ref = Arc::clone(&calls);
+    let observed = Arc::new(Mutex::new(None::<String>));
+    let observed_ref = Arc::clone(&observed);
+    let host = CallbackHostProvider::new().with_witness(move |snapshot| {
+        calls_ref.fetch_add(1, Ordering::SeqCst);
+        *observed_ref.lock().expect("observed mutex poisoned") = snapshot.observed_value.clone();
+        WitnessAction::Yield
+    });
+
+    let mut eval = Evaluator::new(&prog).with_host(Box::new(host));
+    let result = eval.run_or_yield().expect("evaluation failed");
+    let frozen_state = match result {
+        EvalExecResult::Yielded {
+            snapshot,
+            frozen_state,
+        } => {
+            let observed_value = snapshot
+                .observed_value
+                .as_deref()
+                .expect("yielded snapshot must preserve witness target");
+            assert!(observed_value.contains("432.0"), "got {}", observed_value);
+            frozen_state
+        }
+        other => panic!("expected yielded result, got {:?}", other),
+    };
+
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+    let stored = observed
+        .lock()
+        .expect("observed mutex poisoned")
+        .clone()
+        .expect("host callback should receive observed value");
+    assert!(stored.contains("432.0"), "got {}", stored);
+
+    let resumed = eval.resume(frozen_state).expect("resume failed");
+    assert!(
+        matches!(resumed, EvalExecResult::Complete(PhiIRValue::Number(_))),
+        "expected completion after resume, got {:?}",
+        resumed
+    );
+}
+
+#[test]
+fn test_frozen_eval_state_roundtrips_through_json() {
+    let prog = single_block(
+        vec![
+            instr(Some(0), PhiIRNode::Const(PhiIRValue::Number(7.0))),
+            instr(
+                Some(1),
+                PhiIRNode::Witness {
+                    target: Some(0),
+                    collapse_policy: CollapsePolicy::Deferred,
+                },
+            ),
+        ],
+        1,
+    );
+
+    let host = CallbackHostProvider::new().with_witness(|_| WitnessAction::Yield);
+    let mut eval = Evaluator::new(&prog).with_host(Box::new(host));
+    let yielded = eval.run_or_yield().expect("evaluation failed");
+    let frozen_state = match yielded {
+        EvalExecResult::Yielded { frozen_state, .. } => frozen_state,
+        other => panic!("expected yielded result, got {:?}", other),
+    };
+
+    let payload = serde_json::to_string(&frozen_state).expect("state should serialize");
+    let decoded: FrozenEvalState =
+        serde_json::from_str(&payload).expect("state should deserialize");
+
+    assert_eq!(decoded.current_block, frozen_state.current_block);
+    assert_eq!(decoded.instruction_ptr, frozen_state.instruction_ptr);
+    assert_eq!(decoded.intention_stack, frozen_state.intention_stack);
+
+    let resumed = eval.resume(decoded).expect("resume failed");
+    assert!(
+        matches!(resumed, EvalExecResult::Complete(PhiIRValue::Number(_))),
+        "expected completion after resume, got {:?}",
+        resumed
+    );
+}
+
 // ---------------------------------------------------------------------------
 // Intention stack
 // ---------------------------------------------------------------------------
@@ -284,6 +414,62 @@ fn test_two_nested_intentions_yield_golden_ratio() {
     }
 
     assert_eq!(eval.witness_log[0].intention_stack, vec!["Outer", "Inner"]);
+}
+
+#[test]
+fn test_callback_host_receives_intention_push_and_pop() {
+    let prog = single_block(
+        vec![
+            instr(
+                None,
+                PhiIRNode::IntentionPush {
+                    name: "Outer".to_string(),
+                    frequency_hint: None,
+                },
+            ),
+            instr(
+                None,
+                PhiIRNode::IntentionPush {
+                    name: "Inner".to_string(),
+                    frequency_hint: None,
+                },
+            ),
+            instr(None, PhiIRNode::IntentionPop),
+            instr(None, PhiIRNode::IntentionPop),
+            instr(Some(0), PhiIRNode::Const(PhiIRValue::Number(1.0))),
+        ],
+        0,
+    );
+
+    let pushes = Arc::new(Mutex::new(Vec::new()));
+    let pops = Arc::new(Mutex::new(Vec::new()));
+    let pushes_ref = Arc::clone(&pushes);
+    let pops_ref = Arc::clone(&pops);
+    let host = CallbackHostProvider::new()
+        .with_intention_push(move |name| {
+            pushes_ref
+                .lock()
+                .expect("pushes mutex poisoned")
+                .push(name.to_string());
+        })
+        .with_intention_pop(move |name| {
+            pops_ref
+                .lock()
+                .expect("pops mutex poisoned")
+                .push(name.to_string());
+        });
+
+    let mut eval = Evaluator::new(&prog).with_host(Box::new(host));
+    eval.run().expect("evaluation failed");
+
+    assert_eq!(
+        pushes.lock().expect("pushes mutex poisoned").as_slice(),
+        vec!["Outer".to_string(), "Inner".to_string()].as_slice()
+    );
+    assert_eq!(
+        pops.lock().expect("pops mutex poisoned").as_slice(),
+        vec!["Inner".to_string(), "Outer".to_string()].as_slice()
+    );
 }
 
 // ---------------------------------------------------------------------------
