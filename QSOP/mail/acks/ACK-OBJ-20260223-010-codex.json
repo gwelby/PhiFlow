@@ -1,0 +1,25 @@
+{
+  "ack_id": "ACK-OBJ-20260223-010-codex",
+  "objective_id": "OBJ-20260223-010",
+  "status": "completed",
+  "summary": "Lane C complete: WASM backend now propagates nested call return values for claude.phi correctly, and the WASM path returns 0.6180339887498949 instead of the prior incorrect value. Fail-first test added and verified; conformance, full suite, Node host acceptance, and ritual are all green.",
+  "verification": {
+    "fail_first_targeted": "EXIT_CODE=101\\nthread 'test_wasm_claude_formula_returns_618' panicked: WASM path returned 0 not 0.618",
+    "targeted_after_fix": "EXIT_CODE=0\\ntest test_wasm_claude_formula_returns_618 ... ok",
+    "conformance_suite": "EXIT_CODE=0\\nrunning 7 tests\\n7 passed; 0 failed",
+    "full_cargo_suite": "EXIT_CODE=0\\n22 suites executed, 213 total tests reported by harness summaries",
+    "wasm_host_acceptance": "EXIT_CODE=0\\nphi_run() -> 0.6180339887498949\\nCoherence: 0.6180\\nResonance field: [0.6180]",
+    "ritual": "EXIT_CODE=0\\nRITUAL COMPLETE: outside_zero conditions met"
+  },
+  "files_changed": [
+    "src/phi_ir/wasm.rs",
+    "tests/phi_ir_conformance_tests.rs",
+    "tests/phi_ir_evaluator_tests.rs",
+    "QSOP/CHANGELOG.md",
+    "QSOP/mail/acks/ACK-OBJ-20260223-010-codex.json"
+  ],
+  "notes": [
+    "Objective payload acceptance text references 211 tests; current suite reports 213 total tests after new coverage landed.",
+    "run_all.py requires explicit SLA args in current contract: --pending-ack-sla-hours 24 --in-progress-sla-hours 48."
+  ]
+}

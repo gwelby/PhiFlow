@@ -1,0 +1,97 @@
+meta:
+  id: the_loom_ledger_schema
+  version: 0.2.0
+  type: ledger_schema
+  date: "2026-02-21"
+  scope: "schema for weaver activation cycle"
+
+compatibility:
+  directory_name: QSOP
+  conceptual_name: The Loom
+  migration_note: "schema assumes QSOP paths until compatibility migration completes"
+
+entry_model:
+  required_fields:
+    - loom_entry_id
+    - timestamp_utc
+    - actor
+    - objective_id
+    - layer
+    - outside_zero_state
+    - summary
+    - evidence
+    - outcome
+  field_rules:
+    loom_entry_id:
+      pattern: "^LOOM-[0-9]{8}-[0-9]{3,}$"
+    objective_id:
+      pattern: "^OBJ-[0-9]{8}-[0-9]{3,}$"
+    layer:
+      enum: [seed, contract, execution, verification, distill, repair]
+    outside_zero_state:
+      enum:
+        [
+          outside_zero_locked,
+          resonance_lock,
+          structural_dissonance_tear,
+          rollback_required,
+        ]
+    outcome:
+      enum: [completed, blocked, rolled_back, reopened, cancelled]
+
+evidence_model:
+  required_item_fields:
+    - command
+    - result
+    - artifact_paths
+  result_enum: [pass, fail, informational]
+  tiers:
+    tier_0: "narrative only"
+    tier_1: "command logged"
+    tier_2: "command + artifact path"
+    tier_3: "command + artifact + reproducible rerun"
+  minimum_tier_for_completion: tier_2
+
+trigger_taxonomy:
+  zero_rust_test_pass:
+    maps_to: outside_zero_locked
+  structural_dissonance_tear:
+    maps_to: rollback_required
+  polarity_reversal_event:
+    maps_to: reopened
+  harmonic_reweave_complete:
+    maps_to: resonance_lock
+
+state_vector_record:
+  ast_resonance:
+    range: [0.0, 1.0]
+  host_stability:
+    range: [0.0, 1.0]
+  mutation_depth:
+    range: [0.0, 1.0]
+  evidence_coherence:
+    range: [0.0, 1.0]
+  required_on_layers: [execution, verification, repair]
+
+storage_mapping:
+  packets:
+    objectives: QSOP/mail/objectives
+    acks: QSOP/mail/acks
+    payloads: QSOP/mail/payloads
+  ledger_surfaces:
+    changelog: QSOP/CHANGELOG.md
+    state: QSOP/STATE.md
+    metrics: QSOP/metrics/objective_metrics.json
+    audits: "QSOP/metrics/weekly_audit_YYYYMMDD.md"
+
+quality_checks:
+  - "every completed entry has evidence tier >= tier_2"
+  - "every blocked entry includes blocker and owner"
+  - "every reopened entry references prior completion event"
+  - "every repair entry logs rollback and rerun evidence"
+
+promotion_to_primary_schema:
+  requirements:
+    - "one clean activation cycle on OBJ-20260221-003"
+    - "review approved by Antigravity"
+    - "state/changelog updated with adopted invariants"

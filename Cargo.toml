@@ -1,0 +1,61 @@
+[package]
+name = "phiflow"
+version = "0.1.0"
+edition = "2021"
+authors = ["PhiFlow Team <team@phiflow.dev>"]
+description = "PhiFlow - Quantum consciousness programming language"
+license = "MIT"
+repository = "https://github.com/phiflow/phiflow"
+keywords = ["quantum", "consciousness", "dsl", "sacred-geometry", "phi"]
+categories = ["compilers", "science", "development-tools"]
+
+[[bin]]
+name = "phi"
+path = "src/main.rs"
+
+[[bin]]
+name = "phic"
+path = "src/main_cli.rs"
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full", "process"] }
+anyhow = "1.0"
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+num-complex = "0.4" # Added for Mandelbrot set
+
+# Quantum computing backends
+reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
+base64 = "0.21"
+uuid = { version = "1.0", features = ["v4"] }
+async-trait = "0.1"
+chrono = { version = "0.4", features = ["serde"] }
+
+# Consciousness monitoring (EEG) - placeholder for future implementation  
+# eeg-rs = { version = "0.1", optional = true }
+
+# Audio/Frequency processing (cpal requires libasound2-dev; optional until system dep resolved)
+cpal = { version = "0.15", optional = true }
+hound = "3.5"
+rustfft = "6.1"
+
+# Mathematical operations
+nalgebra = "0.32"
+rand = "0.8"
+sysinfo = "0.30"
+
+[features]
+default = []
+audio = ["dep:cpal"]
+
+[dev-dependencies]
+criterion = "0.5"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
