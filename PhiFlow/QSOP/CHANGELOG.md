@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2026-02-26 - [Codex] Human-first docs sweep + D:\Projects implementation mapping
+- Scope: root documentation and QSOP state witness alignment in `D:\Projects\PhiFlow` (master worktree).
+- Updated human-first docs:
+  - `README.md`
+  - `PhiFlow_KNOW.md` (new canonical plain-language explainer)
+  - `KNOW.md` (reduced to factual reality index + truth hierarchy)
+  - `VISION.md` (rewritten with current branch reality and 90-day execution plan)
+- Updated witness ledger:
+  - `PhiFlow/QSOP/STATE.md` with dated `2026-02-26` section for human-first sync and verified `D:\Projects` integration candidates.
+- Verified local `D:\Projects` candidates by path inspection:
+  - `UniversalProcessor`, `ResonanceMatrix`, `MCP`, `P1_Companion`, `QDrive`, `Quantum-Fonts`.
+- Design decision:
+  - Keep `compiler` lane as runtime truth until merge reconciliation; keep master lane as documentation/witness authority with explicit branch-state qualifiers.
+
 ## 2026-02-25 - [Codex] Master truth sync from cross-worktree witness
 - Scope: documentation/QSOP lane in `D:\Projects\PhiFlow` (master worktree only).
 - Read and cross-checked:

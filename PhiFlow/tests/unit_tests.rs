@@ -17,8 +17,9 @@ fn test_lexer_sacred_frequency() {
     let source = "Sacred(432)";
     let mut lexer = PhiFlowLexer::new(source.to_string());
     let tokens = lexer.tokenize().expect("Lexing should succeed");
-    
-    assert!(tokens.len() >= 4); // Sacred, (, 432, )
+
+    // Lexer contract: Sacred(432) is tokenized as a compact Sacred literal.
+    assert!(tokens.iter().any(|t| matches!(t, Token::Sacred(432))));
 }
 
 #[test]

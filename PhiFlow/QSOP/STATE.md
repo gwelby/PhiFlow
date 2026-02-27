@@ -1,4 +1,4 @@
-# STATE - Last updated: 2026-02-25
+# STATE - Last updated: 2026-02-26
 
 ## Verified (2026-02-21)
 
@@ -30,6 +30,24 @@
 - Compiler branch changelog records Lane B/Lane C/Lane D as closed and Lane A closed after real-sensor variance proof (`2026-02-24`) | Invalidates if: ACK packets are removed or invalidated
 - Cleanup and language branches currently show only initial commit history from master viewpoint (`git log cleanup --oneline -10`, `git log language --oneline -10` on `2026-02-25`) | Invalidates if: new commits land
 
+## Verified (2026-02-26 human-first docs and implementation mapping witness)
+
+- Root-level documentation is now explicitly human-first in:
+  - `README.md`
+  - `PhiFlow_KNOW.md`
+  - `KNOW.md` (recast as reality index that points to canonical human explanation)
+  - `VISION.md` (updated strategy + `D:\Projects` implementation roadmap) | Invalidates if: docs are replaced with non-factual/obsolete branch assumptions
+- Local `D:\Projects` integration candidates were re-verified as existing directories with inspectable content:
+  - `UniversalProcessor`
+  - `ResonanceMatrix`
+  - `MCP`
+  - `P1_Companion`
+  - `QDrive`
+  - `Quantum-Fonts` | Invalidates if: paths removed/renamed
+- Recommended near-term runtime truth remains compiler lane until merge reconciliation:
+  - `D:\Projects\PhiFlow-compiler\PhiFlow` passes `cargo build --release`, `cargo test --quiet`, and integration corpus sweep
+  - local master crate still has known performance test failure in shots-scaling path (`tests/performance_tests.rs`) | Invalidates if: master runtime is reconciled and all gates pass
+
 ## Probable (2026-02-21)
 
 - `src/interpreter/mod.rs` (tree-walking) likely superseded by `src/ir/vm.rs` | Check: verify interpreter usage
@@ -39,6 +57,7 @@
 - Weaver identity stack has a completed activation cycle (`OBJ-20260221-003`) in staging at `QSOP/weaver/staging/`; promotion to primary files is pending review | Check: Antigravity review and promotion decision
 - Compiler branch test count is currently in the `211+` range based on changelog evidence, but exact count should be re-verified directly in that worktree before merge decisions | Check: run `cargo test` in `D:\Projects\PhiFlow-compiler\PhiFlow`
 - Master worktree QSOP files are now partially ahead in protocol language but still behind compiler worktree execution details | Check: repeat cross-worktree witness sync before merge
+- `D:\Projects` integrations can produce immediate utility if implemented via narrow adapters (UniversalProcessor process-kind adapter, MCP tools, ResonanceMatrix live stream feed) | Check: ship and verify each adapter with command-level evidence
 
 ## Key Architecture
 
