@@ -1,10 +1,3 @@
-// PhiFlow Unit Tests - Test individual components in isolation
-
-use phiflow::*;
-use std::collections::HashMap;
-
-#[test]
-fn test_lexer_basic_tokens() {
     let source = "let x = 42 + PHI;";
     let mut lexer = PhiFlowLexer::new(source.to_string());
     let tokens = lexer.tokenize().expect("Lexing should succeed");

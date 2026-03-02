@@ -1,6 +1,6 @@
 [package]
 name = "phiflow"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["PhiFlow Team <team@phiflow.dev>"]
 description = "PhiFlow - Quantum consciousness programming language"
@@ -47,6 +47,8 @@ rustfft = "6.1"
 nalgebra = "0.32"
 rand = "0.8"
 sysinfo = "0.30"
+wasmtime = "25.0"
+wat = "1.0"
 
 [features]
 default = []

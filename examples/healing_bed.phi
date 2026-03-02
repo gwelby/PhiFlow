@@ -1,9 +1,6 @@
-stream "healing_bed" {
-    let live = coherence
-    resonate live
-    witness
-    if live >= 0.618 {
+sintention "healing_session" {
+    stream "resonance_loop" {
+        resonate "Healing energy activated"
         break stream
     }
 }
-

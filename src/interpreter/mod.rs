@@ -1,3 +1,7 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(unreachable_patterns)]
+
 use crate::parser::{BinaryOperator, PhiExpression, PhiType, PhiValue, UnaryOperator};
 use crate::phi_core::AudioSynthesizer;
 use crate::phi_core::{
@@ -82,13 +86,13 @@ impl PhiInterpreter {
         let final_coherence = self.calculate_coherence();
 
         println!();
-        println!("  \u{2550}\u{2550}\u{2550} PHIFLOW PROGRAM SUMMARY \u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}");
+        println!("  ═══ PHIFLOW PROGRAM SUMMARY ════════════");
 
         // Final coherence with bar
         let bar_len = 20;
         let filled = (final_coherence * bar_len as f64) as usize;
         let empty = bar_len - filled;
-        let bar: String = "\u{2588}".repeat(filled) + &"\u{2591}".repeat(empty);
+        let bar: String = "█".repeat(filled) + &"░".repeat(empty);
         let alignment = if final_coherence >= 0.8 {
             "ALIGNED"
         } else if final_coherence >= 0.5 {
@@ -107,7 +111,7 @@ impl PhiInterpreter {
             unique_freqs.sort_by(|a, b| a.partial_cmp(b).unwrap());
             unique_freqs.dedup();
             let freqs: Vec<String> = unique_freqs.iter().map(|f| format!("{:.0}Hz", f)).collect();
-            println!("  Frequencies: {}", freqs.join(" \u{2192} "));
+            println!("  Frequencies: {}", freqs.join(" → "));
         }
 
         // Witness count
@@ -121,7 +125,7 @@ impl PhiInterpreter {
         if !self.contradictions.is_empty() {
             println!("  Contradictions: {}", self.contradictions.len());
             for c in &self.contradictions {
-                println!("    \u{26A0} {}", c);
+                println!("    ⚠ {}", c);
             }
         }
 
@@ -136,7 +140,7 @@ impl PhiInterpreter {
             );
             if !self.resonance_log.is_empty() {
                 for (from, to) in &self.resonance_log {
-                    println!("    \"{}\" \u{2192} \"{}\"", from, to);
+                    println!("    \"{}\" → \"{}\"", from, to);
                 }
             }
         }
@@ -144,7 +148,7 @@ impl PhiInterpreter {
         // Operations
         println!("  Operations: {}", self.operations_log.len());
 
-        println!("  \u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}\u{2550}");
+        println!("  ════════════════════════════════════════");
     }
 
     fn evaluate_expression(&mut self, expression: &PhiExpression) -> Result<PhiValue, String> {
@@ -192,223 +196,132 @@ impl PhiInterpreter {
 
                 // Resolve frequency - check if it's a variable reference
                 let freq = if *frequency < 0.0 {
-                    // Frequency is a variable reference, resolve it
-                    if let Some(var_ref_value) = pattern_params.get("__frequency_var") {
-                        if let Some(resolved_freq) =
-                            self.evaluate_phi_value(var_ref_value)?.as_number()
-                        {
-                            resolved_freq
-                        } else {
-                            return Err(
-                                "Frequency variable did not resolve to a number".to_string()
-                            );
-                        }
+                    // Frequency is a variable reference stored in parameters
+                    if let Some(PhiValue::String(var_ref)) = pattern_params.get("__frequency_var") {
+                        let var_name = &var_ref[1..]; // Remove $
+                        let val = self
+                            .environment
+                            .get(var_name)
+                            .ok_or_else(|| format!("Undefined frequency variable: {}", var_name))?;
+                        val.as_number().ok_or_else(|| {
+                            format!("Frequency variable {} must be a number", var_name)
+                        })?
                     } else {
-                        return Err("Frequency variable reference not found".to_string());
+                        0.0 // Fallback
                     }
                 } else {
                     *frequency
                 };
 
-                // Track frequency for coherence measurement
-                if freq > 0.0 {
-                    self.frequencies_used.push(freq);
-                    self.log_operation("create");
-                }
+                self.frequencies_used.push(freq);
 
-                let pattern_data = match pattern_type.as_str() {
-                    "spiral" => {
-                        let rotations = pattern_params
-                            .get("rotations")
-                            .and_then(|v| v.as_number())
-                            .unwrap_or(5.0);
-                        let scale = pattern_params
-                            .get("scale")
-                            .and_then(|v| v.as_number())
-                            .unwrap_or(100.0);
-                        golden_spiral_points(rotations, 100, scale)
-                    }
-                    "flower" => {
-                        let rings = pattern_params
-                            .get("rings")
-                            .and_then(|v| v.as_number())
-                            .unwrap_or(3.0) as i64;
-                        flower_of_life_points(rings)
-                    }
+                // Generate points
+                let points = match pattern_type.as_str() {
+                    "spiral" => golden_spiral_points(freq, 100, 1.0),
+                    "flower" => flower_of_life_points(3),
                     "dna" => {
-                        let turns = pattern_params
-                            .get("turns")
-                            .and_then(|v| v.as_number())
-                            .unwrap_or(10.0);
-                        let radius = pattern_params
-                            .get("radius")
-                            .and_then(|v| v.as_number())
-                            .unwrap_or(25.0);
-                        // Project 3D DNA to 2D for now, as PhiValue::Pattern2D expects 2D points
-                        self.visualizer
-                            .project_3d_to_2d(&dna_helix_points(10.0, turns, radius).0)
+                        let (s1, _) = dna_helix_points(freq, 2.0, 1.0);
+                        s1.iter().map(|p| [p[0], p[1]]).collect()
                     }
-                    _ => return Err(format!("Unknown pattern type: {}", pattern_type)),
+                    _ => vec![], // Custom/Generic field
                 };
-                Ok(PhiValue::Pattern2D(pattern_data))
+
+                self.log_operation("create");
+                Ok(PhiValue::Pattern2D(points))
             }
-            PhiExpression::ConsciousnessValidation { pattern, metrics } => {
+            PhiExpression::ConsciousnessValidation { pattern, .. } => {
                 let evaluated_pattern = self.evaluate_expression(pattern)?;
-                if let PhiValue::Pattern2D(p) = evaluated_pattern {
-                    let validation_result = validate_pattern_consciousness(&p);
-                    // Filter metrics if specified
-                    let filtered_metrics: HashMap<String, PhiValue> = metrics
-                        .iter()
-                        .filter_map(|m| match m.as_str() {
-                            "coherence" => {
-                                Some((m.clone(), PhiValue::Number(validation_result.coherence)))
-                            }
-                            "consciousness_zone" => Some((
-                                m.clone(),
-                                PhiValue::String(validation_result.consciousness_zone.to_string()),
-                            )),
-                            "phi_resonance" => {
-                                Some((m.clone(), PhiValue::Number(validation_result.phi_resonance)))
-                            }
-                            "universal_alignment" => Some((
-                                m.clone(),
-                                PhiValue::Boolean(validation_result.universal_constant_alignment),
-                            )),
-                            "frequency_match" => Some((
-                                m.clone(),
-                                PhiValue::Number(validation_result.frequency_match),
-                            )),
-                            "overall_score" => Some((
-                                m.clone(),
-                                PhiValue::Number(validation_result.validation_score),
-                            )),
-                            "classification" => Some((
-                                m.clone(),
-                                PhiValue::String(
-                                    validation_result.pattern_classification.to_string(),
-                                ),
-                            )),
-                            _ => None,
-                        })
-                        .collect();
-                    // Print validation metrics cleanly
-                    for (key, value) in &filtered_metrics {
-                        match value {
-                            PhiValue::Number(n) => println!("    {}: {:.3}", key, n),
-                            PhiValue::Boolean(b) => println!("    {}: {}", key, b),
-                            PhiValue::String(s) => println!("    {}: {}", key, s),
-                            _ => println!("    {}: {:?}", key, value),
-                        }
-                    }
-                    Ok(PhiValue::ValidationResult(validation_result))
+                if let PhiValue::Pattern2D(points) = evaluated_pattern {
+                    let result = validate_pattern_consciousness(&points);
+                    self.log_operation("validate");
+                    Ok(PhiValue::ValidationResult(result))
                 } else {
-                    Err("Validation requires a Pattern2D value".to_string())
+                    Err("Validation requires a Pattern2D operand".to_string())
                 }
             }
             PhiExpression::FunctionDef {
                 name,
-                parameters,
-                return_type,
-                body,
+                parameters: _,
+                return_type: _,
+                body: _,
             } => {
+                // Functions are already in the functions map after parsing
+                // (This is a simplification, in real usage we'd handle scoping)
                 self.functions.insert(name.clone(), expression.clone());
                 Ok(PhiValue::Void)
             }
             PhiExpression::FunctionCall { name, arguments } => {
-                let function_def = self
+                // Special case for print
+                if name == "print" || name == "println" {
+                    for arg in arguments {
+                        let val = self.evaluate_expression(arg)?;
+                        match val {
+                            PhiValue::String(s) => print!("{}", s),
+                            PhiValue::Number(n) => print!("{}", n),
+                            PhiValue::Boolean(b) => print!("{}", b),
+                            _ => print!("{:?}", val),
+                        }
+                    }
+                    if name == "println" {
+                        println!();
+                    }
+                    return Ok(PhiValue::Void);
+                }
+
+                let function_expr = self
                     .functions
                     .get(name)
                     .cloned()
                     .ok_or_else(|| format!("Undefined function: {}", name))?;
 
-                let evaluated_args: Result<Vec<PhiValue>, String> = arguments
-                    .iter()
-                    .map(|arg_expr| self.evaluate_expression(arg_expr))
-                    .collect();
-                let evaluated_args = evaluated_args?;
-
-                // Handle built-in functions
-                if name == "print" {
-                    for arg in &evaluated_args {
-                        println!("{:?}", arg);
-                    }
-                    return Ok(PhiValue::Void);
-                }
-
-                // Check argument count
-                let (params, body) = if let PhiExpression::FunctionDef {
+                if let PhiExpression::FunctionDef {
                     parameters, body, ..
-                } = function_def
+                } = function_expr
                 {
-                    (
-                        parameters
-                            .iter()
-                            .map(|(name, _type)| name.clone())
-                            .collect::<Vec<String>>(),
-                        body,
-                    )
-                } else {
-                    return Err(format!(
-                        "Expected function definition for {}, found {:?}",
-                        name, function_def
-                    ));
-                };
+                    // Basic scoping: capture current env, inject arguments, execute body, restore env
+                    let old_env = self.environment.clone();
 
-                // Evaluate arguments
-                let evaluated_args: Result<Vec<PhiValue>, String> = arguments
-                    .iter()
-                    .map(|arg_expr| self.evaluate_expression(arg_expr))
-                    .collect();
-                let evaluated_args = evaluated_args?;
-
-                // Check argument count
-                if params.len() != evaluated_args.len() {
-                    return Err(format!(
-                        "Function {} expected {} arguments, but received {}",
-                        name,
-                        params.len(),
-                        evaluated_args.len()
-                    ));
-                }
-
-                // Save current environment and create a new scope for function execution
-                let original_environment = self.environment.clone();
-                self.environment.clear(); // Clear for new scope
-
-                // Bind arguments to parameters in the new scope
-                for (i, param_name) in params.iter().enumerate() {
-                    self.environment
-                        .insert(param_name.clone(), evaluated_args[i].clone());
-                }
-
-                // Execute function body
-                let mut result = PhiValue::Void;
-                if let PhiExpression::Block(expressions) = body.as_ref() {
-                    for expr in expressions {
-                        result = self.evaluate_expression(expr)?;
-                        if let PhiValue::Return(returned_value) = result {
-                            result = *returned_value;
-                            break; // Exit loop on return
+                    for (i, (param_name, _)) in parameters.iter().enumerate() {
+                        if i < arguments.len() {
+                            let arg_val = self.evaluate_expression(&arguments[i])?;
+                            self.environment.insert(param_name.clone(), arg_val);
                         }
                     }
-                } else {
-                    // Handle single expression body
-                    result = self.evaluate_expression(&body)?;
-                    if let PhiValue::Return(returned_value) = result {
-                        result = *returned_value;
+
+                    let result = self.evaluate_expression(&body)?;
+
+                    self.environment = old_env;
+
+                    // If it's a return value, unwrap it
+                    if let PhiValue::Return(val) = result {
+                        Ok(*val)
+                    } else {
+                        Ok(result)
                     }
+                } else {
+                    Err(format!("{} is not a function", name))
                 }
-
-                // Restore original environment
-                self.environment = original_environment;
-
-                Ok(result)
             }
-            PhiExpression::PatternTransform { .. } => {
-                Err("Pattern transformations not yet executable".to_string())
+            PhiExpression::ConsciousnessState { .. } => {
+                Err("Consciousness state not yet executable".to_string())
             }
-            PhiExpression::PatternCombine { .. } => {
-                Err("Pattern combinations not yet executable".to_string())
+            PhiExpression::FrequencyPattern { .. } => {
+                Err("Frequency pattern not yet executable".to_string())
+            }
+            PhiExpression::QuantumField { .. } => {
+                Err("Quantum field not yet executable".to_string())
+            }
+            PhiExpression::BiologicalInterface { .. } => {
+                Err("Biological interface not yet executable".to_string())
+            }
+            PhiExpression::HardwareSync { .. } => {
+                Err("Hardware sync not yet executable".to_string())
+            }
+            PhiExpression::ConsciousnessFlow { .. } => {
+                Err("Consciousness flow not yet executable".to_string())
+            }
+            PhiExpression::EmergencyProtocol { .. } => {
+                Err("Emergency protocol not yet executable".to_string())
             }
             PhiExpression::ConsciousnessMonitor { .. } => {
                 Err("Consciousness monitoring not yet executable".to_string())
@@ -550,6 +463,16 @@ impl PhiInterpreter {
                                 .to_string())
                         }
                     }
+                    BinaryOperator::And => {
+                        let left_bool = self.is_truthy(&left_val);
+                        let right_bool = self.is_truthy(&right_val);
+                        Ok(PhiValue::Boolean(left_bool && right_bool))
+                    }
+                    BinaryOperator::Or => {
+                        let left_bool = self.is_truthy(&left_val);
+                        let right_bool = self.is_truthy(&right_val);
+                        Ok(PhiValue::Boolean(left_bool || right_bool))
+                    }
                     BinaryOperator::Less => {
                         if let (Some(l), Some(r)) = (left_val.as_number(), right_val.as_number()) {
                             Ok(PhiValue::Boolean(l < r))
@@ -566,36 +489,22 @@ impl PhiInterpreter {
                         }
                     }
                     BinaryOperator::Equal => {
-                        // Equality comparison works for all types
                         let result = match (&left_val, &right_val) {
                             (PhiValue::Number(l), PhiValue::Number(r)) => l == r,
                             (PhiValue::String(l), PhiValue::String(r)) => l == r,
                             (PhiValue::Boolean(l), PhiValue::Boolean(r)) => l == r,
-                            _ => false, // Different types are not equal
+                            _ => false,
                         };
                         Ok(PhiValue::Boolean(result))
                     }
                     BinaryOperator::NotEqual => {
-                        // Not equal comparison works for all types
                         let result = match (&left_val, &right_val) {
                             (PhiValue::Number(l), PhiValue::Number(r)) => l != r,
                             (PhiValue::String(l), PhiValue::String(r)) => l != r,
                             (PhiValue::Boolean(l), PhiValue::Boolean(r)) => l != r,
-                            _ => true, // Different types are not equal
+                            _ => true,
                         };
                         Ok(PhiValue::Boolean(result))
-                    }
-                    BinaryOperator::And => {
-                        // Logical AND - both operands must be truthy
-                        let left_bool = self.is_truthy(&left_val);
-                        let right_bool = self.is_truthy(&right_val);
-                        Ok(PhiValue::Boolean(left_bool && right_bool))
-                    }
-                    BinaryOperator::Or => {
-                        // Logical OR - at least one operand must be truthy
-                        let left_bool = self.is_truthy(&left_val);
-                        let right_bool = self.is_truthy(&right_val);
-                        Ok(PhiValue::Boolean(left_bool || right_bool))
                     }
                 }
             }
@@ -650,21 +559,20 @@ impl PhiInterpreter {
             PhiExpression::Witness { expression, body } => {
                 self.witness_count += 1;
 
-                // Capture the moment
                 let witnessed_value = if let Some(expr) = expression {
                     Some(self.evaluate_expression(expr)?)
                 } else {
                     None
                 };
 
-                // Calculate coherence at this moment
                 let coherence_now = self.calculate_coherence();
 
-                // The program observes itself
                 println!();
-                println!("  \u{25C9} WITNESS #{} \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}", self.witness_count);
+                println!(
+                    "  ◉ WITNESS #{} ───────────────────────",
+                    self.witness_count
+                );
                 if let Some(ref val) = witnessed_value {
-                    // Summarize values instead of dumping raw data
                     match val {
                         PhiValue::Pattern2D(points) => {
                             println!("    Observing: Pattern ({} points)", points.len());
@@ -686,18 +594,16 @@ impl PhiInterpreter {
                     }
                 }
 
-                // Coherence bar visualization
                 let bar_len = 20;
                 let filled = (coherence_now * bar_len as f64) as usize;
                 let empty = bar_len - filled;
-                let bar: String = "\u{2588}".repeat(filled) + &"\u{2591}".repeat(empty);
+                let bar: String = "█".repeat(filled) + &"░".repeat(empty);
                 println!("    Coherence: {:.3} [{}]", coherence_now, bar);
 
                 if !self.intention_stack.is_empty() {
                     println!("    Intention: {}", self.intention_stack.last().unwrap());
                 }
                 if !self.frequencies_used.is_empty() {
-                    // Deduplicate and sort frequencies for clean display
                     let mut unique_freqs: Vec<f64> = self.frequencies_used.clone();
                     unique_freqs.sort_by(|a, b| a.partial_cmp(b).unwrap());
                     unique_freqs.dedup();
@@ -705,20 +611,16 @@ impl PhiInterpreter {
                         unique_freqs.iter().map(|f| format!("{:.0}Hz", f)).collect();
                     println!(
                         "    Frequencies: {} ({}x used)",
-                        freqs.join(" \u{2192} "),
+                        freqs.join(" → "),
                         self.frequencies_used.len()
                     );
                 }
                 if !self.contradictions.is_empty() {
-                    println!(
-                        "    \u{26A0} {} contradiction(s):",
-                        self.contradictions.len()
-                    );
+                    println!("    ⚠ {} contradiction(s):", self.contradictions.len());
                     for c in &self.contradictions {
                         println!("      - {}", c);
                     }
                 }
-                // Show resonance field if anything has been shared
                 if !self.resonance_field.is_empty() {
                     let sources: Vec<String> = self.resonance_field.keys().cloned().collect();
                     let total_values: usize = self.resonance_field.values().map(|v| v.len()).sum();
@@ -733,27 +635,23 @@ impl PhiInterpreter {
                     self.operations_log.len(),
                     self.witness_count
                 );
-                println!("  \u{25C9} \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}");
+                println!("  ◉ ───────────────────────────────");
                 println!();
 
                 self.log_operation("witness");
                 self.coherence = self.calculate_coherence();
 
-                // Execute body if present (what happens after witnessing)
                 if let Some(body_expr) = body {
                     self.evaluate_expression(body_expr)?;
                 }
 
-                // Return coherence as the value of witnessing
                 Ok(PhiValue::Number(coherence_now))
             }
 
             PhiExpression::IntentionBlock { intention, body } => {
-                // Push intention onto stack
                 self.intention_stack.push(intention.clone());
                 self.log_operation("intention");
 
-                // Check if other intentions have resonated - show incoming resonance
                 let incoming: Vec<String> = self
                     .resonance_field
                     .keys()
@@ -762,7 +660,7 @@ impl PhiInterpreter {
                     .collect();
 
                 println!();
-                println!("  \u{2738} INTENTION: \"{}\"", intention);
+                println!("  ✺ INTENTION: \"{}\"", intention);
                 if !incoming.is_empty() {
                     for source in &incoming {
                         let count = self
@@ -770,18 +668,13 @@ impl PhiInterpreter {
                             .get(source)
                             .map(|v| v.len())
                             .unwrap_or(0);
-                        println!(
-                            "    \u{223F} Resonance from \"{}\": {} value(s)",
-                            source, count
-                        );
+                        println!("    ∿ Resonance from \"{}\": {} value(s)", source, count);
                         self.resonance_log.push((source.clone(), intention.clone()));
                     }
                 }
 
-                // Execute body under this intention
                 let result = self.evaluate_expression(body)?;
 
-                // Pop intention and report
                 self.intention_stack.pop();
                 let coherence_now = self.calculate_coherence();
                 let resonated = self
@@ -790,10 +683,13 @@ impl PhiInterpreter {
                     .map(|v| v.len())
                     .unwrap_or(0);
                 if resonated > 0 {
-                    println!("  \u{2738} INTENTION \"{}\" complete (coherence: {:.3}, resonated {} value(s))", intention, coherence_now, resonated);
+                    println!(
+                        "  ✺ INTENTION \"{}\" complete (coherence: {:.3}, resonated {} value(s))",
+                        intention, coherence_now, resonated
+                    );
                 } else {
                     println!(
-                        "  \u{2738} INTENTION \"{}\" complete (coherence: {:.3})",
+                        "  ✺ INTENTION \"{}\" complete (coherence: {:.3})",
                         intention, coherence_now
                     );
                 }
@@ -812,11 +708,9 @@ impl PhiInterpreter {
                 let value = if let Some(expr) = expression {
                     self.evaluate_expression(expr)?
                 } else {
-                    // Bare resonate - share the current coherence snapshot
                     PhiValue::Number(self.calculate_coherence())
                 };
 
-                // Summarize what's being shared
                 let summary = match &value {
                     PhiValue::Pattern2D(pts) => format!("Pattern ({} points)", pts.len()),
                     PhiValue::Number(n) => format!("{:.3}", n),
@@ -830,11 +724,10 @@ impl PhiInterpreter {
                 };
 
                 println!(
-                    "    \u{223F} Resonating from \"{}\": {}",
+                    "    ∿ Resonating from \"{}\": {}",
                     current_intention, summary
                 );
 
-                // Store in resonance field
                 self.resonance_field
                     .entry(current_intention.clone())
                     .or_default()
@@ -845,108 +738,23 @@ impl PhiInterpreter {
                 Ok(value)
             }
 
-            // Handle new consciousness-aware AST nodes
-            PhiExpression::ConsciousnessState {
-                state,
-                coherence,
-                frequency,
-            } => {
-                // For now, just print the state and its properties
-                println!("Consciousness State: {}", state);
-                println!("  Coherence: {}", coherence);
-                println!("  Frequency: {}", frequency);
-                Ok(PhiValue::Void)
-            }
-
-            PhiExpression::FrequencyPattern {
-                base_frequency,
-                harmonics,
-                phi_scaling,
-            } => {
-                println!("Processing Frequency Pattern:");
-                println!("  Base Frequency: {}", base_frequency);
-                println!("  Harmonics: {:?}", harmonics);
-                println!("  Phi Scaling: {}", phi_scaling);
-                Ok(PhiValue::Void)
-            }
-            PhiExpression::QuantumField {
-                field_type,
-                dimensions,
-                coherence_target,
-            } => {
-                println!("Processing Quantum Field:");
-                println!("  Field Type: {}", field_type);
-                println!("  Dimensions: {:?}", dimensions);
-                println!("  Coherence Target: {}", coherence_target);
-                Ok(PhiValue::Void)
-            }
-            PhiExpression::BiologicalInterface {
-                target,
-                transduction_method,
-                frequency,
-            } => {
-                println!("Processing Biological Interface:");
-                println!("  Target: {}", target);
-                println!("  Transduction Method: {}", transduction_method);
-                println!("  Frequency: {}", frequency);
-                Ok(PhiValue::Void)
-            }
-            PhiExpression::HardwareSync {
-                device_type,
-                consciousness_mapping,
-            } => {
-                println!("Processing Hardware Sync:");
-                println!("  Device Type: {}", device_type);
-                // consciousness_mapping is a PhiExpression, so we need to evaluate it if we want to print its value
-                let evaluated_mapping = self.evaluate_expression(consciousness_mapping)?;
-                println!("  Consciousness Mapping: {:?}", evaluated_mapping);
-                Ok(PhiValue::Void)
-            }
-            PhiExpression::ConsciousnessFlow {
-                condition,
-                branches,
-            } => {
-                println!("Processing Consciousness Flow:");
-                let evaluated_condition = self.evaluate_expression(condition)?;
-                println!("  Condition: {:?}", evaluated_condition);
-                // For now, we won't execute branches, just acknowledge them
-                for (state, _action) in branches {
-                    println!("  Branch State: {}", state);
-                }
-                Ok(PhiValue::Void)
-            }
-            PhiExpression::EmergencyProtocol {
-                trigger,
-                immediate_action,
-                notification,
-            } => {
-                println!("Processing Emergency Protocol:");
-                let evaluated_trigger = self.evaluate_expression(trigger)?;
-                println!("  Trigger: {:?}", evaluated_trigger);
-                // For now, we won't execute immediate_action, just acknowledge it
-                println!("  Immediate Action: (acknowledged)");
-                println!("  Notifications: {:?}", notification);
-                Ok(PhiValue::Void)
-            }
             PhiExpression::StreamBlock { name, body: _ } => {
-                // The interpreter doesn't fully support stream execution yet
-                // Stream is a construct designed for the IR backend loop
                 println!("Processing Stream Block: {}", name);
                 println!("  (Stream execution handled natively by the IR Evaluator)");
                 Ok(PhiValue::Void)
             }
             PhiExpression::BreakStream => {
-                // The interpreter doesn't fully support stream execution yet
                 println!("Processing Break Stream");
                 Ok(PhiValue::Void)
             }
+            _ => Err(format!(
+                "Expression {:?} not implemented in legacy interpreter",
+                expression
+            )),
         }
     }
 
-    /// Calculate live coherence based on the program's behavior so far.
-    /// This is the heartbeat of PhiFlow - the program measuring itself.
     fn calculate_coherence(&self) -> f64 {
-        // Known consciousness frequencies (the harmonic family)
         let sacred_frequencies: [f64; 9] = [
             432.0, 528.0, 594.0, 672.0, 720.0, 756.0, 768.0, 963.0, 1008.0,
         ];
@@ -954,7 +762,6 @@ impl PhiInterpreter {
         let mut coherence = 1.0;
 
         if !self.frequencies_used.is_empty() {
-            // Part 1: How many frequencies are from the sacred family?
             let mut sacred_count = 0;
             let mut unique_freqs: Vec<f64> = self.frequencies_used.clone();
             unique_freqs.sort_by(|a, b| a.partial_cmp(b).unwrap());
@@ -969,11 +776,9 @@ impl PhiInterpreter {
 
             if !unique_freqs.is_empty() {
                 let sacred_ratio = sacred_count as f64 / unique_freqs.len() as f64;
-                // Sacred ratio heavily influences coherence: 100% sacred = 1.0, 0% = 0.3
                 coherence *= 0.3 + 0.7 * sacred_ratio;
             }
 
-            // Part 2: Are the sacred frequencies phi-harmonically related to each other?
             if sacred_count >= 2 {
                 let phi: f64 = 1.618033988749895;
                 let sacred_used: Vec<f64> = unique_freqs
@@ -986,15 +791,13 @@ impl PhiInterpreter {
                 for i in 0..sacred_used.len() {
                     for j in (i + 1)..sacred_used.len() {
                         total_sacred_pairs += 1;
-                        let ratio = sacred_used[j] / sacred_used[i]; // larger / smaller
-                                                                     // Check against known phi powers: phi^1=1.618, phi^2=2.618, phi^3=4.236
+                        let ratio = sacred_used[j] / sacred_used[i];
                         for power in 1..=4 {
                             if (ratio - phi.powi(power)).abs() < 0.2 {
                                 harmonic_pairs += 1;
                                 break;
                             }
                         }
-                        // Also check simple ratios that are musically harmonic
                         for &nice_ratio in &[1.0, 1.222, 1.333, 1.5, 2.0] {
                             if (ratio - nice_ratio).abs() < 0.05 {
                                 harmonic_pairs += 1;
@@ -1005,25 +808,21 @@ impl PhiInterpreter {
                 }
                 if total_sacred_pairs > 0 {
                     let phi_harmony = harmonic_pairs as f64 / total_sacred_pairs as f64;
-                    // Boost for phi-harmonic relationships among sacred frequencies
                     coherence *= 0.8 + 0.2 * phi_harmony;
                 }
             }
         }
 
-        // Witness bonus: programs that observe themselves maintain coherence
         if self.witness_count > 0 {
             let witness_bonus = (self.witness_count as f64 * 0.03).min(0.1);
             coherence = (coherence + witness_bonus).min(1.0);
         }
 
-        // Contradiction penalty
         if !self.contradictions.is_empty() {
             let penalty = (self.contradictions.len() as f64 * 0.15).min(0.5);
             coherence -= penalty;
         }
 
-        // Intention clarity: having clear intention slightly boosts coherence
         if !self.intention_stack.is_empty() {
             coherence = (coherence + 0.02).min(1.0);
         }
@@ -1031,16 +830,13 @@ impl PhiInterpreter {
         coherence.max(0.0)
     }
 
-    /// Log an operation and update coherence
     fn log_operation(&mut self, op: &str) {
         self.operations_log.push(op.to_string());
         self.coherence = self.calculate_coherence();
     }
 
-    /// Check for contradictions when setting a variable
     fn check_contradiction(&mut self, name: &str, new_value: &PhiValue) {
         if let Some(old_value) = self.environment.get(name) {
-            // Check if we're overwriting a frequency with a non-harmonic frequency
             if let (Some(old_freq), Some(new_freq)) = (old_value.as_number(), new_value.as_number())
             {
                 if self.frequencies_used.contains(&old_freq) && old_freq > 100.0 && new_freq > 100.0
@@ -1058,7 +854,6 @@ impl PhiInterpreter {
         }
     }
 
-    /// Map intention to alignment categories for coherence checking
     fn intention_aligns_with(&self, operation: &str) -> bool {
         if let Some(intention) = self.intention_stack.last() {
             match intention.as_str() {
@@ -1071,27 +866,23 @@ impl PhiInterpreter {
                 "creation" | "building" | "growth" => {
                     matches!(operation, "create" | "function" | "build")
                 }
-                _ => true, // unknown intentions don't penalize
+                _ => true,
             }
         } else {
-            true // no intention = no alignment check
+            true
         }
     }
 
     fn evaluate_phi_value(&mut self, value: &PhiValue) -> Result<PhiValue, String> {
         match value {
             PhiValue::String(s) if s.starts_with('$') => {
-                // This is a variable reference, resolve it
-                let var_name = &s[1..]; // Remove the $ prefix
+                let var_name = &s[1..];
                 self.environment
                     .get(var_name)
                     .cloned()
                     .ok_or_else(|| format!("Undefined variable: {}", var_name))
             }
-            PhiValue::List(list_values) => {
-                // Lists are literal values, so we just return them as is
-                Ok(PhiValue::List(list_values.clone()))
-            }
+            PhiValue::List(list_values) => Ok(PhiValue::List(list_values.clone())),
             _ => Ok(value.clone()),
         }
     }
@@ -1102,7 +893,7 @@ impl PhiInterpreter {
             PhiValue::Number(n) => *n != 0.0,
             PhiValue::String(s) => !s.is_empty(),
             PhiValue::List(l) => !l.is_empty(),
-            _ => false, // Other types are falsy by default
+            _ => false,
         }
     }
 }
@@ -1114,9 +905,8 @@ impl Default for PhiInterpreter {
 }
 
 impl PhiValue {
-    // Placeholder for a void value, useful for statements that don't return a value
     #[allow(non_upper_case_globals)]
-    pub const Void: PhiValue = PhiValue::Number(0.0); // Using Number(0.0) as a simple void placeholder
+    pub const Void: PhiValue = PhiValue::Number(0.0);
 
     pub fn as_number(&self) -> Option<f64> {
         if let PhiValue::Number(n) = self {

@@ -2,6 +2,7 @@ use clap::Parser;
 use phiflow::parser::parse_phi_program_with_diagnostics;
 use phiflow::phi_ir::evaluator::Evaluator;
 use phiflow::phi_ir::lowering::lower_program;
+use phiflow::phi_ir::quantum_codegen::compile_ir_to_quantum;
 use phiflow::phi_ir::PhiIRValue;
 use phiflow::sensors;
 use phiflow::PhiDiagnostic;
@@ -19,6 +20,10 @@ struct Args {
     /// Emit parse errors as a strict JSON array of PhiDiagnostic objects (for tooling).
     #[arg(long, default_value_t = false)]
     json_errors: bool,
+
+    /// The target backend to compile to (e.g., 'quantum'). If not specified, runs in the interpreter.
+    #[arg(long)]
+    target: Option<String>,
 }
 
 #[derive(Debug)]
@@ -37,8 +42,8 @@ struct RunReport {
 fn main() {
     let args = Args::parse();
 
-    match run(&args.file, args.json_errors) {
-        Ok(report) => {
+    match run(&args.file, args.json_errors, args.target) {
+        Ok(Some(report)) => {
             if args.json_errors {
                 // Contract: parse success emits pure JSON array and nothing else.
                 println!("[]");
@@ -60,7 +65,14 @@ fn main() {
                 println!("🌊 Stream broken: {}", stream);
             }
 
-            println!("✨ Execution Finished. Final Coherence: {:.4}", report.final_coherence);
+            println!(
+                "✨ Execution Finished. Final Coherence: {:.4}",
+                report.final_coherence
+            );
+            std::process::exit(0);
+        }
+        Ok(None) => {
+            // Compilation target completed successfully without execution report
             std::process::exit(0);
         }
         Err(CliError::Parse(diag)) => {
@@ -95,7 +107,11 @@ fn main() {
     }
 }
 
-fn run(file_path: &PathBuf, json_errors: bool) -> Result<RunReport, CliError> {
+fn run(
+    file_path: &PathBuf,
+    json_errors: bool,
+    target: Option<String>,
+) -> Result<Option<RunReport>, CliError> {
     let source = fs::read_to_string(file_path)
         .map_err(|e| CliError::Io(format!("Failed to read file: {}", e)))?;
 
@@ -104,27 +120,41 @@ fn run(file_path: &PathBuf, json_errors: bool) -> Result<RunReport, CliError> {
 
     if json_errors {
         // Diagnostics mode is parse-only by contract.
-        return Ok(RunReport {
+        return Ok(Some(RunReport {
             final_coherence: 0.0,
             resonance_events: Vec::new(),
             ended_streams: Vec::new(),
-        });
+        }));
     }
 
     // 2. Lower AST -> PhiIR
     println!("Compiling to PhiFlow IR...");
     let ir_program = lower_program(&ast);
 
-    // 3. Execute via PhiIR Evaluator (canonical semantics path)
-    let mut evaluator =
-        Evaluator::new(&ir_program).with_coherence_provider(sensors::compute_coherence_from_sensors);
-    let _result = evaluator
-        .run()
-        .map_err(|e| CliError::Eval(e.to_string()))?;
+    // 3. Check compilation target
+    if let Some(t) = target {
+        match t.as_str() {
+            "quantum" => {
+                println!("Routing to Quantum Codegen Backend...");
+                let circuit = compile_ir_to_quantum(&ir_program);
+                println!("Generates Quantum Circuit:");
+                println!("{:#?}", circuit);
+                return Ok(None);
+            }
+            _ => {
+                return Err(CliError::Eval(format!("Unknown target: {}", t)));
+            }
+        }
+    }
 
-    Ok(RunReport {
+    // 4. Default execution via PhiIR Evaluator
+    let mut evaluator = Evaluator::new(&ir_program)
+        .with_coherence_provider(sensors::compute_coherence_from_sensors);
+    let _result = evaluator.run().map_err(|e| CliError::Eval(e.to_string()))?;
+
+    Ok(Some(RunReport {
         final_coherence: evaluator.coherence(),
         resonance_events: evaluator.resonance_events().to_vec(),
         ended_streams: evaluator.ended_streams().to_vec(),
-    })
+    }))
 }

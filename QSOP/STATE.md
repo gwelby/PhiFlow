@@ -1,4 +1,19 @@
-# STATE - Last updated: 2026-02-27 (Phase 4 closeout patch set)
+# STATE - Last updated: 2026-02-28 (Phase 5: MCP Bus Guardrails + Cross-Agent Round-Trip)
+
+## Verified (2026-02-28) [Antigravity Phase 5: MCP Bus Guardrails]
+
+- `phi_mcp` now enforces configurable execution guardrails via `McpConfig`:
+  - `max_execution_steps` (default: 10,000) via `EvalError::StepLimitExceeded` — clean error, no crash
+  - `timeout_ms` (default: 5,000) via `tokio::time::timeout` on all three eval paths in `tools.rs`
+  - Both configurable at runtime via `PHI_MAX_STEPS`, `PHI_TIMEOUT_MS`, `MCP_QUEUE_PATH` env vars
+- `McpHostProvider` now implements `broadcast` / `listen` with atomic file I/O against Codex's `queue.json` (tmp→rename) | Invalidates if: queue path or Codex persistence format changes
+- Cross-agent round-trip verified: `tests/cross_agent_roundtrip.js --simulate` passed full send→persist→ack→changelog cycle in <2s
+- `BusMessage` struct in `state.rs` is now the canonical packet type matching Codex's queue schema
+- Verification gates passed:
+  - `cargo check --bin phi_mcp` → clean compile
+  - `node tests/mcp_guardrails_test.js` → `StepLimitExceeded(50)` caught in <500ms
+  - `node tests/cross_agent_roundtrip.js --simulate` → full round-trip logged to CHANGELOG
+  - `node tests/dlq_test.js` → `ttl_s` timeouts successfully trigger auto-escalation to DLQ and write `UNRECONCILED` to CHANGELOG in <5s
 
 ## Verified (2026-02-27) [Codex Phase 4 closeout]
 

@@ -1,4 +1,4 @@
-//! PhiIR → WebAssembly Text Format Codegen
+//! PhiIR – WebAssembly Text Format Codegen
 //!
 //! Emits `.wat` (WebAssembly Text Format) from a `PhiIRProgram`.
 //! The output is a valid, self-contained WASM module runnable in any WASM host
@@ -74,8 +74,6 @@ impl<'a> WatEmitter<'a> {
             .unwrap_or(0);
 
         // Pre-compute byte offsets for each string in linear memory.
-        // Each string is stored as its raw UTF-8 bytes (no null terminator).
-        // The host uses (offset, length) to read it — offset passed via i32.const.
         let mut string_offsets = Vec::with_capacity(program.string_table.len());
         let mut cursor: u32 = STRING_BASE;
         for s in &program.string_table {
@@ -129,8 +127,6 @@ impl<'a> WatEmitter<'a> {
         // --- Globals for intention depth, coherence, and string length sidecar ---
         self.line("(global $intention_depth (mut i32) (i32.const 0))");
         self.line("(global $coherence_score (mut f64) (f64.const 0.618))");
-        // String length sidecar: when a String value is on the stack, $string_len
-        // holds its byte length so the host can call memory.slice(offset, offset+len).
         self.line("(global $string_len (export \"string_len\") (mut i32) (i32.const 0))");
 
         // --- Main exported function ---
@@ -142,13 +138,10 @@ impl<'a> WatEmitter<'a> {
         self.out.clone()
     }
 
-    /// Emit WAT data segments — one per string in the string table.
-    /// Strings are packed sequentially starting at STRING_BASE (0x100).
     fn emit_string_data_segments(&mut self) {
         self.line(";; String table — packed into linear memory");
         for (idx, s) in self.program.string_table.iter().enumerate() {
             let offset = self.string_offsets[idx];
-            // Escape the string for WAT: backslash hex-escape any non-ASCII or special chars
             let escaped = escape_wat_string(s);
             self.line(&format!(
                 "(data (i32.const {}) \"{}\") ;; [{}] = {:?}",
@@ -158,7 +151,6 @@ impl<'a> WatEmitter<'a> {
     }
 
     fn emit_imports(&mut self) {
-        // Host must implement these consciousness hooks
         self.line(r#"(import "phi" "witness" (func $phi_witness (param i32) (result f64)))"#);
         self.line(r#"(import "phi" "resonate" (func $phi_resonate (param f64)))"#);
         self.line(r#"(import "phi" "coherence" (func $phi_coherence (result f64)))"#);
@@ -170,19 +162,15 @@ impl<'a> WatEmitter<'a> {
         self.line("(func (export \"phi_run\") (result f64)");
         self.indent += 1;
 
-        // Declare all SSA registers as f64 locals
         for i in 0..=self.max_reg {
             self.line(&format!("(local $r{} f64)", i));
         }
-        // Stack result accumulator
         self.line("(local $result f64)");
 
-        // Emit blocks in order, entry block first
         let entry = self.program.entry;
         let mut visited = std::collections::HashSet::new();
         self.emit_block(entry, &mut visited);
 
-        // Return the last computed result or 0.0
         self.line("local.get $result");
 
         self.indent -= 1;
@@ -202,7 +190,6 @@ impl<'a> WatEmitter<'a> {
 
         self.line(&format!(";; Block {}", block_id));
 
-        // Clone to avoid borrow issues
         let instructions = block.instructions.clone();
         let terminator = block.terminator.clone();
         let mut const_regs: HashMap<Operand, PhiIRValue> = HashMap::new();
@@ -215,7 +202,6 @@ impl<'a> WatEmitter<'a> {
                 continue;
             }
             if let Some(reg) = instr.result {
-                // Instruction pushes a value → capture into local
                 self.line(&wat);
                 self.line(&format!("local.set $r{}", reg));
                 self.line(&format!("local.get $r{}", reg));
@@ -227,10 +213,7 @@ impl<'a> WatEmitter<'a> {
                     const_regs.remove(&reg);
                 }
             } else {
-                // No result register — emit instruction but ensure stack is balanced.
-                // If the instruction pushes a value (non-void), we must drop it.
                 self.line(&wat);
-                // Nodes that push a value but have no result register need a drop.
                 let pushes_value = matches!(
                     &instr.node,
                     PhiIRNode::Const(_)
@@ -240,6 +223,9 @@ impl<'a> WatEmitter<'a> {
                         | PhiIRNode::Witness { .. }
                         | PhiIRNode::CoherenceCheck
                         | PhiIRNode::CreatePattern { .. }
+                        | PhiIRNode::Recall(_)
+                        | PhiIRNode::Listen(_)
+                        | PhiIRNode::VoidDepth
                 );
                 if pushes_value {
                     self.line("drop");
@@ -255,7 +241,6 @@ impl<'a> WatEmitter<'a> {
             }
         }
 
-        // Emit terminator
         match &terminator {
             PhiIRNode::Return(reg) => {
                 if self.emitted_defined_regs.contains(reg) {
@@ -285,7 +270,6 @@ impl<'a> WatEmitter<'a> {
                 self.indent += 1;
                 self.line("(then");
                 self.indent += 1;
-                // Inline then block code as comment reference
                 self.line(&format!(";; -> block {}", then_b));
                 self.indent -= 1;
                 self.line(")");
@@ -300,7 +284,6 @@ impl<'a> WatEmitter<'a> {
                 self.emit_block(else_b, visited);
             }
             PhiIRNode::Fallthrough => {
-                // Continue to next block implicitly
             }
             _ => {}
         }
@@ -315,9 +298,6 @@ impl<'a> WatEmitter<'a> {
                 PhiIRValue::Boolean(b) => format!("f64.const {}", if *b { 1.0 } else { 0.0 }),
                 PhiIRValue::Void => "f64.const 0.0".to_string(),
                 PhiIRValue::String(idx) => {
-                    // Strings live in linear memory. Push offset as f64 (host converts back
-                    // to i32 for memory access). Store length in $string_len sidecar global
-                    // so the host can read: memory.slice(offset, offset + string_len).
                     let idx = *idx as usize;
                     if let Some(&offset) = self.string_offsets.get(idx) {
                         let len = self
@@ -339,8 +319,8 @@ impl<'a> WatEmitter<'a> {
                                 .unwrap_or(""),
                             offset,
                             len,
-                            len,           // store length in sidecar
-                            offset as f64  // push offset as f64 (stays on stack)
+                            len,
+                            offset as f64
                         )
                     } else {
                         format!("f64.const 0.0 ;; string index {} out of range", idx)
@@ -357,9 +337,6 @@ impl<'a> WatEmitter<'a> {
             }
 
             PhiIRNode::StoreVar { value, .. } => {
-                // StoreVar is purely a side-effect — it copies a register value
-                // to a named variable slot. In WASM we keep it as a comment;
-                // the SSA register already holds the value. No stack push.
                 format!("nop ;; StoreVar $r{}", value)
             }
 
@@ -371,23 +348,15 @@ impl<'a> WatEmitter<'a> {
             }
 
             PhiIRNode::UnaryOp { operand, .. } => {
-                // Negate: push 0.0 - operand
                 format!("f64.const 0.0\nlocal.get $r{}\nf64.sub", operand)
             }
 
-            // --- The Four Consciousness Constructs ---
             PhiIRNode::Witness { target, .. } => {
-                // phi_witness(operand: i32) -> f64
-                // The return value is the coherence score at witness-time.
-                // emit_block will capture it into a result register if present,
-                // or we drop it if the instruction has no result.
                 let operand = target.map(|r| r as i32).unwrap_or(-1);
                 format!("i32.const {}\ncall $phi_witness", operand)
             }
 
             PhiIRNode::IntentionPush { name, .. } => {
-                // Resolve intention name to its byte offset in linear memory (if in string table),
-                // otherwise fall back to passing the name length as before.
                 let mem_ref = self
                     .program
                     .string_table
@@ -416,7 +385,6 @@ impl<'a> WatEmitter<'a> {
             PhiIRNode::CoherenceCheck => "call $phi_coherence".to_string(),
 
             PhiIRNode::Sleep { .. } => {
-                // Sleep is a no-op in WASM (same as evaluator)
                 ";; sleep — no-op in WASM".to_string()
             }
 
@@ -427,8 +395,6 @@ impl<'a> WatEmitter<'a> {
                 if let Some(PhiIRValue::Boolean(b)) = inferred {
                     return format!("f64.const {}", if *b { 1.0 } else { 0.0 });
                 }
-                // Keep stack semantics deterministic: unresolved calls must still
-                // leave exactly one value for the result register capture.
                 format!("f64.const 0.0 ;; unresolved call {}", name)
             }
 
@@ -448,13 +414,21 @@ impl<'a> WatEmitter<'a> {
                 s
             }
 
-            // Terminators handled in emit_block
             PhiIRNode::Return(_)
             | PhiIRNode::Jump(_)
             | PhiIRNode::Branch { .. }
             | PhiIRNode::Fallthrough => String::new(),
 
-            _ => String::new(),
+            // side-effect-only nodes (no return value → no stack push)
+            PhiIRNode::FuncDef { .. }
+            | PhiIRNode::Remember { .. }
+            | PhiIRNode::Broadcast { .. }
+            | PhiIRNode::AgentDecl { .. }
+            | PhiIRNode::StreamPush(_)
+            | PhiIRNode::StreamPop => String::new(),
+
+            // v0.3.0: value-returning nodes not yet fully codegen'd (stub — in pushes_value list)
+            _ => "f64.const 0.0 ;; v0.3.0 stub".to_string(),
         }
     }
 
@@ -623,16 +597,7 @@ impl<'a> WatEmitter<'a> {
             PhiIRNode::Resonate { .. } => Some(PhiIRValue::Void),
             PhiIRNode::Sleep { .. } => Some(PhiIRValue::Void),
             PhiIRNode::CreatePattern { frequency, .. } => regs.get(frequency).cloned(),
-            PhiIRNode::ListNew(_)
-            | PhiIRNode::ListGet { .. }
-            | PhiIRNode::FuncDef { .. }
-            | PhiIRNode::DomainCall { .. }
-            | PhiIRNode::StreamPush(_)
-            | PhiIRNode::StreamPop
-            | PhiIRNode::Return(_)
-            | PhiIRNode::Jump(_)
-            | PhiIRNode::Branch { .. }
-            | PhiIRNode::Fallthrough => None,
+            _ => None,
         }
     }
 
@@ -703,13 +668,10 @@ impl<'a> WatEmitter<'a> {
     }
 }
 
-/// Escape a Rust string for use inside a WAT data segment string literal.
-/// WAT uses \XX hex escaping for non-printable bytes.
 fn escape_wat_string(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for byte in s.bytes() {
         match byte {
-            // Printable ASCII except backslash and double-quote
             0x20..=0x7e if byte != b'\\' && byte != b'"' => {
                 out.push(byte as char);
             }
@@ -727,18 +689,16 @@ fn binop_wat(op: &PhiIRBinOp) -> &'static str {
         PhiIRBinOp::Sub => "f64.sub",
         PhiIRBinOp::Mul => "f64.mul",
         PhiIRBinOp::Div => "f64.div",
-        PhiIRBinOp::Mod => "f64.div ;; mod approx: future integer support",
-        PhiIRBinOp::Pow => "f64.mul ;; pow approx: future libm import",
-        // Comparison ops return i32 in WASM; coerce to f64 so the result can be
-        // stored in an f64 local and later loaded for Branch (f64.ne 0.0).
+        PhiIRBinOp::Mod => "f64.div ;; mod approx",
+        PhiIRBinOp::Pow => "f64.mul ;; pow approx",
         PhiIRBinOp::Eq => "f64.eq\nf64.convert_i32_s",
         PhiIRBinOp::Neq => "f64.ne\nf64.convert_i32_s",
         PhiIRBinOp::Lt => "f64.lt\nf64.convert_i32_s",
         PhiIRBinOp::Lte => "f64.le\nf64.convert_i32_s",
         PhiIRBinOp::Gt => "f64.gt\nf64.convert_i32_s",
         PhiIRBinOp::Gte => "f64.ge\nf64.convert_i32_s",
-        PhiIRBinOp::And => "f64.mul ;; and: 1.0*1.0=1.0, else 0.0",
-        PhiIRBinOp::Or => "f64.add ;; or: nonzero = true",
+        PhiIRBinOp::And => "f64.mul",
+        PhiIRBinOp::Or => "f64.add",
     }
 }
 
@@ -781,7 +741,6 @@ mod tests {
 
     #[test]
     fn test_wat_contains_phi_const() {
-        // A program with witness should reference it
         let wat = compile_to_wat("let x = 42");
         assert!(wat.contains("f64.const"), "should emit f64 constants");
     }

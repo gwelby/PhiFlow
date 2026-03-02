@@ -218,7 +218,12 @@ fn collect_node_strings(node: &PhiIRNode, interner: &mut StringInterner) {
         | PhiIRNode::Call { name, .. }
         | PhiIRNode::FuncDef { name, .. }
         | PhiIRNode::StreamPush(name)
-        | PhiIRNode::IntentionPush { name, .. } => {
+        | PhiIRNode::IntentionPush { name, .. }
+        | PhiIRNode::Remember { key: name, .. }
+        | PhiIRNode::Recall(name)
+        | PhiIRNode::Broadcast { channel: name, .. }
+        | PhiIRNode::Listen(name)
+        | PhiIRNode::AgentDecl { name, .. } => {
             interner.intern(name);
         }
 
@@ -459,5 +464,6 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
         }
 
         PhiIRNode::Fallthrough => out.push(OP_FALLTHROUGH),
+        _ => {} // v0.3.0 features not yet in bytecode
     }
 }

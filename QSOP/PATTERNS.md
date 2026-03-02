@@ -47,6 +47,18 @@
 - **Invalidates if**: examples are partitioned by dialect (for example `examples/canonical/` and `examples/legacy/`) and gate selection becomes explicit.
 - **Promoted to STATE**: No
 
+### P-6: Witness yield callback duplication + snapshot value loss
+
+- **What happens**: In yield-capable evaluator mode, `witness` invoked host callbacks twice (once in instruction execution, once in yield check), and yielded snapshots dropped target observation (`observed_value: None`).
+- **Instances**: 1 (Phase 1 hardening review, 2026-02-26)
+- **Root cause**: Yield logic rebuilt snapshot after instruction execution instead of using the original witness event snapshot.
+- **Fix**: Centralize witness handling in a single path (`process_witness`) and branch yield behavior from that single callback result; preserve observed target value in returned snapshot.
+- **Regression coverage**:
+  - `tests/phi_ir_evaluator_tests.rs::test_witness_callback_called_once_per_instruction`
+  - `tests/phi_ir_evaluator_tests.rs::test_witness_yield_preserves_observed_value_snapshot`
+- **Invalidates if**: witness execution lifecycle is rewritten with a new dispatch model.
+- **Promoted to STATE**: Yes
+
 ## Active Patterns (Successes)
 
 ### S-1: Four constructs map to QSOP operations
@@ -65,4 +77,29 @@
 
 ## Resolved Patterns
 
-(none yet)
+### R-1: MCP stream isolation and missing initialize handshake
+
+- **What happened**: MCP streams were evaluated without a shared resonance field, so cross-stream resonance was invisible; server also rejected `initialize` with `-32601`.
+- **Root cause**: `McpState` lacked shared resonance storage, `spawn/resume` evaluators were not wired to `with_shared_resonance`, and `phi_mcp` request router handled only `tools/list` and `tools/call`.
+- **Fix**:
+  - Added `McpState.shared_resonance` and shared snapshot reads in `read_resonance_field`.
+  - Wired shared resonance into `spawn_phi_stream` and `resume_phi_stream`.
+  - Added `initialize` and `ping` handlers in `src/bin/phi_mcp.rs`.
+  - Replaced fixed sleeps with status polling in MCP integration tests.
+- **Verification**:
+  - `tests/mcp_integration_tests.rs::test_mcp_shared_resonance_visible_across_streams`
+- `tests/mcp_integration_tests.rs::test_mcp_spawn_and_read`
+- `src/bin/phi_mcp.rs::initialize_returns_tools_capability`
+- `cargo build --release && cargo test`
+
+### R-2: No native Rust WASM host bridge (Node/browser-only execution gap)
+
+- **What happened**: WASM execution path was present at codegen/conformance level, but host-side execution for bridge integrations relied on Node/browser scripts instead of a native Rust runtime API.
+- **Root cause**: Missing dedicated Rust host module to parse WAT, bind PhiFlow imports, run `phi_run`, and return structured runtime snapshots.
+- **Fix**:
+  - Added `src/wasm_host.rs` with `wasmtime` + `wat` based runner.
+  - Added hook interface `WasmHostHooks` and runtime outputs (`WasmRunResult`, `WasmHostSnapshot`, `WasmWitnessEvent`).
+  - Exported module in `src/lib.rs` and wired dependencies in `Cargo.toml`.
+- **Verification**:
+  - `cargo test wasm_host -- --nocapture`
+  - `cargo build --release && cargo test`

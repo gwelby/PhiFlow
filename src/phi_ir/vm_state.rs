@@ -17,6 +17,8 @@ pub struct VmWitnessEvent {
     pub register_count: usize,
     /// Total values shared through the resonance field across all intentions.
     pub resonance_count: usize,
+    /// The name of the agent executing the code (if declared).
+    pub agent_name: Option<String>,
 }
 
 /// Serializable evaluator state, captured when the program yields.
@@ -32,4 +34,10 @@ pub struct VmState {
     pub witness_log: Vec<VmWitnessEvent>,
     pub current_block: BlockId,
     pub instruction_ptr: usize,
+    /// The timestamp (in seconds) when the program yielded execution.
+    pub yield_timestamp: Option<f64>,
+    /// The name of the agent owning this execution state.
+    pub agent_name: Option<String>,
+    /// The version of the agent owning this execution state.
+    pub agent_version: Option<String>,
 }

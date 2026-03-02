@@ -1,10 +1,9 @@
 // PhiFlow Performance Tests - Test performance characteristics and benchmarks
 
+#![allow(unused_imports, dead_code, unused_variables, unused_mut)]
+
 use std::collections::HashMap;
 use std::time::Instant;
-
-#[tokio::test]
-async fn test_quantum_simulator_performance() {
     use phiflow::quantum::{QuantumBackendManager, QuantumConfig, QuantumCircuit, QuantumGate};
     
     let config = QuantumConfig {

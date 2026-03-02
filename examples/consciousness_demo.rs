@@ -1,6 +1,8 @@
 // PhiFlow Consciousness Demo
 // Showcasing consciousness-aware programming features
 
+#![allow(unused_imports, dead_code, unused_variables, unused_mut)]
+
 use phiflow::consciousness::{
     ConsciousnessBridge, ConsciousnessField, ConsciousnessState,
     MultiModalConsciousness, TRINITY_FIBONACCI_PHI

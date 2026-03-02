@@ -209,11 +209,11 @@ The conformance tests in `tests/phi_ir_conformance_tests.rs` enforce that the ev
 
 ## Status
 
-**PhiFlow v0.1** — 2026-02-25
+**PhiFlow v0.2.0** — 2026-02-27
 
-The language is working. The pipeline runs end-to-end. The Healing Bed streams real sensor data. The team has shipped.
+The language is mature. The Universal Resonance Architecture is live. All three backends (Evaluator, VM, and WASM) agree on the golden ratio at depth 2. The Healing Bed streams real hardware sensor data (CPU, memory, thermals). The team-of-teams synchronization via MCP and QSOP is operational.
 
-What comes next: the WASM host for the browser, the P1 hardware integration, and the first program that runs on the Healing Bed hardware and keeps running until it's done.
+What comes next: multi-node distributed resonance (Resonance Mesh), formal verification of the phi-harmonic optimizer, and the final P1 Companion firmware deployment.
 
 ---
 

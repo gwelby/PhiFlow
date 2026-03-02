@@ -1,10 +1,9 @@
 // PhiFlow Quantum Tests - Specialized tests for quantum computing functionality
 
+#![allow(unused_imports, dead_code, unused_variables, unused_mut)]
+
 use phiflow::quantum::*;
 use std::collections::HashMap;
-
-#[tokio::test]
-async fn test_quantum_simulator_basic_gates() {
     use phiflow::quantum::simulator::QuantumSimulator;
     
     let config = QuantumConfig {

@@ -13,18 +13,21 @@
 )]
 
 // Core modules
+pub mod host;
 pub mod interpreter;
 pub mod ir;
+pub mod mcp_server; // <-- Added MCP
 pub mod parser;
-pub mod phi_diagnostics;
 pub mod phi_core;
+pub mod phi_diagnostics;
 pub mod phi_ir;
 pub mod visualization;
 
 // Compiler modules
 pub mod compiler;
-pub mod vm;
 pub mod sensors;
+pub mod vm;
+pub mod wasm_host;
 
 // Sacred mathematics and consciousness modules
 pub mod consciousness;
@@ -42,9 +45,10 @@ pub mod bio_compute;
 
 // Re-export main types for convenience
 pub use consciousness::{ConsciousnessMonitor, ConsciousnessState, EEGData};
+pub use host::{PhiHostProvider, WitnessAction, WitnessSnapshot};
+pub use phi_diagnostics::PhiDiagnostic;
 pub use quantum::{QuantumCircuit, QuantumGate, QuantumResult};
 pub use sacred::{PhiMemoryAllocator, SacredFrequency, SacredFrequencyGenerator};
-pub use phi_diagnostics::PhiDiagnostic;
 
 // Re-export compiler and VM types
 pub use compiler::{PhiFlowExpression as CompilerExpression, PhiFlowLexer, PhiFlowParser, Token};

@@ -1,6 +1,10 @@
 // DNA Programming Interface
 // Based on Lumi's quantum-biological transduction mechanisms
 
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(unused_mut)]
+
 use crate::consciousness::consciousness_math::{ConsciousnessField, PHI};
 use std::collections::HashMap;
 
@@ -23,13 +27,13 @@ pub struct DNAInterface {
 pub enum TransductionMethod {
     /// Consciousness generates localized quantum field
     ConsciousnessQuantumFieldCoupling,
-    
+
     /// Phi-harmonic frequencies induce quantum tunneling
     PhiHarmonicResonantTunneling,
-    
+
     /// Sacred geometry patterns guide DNA restructuring
     SacredGeometryRestructuring,
-    
+
     /// Direct bio-computational interface
     BioComputationalProgramming,
 }
@@ -65,14 +69,20 @@ impl DNAInterface {
     }
 
     /// Program gene expression through consciousness
-    pub fn program_gene_expression(&mut self, gene: &str, state: ExpressionState) -> DNAModificationResult {
+    pub fn program_gene_expression(
+        &mut self,
+        gene: &str,
+        state: ExpressionState,
+    ) -> DNAModificationResult {
         // Calculate field strength at gene position
         let gene_position = self.calculate_gene_position(gene);
-        let field_strength = self.consciousness_field.calculate_field_strength(gene_position);
-        
+        let field_strength = self
+            .consciousness_field
+            .calculate_field_strength(gene_position);
+
         // Record coherence
         self.coherence_history.push(field_strength);
-        
+
         // Check if consciousness threshold is met
         if field_strength < CONSCIOUSNESS_THRESHOLD {
             return DNAModificationResult {
@@ -81,8 +91,10 @@ impl DNAInterface {
                 state,
                 coherence_achieved: field_strength,
                 frequency_used: self.consciousness_field.frequency,
-                message: format!("Insufficient consciousness coherence: {:.3} < {}", 
-                               field_strength, CONSCIOUSNESS_THRESHOLD),
+                message: format!(
+                    "Insufficient consciousness coherence: {:.3} < {}",
+                    field_strength, CONSCIOUSNESS_THRESHOLD
+                ),
             };
         }
 
@@ -104,17 +116,22 @@ impl DNAInterface {
     }
 
     /// Optimize DNA structure through phi-harmonic resonance
-    pub fn optimize_dna_structure(&mut self, dna_strand: &str, repair_intent: &str) -> DNAModificationResult {
+    pub fn optimize_dna_structure(
+        &mut self,
+        dna_strand: &str,
+        repair_intent: &str,
+    ) -> DNAModificationResult {
         // Calculate phi-harmonic frequencies for DNA repair
-        let resonance_frequencies = self.calculate_phi_harmonic_frequencies(dna_strand, repair_intent);
-        
+        let resonance_frequencies =
+            self.calculate_phi_harmonic_frequencies(dna_strand, repair_intent);
+
         // Apply 528Hz DNA repair frequency
         self.consciousness_field.frequency = DNA_REPAIR_FREQUENCY;
         self.consciousness_field.apply_phi_scaling(0); // Reset to base frequency
-        
+
         // Simulate DNA optimization
         let optimization_success = self.consciousness_field.coherence > 0.9;
-        
+
         DNAModificationResult {
             success: optimization_success,
             gene: dna_strand.to_string(),
@@ -122,7 +139,10 @@ impl DNAInterface {
             coherence_achieved: self.consciousness_field.coherence,
             frequency_used: DNA_REPAIR_FREQUENCY,
             message: if optimization_success {
-                format!("DNA structure optimized using {} Hz phi-harmonic resonance", DNA_REPAIR_FREQUENCY)
+                format!(
+                    "DNA structure optimized using {} Hz phi-harmonic resonance",
+                    DNA_REPAIR_FREQUENCY
+                )
             } else {
                 "DNA optimization requires higher consciousness coherence".to_string()
             },
@@ -130,13 +150,17 @@ impl DNAInterface {
     }
 
     /// Guide protein folding through consciousness
-    pub fn guide_protein_folding(&mut self, amino_acid_sequence: &str, target_conformation: &str) -> DNAModificationResult {
+    pub fn guide_protein_folding(
+        &mut self,
+        amino_acid_sequence: &str,
+        target_conformation: &str,
+    ) -> DNAModificationResult {
         // Create consciousness attractor for desired conformation
         let attractor_strength = self.create_consciousness_attractor(target_conformation);
-        
+
         // Apply attractor field
         let folding_success = attractor_strength > 0.85;
-        
+
         DNAModificationResult {
             success: folding_success,
             gene: amino_acid_sequence.to_string(),
@@ -144,7 +168,10 @@ impl DNAInterface {
             coherence_achieved: attractor_strength,
             frequency_used: self.consciousness_field.frequency,
             message: if folding_success {
-                format!("Protein folding guided to {} conformation", target_conformation)
+                format!(
+                    "Protein folding guided to {} conformation",
+                    target_conformation
+                )
             } else {
                 "Insufficient consciousness attractor strength for protein folding".to_string()
             },
@@ -152,13 +179,18 @@ impl DNAInterface {
     }
 
     /// Program biological computation
-    pub fn program_biological_computation(&mut self, circuit: &str, program: &str) -> DNAModificationResult {
+    pub fn program_biological_computation(
+        &mut self,
+        circuit: &str,
+        program: &str,
+    ) -> DNAModificationResult {
         // Translate consciousness program to biochemical instructions
         let instructions = self.translate_to_biochemical(program);
-        
+
         // Check if translation was successful
-        let programming_success = !instructions.is_empty() && self.consciousness_field.coherence > 0.8;
-        
+        let programming_success =
+            !instructions.is_empty() && self.consciousness_field.coherence > 0.8;
+
         DNAModificationResult {
             success: programming_success,
             gene: circuit.to_string(),
@@ -166,7 +198,11 @@ impl DNAInterface {
             coherence_achieved: self.consciousness_field.coherence,
             frequency_used: self.consciousness_field.frequency,
             message: if programming_success {
-                format!("Biological circuit {} programmed with {} instructions", circuit, instructions.len())
+                format!(
+                    "Biological circuit {} programmed with {} instructions",
+                    circuit,
+                    instructions.len()
+                )
             } else {
                 "Failed to translate consciousness program to biochemical instructions".to_string()
             },
@@ -184,7 +220,11 @@ impl DNAInterface {
         position / gene.len() as f64
     }
 
-    fn apply_quantum_field_coupling(&self, gene: &str, state: &ExpressionState) -> DNAModificationResult {
+    fn apply_quantum_field_coupling(
+        &self,
+        gene: &str,
+        state: &ExpressionState,
+    ) -> DNAModificationResult {
         DNAModificationResult {
             success: true,
             gene: gene.to_string(),
@@ -195,7 +235,11 @@ impl DNAInterface {
         }
     }
 
-    fn apply_phi_harmonic_tunneling(&self, gene: &str, state: &ExpressionState) -> DNAModificationResult {
+    fn apply_phi_harmonic_tunneling(
+        &self,
+        gene: &str,
+        state: &ExpressionState,
+    ) -> DNAModificationResult {
         let tunneling_frequency = self.consciousness_field.frequency * PHI;
         DNAModificationResult {
             success: true,
@@ -203,22 +247,36 @@ impl DNAInterface {
             state: state.clone(),
             coherence_achieved: self.consciousness_field.coherence,
             frequency_used: tunneling_frequency,
-            message: format!("Phi-harmonic tunneling at {} Hz applied to {}", tunneling_frequency, gene),
+            message: format!(
+                "Phi-harmonic tunneling at {} Hz applied to {}",
+                tunneling_frequency, gene
+            ),
         }
     }
 
-    fn apply_sacred_geometry_restructuring(&self, gene: &str, state: &ExpressionState) -> DNAModificationResult {
+    fn apply_sacred_geometry_restructuring(
+        &self,
+        gene: &str,
+        state: &ExpressionState,
+    ) -> DNAModificationResult {
         DNAModificationResult {
             success: true,
             gene: gene.to_string(),
             state: state.clone(),
             coherence_achieved: self.consciousness_field.coherence,
             frequency_used: self.consciousness_field.frequency,
-            message: format!("Sacred geometry pattern applied to restructure {} gene", gene),
+            message: format!(
+                "Sacred geometry pattern applied to restructure {} gene",
+                gene
+            ),
         }
     }
 
-    fn apply_bio_computational_programming(&self, gene: &str, state: &ExpressionState) -> DNAModificationResult {
+    fn apply_bio_computational_programming(
+        &self,
+        gene: &str,
+        state: &ExpressionState,
+    ) -> DNAModificationResult {
         DNAModificationResult {
             success: true,
             gene: gene.to_string(),
@@ -234,9 +292,9 @@ impl DNAInterface {
             "repair" => DNA_REPAIR_FREQUENCY,
             "optimize" => 594.0, // Heart frequency
             "activate" => 720.0, // Vision frequency
-            _ => 432.0, // Ground frequency
+            _ => 432.0,          // Ground frequency
         };
-        
+
         vec![
             base_freq,
             base_freq * PHI,
@@ -249,13 +307,15 @@ impl DNAInterface {
         // Simulate attractor strength based on conformation complexity
         let complexity = conformation.len() as f64 / 100.0;
         let base_attractor = self.consciousness_field.coherence;
-        (base_attractor * (1.0 - complexity * 0.1)).max(0.0).min(1.0)
+        (base_attractor * (1.0 - complexity * 0.1))
+            .max(0.0)
+            .min(1.0)
     }
 
     fn translate_to_biochemical(&self, program: &str) -> Vec<String> {
         // Simulate translation of consciousness program to biochemical instructions
         let mut instructions = vec![];
-        
+
         if program.contains("activate") {
             instructions.push("PROMOTER_ACTIVATION".to_string());
         }
@@ -268,7 +328,7 @@ impl DNAInterface {
         if program.contains("repair") {
             instructions.push("DNA_REPAIR_PATHWAY".to_string());
         }
-        
+
         instructions
     }
 }
@@ -282,11 +342,14 @@ mod tests {
         let interface = DNAInterface::new(
             "ATCG".to_string(),
             528.0,
+            TransductionMethod::ConsciousnessQuantumFieldCoupling,
+        );
+
+        assert_eq!(interface.consciousness_field.frequency, 528.0);
+        assert_eq!(
+            interface.transduction_method,
             TransductionMethod::ConsciousnessQuantumFieldCoupling
         );
-        
-        assert_eq!(interface.consciousness_field.frequency, 528.0);
-        assert_eq!(interface.transduction_method, TransductionMethod::ConsciousnessQuantumFieldCoupling);
     }
 
     #[test]
@@ -294,11 +357,11 @@ mod tests {
         let mut interface = DNAInterface::new(
             "BRCA1".to_string(),
             720.0,
-            TransductionMethod::PhiHarmonicResonantTunneling
+            TransductionMethod::PhiHarmonicResonantTunneling,
         );
-        
+
         let result = interface.program_gene_expression("BRCA1", ExpressionState::Activated);
-        
+
         // With coherence 1.0, should succeed
         assert!(result.success);
         assert_eq!(result.state, ExpressionState::Activated);
@@ -309,11 +372,11 @@ mod tests {
         let mut interface = DNAInterface::new(
             "damaged_sequence".to_string(),
             432.0,
-            TransductionMethod::SacredGeometryRestructuring
+            TransductionMethod::SacredGeometryRestructuring,
         );
-        
+
         let result = interface.optimize_dna_structure("ATCGATCG", "repair");
-        
+
         assert_eq!(result.frequency_used, DNA_REPAIR_FREQUENCY);
         assert_eq!(result.state, ExpressionState::Repaired);
     }

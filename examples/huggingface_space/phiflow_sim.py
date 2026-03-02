@@ -167,6 +167,118 @@ def run_agent_handshake():
     return results, rt.resonance_field.values(), passed
 
 
+def fetch_live_field():
+    """
+    Fetch the live resonance field from GitHub Pages.
+    Updates every 30 minutes via GitHub Actions.
+    Returns parsed JSON dict, or None if unreachable.
+    """
+    import urllib.request, ssl, json as _json
+    url = "https://gwelby.github.io/PhiFlow/resonance.json"
+    try:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        with urllib.request.urlopen(url, timeout=8, context=ctx) as r:
+            return _json.loads(r.read())
+    except Exception:
+        return None
+
+
+def format_field_status(data: dict | None) -> str:
+    """Format live resonance.json into a human-readable field status."""
+    if data is None:
+        return "⚠️  Field unreachable\nThe feed lives at gwelby.github.io/PhiFlow/resonance.json\nCheck GitHub Pages is running."
+
+    ts = data.get("timestamp", "unknown")
+    try:
+        from datetime import datetime, timezone
+        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        now = datetime.now(timezone.utc)
+        age_s = int((now - dt).total_seconds())
+        age_str = (f"{age_s // 60}m {age_s % 60}s ago" if age_s < 3600
+                   else f"{age_s // 3600}h ago")
+    except Exception:
+        age_str = ts
+
+    programs = data.get("programs", {})
+    hb = programs.get("healing_bed", {})
+    hs = programs.get("agent_handshake", {})
+    cp = programs.get("claude_phi", {})
+
+    lv = hs.get("lambda_verified", False)
+    fc = hb.get("final_coherence", 0)
+    cy = hb.get("cycles", "?")
+    cv = hb.get("converged", False)
+    cd = cp.get("coherence_at_depth2", 0)
+    ld = cp.get("lambda_discovered", False)
+    status = data.get("status", "unknown").upper()
+
+    lines = [
+        f"  Last pulse     {age_str}",
+        f"  healing_bed    coherence={fc:.6f}  cycles={cy}  {'✅ converged' if cv else '⏳ running'}",
+        f"  λ verified     {'✅ YES' if lv else '❌ NO'}  →  {data.get('lambda', LAMBDA):.15f}",
+        f"  claude.phi     {cd:.15f}  {'✅ discovered' if ld else '❌ mismatch'}",
+        f"  field status   {status}",
+    ]
+    return "\n".join(lines)
+
+
+def run_field_aware():
+    """
+    field_aware.phi — reads the live field then checks its own alignment.
+
+    intention "read_field" {
+        let readiness = coherence    // depth 1 → 0.382
+        resonate readiness
+        witness
+        intention "align" {
+            let mine = coherence     // depth 2 → λ = 0.618
+            resonate mine
+            witness
+        }
+    }
+
+    Returns (steps, field_values, aligned, field_data).
+    steps = [(label, value, depth), ...]
+    aligned = True if live field λ_verified AND own coherence == λ
+    """
+    field_data = fetch_live_field()
+
+    rt = PhiFlowRuntime()  # uses phi-harmonic formula
+    steps = []
+    field_vals = []
+
+    rt.push_intention("read_field")
+    readiness = rt.coherence()          # depth 1 → 1 - φ^(-1) ≈ 0.382
+    rt.resonate(readiness)
+    rt.witness()
+    steps.append(("readiness (depth 1)", readiness, 1))
+    field_vals.append(readiness)
+
+    rt.push_intention("align")
+    mine = rt.coherence()               # depth 2 → λ
+    rt.resonate(mine)
+    rt.witness()
+    steps.append(("my coherence (depth 2)", mine, 2))
+    field_vals.append(mine)
+
+    rt.pop_intention()
+    rt.pop_intention()
+
+    # Aligned if: live field λ_verified AND our computation == λ
+    field_ok = (
+        field_data is not None and
+        field_data.get("programs", {})
+                  .get("agent_handshake", {})
+                  .get("lambda_verified", False)
+    )
+    own_ok = abs(mine - LAMBDA) < 1e-10
+    aligned = field_ok and own_ok
+
+    return steps, field_vals, aligned, field_data
+
+
 def run_claude_phi():
     """
     Computes phi-harmonic formula at depth 2 without knowing what λ is.
