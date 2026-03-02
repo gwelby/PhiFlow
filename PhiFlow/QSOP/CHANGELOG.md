@@ -1,174 +1,154 @@
 # CHANGELOG
 
-## 2026-02-26 - [Codex] Human-first docs sweep + D:\Projects implementation mapping
-- Scope: root documentation and QSOP state witness alignment in `D:\Projects\PhiFlow` (master worktree).
-- Updated human-first docs:
-  - `README.md`
-  - `PhiFlow_KNOW.md` (new canonical plain-language explainer)
-  - `KNOW.md` (reduced to factual reality index + truth hierarchy)
-  - `VISION.md` (rewritten with current branch reality and 90-day execution plan)
-- Updated witness ledger:
-  - `PhiFlow/QSOP/STATE.md` with dated `2026-02-26` section for human-first sync and verified `D:\Projects` integration candidates.
-- Verified local `D:\Projects` candidates by path inspection:
-  - `UniversalProcessor`, `ResonanceMatrix`, `MCP`, `P1_Companion`, `QDrive`, `Quantum-Fonts`.
-- Design decision:
-  - Keep `compiler` lane as runtime truth until merge reconciliation; keep master lane as documentation/witness authority with explicit branch-state qualifiers.
+## 2026-02-27 - [Codex] Phase 4 closeout patch set: serializable state, MCP stdio E2E, reality hooks
 
-## 2026-02-25 - [Codex] Master truth sync from cross-worktree witness
-- Scope: documentation/QSOP lane in `D:\Projects\PhiFlow` (master worktree only).
-- Read and cross-checked:
-  - `VISION.md`
-  - `PhiFlow/QSOP/STATE.md`
-  - `PhiFlow/QSOP/PATTERNS.md`
-  - `git log compiler --oneline -10`
-  - `git log cleanup --oneline -10`
-  - `git log language --oneline -10`
-  - `git show compiler:PhiFlow/QSOP/{STATE.md,PATTERNS.md,CHANGELOG.md}`
-- Updated `PhiFlow/QSOP/STATE.md`:
-  - Added a dated `2026-02-25` cross-worktree witness section separating verified branch-log facts from probable items.
-  - Recorded current branch reality from master view: compiler active; cleanup/language currently unchanged since initial commit.
-  - Added runtime-trend note that compiler treats `phi_ir::evaluator` as canonical semantics path.
-- Updated `PhiFlow/QSOP/PATTERNS.md`:
-  - Added `P-3` (WASM stream loop-back signal loss).
-  - Added `P-4` (cross-agent cargo lock contention).
-- Design decision:
-  - Keep master QSOP as a strict witness ledger based on observable evidence (`git log`/`git show`) and mark anything not directly executed in this worktree as probable until locally re-verified.
-- Verification:
-  - `python PhiFlow/QSOP/tools/validate_packets.py` -> `Validation passed: 3 objective packet(s), 9 ack packet(s), 0 issues.`
-  - `python PhiFlow/QSOP/tools/run_all.py --pending-ack-sla-hours 24 --in-progress-sla-hours 48` -> all steps passed; metrics/audit refreshed in `PhiFlow/QSOP/metrics/`.
+- ADDED: `src/phi_ir/vm_state.rs`
+  - New serializable execution snapshot contract:
+    - `VmState` (yield/resume state)
+    - `VmWitnessEvent` (witness-log entry payload)
+- UPDATED: `src/phi_ir/evaluator.rs`
+  - `FrozenEvalState` now aliases serializable `VmState`.
+  - `WitnessEvent` now aliases serializable `VmWitnessEvent`.
+  - Yield/resume path remains backward-compatible while enabling state serialization.
+- UPDATED: `src/phi_ir/mod.rs`
+  - Exported `pub mod vm_state`.
+  - `PhiIRValue` now derives `serde::Serialize` and `serde::Deserialize` to support persisted VM/evaluator state.
+- UPDATED: `tests/phi_ir_evaluator_tests.rs`
+  - Added `test_frozen_eval_state_roundtrips_through_json` to validate JSON serialize/deserialize and successful resume.
+- ADDED: `tests/mcp_stdio_e2e_tests.rs`
+  - True MCP transport-level E2E over stdio:
+    - spawns `phi_mcp` binary,
+    - performs `initialize`,
+    - runs `spawn_phi_stream` -> `read_resonance_field` (yielded) -> `resume_phi_stream` -> `read_resonance_field` (completed).
+- UPDATED: `src/sensors.rs`
+  - Coherence mapping now blends:
+    - CPU stability,
+    - memory stability,
+    - thermal stability (via `sysinfo::Components`),
+    - network stability (via packet/error/traffic signals from `sysinfo::Networks`).
+  - Includes graceful fallback weighting when thermal/network signals are unavailable.
+- ADDED examples:
+  - `examples/sync_rule.phi` (QDrive sync intent flow)
+  - `examples/companion_loop.phi` (P1 companion witness/resonate loop)
+- VERIFIED:
+  - `cargo test --test phi_ir_evaluator_tests --test mcp_integration_tests --test mcp_stdio_e2e_tests --test concurrent_streams_tests -- --nocapture` ✅
+  - `cargo run --release --bin phic -- examples/sync_rule.phi` ✅
+  - `cargo run --release --bin phic -- examples/companion_loop.phi` ✅
+  - `cargo test wasm_host -- --nocapture` ✅
+- NOTE:
+  - One earlier run in this session showed transient toolchain/resource instability (`E0463` and linker-format noise), but immediate rerun and final verification passed.
 
-## 2026-02-21 - [Codex] Weaver seed/contract/loom schema draft
-- Added Weaver trio:
-  - `PhiFlow/QSOP/weaver/the_weaver.seed.yaml`
-  - `PhiFlow/QSOP/weaver/the_weaver.contract.yaml`
-  - `PhiFlow/QSOP/weaver/the_loom_ledger_schema.yaml`
-- Added operational flow doc:
-  - `PhiFlow/QSOP/weaver/README.md`
-- Added dispatch-ready activation objective:
-  - `PhiFlow/QSOP/mail/payloads/OBJ-20260221-003.md`
-  - `PhiFlow/QSOP/mail/objectives/OBJ-20260221-003.json` (initial dispatch packet)
-- Design decision:
-  - Keep filesystem path `QSOP` for compatibility.
-  - Use "The Loom" as conceptual alias in docs/contracts until migration tooling is ready.
-- Included first dispatch-ready flow for Team of Teams:
-  - Codex draft/update -> Antigravity resonance review -> objective dispatch -> ritual verification.
-- Verification run:
-  - `python PhiFlow/QSOP/tools/run_all.py --pending-ack-sla-hours 24 --in-progress-sla-hours 48` -> all steps passed.
+## 2026-02-26 - [Codex] Phase 3 realm execution: WASM Universal Bridge (`src/wasm_host.rs`)
 
-## 2026-02-21 - [Codex] OBJ-20260221-003 completed with reference-grounded staging synthesis
-- Verified references were provided in compiler worktree and imported into this workspace:
-  - `PhiFlow/QSOP/weaver/references/cascade_reference.yaml`
-  - `PhiFlow/QSOP/weaver/references/tesla_reference.yaml`
-- Created review-only staging trio:
-  - `PhiFlow/QSOP/weaver/staging/the_weaver.seed.yaml`
-  - `PhiFlow/QSOP/weaver/staging/the_weaver.contract.yaml`
-  - `PhiFlow/QSOP/weaver/staging/the_loom_ledger_schema.yaml`
-  - `PhiFlow/QSOP/weaver/staging/README.md`
-- Closed objective flow:
-  - Updated `PhiFlow/QSOP/mail/objectives/OBJ-20260221-003.json` to `completed`
-  - Added `PhiFlow/QSOP/mail/acks/ACK-OBJ-20260221-003-codex.json`
-- Verification run:
-  - `python PhiFlow/QSOP/tools/run_all.py --pending-ack-sla-hours 24 --in-progress-sla-hours 48` -> pass
-  - Metrics now: objectives=3, acked=3, completed=3, reopened=1
+- ADDED: `src/wasm_host.rs`
+  - New native Rust WASM host bridge using `wasmtime` + `wat`.
+  - Exposes source/WAT execution APIs:
+    - `compile_source_to_wat(source)`
+    - `run_source_with_host(source, hooks)`
+    - `run_wat_with_host(wat_source, hooks)`
+  - Implements host hook wiring for imported PhiFlow WASM consciousness hooks:
+    - `phi.witness(i32) -> f64`
+    - `phi.resonate(f64)`
+    - `phi.coherence() -> f64`
+    - `phi.intention_push(i32)`
+    - `phi.intention_pop()`
+  - Adds bridge-side contracts:
+    - `WasmHostHooks` (custom coherence + lifecycle callbacks)
+    - `WasmWitnessEvent`
+    - `WasmHostSnapshot`
+    - `WasmRunResult`
+    - `WasmHostError`
+- UPDATED: `Cargo.toml`
+  - Added dependencies: `wasmtime`, `wat`.
+- UPDATED: `src/lib.rs`
+  - Exported `pub mod wasm_host`.
+- ADDED tests in `src/wasm_host.rs`:
+  - `wasm_host_uses_custom_coherence_provider`
+  - `wasm_host_records_witness_and_resonate_events`
+- VERIFIED:
+  - `cargo test wasm_host -- --nocapture` ✅
+  - `cargo build --release && cargo test` ✅
 
-## 2026-02-21 - [Codex] Added blocked/recovered + reopened objective scenario
-- Added payload:
-  - `PhiFlow/QSOP/mail/payloads/OBJ-20260221-002.md`
-- Added objective:
-  - `PhiFlow/QSOP/mail/objectives/OBJ-20260221-002.json`
-- Added ACK transition chain:
-  - `PhiFlow/QSOP/mail/acks/ACK-OBJ-20260221-002-codex-01.json` (accepted)
-  - `PhiFlow/QSOP/mail/acks/ACK-OBJ-20260221-002-codex-02.json` (blocked)
-  - `PhiFlow/QSOP/mail/acks/ACK-OBJ-20260221-002-codex-03.json` (in_progress)
-  - `PhiFlow/QSOP/mail/acks/ACK-OBJ-20260221-002-codex-04.json` (completed)
-  - `PhiFlow/QSOP/mail/acks/ACK-OBJ-20260221-002-codex-05.json` (blocked; reopened)
-  - `PhiFlow/QSOP/mail/acks/ACK-OBJ-20260221-002-codex-06.json` (in_progress)
-  - `PhiFlow/QSOP/mail/acks/ACK-OBJ-20260221-002-codex-07.json` (completed)
-- Verification run:
-  - `python PhiFlow/QSOP/tools/run_all.py --pending-ack-sla-hours 24 --in-progress-sla-hours 48` -> all steps passed.
-- Metrics impact:
-  - totals: objectives=2, acked=2, completed=2
-  - reopen tracking now exercised: `reopened_objectives=1`, `reopen_rate=0.5`
-  - validation/audit remain clean (0 issues, 0 warnings).
+## 2026-02-26 - [Codex] Phase 2 realm execution: MCP convergence bus hardening
 
-## 2026-02-21 - [Codex] Seeded first live objective cycle
-- Added payload:
-  - `PhiFlow/QSOP/mail/payloads/OBJ-20260221-001.md`
-- Added objective packet:
-  - `PhiFlow/QSOP/mail/objectives/OBJ-20260221-001.json`
-- Added completion ack:
-  - `PhiFlow/QSOP/mail/acks/ACK-OBJ-20260221-001-codex.json`
-- Used `python PhiFlow/QSOP/tools/compute_payload_checksum.py QSOP/mail/payloads/OBJ-20260221-001.md` to bind checksum.
-- Verification run:
-  - `python PhiFlow/QSOP/tools/run_all.py --pending-ack-sla-hours 24 --in-progress-sla-hours 48` -> all steps passed.
-- Metrics moved from zero-history to live:
-  - total=1, acked=1, completed=1, verification_coverage=1.0, reopen_rate=0.0.
+- UPDATED: `src/mcp_server/state.rs`
+  - Added `shared_resonance: Arc<Mutex<HashMap<String, Vec<PhiIRValue>>>>` to `McpState`.
+  - `McpState::new()` now initializes a process-wide shared resonance field for all spawned/resumed streams.
+- UPDATED: `src/mcp_server/tools.rs`
+  - `spawn_phi_stream` and `resume_phi_stream` now wire evaluators with `.with_shared_resonance(...)`.
+  - `read_resonance_field` now reports the shared resonance snapshot (cross-stream visibility) rather than stream-local-only state.
+  - Refactored tool helpers to reduce timing fragility in test interaction.
+- UPDATED: `src/bin/phi_mcp.rs`
+  - Added MCP protocol handshake support for `initialize`.
+  - Added `ping` response path.
+  - Added unit test `initialize_returns_tools_capability`.
+- UPDATED: `tests/mcp_integration_tests.rs`
+  - Replaced fixed-sleep checks with polling helpers (`wait_for_status`) for deterministic async behavior.
+  - Added `test_mcp_shared_resonance_visible_across_streams` proving cross-stream resonance aggregation.
+  - Tightened witness assertion to verify yielded `observed_value`.
+- VERIFIED:
+  - `cargo test --test mcp_integration_tests --bin phi_mcp -- --nocapture` ✅
+  - `cargo build --release && cargo test` ✅
 
-## 2026-02-21 - [Codex] Phase 2 tooling upgrades (checksum + SLA + one-command runner)
-- Added checksum enforcement for objective payloads:
-  - `PhiFlow/QSOP/tools/qsop_packet_lib.py` (`verify_objective_payload_checksum`)
-  - `PhiFlow/QSOP/tools/validate_packets.py` now validates `checksum` vs `payload_path` content.
-- Added SLA-aware weekly audit:
-  - `PhiFlow/QSOP/tools/weekly_qsop_audit.py` now checks:
-    - objective age without ack (`--pending-ack-sla-hours`, default 24h)
-    - stale `in_progress` ack age (`--in-progress-sla-hours`, default 48h)
-- Added one-command ritual runner:
-  - `PhiFlow/QSOP/tools/run_all.py` executes validate -> metrics -> audit with SLA args.
-- Added checksum helper:
-  - `PhiFlow/QSOP/tools/compute_payload_checksum.py`
-- Updated docs:
-  - `PhiFlow/QSOP/tools/README.md`
-  - `PhiFlow/QSOP/metrics/README.md`
-- Verification run:
-  - `python PhiFlow/QSOP/tools/validate_packets.py` -> pass
-  - `python PhiFlow/QSOP/tools/log_objective_metrics.py` -> pass, metrics written
-  - `python PhiFlow/QSOP/tools/weekly_qsop_audit.py` -> pass, audit written
-  - `python PhiFlow/QSOP/tools/run_all.py --pending-ack-sla-hours 24 --in-progress-sla-hours 48` -> all steps passed
+## 2026-02-26 - [Codex] Phase 1 realm hardening: host callbacks + witness yield correctness
 
-## 2026-02-21 - [Codex] Week 1 instrumentation shipped
-- Added protocol scaffolding:
-  - `PhiFlow/QSOP/mail/objectives/.gitkeep`
-  - `PhiFlow/QSOP/mail/acks/.gitkeep`
-  - `PhiFlow/QSOP/mail/payloads/.gitkeep`
-  - `PhiFlow/QSOP/mail/templates/objective.template.json`
-  - `PhiFlow/QSOP/mail/templates/ack.template.json`
-- Added schema references:
-  - `PhiFlow/QSOP/schemas/objective.schema.json`
-  - `PhiFlow/QSOP/schemas/ack.schema.json`
-- Added tooling:
-  - `PhiFlow/QSOP/tools/qsop_packet_lib.py`
-  - `PhiFlow/QSOP/tools/validate_packets.py`
-  - `PhiFlow/QSOP/tools/log_objective_metrics.py`
-  - `PhiFlow/QSOP/tools/weekly_qsop_audit.py`
-  - `PhiFlow/QSOP/tools/README.md`
-- Ran tooling successfully:
-  - `python PhiFlow/QSOP/tools/validate_packets.py` -> pass (0 issues)
-  - `python PhiFlow/QSOP/tools/log_objective_metrics.py` -> wrote `QSOP/metrics/objective_metrics.json`
-  - `python PhiFlow/QSOP/tools/weekly_qsop_audit.py` -> wrote `QSOP/metrics/weekly_audit_20260221.md`
-- Design decision: metrics tolerate empty history and invalid packets (reported, not fatal) so adoption can start immediately without blocking.
+- UPDATED: `src/host.rs`
+  - `CallbackHostProvider` now supports full host hook coverage:
+    - `with_intention_push(...)`
+    - `with_intention_pop(...)`
+  - This closes trait-level parity with `PhiHostProvider` and removes callback-only gaps for intention lifecycle observation.
+- UPDATED: `src/phi_ir/evaluator.rs`
+  - Added `VmExecResult` enum and kept `EvalExecResult` as backward-compatible alias.
+  - Reworked witness execution path to eliminate duplicate `on_witness` host callback invocations.
+  - Yielded witness snapshots now preserve `observed_value` from witness target operands.
+  - `CoherenceCheck` now resolves through host contract (`resolve_coherence()`), preserving provider override semantics.
+- UPDATED: `tests/phi_ir_evaluator_tests.rs`
+  - Added `test_witness_callback_called_once_per_instruction`.
+  - Added `test_witness_yield_preserves_observed_value_snapshot`.
+  - Added `test_callback_host_receives_intention_push_and_pop`.
+- VERIFIED:
+  - `cargo test --test phi_ir_evaluator_tests --test mcp_integration_tests -- --nocapture` ✅
+  - `cargo build --release && cargo test` ✅
 
-## 2026-02-21 - [Codex] Self-evolution plan added
-- Added `PhiFlow/QSOP/CODEX_SELF_EVOLUTION_PLAN.md`.
-- Captured Codex-specific growth tracks: execution quality, memory quality, coordination quality, research cadence.
-- Added explicit `Me Time` distill rhythm (post-objective, daily refinement, weekly deep block).
-- Defined measurable metrics and 30-day evolution sequence to reduce fuzz and increase verified throughput.
+## 2026-02-25 - [Codex] OBJ-20260225-001 agent protocol publication lane
 
-## 2026-02-21 - [Codex] Codex Operating System hardening
-- Added `PhiFlow/AGENTS.md` as inner-repo agent contract (startup order, operating contract, handoff format).
-- Added `PhiFlow/codex.toml` with explicit rules chain.
-- Added rule set:
-  - `PhiFlow/.codex/rules/00-core.md`
-  - `PhiFlow/.codex/rules/10-qsop-loop.md`
-  - `PhiFlow/.codex/rules/20-team-sync.md`
-- Added `PhiFlow/QSOP/CODEX_EXCELLENCE_PLAYBOOK.md` with per-session + weekly improvement loops.
-- Decision: codify protocol and memory as files first, then evolve skills/multi-agent automation on top.
+- ADDED: `AGENT_PROTOCOL.json`
+  - Machine-readable protocol contract for the five hooks:
+    - `phi_witness`
+    - `phi_resonate`
+    - `phi_coherence`
+    - `phi_intention_push`
+    - `phi_intention_pop`
+  - Includes canonical coherence formula and explicit `lambda = 0.618033988749895`.
+  - Includes resonance field model, witness event schema, self-verification program, and canonical semantics reference.
+- UPDATED: `README.md`
+  - Added examples-table entry:
+    - `agent_handshake.phi` — self-verifying protocol handshake for hook implementations.
+- UPDATED: GitHub topics for discoverability (`gwelby/PhiFlow`):
+  - `consciousness`, `webassembly`, `agent-protocol`, `phi`, `streaming`, `rust`
+- VERIFIED:
+  - `python -m json.tool AGENT_PROTOCOL.json` ✅
+  - `gh api repos/gwelby/PhiFlow -q .topics` -> `["agent-protocol","consciousness","phi","rust","streaming","webassembly"]` ✅
+  - `cargo test` ✅ (full suite passed)
 
-## 2026-02-10 - Initial QSOP bootstrap
-- ADDED to STATE: Full project architecture (parser, interpreter, CLI, constructs)
-- ADDED to STATE: What exists vs what doesn't (no WASM/quantum/hardware backends yet)
-- ADDED to STATE: Build and run commands
-- NEW PATTERN: P-1 keyword-as-variable collision
-- NEW PATTERN: P-2 newline sensitivity in statement parsing
-- NEW PATTERN: S-1 four constructs map to QSOP operations
-- NEW PATTERN: S-2 sacred frequency detection with tolerance band
-- QSOP bootstrapped from session where all four constructs were designed and implemented
+## 2026-02-25 - [Codex] Canonical gate + coherence runtime compatibility
+
+- UPDATED: `src/interpreter/mod.rs`
+  - `PhiExpression::Variable("coherence")` now resolves to `calculate_coherence()` in legacy interpreter mode.
+  - Fix closes runtime incompatibility for coherence-driven legacy examples (notably `examples/p1_demo.phi` and `examples/universalprocessor.phi`).
+- UPDATED: `tests/integration_tests.rs`
+  - Added explicit canonical allowlist (`is_canonical_phi`) and strict assertions for canonical parse+execute compatibility.
+  - Retained non-fatal diagnostics for legacy/experimental files to keep drift visible without destabilizing CI.
+  - Reduced non-canonical timeout budget to 5s for faster sweep feedback; canonical remains 30s.
+- VERIFIED:
+  - `cargo test --test integration_tests test_all_phi_files_parse_and_execute -- --nocapture` ✅
+  - `cargo test --quiet` ✅
+- Current sweep signal:
+  - Canonical set: strict pass
+  - Legacy drift remains parse-diagnostic only (12 files)
+
+## 2026-02-25 - [Codex] Compiler hardening sweep gate for `.phi` corpus
+
+- UPDATED: `tests/integration_tests.rs`
+  - Added recursive `.phi` corpus collector across `examples/` and `tests/`.
+  - ... (rest of the file)

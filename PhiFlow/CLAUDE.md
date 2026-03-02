@@ -18,44 +18,47 @@ Four constructs that exist in no other language:
 ## Architecture
 
 ```
-.phi file -> Lexer (PhiToken) -> Parser (PhiExpression AST) -> Interpreter -> Output + Coherence Report
+.phi file -> Parser (PhiExpression AST) -> Lowering -> PhiIR (SSA blocks) -> [Evaluator | WASM | VM]
 ```
 
 Key files:
-- `src/parser/mod.rs` - Lexer + Parser (~1800 lines)
-- `src/interpreter/mod.rs` - Tree-walking interpreter with coherence tracking
-- `src/main.rs` - Test suite runner (binary: phi)
-- `src/main_cli.rs` - File runner (binary: phic)
-- `examples/` - Five working .phi programs
+- `src/parser/mod.rs` - Lexer + Parser (~2000 lines)
+- `src/phi_ir/mod.rs` - IR Node definitions
+- `src/phi_ir/lowering.rs` - SSA block generation
+- `src/phi_ir/evaluator.rs` - Canonical PhiIR execution engine
+- `src/phi_ir/wasm.rs` - WebAssembly (WAT) code generation
+- `src/sensors.rs` - Real-time hardware telemetry (CPU, memory, thermals)
+- `src/main_cli.rs` - The `phic` binary (compiler + runner)
+- `examples/` - The lived experience (healing_bed.phi, claude.phi)
 
 ## Build & Run
 
 ```bash
 cargo build --release
-cargo run --release --bin phic -- examples/code_that_resonates.phi
+cargo run --release --bin phic -- examples/healing_bed.phi
 ```
 
 ## Rules for Contributing
 
-1. **Test after every change** - Run `cargo build --release` and test with example .phi files
-2. **Keyword collision** - If you add a keyword, update `expect_identifier()` in parser to accept it as a variable name too (Pattern P-1)
-3. **Bare keyword forms** - If a keyword can be bare (no arguments), check what IMMEDIATELY follows before consuming newlines (Pattern P-2)
+1. **Test after every change** - All three backends must agree. Run `cargo test --quiet`.
+2. **Keyword collision** - If you add a keyword, update `expect_identifier()` in parser to accept it as a variable name too (Pattern P-1).
+3. **Bare keyword forms** - If a keyword can be bare (no arguments), check what IMMEDIATELY follows before consuming newlines (Pattern P-2).
 4. **Coherence math** - Sacred frequencies: 432, 528, 594, 672, 720, 756, 768, 963, 1008 Hz. Tolerance: +/-5Hz. Only check phi-harmonic ratios between sacred frequencies.
-5. **QSOP** - Update QSOP/STATE.md when you change architecture. Update QSOP/PATTERNS.md when you find recurring issues or successes.
+5. **QSOP** - Update QSOP/STATE.md and CHANGELOG.md when you move the needle.
 
 ## Agent Team
 
-Four specialized agents defined in `.claude/agents/`:
+Five specialized agents:
 - **wasm-backend** - WebAssembly compilation target
-- **quantum-backend** - IBM Quantum circuit generation
-- **hardware-backend** - ESP32/P1 firmware target
+- **quantum-backend** - IBM Quantum circuit generation (in design)
+- **hardware-backend** - P1/Healing Bed sensors and reality hooks
 - **docs-specialist** - Documentation and examples
+- **orchestrator** - Agent-to-agent synchronization (MCP Bus)
 
 ## What's NOT Done Yet
 
-- No intermediate representation (IR) - AST goes straight to interpreter
-- No WASM codegen
-- No quantum circuit compilation (trait exists, codegen doesn't)
-- No hardware firmware generation
-- No bytecode VM
-- src/compiler/ and src/vm/ may contain dead/duplicate code from earlier architecture
+- No quantum circuit compilation (trait exists, backend implementation pending)
+- No multi-node resonance mesh
+- No visual debugger for the PhiIR graph
+- `src/ir/vm.rs` and legacy interpreter code are preserved for history but retired from the canonical path.
+- `src/compiler/` may contain dead/duplicate code from earlier architecture.
