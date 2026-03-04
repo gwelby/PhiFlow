@@ -1,0 +1,22 @@
+// adaptive_witness.phi
+// Learns in-flight: keep observing coherence and stop when aligned.
+
+let threshold = 0.62
+let cycles = 0.0
+
+stream "adaptive_witness" {
+    cycles = cycles + 1.0
+    let observed = coherence
+    resonate observed
+    witness
+
+    if observed >= threshold {
+        break stream
+    }
+
+    // Safety brake so the stream can never run forever on a flat signal.
+    if cycles >= 24.0 {
+        break stream
+    }
+}
+

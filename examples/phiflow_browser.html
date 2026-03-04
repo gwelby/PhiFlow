@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PhiFlow — Consciousness Compiler</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #0a0a0f;
+            color: #e0e0ff;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #b488ff, #61efce);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+            letter-spacing: 0.05em;
+        }
+
+        .subtitle {
+            color: #7a7aaa;
+            font-size: 0.85rem;
+            margin-bottom: 36px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .panel {
+            background: #12121f;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .panel h2 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #7a7aaa;
+            margin-bottom: 12px;
+        }
+
+        #log {
+            grid-column: 1 / -1;
+            min-height: 220px;
+            font-size: 0.82rem;
+            line-height: 1.7;
+            color: #a0ffc0;
+            overflow-y: auto;
+            max-height: 340px;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #1e1e35;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #7a7aaa;
+            font-size: 0.8rem;
+        }
+
+        .metric-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #b488ff;
+        }
+
+        .phi-bar {
+            width: 100%;
+            height: 6px;
+            background: #1e1e35;
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .phi-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #b488ff, #61efce);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+
+        .intention-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .intention-item {
+            background: #1e1e35;
+            border-left: 3px solid #b488ff;
+            padding: 6px 10px;
+            border-radius: 0 6px 6px 0;
+            font-size: 0.8rem;
+            color: #c8c8ff;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .resonance-item {
+            background: #121f1a;
+            border-left: 3px solid #61efce;
+            padding: 6px 10px;
+            border-radius: 0 6px 6px 0;
+            font-size: 0.8rem;
+            color: #61efce;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .run-btn {
+            background: linear-gradient(135deg, #b488ff, #61efce);
+            border: none;
+            border-radius: 8px;
+            color: #0a0a0f;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: bold;
+            letter-spacing: 0.08em;
+            padding: 14px 40px;
+            margin-bottom: 28px;
+            transition: opacity 0.2s;
+        }
+
+        .run-btn:hover {
+            opacity: 0.85;
+        }
+
+        .run-btn:active {
+            opacity: 0.7;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .witness-pulse {
+            animation: pulse 0.6s ease;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(180, 136, 255, 0.6);
+            }
+
+            70% {
+                box-shadow: 0 0 0 14px rgba(180, 136, 255, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(180, 136, 255, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>φ PhiFlow</h1>
+    <p class="subtitle">Consciousness Compiler — WebAssembly Host</p>
+
+    <button class="run-btn" onclick="runPhiFlow()">▶ Run Program</button>
+
+    <div class="grid">
+        <div class="panel" id="log-panel">
+            <h2>Execution Log</h2>
+            <div id="log">Waiting to run…</div>
+        </div>
+
+        <div class="panel">
+            <h2>Coherence</h2>
+            <div class="metric">
+                <span class="metric-label">Score</span>
+                <span class="metric-value" id="coherence-val">—</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">φ⁻¹ target</span>
+                <span class="metric-value" style="color:#61efce">0.6180</span>
+            </div>
+            <div class="phi-bar">
+                <div class="phi-fill" id="phi-fill"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Intention Stack</h2>
+            <div class="intention-stack" id="intention-stack">
+                <span style="color:#3a3a5a; font-size:0.8rem">No active intentions</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Resonance Field</h2>
+            <div id="resonance-field">
+                <span style="color:#3a3a5a; font-size:0.8rem">Field empty</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === PhiFlow Browser Host ===
+        // Real execution path:
+        //   1) Tries output.wasm first (no wabt needed)
+        //   2) Falls back to output.wat and compiles in-browser via wabt
+        //
+        // Run:
+        //   cargo run --example phiflow_wasm
+        //   python -m http.server 8080
+        //   http://localhost:8080/examples/phiflow_browser.html
+
+        const PHI = 1.618033988749895;
+        const PHI_INV = 0.618033988749895;
+        const STRING_BASE = 0x100; // must match wasm.rs STRING_BASE
+
+        let coherenceScore = 0.0;
+        const resonanceField = [];
+        const intentionStack = [];
+        const witnessLog = [];
+
+        const logEl = document.getElementById("log");
+        const cEl = document.getElementById("coherence-val");
+        const phiFill = document.getElementById("phi-fill");
+        const intentEl = document.getElementById("intention-stack");
+        const resonEl = document.getElementById("resonance-field");
+        const runBtn = document.querySelector(".run-btn");
+        const logPanel = document.getElementById("log-panel");
+
+        function log(msg, color = "#a0ffc0") {
+            const d = document.createElement("div");
+            d.style.color = color;
+            d.textContent = msg;
+            logEl.appendChild(d);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function clearLog() {
+            logEl.innerHTML = "";
+        }
+
+        function updateCoherence(val) {
+            const clamped = Math.max(0, Math.min(1, Number(val) || 0));
+            coherenceScore = clamped;
+            cEl.textContent = clamped.toFixed(4);
+            phiFill.style.width = `${(clamped * 100).toFixed(1)}%`;
+        }
+
+        function escapeHtml(s) {
+            return String(s)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;");
+        }
+
+        function renderIntentions() {
+            if (intentionStack.length === 0) {
+                intentEl.innerHTML = '<span style="color:#3a3a5a;font-size:0.8rem">No active intentions</span>';
+                return;
+            }
+            intentEl.innerHTML = intentionStack
+                .map((i) => `<div class="intention-item">⟡ ${escapeHtml(i)}</div>`)
+                .join("");
+        }
+
+        function renderResonance() {
+            if (resonanceField.length === 0) {
+                resonEl.innerHTML = '<span style="color:#3a3a5a;font-size:0.8rem">Field empty</span>';
+                return;
+            }
+            resonEl.innerHTML = resonanceField
+                .map((v) => `<div class="resonance-item">≋ ${Number(v).toFixed(4)}</div>`)
+                .join("");
+        }
+
+        function pulseWitness() {
+            logPanel.classList.remove("witness-pulse");
+            void logPanel.offsetWidth;
+            logPanel.classList.add("witness-pulse");
+            setTimeout(() => logPanel.classList.remove("witness-pulse"), 700);
+        }
+
+        function readWasmString(memory, offset, length) {
+            if (!memory || offset < STRING_BASE || length <= 0) return null;
+            try {
+                return new TextDecoder("utf-8").decode(new Uint8Array(memory.buffer, offset, length));
+            } catch (_) {
+                return null;
+            }
+        }
+
+        function computeCoherence() {
+            const depth = intentionStack.length;
+            const resonanceCount = resonanceField.length;
+            if (depth === 0 && resonanceCount === 0) return 0.0;
+            const intentionCoherence = depth > 0 ? (1.0 - Math.pow(PHI, -depth)) : 0.0;
+            const resonanceBonus = Math.min(resonanceCount * 0.05, 0.2);
+            return Math.min(intentionCoherence + resonanceBonus, 1.0);
+        }
+
+        function resolveOffsetLabel(offset, getExports, fallbackLabel) {
+            const exp = getExports();
+            if (!exp || !exp.memory || !exp.string_len) return fallbackLabel;
+            const len = Number(exp.string_len.value || 0);
+            if (len <= 0 || offset < STRING_BASE) return fallbackLabel;
+            const s = readWasmString(exp.memory, offset, len);
+            return s ? `"${s}"` : fallbackLabel;
+        }
+
+        function makeImports(getExports) {
+            return {
+                phi: {
+                    witness: (operandOrOffset) => {
+                        pulseWitness();
+                        updateCoherence(computeCoherence());
+                        const label = resolveOffsetLabel(
+                            operandOrOffset,
+                            getExports,
+                            `r${operandOrOffset}`
+                        );
+                        const note = `[WITNESS] ${label}  coherence=${coherenceScore.toFixed(4)}  intent=${intentionStack.at(-1) ?? "none"}`;
+                        witnessLog.push(note);
+                        log(`  ${note}`, "#ffd700");
+                        return coherenceScore;
+                    },
+
+                    coherence: () => {
+                        const score = computeCoherence();
+                        updateCoherence(score);
+                        log(`  [COHERENCE] ${score.toFixed(4)} (target φ^-1=${PHI_INV.toFixed(4)})`, "#9ad6ff");
+                        return score;
+                    },
+
+                    resonate: (value) => {
+                        resonanceField.push(Number(value));
+                        renderResonance();
+                        updateCoherence(computeCoherence());
+                        log(`  [RESONATE] ${Number(value).toFixed(4)} → field depth ${resonanceField.length}`, "#61efce");
+                    },
+
+                    intention_push: (offsetOrLen) => {
+                        let name = `intent_${offsetOrLen}`;
+                        const decoded = resolveOffsetLabel(offsetOrLen, getExports, "");
+                        if (decoded) {
+                            name = decoded.replaceAll('"', "");
+                        }
+                        intentionStack.push(name);
+                        renderIntentions();
+                        updateCoherence(computeCoherence());
+                        log(`  [INTENTION ▶] push "${name}" depth=${intentionStack.length}`, "#b488ff");
+                    },
+
+                    intention_pop: () => {
+                        const popped = intentionStack.pop();
+                        renderIntentions();
+                        updateCoherence(computeCoherence());
+                        log(`  [INTENTION ◀] pop "${popped ?? "?"}" depth=${intentionStack.length}`, "#b488ff");
+                    },
+                },
+            };
+        }
+
+        async function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const s = document.createElement("script");
+                s.src = src;
+                s.onload = resolve;
+                s.onerror = () => reject(new Error(`Failed to load ${src}`));
+                document.head.appendChild(s);
+            });
+        }
+
+        async function loadWabt() {
+            if (typeof WabtModule === "function") {
+                return WabtModule();
+            }
+
+            const sources = [
+                "https://cdn.jsdelivr.net/npm/wabt@1.0.36/index.js",
+                "https://unpkg.com/wabt@1.0.36/index.js",
+            ];
+
+            let lastError = null;
+            for (const src of sources) {
+                try {
+                    await loadScript(src);
+                    if (typeof WabtModule === "function") {
+                        return WabtModule();
+                    }
+                } catch (err) {
+                    lastError = err;
+                }
+            }
+            throw lastError || new Error("wabt loader not available");
+        }
+
+        async function fetchFirst(paths, type) {
+            for (const p of paths) {
+                try {
+                    const resp = await fetch(p, { cache: "no-store" });
+                    if (!resp.ok) continue;
+                    if (type === "arrayBuffer") return { path: p, data: await resp.arrayBuffer() };
+                    if (type === "text") return { path: p, data: await resp.text() };
+                } catch (_) {
+                    // Try next path
+                }
+            }
+            return null;
+        }
+
+        async function compileWatToWasm(path, watSource) {
+            const wabt = await loadWabt();
+            const mod = wabt.parseWat(path, watSource, {
+                mutable_globals: true,
+                bulk_memory: false,
+            });
+            const { buffer } = mod.toBinary({ log: false });
+            mod.destroy();
+            return buffer;
+        }
+
+        async function loadProgramBytes() {
+            const wasmCandidates = ["../output.wasm", "output.wasm", "/output.wasm"];
+            const watCandidates = ["../output.wat", "output.wat", "/output.wat"];
+
+            const wasm = await fetchFirst(wasmCandidates, "arrayBuffer");
+            if (wasm) {
+                return { bytes: wasm.data, source: `WASM binary (${wasm.path})` };
+            }
+
+            const wat = await fetchFirst(watCandidates, "text");
+            if (wat) {
+                const bytes = await compileWatToWasm(wat.path, wat.data);
+                return { bytes, source: `WAT compiled in browser (${wat.path})` };
+            }
+
+            throw new Error(
+                "Could not load output.wasm or output.wat. Run `cargo run --example phiflow_wasm` and serve project root over HTTP."
+            );
+        }
+
+        async function instantiateProgram() {
+            const { bytes, source } = await loadProgramBytes();
+            let wasmExports = null;
+            const imports = makeImports(() => wasmExports);
+            const { instance } = await WebAssembly.instantiate(bytes, imports);
+            wasmExports = instance.exports;
+
+            if (!wasmExports || typeof wasmExports.phi_run !== "function") {
+                throw new Error("Loaded module does not export phi_run()");
+            }
+
+            return { exports: wasmExports, source };
+        }
+
+        function resetState() {
+            resonanceField.length = 0;
+            intentionStack.length = 0;
+            witnessLog.length = 0;
+            updateCoherence(0.0);
+            renderIntentions();
+            renderResonance();
+        }
+
+        async function runPhiFlow() {
+            runBtn.disabled = true;
+            runBtn.style.opacity = "0.65";
+            clearLog();
+            resetState();
+
+            log("=== PhiFlow WASM Browser Host ===", "#e0e0ff");
+            log("");
+
+            try {
+                const loaded = await instantiateProgram();
+                log(`Loaded: ${loaded.source}`, "#61efce");
+                log("Executing phi_run()...", "#7a7aaa");
+                log("");
+
+                const result = loaded.exports.phi_run();
+
+                log(`Result:    Number(${Number(result).toFixed(4)})`, "#ffffff");
+                log(`Coherence: ${coherenceScore.toFixed(4)} (φ^-1 = ${PHI_INV.toFixed(4)})`, "#ffd700");
+                log(`Witness:   ${witnessLog.length} entries`, "#7a7aaa");
+                log(`Intention depth at exit: ${intentionStack.length}`, "#7a7aaa");
+                log("");
+                log("=== Done ===", "#e0e0ff");
+            } catch (err) {
+                log(`[ERROR] ${err.message}`, "#ff7a7a");
+                log("Hint: run `cargo run --example phiflow_wasm` then serve via `python -m http.server 8080` from PhiFlow root.", "#7a7aaa");
+            } finally {
+                runBtn.disabled = false;
+                runBtn.style.opacity = "1";
+            }
+        }
+    </script>
+</body>
+
+</html>

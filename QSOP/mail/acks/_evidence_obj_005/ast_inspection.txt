@@ -1,0 +1,660 @@
+warning: unused doc comment
+   --> src/phi_ir/evaluator.rs:183:13
+    |
+183 | /             /// `witness` — pauses to observe program state.
+184 | |             /// Returns coherence score as a Number (0.0–1.0).
+185 | |             /// Records a WitnessEvent in witness_log.
+    | |______________________________________________________^
+186 | /             PhiIRNode::Witness { target, .. } => {
+187 | |                 // Optionally observe a specific operand (for future use by backends).
+188 | |                 let _observed = target.and_then(|op| self.get_reg(op).ok().cloned());
+...   |
+200 | |                 Some(PhiIRValue::Number(coherence))
+201 | |             }
+    | |_____________- rustdoc does not generate documentation for match arms
+    |
+    = help: use `//` for a plain comment
+    = note: `#[warn(unused_doc_comments)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused doc comment
+   --> src/phi_ir/evaluator.rs:203:13
+    |
+203 | /             /// `intention "Name" { ... }` — enter a purposeful scope.
+204 | |             /// Pushes intention name; initialises its resonance field slot.
+    | |____________________________________________________________________________^
+205 | /             PhiIRNode::IntentionPush { name, .. } => {
+206 | |                 self.intention_stack.push(name.clone());
+207 | |                 self.resonance_field.entry(name.clone()).or_default();
+208 | |                 None
+209 | |             }
+    | |_____________- rustdoc does not generate documentation for match arms
+    |
+    = help: use `//` for a plain comment
+
+warning: unused doc comment
+   --> src/phi_ir/evaluator.rs:211:13
+    |
+211 |               /// Exit intention scope. Pops the innermost intention name.
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+212 | /             PhiIRNode::IntentionPop => {
+213 | |                 self.intention_stack.pop();
+214 | |                 None
+215 | |             }
+    | |_____________- rustdoc does not generate documentation for match arms
+    |
+    = help: use `//` for a plain comment
+
+warning: unused doc comment
+   --> src/phi_ir/evaluator.rs:217:13
+    |
+217 | /             /// `resonate value` — share a value through the resonance field.
+218 | |             /// Filed under the current intention name, or "global" if none active.
+    | |___________________________________________________________________________________^
+219 | /             PhiIRNode::Resonate { value, .. } => {
+220 | |                 let key = self
+221 | |                     .intention_stack
+222 | |                     .last()
+...   |
+232 | |                 None
+233 | |             }
+    | |_____________- rustdoc does not generate documentation for match arms
+    |
+    = help: use `//` for a plain comment
+
+warning: unused doc comment
+   --> src/phi_ir/evaluator.rs:235:13
+    |
+235 |             /// `coherence` — evaluate and return current phi-harmonic coherence.
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+236 |             PhiIRNode::CoherenceCheck => Some(PhiIRValue::Number(self.compute_coherence())),
+    |             ------------------------------------------------------------------------------- rustdoc does not generate documentation for match arms
+    |
+    = help: use `//` for a plain comment
+
+warning: unused doc comment
+   --> src/phi_ir/evaluator.rs:243:13
+    |
+243 | /             /// `Sleep { duration }` — harmonic pause for self-healing.
+244 | |             /// In the evaluator, we record the intent but don't actually sleep
+245 | |             /// (tests would hang). A real runtime backend can override this.
+    | |_____________________________________________________________________________^
+246 |               PhiIRNode::Sleep { .. } => None,
+    |               ------------------------------- rustdoc does not generate documentation for match arms
+    |
+    = help: use `//` for a plain comment
+
+warning: unnecessary parentheses around assigned value
+   --> src/cuda/frequency_synthesis.rs:228:34
+    |
+228 |             let phi_modulation = (phi_phase.sin() * 0.1 + 1.0); // 10% modulation depth
+    |                                  ^                           ^
+    |
+    = note: `#[warn(unused_parens)]` (part of `#[warn(unused)]`) on by default
+help: remove these parentheses
+    |
+228 -             let phi_modulation = (phi_phase.sin() * 0.1 + 1.0); // 10% modulation depth
+228 +             let phi_modulation = phi_phase.sin() * 0.1 + 1.0; // 10% modulation depth
+    |
+
+warning: value assigned to `intention` is never read
+    --> src/parser/mod.rs:1635:21
+     |
+1635 |                     intention = self.expect_string()?;
+     |                     ^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+     = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `InvalidQuantumConfiguration` should have a snake case name
+   --> src/cuda/quantum_cuda.rs:854:12
+    |
+854 |     pub fn InvalidQuantumConfiguration(msg: String) -> Self {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `invalid_quantum_configuration`
+    |
+    = note: `#[warn(non_snake_case)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: method `QuantumGateNotFound` should have a snake case name
+   --> src/cuda/quantum_cuda.rs:858:12
+    |
+858 |     pub fn QuantumGateNotFound(gate_name: String) -> Self {
+    |            ^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `quantum_gate_not_found`
+
+warning: `phiflow` (lib) generated 10 warnings (run `cargo fix --lib -p phiflow` to apply 1 suggestion)
+warning: unused imports: `CREATION_FREQUENCY` and `VOICE_FLOW_FREQUENCY`
+ --> src/interpreter/mod.rs:5:22
+  |
+5 |     PatternAnalyzer, CREATION_FREQUENCY, VOICE_FLOW_FREQUENCY,
+  |                      ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::f64::consts::PI`
+ --> src/main.rs:5:5
+  |
+5 | use std::f64::consts::PI;
+  |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `name`
+   --> src/parser/mod.rs:752:34
+    |
+752 |             PhiToken::Identifier(name) => {
+    |                                  ^^^^ help: if this is intentional, prefix it with an underscore: `_name`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable `intention` is assigned to, but never used
+    --> src/parser/mod.rs:1607:13
+     |
+1607 |         let mut intention = String::new();
+     |             ^^^^^^^^^^^^^
+     |
+     = note: consider using `_intention` instead
+
+warning: variable does not need to be mutable
+    --> src/parser/mod.rs:1668:13
+     |
+1668 |         let mut device_type = String::new();
+     |             ----^^^^^^^^^^^
+     |             |
+     |             help: remove this `mut`
+     |
+     = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `device_type`
+    --> src/parser/mod.rs:1668:13
+     |
+1668 |         let mut device_type = String::new();
+     |             ^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_device_type`
+
+warning: unused variable: `protocol_name`
+    --> src/parser/mod.rs:1699:13
+     |
+1699 |         let protocol_name = self.expect_identifier()?;
+     |             ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_protocol_name`
+
+warning: unused variable: `program_name`
+    --> src/parser/mod.rs:1836:13
+     |
+1836 |         let program_name = self.expect_identifier()?;
+     |             ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_program_name`
+
+warning: unused variable: `bridge_name`
+    --> src/parser/mod.rs:1861:13
+     |
+1861 |         let bridge_name = self.expect_identifier()?;
+     |             ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_bridge_name`
+
+warning: unused variable: `parameters`
+   --> src/interpreter/mod.rs:304:17
+    |
+304 |                 parameters,
+    |                 ^^^^^^^^^^ help: try ignoring the field: `parameters: _`
+
+warning: unused variable: `return_type`
+   --> src/interpreter/mod.rs:305:17
+    |
+305 |                 return_type,
+    |                 ^^^^^^^^^^^ help: try ignoring the field: `return_type: _`
+
+warning: unused variable: `body`
+   --> src/interpreter/mod.rs:306:17
+    |
+306 |                 body,
+    |                 ^^^^ help: try ignoring the field: `body: _`
+
+warning: unused variable: `immediate_action`
+   --> src/interpreter/mod.rs:914:17
+    |
+914 |                 immediate_action,
+    |                 ^^^^^^^^^^^^^^^^ help: try ignoring the field: `immediate_action: _`
+
+warning: unused variable: `result`
+   --> src/main.rs:347:20
+    |
+347 |                 Ok(result) => println!("✅ Program 1 executed. Variable in parameters working."),
+    |                    ^^^^^^ help: if this is intentional, prefix it with an underscore: `_result`
+
+warning: unused variable: `result`
+   --> src/main.rs:366:20
+    |
+366 |                 Ok(result) => println!("✅ Program 2 executed. Frequency variable resolution working!"),
+    |                    ^^^^^^ help: if this is intentional, prefix it with an underscore: `_result`
+
+warning: constant `TRINITY` is never used
+ --> src/phi_core.rs:5:11
+  |
+5 | pub const TRINITY: i64 = 3;
+  |           ^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `FIBONACCI_89` is never used
+ --> src/phi_core.rs:6:11
+  |
+6 | pub const FIBONACCI_89: i64 = 89; // The 11th Fibonacci number, consciousness bridge frequency
+  |           ^^^^^^^^^^^^
+
+warning: constant `PHI_PHI` is never used
+  --> src/phi_core.rs:11:11
+   |
+11 | pub const PHI_PHI: f64 = 4.23606797749979; // φ^φ
+   |           ^^^^^^^
+
+warning: constant `PHI_PHI_PHI` is never used
+  --> src/phi_core.rs:12:11
+   |
+12 | pub const PHI_PHI_PHI: f64 = 445506.92; // φ^φ^φ (Meta-Reality constant) - Using f64 for now, arbitrary precision planned
+   |           ^^^^^^^^^^^
+
+warning: constant `TRINITY_FIBONACCI_PHI` is never used
+  --> src/phi_core.rs:15:11
+   |
+15 | pub const TRINITY_FIBONACCI_PHI: f64 = TRINITY as f64 * FIBONACCI_89 as f64 * PHI; // = 432.000... Hz
+   |           ^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `ZERO_POINT` is never used
+  --> src/phi_core.rs:16:11
+   |
+16 | pub const ZERO_POINT: [f64; 3] = [0.5, 0.5, 0.5]; // Perfect balance coordinates
+   |           ^^^^^^^^^^
+
+warning: constant `GROUND_FREQUENCY` is never used
+  --> src/phi_core.rs:19:11
+   |
+19 | pub const GROUND_FREQUENCY: f64 = 432.0;
+   |           ^^^^^^^^^^^^^^^^
+
+warning: constant `PI_CONST` is never used
+  --> src/phi_core.rs:23:11
+   |
+23 | pub const PI_CONST: f64 = PI;
+   |           ^^^^^^^^
+
+warning: constant `E_CONST` is never used
+  --> src/phi_core.rs:24:11
+   |
+24 | pub const E_CONST: f64 = std::f64::consts::E;
+   |           ^^^^^^^
+
+warning: constant `SQRT_2_CONST` is never used
+  --> src/phi_core.rs:25:11
+   |
+25 | pub const SQRT_2_CONST: f64 = SQRT_2;
+   |           ^^^^^^^^^^^^
+
+warning: constant `SQRT_5_CONST` is never used
+  --> src/phi_core.rs:26:11
+   |
+26 | pub const SQRT_5_CONST: f64 = 2.23606797749979; // Used in φ calculation (pre-calculated literal)
+   |           ^^^^^^^^^^^^
+
+warning: constant `CREATION_PHI_LEVEL` is never used
+  --> src/phi_core.rs:30:11
+   |
+30 | pub const CREATION_PHI_LEVEL: i64 = 1; // φ¹ = PHI
+   |           ^^^^^^^^^^^^^^^^^^
+
+warning: constant `FLOWER_OF_LIFE_RATIO` is never used
+  --> src/phi_core.rs:31:11
+   |
+31 | pub const FLOWER_OF_LIFE_RATIO: f64 = PHI; // Sacred geometry creation pattern
+   |           ^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `PENTAGRAM_RATIO` is never used
+  --> src/phi_core.rs:33:11
+   |
+33 | pub const PENTAGRAM_RATIO: f64 = PHI * PHI; // φ² for creation patterns
+   |           ^^^^^^^^^^^^^^^
+
+warning: constant `CREATION_SCALING_FACTOR` is never used
+  --> src/phi_core.rs:34:11
+   |
+34 | pub const CREATION_SCALING_FACTOR: f64 = LAMBDA * PHI; // Perfect creation balance
+   |           ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `PATTERN_COHERENCE_THRESHOLD` is never used
+  --> src/phi_core.rs:37:11
+   |
+37 | pub const PATTERN_COHERENCE_THRESHOLD: f64 = LAMBDA; // LAMBDA minimum for manifestation
+   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `CREATION_RESONANCE_MINIMUM` is never used
+  --> src/phi_core.rs:38:11
+   |
+38 | pub const CREATION_RESONANCE_MINIMUM: f64 = PHI / 2.0;
+   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `TRANSFORMATION_ENERGY_QUANTUM` is never used
+  --> src/phi_core.rs:39:11
+   |
+39 | pub const TRANSFORMATION_ENERGY_QUANTUM: f64 = TRINITY_FIBONACCI_PHI / 2.0;
+   |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `HEART_FIELD_FREQUENCY` is never used
+  --> src/phi_core.rs:59:11
+   |
+59 | pub const HEART_FIELD_FREQUENCY: f64 = 594.0;
+   |           ^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `VOICE_FLOW_FREQUENCY` is never used
+  --> src/phi_core.rs:62:11
+   |
+62 | pub const VOICE_FLOW_FREQUENCY: f64 = 672.0;
+   |           ^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `EntanglementState` is never constructed
+  --> src/phi_core.rs:70:12
+   |
+70 | pub struct EntanglementState {
+   |            ^^^^^^^^^^^^^^^^^
+
+warning: struct `HeartFieldMetrics` is never constructed
+  --> src/phi_core.rs:79:12
+   |
+79 | pub struct HeartFieldMetrics {
+   |            ^^^^^^^^^^^^^^^^^
+
+warning: struct `ConsciousnessField` is never constructed
+  --> src/phi_core.rs:88:12
+   |
+88 | pub struct ConsciousnessField {
+   |            ^^^^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `generate_field`, and `measure_coherence_at` are never used
+   --> src/phi_core.rs:96:12
+    |
+ 95 | impl ConsciousnessField {
+    | ----------------------- associated items in this implementation
+ 96 |     pub fn new(frequency: f64) -> Self {
+    |            ^^^
+...
+111 |     pub fn generate_field(&mut self, source: &[Point2D], field_radius: f64, resolution: i64) {
+    |            ^^^^^^^^^^^^^^
+...
+137 |     pub fn measure_coherence_at(&self, point: Point2D) -> f64 {
+    |            ^^^^^^^^^^^^^^^^^^^^
+
+warning: field `universal_constant` is never read
+   --> src/phi_core.rs:174:9
+    |
+171 | pub struct PatternAnalyzer {
+    |            --------------- field in this struct
+...
+174 |     pub universal_constant: f64,
+    |         ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `PatternAnalyzer` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: function `phi_power` is never used
+   --> src/phi_core.rs:417:8
+    |
+417 | pub fn phi_power(n: f64) -> f64 {
+    |        ^^^^^^^^^
+
+warning: function `phi_harmonic_frequency` is never used
+   --> src/phi_core.rs:421:8
+    |
+421 | pub fn phi_harmonic_frequency(base: f64, power: f64) -> f64 {
+    |        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `trinity_fibonacci_phi_resonance` is never used
+   --> src/phi_core.rs:425:8
+    |
+425 | pub fn trinity_fibonacci_phi_resonance(multiplier: f64) -> f64 {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `fibonacci` is never used
+   --> src/phi_core.rs:430:8
+    |
+430 | pub fn fibonacci(n: i64) -> i64 {
+    |        ^^^^^^^^^
+
+warning: function `fibonacci_ratio` is never used
+   --> src/phi_core.rs:438:8
+    |
+438 | pub fn fibonacci_ratio(n: i64) -> f64 {
+    |        ^^^^^^^^^^^^^^^
+
+warning: function `golden_angle_radians` is never used
+   --> src/phi_core.rs:452:8
+    |
+452 | pub fn golden_angle_radians() -> f64 {
+    |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `pentagram_vertices` is never used
+   --> src/phi_core.rs:489:8
+    |
+489 | pub fn pentagram_vertices(center: Point2D, radius: f64) -> Vec<Point2D> {
+    |        ^^^^^^^^^^^^^^^^^^
+
+warning: function `create_equilateral_triangle` is never used
+   --> src/phi_core.rs:567:4
+    |
+567 | fn create_equilateral_triangle(center: Point2D, side_length: f64, upward: bool) -> Vec<Point2D> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `generate_upward_triangles` is never used
+   --> src/phi_core.rs:585:4
+    |
+585 | fn generate_upward_triangles(scale: f64, num_triangles: i64) -> Vec<Point2D> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `generate_downward_triangles` is never used
+   --> src/phi_core.rs:598:4
+    |
+598 | fn generate_downward_triangles(scale: f64, num_triangles: i64) -> Vec<Point2D> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `sri_yantra_triangles` is never used
+   --> src/phi_core.rs:609:8
+    |
+609 | pub fn sri_yantra_triangles(scale: f64) -> (Vec<Point2D>, Vec<Point2D>) {
+    |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `mandelbrot_iterations` is never used
+   --> src/phi_core.rs:617:8
+    |
+617 | pub fn mandelbrot_iterations(c: Complex64, max_iterations: i64) -> i64 {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `mandelbrot_creation_set` is never used
+   --> src/phi_core.rs:628:8
+    |
+628 | pub fn mandelbrot_creation_set(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `generate_phi_harmonic_series` is never used
+   --> src/phi_core.rs:659:8
+    |
+659 | pub fn generate_phi_harmonic_series(base_freq: f64, harmonics: usize) -> Vec<f64> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `quantum_entanglement_pair` is never used
+   --> src/phi_core.rs:683:8
+    |
+683 | pub fn quantum_entanglement_pair(point1: Point2D, point2: Point2D) -> EntanglementState {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `heart_toroid_field` is never used
+   --> src/phi_core.rs:696:8
+    |
+696 | pub fn heart_toroid_field(center: Point3D, major_radius: f64, minor_radius: f64, resolution: i64) -> Vec<Point3D> {
+    |        ^^^^^^^^^^^^^^^^^^
+
+warning: function `consciousness_bridge_resonance` is never used
+   --> src/phi_core.rs:715:8
+    |
+715 | pub fn consciousness_bridge_resonance(patterns: &[Vec<Point2D>]) -> f64 {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `heart_field_coherence` is never used
+   --> src/phi_core.rs:730:8
+    |
+730 | pub fn heart_field_coherence(pattern: &[Point2D]) -> HeartFieldMetrics {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `sample_rate`, `consciousness_level`, and `phi_harmonics` are never read
+   --> src/phi_core.rs:751:9
+    |
+750 | pub struct AudioSynthesizer {
+    |            ---------------- fields in this struct
+751 |     pub sample_rate: u32,
+    |         ^^^^^^^^^^^
+752 |     pub consciousness_level: f64,
+    |         ^^^^^^^^^^^^^^^^^^^
+753 |     pub phi_harmonics: bool,
+    |         ^^^^^^^^^^^^^
+
+warning: methods `pattern_to_frequencies`, `generate_consciousness_audio`, `generate_binaural_beats`, and `analyze_phi_coherence` are never used
+   --> src/phi_core.rs:766:12
+    |
+756 | impl AudioSynthesizer {
+    | --------------------- methods in this implementation
+...
+766 |     pub fn pattern_to_frequencies(&self, pattern: &[Point2D]) -> Vec<f64> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+...
+790 |     pub fn generate_consciousness_audio(&self, frequencies: &[f64], duration: f64) -> Vec<f64> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+823 |     pub fn generate_binaural_beats(&self, base_freq: f64, beat_freq: f64, duration: f64) -> (Vec<f64>, Vec<f64>) {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+...
+849 |     pub fn analyze_phi_coherence(&self, audio: &[f64]) -> f64 {
+    |            ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `synthesize_voice_patterns` is never used
+   --> src/phi_core.rs:887:8
+    |
+887 | pub fn synthesize_voice_patterns(text: &str, frequency: f64) -> Vec<Point2D> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `zero_point_distance` is never used
+   --> src/phi_core.rs:913:8
+    |
+913 | pub fn zero_point_distance(point: [f64; 3]) -> f64 {
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: function `trinity_balance` is never used
+   --> src/phi_core.rs:921:8
+    |
+921 | pub fn trinity_balance(a: f64, b: f64, c: f64) -> f64 {
+    |        ^^^^^^^^^^^^^^^
+
+warning: method `animated_pattern_svg` is never used
+  --> src/visualization/mod.rs:74:12
+   |
+11 | impl Visualizer {
+   | --------------- method in this implementation
+...
+74 |     pub fn animated_pattern_svg(&self, pattern_sequence: &[Vec<Point2D>], frequency: f64, duration: f64) -> String {
+   |            ^^^^^^^^^^^^^^^^^^^^
+
+warning: variant `Sacred` is never constructed
+  --> src/parser/mod.rs:11:5
+   |
+ 5 | pub enum PhiToken {
+   |          -------- variant in this enum
+...
+11 |     Sacred(u32),
+   |     ^^^^^^
+   |
+   = note: `PhiToken` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `phi_type` is never read
+  --> src/parser/mod.rs:77:9
+   |
+74 |     LetBinding {
+   |     ---------- field in this variant
+...
+77 |         phi_type: Option<PhiType>,
+   |         ^^^^^^^^
+   |
+   = note: `PhiExpression` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: variants `PatternTransform`, `PatternCombine`, `ConsciousnessMonitor`, and `AudioSynthesis` are never constructed
+   --> src/parser/mod.rs:82:5
+    |
+ 53 | pub enum PhiExpression {
+    |          ------------- variants in this enum
+...
+ 82 |     PatternTransform {
+    |     ^^^^^^^^^^^^^^^^
+...
+ 87 |     PatternCombine {
+    |     ^^^^^^^^^^^^^^
+...
+ 97 |     ConsciousnessMonitor {
+    |     ^^^^^^^^^^^^^^^^^^^^
+...
+146 |     AudioSynthesis {
+    |     ^^^^^^^^^^^^^^
+    |
+    = note: `PhiExpression` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: variants `Point2D`, `Point3D`, `Pattern3D`, and `Audio` are never constructed
+   --> src/parser/mod.rs:220:5
+    |
+216 | pub enum PhiValue {
+    |          -------- variants in this enum
+...
+220 |     Point2D([f64; 2]),
+    |     ^^^^^^^
+221 |     Point3D([f64; 3]),
+    |     ^^^^^^^
+222 |     Pattern2D(Vec<[f64; 2]>),
+223 |     Pattern3D(Vec<[f64; 3]>),
+    |     ^^^^^^^^^
+224 |     Audio(Vec<f64>),
+    |     ^^^^^
+    |
+    = note: `PhiValue` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: variant `Function` is never constructed
+   --> src/parser/mod.rs:238:5
+    |
+231 | pub enum PhiType {
+    |          ------- variant in this enum
+...
+238 |     Function(Vec<PhiType>, Box<PhiType>),
+    |     ^^^^^^^^
+    |
+    = note: `PhiType` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: fields `pattern_analyzer` and `audio_synthesizer` are never read
+  --> src/interpreter/mod.rs:16:5
+   |
+10 | pub struct PhiInterpreter {
+   |            -------------- fields in this struct
+...
+16 |     pattern_analyzer: PatternAnalyzer,
+   |     ^^^^^^^^^^^^^^^^
+17 |     audio_synthesizer: AudioSynthesizer,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: method `intention_aligns_with` is never used
+    --> src/interpreter/mod.rs:1044:8
+     |
+  35 | impl PhiInterpreter {
+     | ------------------- method in this implementation
+...
+1044 |     fn intention_aligns_with(&self, operation: &str) -> bool {
+     |        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: associated constant `Void` should have an upper case name
+    --> src/interpreter/mod.rs:1094:15
+     |
+1094 |     pub const Void: PhiValue = PhiValue::Number(0.0); // Using Number(0.0) as a simple void placeholder
+     |               ^^^^ help: convert the identifier to upper case: `VOID`
+     |
+     = note: `#[warn(non_upper_case_globals)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: `phiflow` (bin "phi") generated 73 warnings (1 duplicate) (run `cargo fix --bin "phi" -p phiflow` to apply 14 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.99s
+     Running tests/ir_vm_intention_assignment_tests.rs (target/debug/deps/ir_vm_intention_assignment_tests-0b9b4bfdb1949369)
+
+running 1 test
+test test_ast_nested_call_in_intention_block_shape ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.01s
+

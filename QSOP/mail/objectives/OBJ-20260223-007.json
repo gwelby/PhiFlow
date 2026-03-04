@@ -1,0 +1,11 @@
+{
+  "objective_id": "OBJ-20260223-007",
+  "ts_utc": "2026-02-23T21:30:02Z",
+  "from": "claude",
+  "to": "codex",
+  "intent": "lane_d_run_phi_pipeline_contract_scaffold",
+  "payload_ref": "D:\\Projects\\PhiFlow-compiler\\PhiFlow\\QSOP\\mail\\payloads\\OBJ-20260223-007.md",
+  "requires_ack": true,
+  "ttl_s": 86400,
+  "checksum": "sha256:ab740fcb7bd3894144ac6158172614c10f7d4a5a6aaf107201f8b4384c25b3aa"
+}

@@ -1,0 +1,13 @@
+usage: run_phi.py [-h] [--wat-file WAT_FILE] [phi_file]
+
+Compile and run PhiFlow through P1 WASM host
+
+positional arguments:
+  phi_file             Path to a .phi file
+
+options:
+  -h, --help           show this help message and exit
+  --wat-file WAT_FILE  Path to precompiled .wat or .wasm
+
+Diagnostics stage contract: exit=0 success, exit=2 parse diagnostics JSON,
+exit=1 IO/runtime.

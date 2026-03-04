@@ -1,0 +1,16 @@
+{
+  "objective_id": "OBJ-YYYYMMDD-001",
+  "agent_name": "codex",
+  "state": "completed",
+  "summary": "what happened",
+  "evidence": [
+    "command 1 output summary",
+    "command 2 output summary"
+  ],
+  "files_touched": [
+    "path/to/fileA",
+    "path/to/fileB"
+  ],
+  "open_risks": [],
+  "next_action": "await_next_objective"
+}

@@ -92,5 +92,8 @@
     "profiling": "nsight",
     "monitoring": "consciousness_dashboard",
     "version_control": "git_with_sacred_commit_timing"
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   }
 }

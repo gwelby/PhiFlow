@@ -1,0 +1,11 @@
+{
+    "objective_id": "OBJ-20260223-006",
+    "ts_utc": "2026-02-23T21:56:00Z",
+    "from": "claude",
+    "to": "codex",
+    "intent": "lane_c_structured_error_diagnostics",
+    "payload_ref": "D:\\Projects\\PhiFlow-compiler\\PhiFlow\\QSOP\\mail\\payloads\\OBJ-20260223-006.md",
+    "requires_ack": true,
+    "ttl_s": 86400,
+    "checksum": "sha256:c27097c14fdc361fab1a3dd1131024c35b2882d5dd63ec234fd76a90d4489ecd"
+}

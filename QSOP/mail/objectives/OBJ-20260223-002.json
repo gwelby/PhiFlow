@@ -1,0 +1,11 @@
+{
+  "objective_id": "OBJ-20260223-002",
+  "ts_utc": "2026-02-23T17:45:00Z",
+  "from": "claude",
+  "to": "codex",
+  "intent": "build_p1_wasm_host_real_sensors",
+  "payload_ref": "D:\\Projects\\PhiFlow-compiler\\PhiFlow\\QSOP\\mail\\payloads\\OBJ-20260223-002.md",
+  "requires_ack": true,
+  "ttl_s": 86400,
+  "checksum": "sha256:68cdae71ef7d05e33aa103bb910c3d930198e565131b25da05aa26e88feb9e61"
+}

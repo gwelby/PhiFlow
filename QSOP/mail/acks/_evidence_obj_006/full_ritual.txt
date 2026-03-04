@@ -1,0 +1,15 @@
+=== [validate_packets] ===
+[PASS] OBJ-20260221-001.json: ok
+[PASS] OBJ-20260223-001.json: ok
+[PASS] OBJ-20260223-002.json: ok
+[PASS] OBJ-20260223-003.json: ok
+[PASS] OBJ-20260223-006.json: ok
+[PASS] OBJ-20260223-007.json: ok
+[PASS] ACK-OBJ-20260221-001-codex.json: ok (legacy schema)
+[PASS] ACK-OBJ-20260223-001-codex.json: ok (modern schema)
+[PASS] ACK-OBJ-20260223-002-codex.json: ok (modern schema)
+[PASS] ACK-OBJ-20260223-003-codex.json: ok (modern schema)
+[PASS] ACK-OBJ-20260223-004-codex.json: ok (modern schema)
+[PASS] ACK-OBJ-20260223-005-codex.json: ok (modern schema)
+[FAIL] REVIEWER_GATE-OBJ-20260223-005-claude.json: missing required fields for legacy or modern ack schema
+RITUAL FAILED at: validate_packets

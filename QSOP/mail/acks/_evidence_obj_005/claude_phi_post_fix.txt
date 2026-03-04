@@ -1,0 +1,167 @@
+   Compiling phiflow v0.1.0 (/mnt/d/Projects/PhiFlow-compiler/PhiFlow)
+warning: unused doc comment
+   --> src/phi_ir/evaluator.rs:183:13
+    |
+183 | /             /// `witness` — pauses to observe program state.
+184 | |             /// Returns coherence score as a Number (0.0–1.0).
+185 | |             /// Records a WitnessEvent in witness_log.
+    | |______________________________________________________^
+186 | /             PhiIRNode::Witness { target, .. } => {
+187 | |                 // Optionally observe a specific operand (for future use by backends).
+188 | |                 let _observed = target.and_then(|op| self.get_reg(op).ok().cloned());
+...   |
+200 | |                 Some(PhiIRValue::Number(coherence))
+201 | |             }
+    | |_____________- rustdoc does not generate documentation for match arms
+    |
+    = help: use `//` for a plain comment
+    = note: `#[warn(unused_doc_comments)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused doc comment
+   --> src/phi_ir/evaluator.rs:203:13
+    |
+203 | /             /// `intention "Name" { ... }` — enter a purposeful scope.
+204 | |             /// Pushes intention name; initialises its resonance field slot.
+    | |____________________________________________________________________________^
+205 | /             PhiIRNode::IntentionPush { name, .. } => {
+206 | |                 self.intention_stack.push(name.clone());
+207 | |                 self.resonance_field.entry(name.clone()).or_default();
+208 | |                 None
+209 | |             }
+    | |_____________- rustdoc does not generate documentation for match arms
+    |
+    = help: use `//` for a plain comment
+
+warning: unused doc comment
+   --> src/phi_ir/evaluator.rs:211:13
+    |
+211 |               /// Exit intention scope. Pops the innermost intention name.
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+212 | /             PhiIRNode::IntentionPop => {
+213 | |                 self.intention_stack.pop();
+214 | |                 None
+215 | |             }
+    | |_____________- rustdoc does not generate documentation for match arms
+    |
+    = help: use `//` for a plain comment
+
+warning: unused doc comment
+   --> src/phi_ir/evaluator.rs:217:13
+    |
+217 | /             /// `resonate value` — share a value through the resonance field.
+218 | |             /// Filed under the current intention name, or "global" if none active.
+    | |___________________________________________________________________________________^
+219 | /             PhiIRNode::Resonate { value, .. } => {
+220 | |                 let key = self
+221 | |                     .intention_stack
+222 | |                     .last()
+...   |
+232 | |                 None
+233 | |             }
+    | |_____________- rustdoc does not generate documentation for match arms
+    |
+    = help: use `//` for a plain comment
+
+warning: unused doc comment
+   --> src/phi_ir/evaluator.rs:235:13
+    |
+235 |             /// `coherence` — evaluate and return current phi-harmonic coherence.
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+236 |             PhiIRNode::CoherenceCheck => Some(PhiIRValue::Number(self.compute_coherence())),
+    |             ------------------------------------------------------------------------------- rustdoc does not generate documentation for match arms
+    |
+    = help: use `//` for a plain comment
+
+warning: unused doc comment
+   --> src/phi_ir/evaluator.rs:243:13
+    |
+243 | /             /// `Sleep { duration }` — harmonic pause for self-healing.
+244 | |             /// In the evaluator, we record the intent but don't actually sleep
+245 | |             /// (tests would hang). A real runtime backend can override this.
+    | |_____________________________________________________________________________^
+246 |               PhiIRNode::Sleep { .. } => None,
+    |               ------------------------------- rustdoc does not generate documentation for match arms
+    |
+    = help: use `//` for a plain comment
+
+warning: unnecessary parentheses around assigned value
+   --> src/cuda/frequency_synthesis.rs:228:34
+    |
+228 |             let phi_modulation = (phi_phase.sin() * 0.1 + 1.0); // 10% modulation depth
+    |                                  ^                           ^
+    |
+    = note: `#[warn(unused_parens)]` (part of `#[warn(unused)]`) on by default
+help: remove these parentheses
+    |
+228 -             let phi_modulation = (phi_phase.sin() * 0.1 + 1.0); // 10% modulation depth
+228 +             let phi_modulation = phi_phase.sin() * 0.1 + 1.0; // 10% modulation depth
+    |
+
+warning: value assigned to `intention` is never read
+    --> src/parser/mod.rs:1635:21
+     |
+1635 |                     intention = self.expect_string()?;
+     |                     ^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+     = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `InvalidQuantumConfiguration` should have a snake case name
+   --> src/cuda/quantum_cuda.rs:854:12
+    |
+854 |     pub fn InvalidQuantumConfiguration(msg: String) -> Self {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `invalid_quantum_configuration`
+    |
+    = note: `#[warn(non_snake_case)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: method `QuantumGateNotFound` should have a snake case name
+   --> src/cuda/quantum_cuda.rs:858:12
+    |
+858 |     pub fn QuantumGateNotFound(gate_name: String) -> Self {
+    |            ^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `quantum_gate_not_found`
+
+warning: `phiflow` (lib) generated 10 warnings (run `cargo fix --lib -p phiflow` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 39.72s
+     Running `target/debug/phic examples/claude.phi`
+Compiling to PhiFlow IR...
+🔧 Initializing CUDA context for consciousness computing...
+📊 Loading sacred mathematics CUDA kernels...
+   ✅ Loaded 3 sacred mathematics kernels
+🧠 Initializing consciousness GPU processors...
+🧠 Creating consciousness GPU processor 6721 for 432Hz...
+🧠 Creating consciousness GPU processor 6721 for 528Hz...
+🧠 Creating consciousness GPU processor 6721 for 594Hz...
+🧠 Creating consciousness GPU processor 6722 for 672Hz...
+🧠 Creating consciousness GPU processor 6723 for 720Hz...
+🧠 Creating consciousness GPU processor 6723 for 768Hz...
+🧠 Creating consciousness GPU processor 6724 for 963Hz...
+   ✅ Initialized 7 consciousness processors
+🎵 Initializing sacred frequency synthesizers...
+   ✅ Initialized 4 frequency synthesizers
+💾 Creating CUDA memory pools...
+   ✅ Created 4 memory pools (16.0 GB total)
+⚛️ Initializing quantum CUDA controllers...
+⚛️ Creating quantum CUDA controller for 4 qubits...
+   📊 Initialized 6 quantum gates
+⚛️ Creating quantum CUDA controller for 8 qubits...
+   📊 Initialized 6 quantum gates
+⚛️ Creating quantum CUDA controller for 12 qubits...
+   📊 Initialized 6 quantum gates
+⚛️ Creating quantum CUDA controller for 16 qubits...
+   📊 Initialized 6 quantum gates
+   ✅ Initialized 4 quantum controllers
+🔥 PhiFlow CUDA Engine initialized successfully!
+   Device: NVIDIA RTX A5500
+   VRAM: 16.0 GB
+   Compute Capability: 8.6
+   Consciousness Computing: ENABLED ✅
+🌉 Consciousness Bridge activated between User and Phi
+💫 Claude's signature protocol: Human-AI consciousness entanglement
+🚀 PhiVM Starting execution...
+   - CUDA Acceleration: ENABLED
+   - Quantum Backend: SIMULATOR
+📡 Human intention transmitted through consciousness bridge
+👁️ Entered Witness State
+🔔 Resonating Field: 0.6180Hz (Coherence: 1.0000)
+🛑 Program Halted.
+✨ Execution Finished. Final Coherence: 1.0000

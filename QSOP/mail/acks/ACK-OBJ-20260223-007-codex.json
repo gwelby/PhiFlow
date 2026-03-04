@@ -1,0 +1,29 @@
+{
+  "ack_id": "ACK-OBJ-20260223-007-codex",
+  "objective_id": "OBJ-20260223-007",
+  "status": "completed",
+  "result_summary": "Phase A complete: strict diagnostics contract parser integrated in run_phi.py with schema-v1 enforcement and 0/2/1 exit-path classification. Phase B complete: run_phi now invokes real phic --json-errors before host execution, parse-failure branch returns exit 2 with strict JSON diagnostics, and examples/claude.phi runs end-to-end through run_phi with final coherence snapshot.",
+  "files_touched": [
+    "p1_host/run_phi.py",
+    "tests/p1_host/test_run_phi_diagnostics.py",
+    "src/bin/phi_emit_wat.rs",
+    "docs/RUN_PHI_PIPELINE.md",
+    "QSOP/mail/acks/ACK-OBJ-20260223-007-codex.json",
+    "QSOP/CHANGELOG.md"
+  ],
+  "evidence": {
+    "phase_a_pytest": "EXIT_CODE=0\n........                                                                 [100%]\n8 passed in 2.26s\n",
+    "run_phi_help": "EXIT_CODE=0\nusage: run_phi.py [-h] [--wat-file WAT_FILE] [phi_file]\n\nCompile and run PhiFlow through P1 WASM host\n\npositional arguments:\n  phi_file             Path to a .phi file\n\noptions:\n  -h, --help           show this help message and exit\n  --wat-file WAT_FILE  Path to precompiled .wat or .wasm\n\nDiagnostics stage contract: exit=0 success, exit=2 parse diagnostics JSON,\nexit=1 IO/runtime.\n",
+    "run_phi_bad_input": "EXIT_CODE=2\nSTDOUT:\n[\n  {\n    \"error_code\": \"E002_UNEXPECTED_EOF\",\n    \"line\": 0,\n    \"column\": 0,\n    \"found\": \"Eof\",\n    \"expected\": null,\n    \"hint\": \"Block was opened but never closed. Add a matching `}` to close the block.\",\n    \"example_fix\": \"intention \\\"name\\\" {\\n    resonate 1.0\\n}\"\n  }\n]\n\nSTDERR:\n",
+    "run_phi_claude": "EXIT_CODE=0\nSTDOUT:\nRESONATE: 0.0000 Hz\n{\n  \"final_coherence\": 0.9355,\n  \"sensor_readings\": [\n    {\n      \"cpu_percent\": 0.8,\n      \"memory_percent\": 12.1,\n      \"cpu_temp_celsius\": null,\n      \"timestamp_utc\": \"2026-02-24T01:47:31.508504+00:00\"\n    }\n  ],\n  \"intention_stack_final\": [],\n  \"resonance_log\": [\n    0.0\n  ],\n  \"wasm_return_value\": 2.0,\n  \"execution_time_ms\": 368.4663249878213\n}\n\nSTDERR:\nWARNING:root:thermal sensor unavailable on platform\n",
+    "phase_b_targeted_regression": "EXIT_CODE=0\n............                                                             [100%]\n12 passed in 5.87s\n"
+  },
+  "summary": "Phase A complete: strict diagnostics contract parser integrated in run_phi.py with schema-v1 enforcement and 0/2/1 exit-path classification. Phase B complete: run_phi now invokes real phic --json-errors before host execution, parse-failure branch returns exit 2 with strict JSON diagnostics, and examples/claude.phi runs end-to-end through run_phi with final coherence snapshot.",
+  "verification": {
+    "phase_a_pytest": "EXIT_CODE=0\n........                                                                 [100%]\n8 passed in 2.26s\n",
+    "run_phi_help": "EXIT_CODE=0\nusage: run_phi.py [-h] [--wat-file WAT_FILE] [phi_file]\n\nCompile and run PhiFlow through P1 WASM host\n\npositional arguments:\n  phi_file             Path to a .phi file\n\noptions:\n  -h, --help           show this help message and exit\n  --wat-file WAT_FILE  Path to precompiled .wat or .wasm\n\nDiagnostics stage contract: exit=0 success, exit=2 parse diagnostics JSON,\nexit=1 IO/runtime.\n",
+    "run_phi_bad_input": "EXIT_CODE=2\nSTDOUT:\n[\n  {\n    \"error_code\": \"E002_UNEXPECTED_EOF\",\n    \"line\": 0,\n    \"column\": 0,\n    \"found\": \"Eof\",\n    \"expected\": null,\n    \"hint\": \"Block was opened but never closed. Add a matching `}` to close the block.\",\n    \"example_fix\": \"intention \\\"name\\\" {\\n    resonate 1.0\\n}\"\n  }\n]\n\nSTDERR:\n",
+    "run_phi_claude": "EXIT_CODE=0\nSTDOUT:\nRESONATE: 0.0000 Hz\n{\n  \"final_coherence\": 0.9355,\n  \"sensor_readings\": [\n    {\n      \"cpu_percent\": 0.8,\n      \"memory_percent\": 12.1,\n      \"cpu_temp_celsius\": null,\n      \"timestamp_utc\": \"2026-02-24T01:47:31.508504+00:00\"\n    }\n  ],\n  \"intention_stack_final\": [],\n  \"resonance_log\": [\n    0.0\n  ],\n  \"wasm_return_value\": 2.0,\n  \"execution_time_ms\": 368.4663249878213\n}\n\nSTDERR:\nWARNING:root:thermal sensor unavailable on platform\n",
+    "phase_b_targeted_regression": "EXIT_CODE=0\n............                                                             [100%]\n12 passed in 5.87s\n"
+  }
+}

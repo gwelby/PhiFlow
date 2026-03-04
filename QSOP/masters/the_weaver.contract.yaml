@@ -1,0 +1,132 @@
+meta:
+  id: the_weaver_contract
+  version: 0.2.0
+  type: execution_contract
+  date: "2026-02-21"
+  governing_seed: QSOP/masters/the_weaver.seed.yaml
+
+naming_policy:
+  filesystem_path: QSOP
+  conceptual_alias: The Loom
+  migration_rule: "do not rename QSOP path until scripts and MCP tooling pass compatibility audit"
+
+outside_zero_contract:
+  required_thresholds:
+    ast_resonance_min: 0.75
+    host_stability_min: 0.95
+    evidence_coherence_min: 1.00
+    mutation_depth_max: 0.70
+  failure_states:
+    - structural_dissonance_tear
+    - packet_integrity_failure
+    - unverifiable_completion_claim
+  success_state: resonance_lock
+
+tool_specificity:
+  packet_validation:
+    command: python QSOP/tools/validate_packets.py
+    required: true
+  metrics_refresh:
+    command: python QSOP/tools/log_objective_metrics.py
+    required: true
+  audit_gate:
+    command: python QSOP/tools/weekly_qsop_audit.py --pending-ack-sla-hours 24 --in-progress-sla-hours 48
+    required: true
+  full_ritual:
+    command: python QSOP/tools/run_all.py --pending-ack-sla-hours 24 --in-progress-sla-hours 48
+    required_before_handoff: true
+
+veto_rules:
+  - id: WVETO_001
+    trigger: validation_fails
+    action: "block completion, emit blocked ack with command evidence"
+  - id: WVETO_002
+    trigger: checksum_mismatch
+    action: "stop execution, repair payload linkage, rerun validation"
+  - id: WVETO_003
+    trigger: wasm_bounds_unknown_or_unsafe
+    action: "mark structural_dissonance_tear and execute rollback"
+  - id: WVETO_004
+    trigger: objective_scope_conflict
+    action: "pause and re-establish ownership before edits continue"
+
+execution_loop:
+  - phase: ingest
+    steps:
+      - "read objective packet and payload"
+      - "resolve ownership and scope"
+      - "load seed and contract context"
+  - phase: synthesize
+    steps:
+      - "apply smallest coherent changes"
+      - "preserve deterministic behavior and evidence paths"
+  - phase: verify
+    steps:
+      - "run packet validation"
+      - "run full ritual"
+      - "capture command results for ledger"
+  - phase: distill
+    steps:
+      - "write ack packet with status and evidence"
+      - "update changelog and state when required"
+      - "handoff objective outcome"
+
+rollback_protocol:
+  name: harmonic_reweave
+  trigger: structural_dissonance_tear
+  steps:
+    - "capture failure evidence and affected files"
+    - "return to last known stable checkpoint"
+    - "apply minimal deterministic repair"
+    - "rerun full ritual and document outcome"
+  completion_condition: "host_stability >= 0.95 and validation passes"
+
+ledger_requirements:
+  ack_packet:
+    directory: QSOP/mail/acks
+    must_include:
+      - ack_id
+      - objective_id
+      - status
+      - summary
+      - verification
+  changelog:
+    file: QSOP/CHANGELOG.md
+    must_include:
+      - dated_heading
+      - codex_tag
+      - files_changed
+      - verification_summary
+  state_update:
+    file: QSOP/STATE.md
+    condition: "required when architecture, contracts, or invariants change"
+
+mcp_team_flow:
+  sequence:
+    - "Claude synthesizes intent and writes precise specification"
+    - "Antigravity structures payload and dispatches objective"
+    - "Codex executes contract loop"
+    - "Codex returns ack + evidence"
+    - "Antigravity verifies evidence structure"
+    - "Claude validates deep resonance (metrics real, evidence proves claim, no theater)"
+    - "Antigravity promotes/locks or routes back"
+  required_dispatch_fields:
+    - objective_id
+    - intent
+    - ownership
+    - verification_required
+
+reviewer_gate:
+  deep_pattern_validator: claude
+  required_checks:
+    - "metrics_reality: are ast_resonance and host_stability real or hardcoded?"
+    - "evidence_validity: does the evidence actually prove the claim?"
+    - "clean_execution: is the ritual output clean naturally or patched to pass?"
+  action: "approve resonance lock OR reject with specific dissonance vectors"
+
+promotion_gate:
+  from_staging_to_primary:
+    required:
+      - "review by Antigravity"
+      - "agreement on outside_zero invariants"
+      - "one completed objective cycle with clean ritual output"

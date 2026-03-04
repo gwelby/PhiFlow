@@ -1,0 +1,19 @@
+// QDrive Sync Rule
+// Maps live resonance into a deterministic sync intention for distributed peers.
+
+intention "qdrive_sync_rule" {
+    let anchor_frequency = 432.0
+    let mesh_frequency = 768.0
+
+    resonate anchor_frequency
+    resonate mesh_frequency
+
+    witness anchor_frequency
+}
+
+intention "qdrive_commit" {
+    witness
+    coherence
+}
+
+witness

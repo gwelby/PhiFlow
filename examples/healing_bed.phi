@@ -1,0 +1,6 @@
+sintention "healing_session" {
+    stream "resonance_loop" {
+        resonate "Healing energy activated"
+        break stream
+    }
+}

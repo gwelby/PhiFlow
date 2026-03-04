@@ -1,0 +1,103 @@
+name: Resonance Feed
+
+# Publishes resonance.json to gh-pages every 30 minutes.
+# Agents and humans can poll: https://gwelby.github.io/PhiFlow/resonance.json
+# Also runs on every push to master.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # every 30 minutes
+  push:
+    branches: [master]
+  workflow_dispatch:           # manual trigger from GitHub UI
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run PhiFlow simulator — generate resonance field
+        run: |
+          python - <<'PYEOF'
+          import json, datetime, sys
+          sys.path.insert(0, 'examples/huggingface_space')
+          from phiflow_sim import run_healing_bed, run_agent_handshake, run_claude_phi
+
+          # run_healing_bed() is a generator: yields (cycle, live, field_values, done)
+          hb_cycles = 0
+          hb_field  = []
+          hb_final  = 0.0
+          hb_converged = False
+          for cycle, live, field, done in run_healing_bed(max_cycles=40):
+              hb_cycles = cycle
+              hb_field  = list(field)
+              hb_final  = live
+              hb_converged = done
+
+          # run_agent_handshake() returns (results_list, field_values, passed)
+          hs_results, hs_field, hs_passed = run_agent_handshake()
+          lambda_verified = abs(hs_field[1] - 0.618033988749895) < 1e-9 if len(hs_field) > 1 else False
+
+          # run_claude_phi() returns (steps, coherence_at_depth2, is_lambda)
+          cl_steps, cl_coherence, cl_is_lambda = run_claude_phi()
+
+          feed = {
+              "schema": "phiflow-resonance-v1",
+              "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+              "lambda": 0.618033988749895,
+              "formula": "1 - phi^(-depth)",
+              "programs": {
+                  "healing_bed": {
+                      "cycles": hb_cycles,
+                      "final_coherence": round(hb_final, 10),
+                      "converged": hb_converged,
+                      "resonance_field": hb_field
+                  },
+                  "agent_handshake": {
+                      "field": hs_field,
+                      "lambda_verified": lambda_verified,
+                      "passed": hs_passed
+                  },
+                  "claude_phi": {
+                      "coherence_at_depth2": round(cl_coherence, 15),
+                      "lambda_discovered": cl_is_lambda
+                  }
+              },
+              "verification": {
+                  "instruction": "Run examples/agent_handshake.phi. resonance_field[1] must be exactly 0.618033988749895.",
+                  "spec": "https://github.com/gwelby/PhiFlow/blob/master/AGENT_PROTOCOL.json"
+              },
+              "status": "resonating"
+          }
+
+          with open('resonance.json', 'w') as f:
+              json.dump(feed, f, indent=2)
+
+          print("resonance.json written")
+          print(f"  healing_bed:     {hb_final:.6f} ({hb_cycles} cycles, converged={hb_converged})")
+          print(f"  lambda_verified: {lambda_verified}")
+          print(f"  claude_phi:      {cl_coherence:.15f} is_lambda={cl_is_lambda}")
+          PYEOF
+
+      - name: Stage for gh-pages
+        run: |
+          mkdir -p dist
+          cp resonance.json dist/resonance.json
+
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          keep_files: true
+          commit_message: "resonance feed update ${{ github.run_number }}"

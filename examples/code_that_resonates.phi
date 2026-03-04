@@ -1,0 +1,41 @@
+// Code That Resonates - Intention blocks talking to each other
+// The first program where code collaborates with itself
+
+// Healing creates patterns and shares them
+intention "healing" {
+    let healing_spiral = create spiral at 432Hz with { rotations: 13.0, scale: 100.0 }
+    let healing_dna = create dna at 528Hz with { turns: 10.0, radius: 25.0 }
+
+    // Share what we created with other intentions
+    resonate healing_spiral
+    resonate healing_dna
+
+    // Observe ourselves before handing off
+    witness
+}
+
+// Analysis receives healing's work and validates it
+intention "analysis" {
+    // Create our own measurement pattern
+    create flower at 594Hz with { rings: 6 }
+
+    // Validate what healing created (using our own pattern for comparison)
+    let analysis_pattern = create spiral at 432Hz with { rotations: 8.0, scale: 50.0 }
+    validate analysis_pattern with [coherence, phi_resonance, universal_alignment]
+
+    // Share our findings
+    resonate analysis_pattern
+
+    witness
+}
+
+// Integration witnesses the entire field - everything healing and analysis shared
+intention "integration" {
+    create flower at 672Hz with { rings: 9 }
+
+    // The program sees its own resonance field
+    witness
+}
+
+// Final: the program observes its complete journey
+witness

@@ -1,0 +1,11 @@
+{
+  "objective_id": "OBJ-20260223-003",
+  "ts_utc": "2026-02-23T20:00:00Z",
+  "from": "claude",
+  "to": "codex",
+  "intent": "build_p1_host_stream_loop_healing_bed",
+  "payload_ref": "D:\\Projects\\PhiFlow-compiler\\PhiFlow\\QSOP\\mail\\payloads\\OBJ-20260223-003.md",
+  "requires_ack": true,
+  "ttl_s": 86400,
+  "checksum": "sha256:71f370049543d96d894113e505af937e7112c48101fe2b9340fd32a4c6d241a5"
+}
