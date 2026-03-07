@@ -100,13 +100,18 @@ fn run_eval_and_wasm(source: &str) -> (PhiIRValue, f64) {
     (eval_result, wasm_result)
 }
 
+#[allow(dead_code)]
 fn assert_program_conforms_eval_wasm(source: &str, label: &str) {
     let (eval_result, wasm_result) = run_eval_and_wasm(source);
     let eval_number = match eval_result {
         PhiIRValue::Number(n) => n,
         other => panic!("{} expected numeric result, got {:?}", label, other),
     };
-    assert_number_close(eval_number, wasm_result, &format!("{} evaluator-wasm", label));
+    assert_number_close(
+        eval_number,
+        wasm_result,
+        &format!("{} evaluator-wasm", label),
+    );
 }
 
 fn run_all_paths(source: &str) -> (PhiIRValue, PhiIRValue, f64) {
@@ -142,23 +147,28 @@ fn assert_program_matches(source: &str, expected: PhiIRValue, label: &str) {
         PhiIRValue::Number(n) => n,
         other => panic!("{} expected numeric result, got {:?}", label, other),
     };
-    assert_number_close(eval_number, wasm_result, &format!("{} evaluator-wasm", label));
+    assert_number_close(
+        eval_number,
+        wasm_result,
+        &format!("{} evaluator-wasm", label),
+    );
 }
 
+#[allow(dead_code)]
 fn assert_program_conforms(source: &str, label: &str) {
     let (eval_result, vm_result, wasm_result) = run_all_paths(source);
 
-    assert_values_close(
-        &eval_result,
-        &vm_result,
-        &format!("{} evaluator-vm", label),
-    );
+    assert_values_close(&eval_result, &vm_result, &format!("{} evaluator-vm", label));
 
     let eval_number = match eval_result {
         PhiIRValue::Number(n) => n,
         other => panic!("{} expected numeric result, got {:?}", label, other),
     };
-    assert_number_close(eval_number, wasm_result, &format!("{} evaluator-wasm", label));
+    assert_number_close(
+        eval_number,
+        wasm_result,
+        &format!("{} evaluator-wasm", label),
+    );
 }
 
 #[test]
@@ -206,11 +216,7 @@ fn conformance_intention_scope_return() {
 
 #[test]
 fn conformance_coherence_check() {
-    assert_program_matches(
-        "coherence",
-        PhiIRValue::Number(0.0),
-        "coherence_check",
-    );
+    assert_program_matches("coherence", PhiIRValue::Number(0.0), "coherence_check");
 }
 
 #[test]
@@ -233,8 +239,8 @@ fn conformance_resonate_then_coherence() {
 /// stream programs) don't have a meaningful return-value to compare, so this test
 /// checks parse-lower-optimize-run success rather than value equality.
 fn assert_program_runs_on_eval_and_wasm(source: &str, label: &str) {
-    let expressions = parse_phi_program(source)
-        .unwrap_or_else(|e| panic!("{}: parse failed: {:?}", label, e));
+    let expressions =
+        parse_phi_program(source).unwrap_or_else(|e| panic!("{}: parse failed: {:?}", label, e));
     let mut program: PhiIRProgram = lower_program(&expressions);
     let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
     optimizer.optimize(&mut program);
@@ -258,7 +264,10 @@ fn assert_program_runs_on_eval_and_wasm(source: &str, label: &str) {
 #[test]
 fn conformance_shared_fixture_examples() {
     let fixtures = [
-        ("examples/claude.phi", include_str!("../examples/claude.phi")),
+        (
+            "examples/claude.phi",
+            include_str!("../examples/claude.phi"),
+        ),
         (
             "examples/stream_demo.phi",
             include_str!("../examples/stream_demo.phi"),
@@ -308,8 +317,16 @@ fn conformance_nested_function_regression() {
         PhiIRValue::Number(n) => n,
         other => panic!("nested_function_regression: evaluator returned {:?}", other),
     };
-    assert_number_close(eval_n, expected, "nested_function_regression evaluator-expected");
-    assert_number_close(eval_n, wasm_result, "nested_function_regression evaluator-wasm");
+    assert_number_close(
+        eval_n,
+        expected,
+        "nested_function_regression evaluator-expected",
+    );
+    assert_number_close(
+        eval_n,
+        wasm_result,
+        "nested_function_regression evaluator-wasm",
+    );
 }
 
 #[test]

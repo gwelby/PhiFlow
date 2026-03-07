@@ -77,6 +77,22 @@
 
 ## Resolved Patterns
 
+### R-3: Snapshot queue rewrites shred MCP state under concurrent writers
+
+- **What happened**: The MCP bus persisted all message state by rewriting `queue.json` as a full-array snapshot, so concurrent `send_message`, `ack_message`, or DLQ sweeps could race and drop unrelated updates.
+- **Root cause**: Queue persistence used read-modify-write replacement on a shared file instead of append-only event logging with replay.
+- **Fix**:
+  - Migrated the bus transport to append-only `queue.jsonl`.
+  - Reconstruct latest state by replaying log entries keyed by `id`.
+  - Added one-time import from legacy `queue.json` for backward compatibility.
+  - Updated Rust `McpHostProvider` and JS/Python verification tools to use the same replay contract.
+- **Verification**:
+  - `cargo test mcp_host_provider -- --nocapture`
+  - `node tests/queue_jsonl_legacy_import_test.js`
+  - `node tests/cross_agent_roundtrip.js --simulate` (temp queue env)
+  - `node tests/dlq_test.js` (temp queue env)
+  - `cargo build --release`
+
 ### R-1: MCP stream isolation and missing initialize handshake
 
 - **What happened**: MCP streams were evaluated without a shared resonance field, so cross-stream resonance was invisible; server also rejected `initialize` with `-32601`.

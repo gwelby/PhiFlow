@@ -88,6 +88,16 @@ Compiling to PhiFlow IR...
 
 The `0.9801` is real. It came from `sysinfo::global_cpu_info().cpu_usage()` and `used_memory() / total_memory()` at the moment the program ran. A second run returns `0.9800`. Different. Alive. That variance is the signature of truth.
 
+## Running Bytecode
+
+Any `.phivm` file emitted by the PhiIR bytecode emitter can run directly through the standalone runtime:
+
+```bash
+cargo run --bin phivm -- path/to/program.phivm
+```
+
+Use `--disassemble` to print the bytecode summary before execution, or `--dump-stack` to inspect the final VM stack.
+
 ---
 
 ## Examples

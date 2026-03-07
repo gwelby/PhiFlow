@@ -1,4 +1,37 @@
-# STATE - Last updated: 2026-02-28 (Phase 5: MCP Bus Guardrails + Cross-Agent Round-Trip)
+# STATE - Last updated: 2026-03-06 (Phase 7: Standalone PhiVM Runner)
+
+## Verified (2026-03-06) [Codex Phase 7: Standalone PhiVM Runner]
+
+- Standalone bytecode runtime binary now exists at `src/bin/phivm.rs` and loads `.phivm` files directly through `PhiVm::from_bytes(...)`, without parsing or lowering `.phi` source at runtime | Invalidates if: runner entrypoint or VM load contract changes
+- Runner surface:
+  - `phivm <file.phivm>` executes bytecode and prints the final value
+  - `phivm --disassemble <file.phivm>` prints emitter-level bytecode summary before execution
+  - `phivm --dump-stack <file.phivm>` prints the final VM stack for runtime inspection
+- String results are rendered through the VM string table, so interned `PhiIRValue::String(u32)` values resolve to their human-readable payloads at the CLI boundary | Invalidates if: string table contract changes
+- Regression coverage now exists in `tests/phivm_runner_tests.rs` for:
+  - arithmetic bytecode execution from a real `.phivm` file
+  - string-table-backed result rendering
+  - disassembly + execution path through the standalone runner
+- Verification gates passed:
+  - `cargo build --release --bin phivm`
+  - `cargo test --test phivm_runner_tests --test phi_ir_vm_tests --bin phivm --quiet`
+
+## Verified (2026-03-05) [Codex Phase 6: Append-Only MCP Queue Log]
+
+- MCP bus persistence now uses append-only `queue.jsonl` as the primary transport log instead of snapshot-rewriting `queue.json` | Invalidates if: log schema or path changes
+- `mcp-message-bus/server.js` now replays `queue.jsonl` to reconstruct latest message state by `id`, and imports legacy `queue.json` on first boot for backward compatibility | Invalidates if: replay/import path changes
+- `McpHostProvider` in `src/mcp_server/state.rs` now reads/writes the same append-only `queue.jsonl` contract, so Rust-side `broadcast` / `listen` no longer rewrite the full queue file | Invalidates if: host provider queue format changes
+- Queue-facing verification tooling now reads reconstructed state from `queue.jsonl` with fallback to legacy `queue.json`:
+  - `tests/cross_agent_roundtrip.js`
+  - `tests/dlq_test.js`
+  - `tests/queue_jsonl_legacy_import_test.js`
+  - `QSOP/tools/weekly_qsop_audit.py`
+- Verification gates passed:
+  - `cargo test mcp_host_provider -- --nocapture`
+  - `cargo check --bin phi_mcp`
+  - `node tests/queue_jsonl_legacy_import_test.js`
+  - `node tests/cross_agent_roundtrip.js --simulate` (temp queue env)
+  - `node tests/dlq_test.js` (temp queue env)
 
 ## Verified (2026-02-28) [Antigravity Phase 5: MCP Bus Guardrails]
 
@@ -6,7 +39,7 @@
   - `max_execution_steps` (default: 10,000) via `EvalError::StepLimitExceeded` — clean error, no crash
   - `timeout_ms` (default: 5,000) via `tokio::time::timeout` on all three eval paths in `tools.rs`
   - Both configurable at runtime via `PHI_MAX_STEPS`, `PHI_TIMEOUT_MS`, `MCP_QUEUE_PATH` env vars
-- `McpHostProvider` now implements `broadcast` / `listen` with atomic file I/O against Codex's `queue.json` (tmp→rename) | Invalidates if: queue path or Codex persistence format changes
+- `McpHostProvider` now implements `broadcast` / `listen` through the shared MCP queue transport | Historical note: the original implementation used snapshot rewrite of `queue.json`; current implementation is append-only `queue.jsonl`
 - Cross-agent round-trip verified: `tests/cross_agent_roundtrip.js --simulate` passed full send→persist→ack→changelog cycle in <2s
 - `BusMessage` struct in `state.rs` is now the canonical packet type matching Codex's queue schema
 - Verification gates passed:
@@ -142,7 +175,7 @@
   - `QSOP/mail/templates/OBJECTIVE_PACKET.json`
   - `QSOP/mail/templates/ACK_PACKET.json`
   - `QSOP/mail/templates/OBJECTIVE_PAYLOAD_TEMPLATE.md`
-- MCP bus persistence is active in `D:\Projects\PhiFlow-compiler\mcp-message-bus\server.js` (`queue.json` load/save + idempotent ack).
+- MCP bus persistence is active in `D:\Projects\PhiFlow-compiler\mcp-message-bus\server.js` (`queue.jsonl` append-only replay + idempotent ack).
 
 ## Key Architecture (enum definitions — for emitter/VM correctness)
 

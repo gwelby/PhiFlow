@@ -1,0 +1,11 @@
+{
+    "objective_id": "OBJ-20260306-001",
+    "ts_utc": "2026-03-06T22:16:59Z",
+    "from": "antigravity",
+    "to": "codex",
+    "intent": "phivm_runner",
+    "payload_ref": "D:\\Projects\\PhiFlow-compiler\\PhiFlow\\QSOP\\mail\\payloads\\OBJ-20260306-001-codex.md",
+    "requires_ack": true,
+    "ttl_s": 14400,
+    "checksum": "sha256:5D44A896B526BE94EB54043584A382EF81EF8538FCDA8AA8D87A2EF606BBF8AA"
+}

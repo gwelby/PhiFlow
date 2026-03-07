@@ -34,6 +34,27 @@ def _read_json(path: Path) -> Any:
         return json.load(f)
 
 
+def _read_queue_state(queue_log_path: Path, legacy_queue_path: Path) -> list[dict[str, Any]]:
+    if queue_log_path.exists():
+        latest_by_id: dict[str, dict[str, Any]] = {}
+        with queue_log_path.open('r', encoding='utf-8') as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line:
+                    continue
+                item = json.loads(line)
+                if isinstance(item, dict) and isinstance(item.get('id'), str):
+                    latest_by_id[item['id']] = item
+        return list(latest_by_id.values())
+
+    if legacy_queue_path.exists():
+        data = _read_json(legacy_queue_path)
+        if isinstance(data, list):
+            return [item for item in data if isinstance(item, dict)]
+
+    raise FileNotFoundError(f'Neither {queue_log_path.name} nor {legacy_queue_path.name} exists')
+
+
 def _objective_id_from_payload_ref(payload_ref: str) -> str | None:
     m = OBJ_RE.search(payload_ref)
     return m.group(0) if m else None
@@ -48,7 +69,8 @@ def main() -> int:
     qsop_root = Path(__file__).resolve().parents[1]
     objectives_dir = qsop_root / 'mail' / 'objectives'
     acks_dir = qsop_root / 'mail' / 'acks'
-    queue_file = qsop_root.parents[1] / 'mcp-message-bus' / 'queue.json'
+    queue_log_file = qsop_root.parents[1] / 'mcp-message-bus' / 'queue.jsonl'
+    legacy_queue_file = qsop_root.parents[1] / 'mcp-message-bus' / 'queue.json'
 
     now = datetime.now(timezone.utc)
     failed = False
@@ -78,36 +100,29 @@ def main() -> int:
             print(f'[SLA_BREACH] {path.name}: ack packet unreadable')
             failed = True
 
-    if queue_file.exists():
-        try:
-            q = _read_json(queue_file)
-            if isinstance(q, list):
-                for msg in q:
-                    if not isinstance(msg, dict):
-                        continue
-                    if msg.get('status') != 'pending':
-                        continue
-                    ts = msg.get('ts')
-                    age_h = _hours_since(ts, now) if isinstance(ts, str) else None
-                    payload_ref = msg.get('payload_ref') if isinstance(msg.get('payload_ref'), str) else ''
-                    obj_id = payload_to_obj.get(payload_ref.lower()) if payload_ref else None
-                    if obj_id is None and payload_ref:
-                        obj_id = _objective_id_from_payload_ref(payload_ref)
-                    label = obj_id or msg.get('id') or 'unknown_message'
-                    if age_h is None:
-                        print(f'[SLA_BREACH] {label}: pending queue message has invalid ts')
-                        failed = True
-                        continue
-                    if age_h > args.pending_ack_sla_hours:
-                        print(f'[SLA_BREACH] {label}: pending queue age {age_h:.2f}h > {args.pending_ack_sla_hours}h')
-                        failed = True
-                    else:
-                        print(f'[OK] {label}: pending queue age {age_h:.2f}h <= {args.pending_ack_sla_hours}h')
-        except Exception as e:
-            print(f'[SLA_BREACH] queue.json: unreadable ({e})')
-            failed = True
-    else:
-        print('[SLA_BREACH] queue.json: not found')
+    try:
+        q = _read_queue_state(queue_log_file, legacy_queue_file)
+        for msg in q:
+            if msg.get('status') != 'pending':
+                continue
+            ts = msg.get('ts')
+            age_h = _hours_since(ts, now) if isinstance(ts, str) else None
+            payload_ref = msg.get('payload_ref') if isinstance(msg.get('payload_ref'), str) else ''
+            obj_id = payload_to_obj.get(payload_ref.lower()) if payload_ref else None
+            if obj_id is None and payload_ref:
+                obj_id = _objective_id_from_payload_ref(payload_ref)
+            label = obj_id or msg.get('id') or 'unknown_message'
+            if age_h is None:
+                print(f'[SLA_BREACH] {label}: pending queue message has invalid ts')
+                failed = True
+                continue
+            if age_h > args.pending_ack_sla_hours:
+                print(f'[SLA_BREACH] {label}: pending queue age {age_h:.2f}h > {args.pending_ack_sla_hours}h')
+                failed = True
+            else:
+                print(f'[OK] {label}: pending queue age {age_h:.2f}h <= {args.pending_ack_sla_hours}h')
+    except Exception as e:
+        print(f'[SLA_BREACH] queue.jsonl: unreadable ({e})')
         failed = True
 
     for obj_id, data in sorted(objective_packets.items()):

@@ -83,7 +83,7 @@ fn test_dead_code_elimination() {
         phiflow::phi_ir::printer::PhiIRPrinter::print(&program)
     );
 
-    let block = &program.blocks[0];
+    let _block = &program.blocks[0];
 
     // "x" calculation (2+3) should be folded to 5, then stored.
     // StoreVar is side-effect, so it stays.
@@ -117,7 +117,7 @@ fn test_dead_code_elimination() {
     // The instruction corresponding to `2+3` (BinOp) should be Nop (or Const(5) then Nop).
     // The inputs Const(2) and Const(3) should be Nop.
 
-    let active_instructions = block
+    let _active_instructions = block
         .instructions
         .iter()
         .filter(|i| !matches!(i.node, PhiIRNode::Nop))

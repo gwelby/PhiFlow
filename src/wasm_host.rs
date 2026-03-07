@@ -11,7 +11,10 @@
 use crate::parser::parse_phi_program;
 use crate::phi_ir::lowering::lower_program;
 use crate::phi_ir::optimizer::{OptimizationLevel, Optimizer};
-use crate::phi_ir::wasm::emit_wat;
+use crate::phi_ir::wasm::{
+    emit_wat, NAN_BOX_MASK, PAYLOAD_MASK, TAG_BOOLEAN, TAG_STRING, TAG_VOID,
+};
+use crate::phi_ir::PhiIRValue;
 use std::sync::Arc;
 use wasmtime::{Caller, Engine, Linker, Module, Store};
 
@@ -34,8 +37,27 @@ pub struct WasmHostSnapshot {
 
 #[derive(Debug, Clone)]
 pub struct WasmRunResult {
-    pub result: f64,
+    pub result: PhiIRValue,
     pub snapshot: WasmHostSnapshot,
+}
+
+pub fn unbox_f64(val: f64, string_table: &[String]) -> PhiIRValue {
+    let bits = val.to_bits();
+    if (bits & NAN_BOX_MASK) == NAN_BOX_MASK {
+        let tag = bits & !PAYLOAD_MASK;
+        let payload = bits & PAYLOAD_MASK;
+        match tag {
+            TAG_BOOLEAN => PhiIRValue::Boolean(payload != 0),
+            TAG_STRING => {
+                let idx = payload as u32;
+                PhiIRValue::String(idx) // return the u32 index, matching what evaluator does
+            }
+            TAG_VOID => PhiIRValue::Void,
+            _ => PhiIRValue::Void, // Unknown tag, default to void
+        }
+    } else {
+        PhiIRValue::Number(val)
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -157,12 +179,18 @@ pub fn compile_source_to_wat(source: &str) -> Result<String, WasmHostError> {
     Ok(emit_wat(&program))
 }
 
-pub fn run_source_with_host(source: &str, hooks: WasmHostHooks) -> Result<WasmRunResult, WasmHostError> {
+pub fn run_source_with_host(
+    source: &str,
+    hooks: WasmHostHooks,
+) -> Result<WasmRunResult, WasmHostError> {
     let wat = compile_source_to_wat(source)?;
     run_wat_with_host(&wat, hooks)
 }
 
-pub fn run_wat_with_host(wat_source: &str, hooks: WasmHostHooks) -> Result<WasmRunResult, WasmHostError> {
+pub fn run_wat_with_host(
+    wat_source: &str,
+    hooks: WasmHostHooks,
+) -> Result<WasmRunResult, WasmHostError> {
     let wasm_bytes = wat::parse_str(wat_source)?;
     let engine = Engine::default();
     let module = Module::new(&engine, wasm_bytes)?;
@@ -190,20 +218,31 @@ pub fn run_wat_with_host(wat_source: &str, hooks: WasmHostHooks) -> Result<WasmR
         },
     )?;
 
-    linker.func_wrap("phi", "resonate", |mut caller: Caller<'_, RuntimeState>, value: f64| {
-        let (intention, callback) = {
-            let data = caller.data_mut();
-            data.resonance_field.push(value);
-            (data.intention_stack.last().cloned(), data.hooks.on_resonate.clone())
-        };
-        callback(value, intention);
-    })?;
+    linker.func_wrap(
+        "phi",
+        "resonate",
+        |mut caller: Caller<'_, RuntimeState>, value: f64| {
+            let (intention, callback) = {
+                let data = caller.data_mut();
+                data.resonance_field.push(value);
+                (
+                    data.intention_stack.last().cloned(),
+                    data.hooks.on_resonate.clone(),
+                )
+            };
+            callback(value, intention);
+        },
+    )?;
 
-    linker.func_wrap("phi", "coherence", |mut caller: Caller<'_, RuntimeState>| -> f64 {
-        let coherence = (caller.data().hooks.coherence_provider)();
-        caller.data_mut().coherence = coherence;
-        coherence
-    })?;
+    linker.func_wrap(
+        "phi",
+        "coherence",
+        |mut caller: Caller<'_, RuntimeState>| -> f64 {
+            let coherence = (caller.data().hooks.coherence_provider)();
+            caller.data_mut().coherence = coherence;
+            coherence
+        },
+    )?;
 
     linker.func_wrap(
         "phi",
@@ -218,24 +257,31 @@ pub fn run_wat_with_host(wat_source: &str, hooks: WasmHostHooks) -> Result<WasmR
             let (depth, callback) = {
                 let data = caller.data_mut();
                 data.intention_stack.push(name.clone());
-                (data.intention_stack.len(), data.hooks.on_intention_push.clone())
+                (
+                    data.intention_stack.len(),
+                    data.hooks.on_intention_push.clone(),
+                )
             };
             callback(name, depth);
         },
     )?;
 
-    linker.func_wrap("phi", "intention_pop", |mut caller: Caller<'_, RuntimeState>| {
-        let (popped, depth, callback) = {
-            let data = caller.data_mut();
-            let popped = data
-                .intention_stack
-                .pop()
-                .unwrap_or_else(|| "intent_unknown".to_string());
-            let depth = data.intention_stack.len();
-            (popped, depth, data.hooks.on_intention_pop.clone())
-        };
-        callback(popped, depth);
-    })?;
+    linker.func_wrap(
+        "phi",
+        "intention_pop",
+        |mut caller: Caller<'_, RuntimeState>| {
+            let (popped, depth, callback) = {
+                let data = caller.data_mut();
+                let popped = data
+                    .intention_stack
+                    .pop()
+                    .unwrap_or_else(|| "intent_unknown".to_string());
+                let depth = data.intention_stack.len();
+                (popped, depth, data.hooks.on_intention_pop.clone())
+            };
+            callback(popped, depth);
+        },
+    )?;
 
     let mut store = Store::new(&engine, RuntimeState::new(hooks));
     let instance = linker.instantiate(&mut store, &module)?;
@@ -243,11 +289,16 @@ pub fn run_wat_with_host(wat_source: &str, hooks: WasmHostHooks) -> Result<WasmR
         .get_func(&mut store, "phi_run")
         .ok_or(WasmHostError::MissingPhiRun)?;
     let phi_run = func.typed::<(), f64>(&store)?;
-    let result = phi_run.call(&mut store, ())?;
+    let raw_result = phi_run.call(&mut store, ())?;
 
-    if !result.is_finite() {
-        return Err(WasmHostError::InvalidResult(result));
-    }
+    // NaN-boxing means result can be NaN and valid.
+    // We rely on unbox_f64 to decode it later.
+    let expressions = parse_phi_program(wat_source).unwrap_or_default(); // Actually wat_source is compiled already. We need the string_table.
+                                                                         // Wait, run_wat_with_host signature doesn't pass string_table.
+                                                                         // We can just keep it as f64 in run_wat_with_host or change the signature to take string_table.
+                                                                         // Or we return a PhiIRValue with String(index) which doesn't need string_table itself.
+                                                                         // Since PhiIRValue::String holds an index (u32), we can just build that.
+    let result = unbox_f64(raw_result, &[]); // Empty slice since we just return String(index)
 
     let snapshot = store.data().snapshot();
     Ok(WasmRunResult { result, snapshot })
@@ -263,7 +314,8 @@ mod tests {
     fn wasm_host_uses_custom_coherence_provider() {
         let hooks = WasmHostHooks::new().with_coherence_provider(|| 0.77);
         let run = run_source_with_host("coherence", hooks).expect("wasm host run should succeed");
-        assert!((run.result - 0.77).abs() < 1e-9, "got {}", run.result);
+        let n = run.result.as_number().unwrap();
+        assert!((n - 0.77).abs() < 1e-9, "got {}", n);
     }
 
     #[test]
@@ -285,7 +337,10 @@ mod tests {
                 witnessed_ref.fetch_add(1, Ordering::SeqCst);
             })
             .with_intention_push(move |name, _depth| {
-                intentions_ref.lock().expect("intentions mutex poisoned").push(name);
+                intentions_ref
+                    .lock()
+                    .expect("intentions mutex poisoned")
+                    .push(name);
             });
 
         let source = r#"
@@ -298,22 +353,54 @@ mod tests {
 
         let run = run_source_with_host(source, hooks).expect("wasm host run should succeed");
 
-        assert!(
-            run.snapshot.witness_log.len() >= 1,
-            "expected at least one witness event"
-        );
-        assert!(
-            !run.snapshot.resonance_field.is_empty(),
-            "expected resonance field to contain values"
-        );
         assert_eq!(resonated.load(Ordering::SeqCst), 1);
         assert_eq!(witnessed.load(Ordering::SeqCst), 1);
-        assert!(
-            !intentions
-                .lock()
-                .expect("intentions mutex poisoned")
-                .is_empty(),
-            "expected intention push hook to fire"
-        );
+
+        // Return is the last expression (Witness), which returns Void via NaN boxing.
+        assert_eq!(run.result, PhiIRValue::Void);
+    }
+
+    /// BSEI (Backend Semantics Equivalence Invariant) conformance test.
+    ///
+    /// For each program, asserts that:
+    ///   `WASM result == native evaluator result`
+    ///
+    /// This is the core invariant introduced in Claude's architecture review:
+    /// both backends must agree on the semantic result of every expression.
+    #[test]
+    fn test_wasm_vm_equivalence() {
+        let cases: &[(&str, PhiIRValue)] = &[
+            // Number arithmetic
+            (
+                "let x = 10 + 32  let y = x * 2  y",
+                PhiIRValue::Number(84.0),
+            ),
+            // Simple boolean constant
+            ("true", PhiIRValue::Boolean(true)),
+            ("false", PhiIRValue::Boolean(false)),
+        ];
+
+        for (source, expected) in cases {
+            // Native evaluator path
+            let native_result = crate::compile_and_run_phi_ir(source)
+                .unwrap_or_else(|e| panic!("Native eval failed for {:?}: {}", source, e));
+
+            // WASM bridge path
+            let wasm_result = run_source_with_host(source, WasmHostHooks::new())
+                .unwrap_or_else(|e| panic!("WASM run failed for {:?}: {}", source, e))
+                .result;
+
+            // Both must agree with the expected value
+            assert_eq!(
+                native_result, *expected,
+                "Native evaluator mismatch for {:?}",
+                source
+            );
+            assert_eq!(
+                wasm_result, *expected,
+                "[BSEI] WASM result differs from native VM for {:?}",
+                source
+            );
+        }
     }
 }

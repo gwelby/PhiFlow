@@ -1,7 +1,6 @@
-use phiflow::phi_ir::lowering::lower_program;
-use phiflow::phi_ir::evaluator::{Evaluator, VmExecResult};
 use phiflow::parser::parse_phi_program;
-use phiflow::host::{CallbackHostProvider, WitnessAction};
+use phiflow::phi_ir::evaluator::{Evaluator, VmExecResult};
+use phiflow::phi_ir::lowering::lower_program;
 
 #[test]
 fn test_entangle_yields_with_frequency() {
@@ -15,7 +14,11 @@ fn test_entangle_yields_with_frequency() {
     let mut eval = Evaluator::new(&program);
     let res = eval.run_or_yield().unwrap();
 
-    if let VmExecResult::Entangled { frequency, frozen_state } = res {
+    if let VmExecResult::Entangled {
+        frequency,
+        frozen_state,
+    } = res
+    {
         assert_eq!(frequency, 432.0);
         let res2 = eval.resume(frozen_state).unwrap();
         if let VmExecResult::Complete(val) = res2 {
@@ -44,7 +47,7 @@ fn test_evolve_blocks() {
         }
         println!("  Terminator: {:?}", block.terminator);
     }
-    
+
     let mut eval = Evaluator::new(&program);
     let result = eval.run().unwrap();
     println!("Final Result: {:?}", result);
