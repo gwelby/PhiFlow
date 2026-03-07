@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PhiFlow Resonance Protocol",
+  "description": "Standard event format for the PhiFlow Resonance Bus (RESONANCE.jsonl)",
+  "type": "object",
+  "required": ["source", "timestamp", "type", "coherence"],
+  "properties": {
+    "source": {
+      "type": "string",
+      "description": "ID of the PhiFlow process or agent emitting the event"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["witness", "resonate", "intention_push", "intention_pop", "coherence_check"],
+      "description": "The consciousness operation performed"
+    },
+    "data": {
+      "type": "object",
+      "description": "Payload specific to the operation type",
+      "properties": {
+        "value": { "type": "number" },
+        "intention": { "type": "string" },
+        "duration_ms": { "type": "number" }
+      }
+    },
+    "coherence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "The measured coherence level at the time of the event"
+    }
+  }
+}

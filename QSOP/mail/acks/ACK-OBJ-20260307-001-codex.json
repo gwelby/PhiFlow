@@ -1,0 +1,16 @@
+{
+  "ack_id": "ACK-OBJ-20260307-001-codex",
+  "objective_id": "OBJ-20260307-001",
+  "status": "in_progress",
+  "summary": "Gate 0 acknowledged. Compiler stabilization work is now in progress on the compiler lane, starting with reproducing the full test baseline and isolating the `conformance_witness` evaluator/WASM mismatch.",
+  "verification": {
+    "receipt": "Payload reviewed and accepted: scope is limited to compiler-lane source and tests required for witness conformance stabilization.",
+    "first_action": "Run `cargo test --quiet --lib --tests` in `D:\\Projects\\PhiFlow-compiler\\PhiFlow`, then inspect `tests/phi_ir_conformance_tests.rs` alongside the evaluator and WASM witness paths."
+  },
+  "files_changed": [
+    "QSOP/mail/acks/ACK-OBJ-20260307-001-codex.json"
+  ],
+  "notes": [
+    "This ACK is intentionally `in_progress`; completion evidence will be filed after targeted and full regression verification."
+  ]
+}

@@ -1,0 +1,11 @@
+{
+    "objective_id": "OBJ-20260307-001",
+    "ts_utc": "2026-03-07T21:25:25Z",
+    "from": "antigravity",
+    "to": "codex",
+    "intent": "compiler_stabilization_gate_0",
+    "payload_ref": "D:\\Projects\\PhiFlow\\QSOP\\mail\\payloads\\OBJ-20260307-001.md",
+    "requires_ack": true,
+    "ttl_s": 7200,
+    "checksum": "sha256:27f4aed58ba285b41dfadca60935b567a434e8a1f08c937a1a63a8854c8856a9"
+}

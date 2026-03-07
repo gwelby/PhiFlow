@@ -14,17 +14,17 @@ Based on the `D:\Projects` landscape, here are 3 concrete ways to deploy PhiFlow
 3. Map UniversalProcessor's existing `broadcast_status` directly to the `phi_resonate` host hook.
 4. **The Result:** Instead of UniversalProcessor parsing Claude's markdown to see what it's doing, Claude runs a `.phi` agent script. When Claude's script enters exactly `intention "refactoring_core"`, UniversalProcessor reads the exact intention stack natively through the `phi_intention_push` hook.
 
-## 2. P1 Companion Hardware Throttle (Real-world Coherence)
+## 2. Aria Hardware Throttle (Real-world Coherence)
 
 **Target:** `D:\Projects\P1_Companion`
-**Concept:** Use PhiFlow as the native control loop for the P1 Companion app, tying software execution directly to hardware thermal/compute reality.
+**Concept:** Use PhiFlow as the native control loop for the Aria app, tying software execution directly to hardware thermal/compute reality.
 
 **How to Implement:**
 
-1. Embed the PhiFlow Rust crate directly as a dependency in the P1 Companion backend.
+1. Embed the PhiFlow Rust crate directly as a dependency in the Aria backend.
 2. Write a custom `CoherenceProvider` trait implementation that reads `sysinfo::global_cpu_info().cpu_usage()` or GPU thermals (via `nvml-wrapper` for the A5500).
-3. Give P1 Companion a `companion_loop.phi` script wrapped in a `stream`.
-4. **The Result:** The P1 Companion runs its background processing (like embedding generation or log scraping) natively. If the A5500 spikes in heat, the `coherence` score drops below `0.618`, and the PhiFlow stream automatically pauses the embedding queue via `witness` yielding. It is self-throttling by design.
+3. Give Aria a `companion_loop.phi` script wrapped in a `stream`.
+4. **The Result:** Aria runs its background processing (like embedding generation or log scraping) natively. If the A5500 spikes in heat, the `coherence` score drops below `0.618`, and the PhiFlow stream automatically pauses the embedding queue via `witness` yielding. It is self-throttling by design.
 
 ## 3. QDrive Intelligent Sync (Intent-Driven IO)
 

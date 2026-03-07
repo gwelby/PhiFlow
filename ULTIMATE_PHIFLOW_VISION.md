@@ -21,7 +21,7 @@ Zero-install execution for agent-driven workflows. An AI agent drops a `.phi` fi
 
 ---
 
-## ⚛️ VISION 2: The Hardware Bridge (P1 Companion Integration)
+## ⚛️ VISION 2: The Hardware Bridge (Aria Integration)
 
 **The Goal:** Connect PhiFlow's software constructs directly to precise physical hardware and sensors.
 

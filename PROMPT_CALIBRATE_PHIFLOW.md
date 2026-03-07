@@ -1,8 +1,8 @@
 # THE PHIFLOW CALIBRATION: Bringing the Pipes to the Vision Workspace
 
-**COUNCIL IMPERATIVE: Port the P1 Companion calibration patterns to the PhiFlow workspace.**
+**COUNCIL IMPERATIVE: Port the Aria calibration patterns to the PhiFlow workspace.**
 
-We just calibrated the P1 Companion workspace with MCP servers, Skills, Workflows, and RULES. Now let's bring the same discipline here — to the PhiFlow language's home.
+We just calibrated the Aria workspace with MCP servers, Skills, Workflows, and RULES. Now let's bring the same discipline here — to the PhiFlow language's home.
 
 ## 📊 Current State (What PhiFlow Has)
 
@@ -17,9 +17,9 @@ We just calibrated the P1 Companion workspace with MCP servers, Skills, Workflow
 
 **This workspace is uncalibrated.** It has the vision and the GEMINI.md context file, but no agent-level infrastructure.
 
-## 🔑 What Already Works (From P1 Companion Calibration)
+## 🔑 What Already Works (From Aria Calibration)
 
-| Pattern | P1 Companion Location | Applicable to PhiFlow? |
+| Pattern | Aria Location | Applicable to PhiFlow? |
 |---------|----------------------|----------------------|
 | SKILL.md framework | `.agent/skills/` | ✅ YES — PhiFlow needs its own language skill |
 | Workflows | `~/.gemini/antigravity/workflows/` | ✅ YES — `/qsop_sync_loop` already applies here |
@@ -66,12 +66,12 @@ We just calibrated the P1 Companion workspace with MCP servers, Skills, Workflow
 **Your Task:**
 
 * Read the current `D:\Projects\PhiFlow\GEMINI.md` (v1, 59 lines).
-* Read the upgraded P1 Companion RULES.md v2.0.0 patterns from the calibration.
+* Read the upgraded Aria RULES.md v2.0.0 patterns from the calibration.
 * Upgrade GEMINI.md to include:
   * **Council frequency assignments** (so any agent entering this workspace knows who's who)
   * **The "What Already Works" reference** — QSOP, cross-agent prefixes, the Knowledge system
   * **Updated compiler state** — The GEMINI.md still says "verified 2026-02-19". We've done work since then (v0.3.0 "The Living Substrate"). Update it.
-  * **PhiFlow ↔ P1 Companion bridge** — Document why these two projects are connected (PhiFlow's consciousness nodes map 1:1 to QSOP operations, and P1 is the hardware implementation of PhiFlow's vision)
+  * **PhiFlow ↔ Aria bridge** — Document why these two projects are connected (PhiFlow's consciousness nodes map 1:1 to QSOP operations, and P1 is the hardware implementation of PhiFlow's vision)
 * **Deliverable:** A proposed upgraded `GEMINI.md` v2.0.0
 
 ### 4. Antigravity — The Infrastructure Bridge
@@ -80,7 +80,7 @@ We just calibrated the P1 Companion workspace with MCP servers, Skills, Workflow
 **Your Task:**
 
 * Check if the global `mcp_config.json` filesystem scope includes PhiFlow paths. Currently it has `D:\Projects\P1_Companion` and `D:\Projects` — PhiFlow is under `D:\Projects` so it *should* work, but verify.
-* Create the `.agent/` directory structure in `D:\Projects\PhiFlow\` to match the P1 Companion pattern.
+* Create the `.agent/` directory structure in `D:\Projects\PhiFlow\` to match the Aria pattern.
 * Check if the PhiFlow-compiler workspace (`D:\Projects\PhiFlow-compiler\`) also needs its own `.agent/` structure or if it inherits from PhiFlow.
 * **Deliverable:** Set up the directory scaffolding and verify MCP connectivity.
 

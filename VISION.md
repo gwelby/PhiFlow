@@ -1,7 +1,7 @@
 # PhiFlow Vision
 
 Status: Living document  
-Last updated: 2026-02-26
+Last updated: 2026-03-06
 
 ## Human Promise
 PhiFlow exists to create software that is not blind while it runs.
@@ -31,23 +31,27 @@ These map directly to QSOP operations:
 - `resonate` -> shared resonance plane
 - `coherence` -> DISTILL signal
 
-## Architecture Reality (2026-02-26)
+## Architecture Reality (2026-03-06)
 
 There are currently two important runtime states:
 
 1. `D:\Projects\PhiFlow\PhiFlow` (master worktree)
-- Historical/original crate and documentation lane.
-- Local `cargo test` currently fails in `tests/performance_tests.rs` because simulator shots scaling is inconsistent.
+- Documentation/witness lane and currently the most stable directly runnable crate.
+- Verified on 2026-03-06:
+  - `cargo test --quiet` passes with warnings.
+- Caveat:
+  - The outer `master` worktree is dirty with protocol, bridge, and architecture-review files that have not been reconciled into committed branch truth yet.
 
 2. `D:\Projects\PhiFlow-compiler\PhiFlow` (compiler worktree)
 - Newer parser -> PhiIR -> optimizer -> evaluator/VM/WASM pipeline.
-- Verified passing:
-  - `cargo build --release`
-  - `cargo test --quiet`
-  - corpus sweep test (`test_all_phi_files_parse_and_execute`)
+- Current verification is mixed:
+  - `cargo test --quiet --lib --tests` reaches the main suite but fails in `tests/phi_ir_conformance_tests.rs::conformance_witness` on evaluator/WASM mismatch (`lhs=0`, `rhs=NaN`)
+  - full `cargo test --quiet` fails earlier while compiling several examples and some dependency surfaces
+- Operational note:
+  - Treat compiler worktree as the advanced integration lane, not the current green release lane, until end-to-end tests are repaired.
 
 Near-term operating principle:
-- Treat compiler worktree as runtime truth until merge reconciliation is complete.
+- Treat `master` as the stable demo/docs lane and `compiler` as the runtime repair lane until merge reconciliation is complete.
 
 ## Why This Matters For Real Users
 1. Debugging becomes faster:
@@ -103,8 +107,8 @@ The following candidates are grounded in existing local projects.
 ## 90-Day Execution Plan
 
 ### Phase 1 (Stabilize Runtime Contract)
-1. Reconcile `master` and `compiler` runtime paths.
-2. Fix simulator shots scaling bug in master.
+1. Repair compiler-lane conformance and example build regressions.
+2. Reconcile `master` and `compiler` runtime paths after compiler returns to green.
 3. Enforce release gates:
 - `cargo build --release`
 - `cargo test --quiet`

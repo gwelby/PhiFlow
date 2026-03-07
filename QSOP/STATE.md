@@ -1,4 +1,41 @@
-# STATE - Last updated: 2026-02-28 (Phase 5: MCP Bus Guardrails + Cross-Agent Round-Trip)
+# STATE - Last updated: 2026-03-06 (Cross-Worktree Reality Check + Council Activation)
+
+## Verified (2026-03-06) [Cross-worktree reality check]
+
+- `D:\Projects\PhiFlow\PhiFlow` (`master` inner crate) is currently the most stable directly runnable lane:
+  - `cargo test --quiet` passed on 2026-03-06 with warnings only
+  - This supersedes the older note that `tests/performance_tests.rs` was still failing on `master`
+- `D:\Projects\PhiFlow-compiler\PhiFlow` (`compiler` inner crate) remains the most advanced runtime lane, but it is not currently green end-to-end:
+  - `cargo test --quiet --lib --tests` now fails at `tests/phi_ir_conformance_tests.rs::conformance_witness` with evaluator/WASM mismatch (`lhs=0`, `rhs=NaN`)
+  - Full `cargo test --quiet` fails earlier while compiling multiple examples that import `phiflow`, and also reports missing `rlib` forms for several dependencies
+  - This means the older claim that compiler-lane `cargo test --quiet` passes is stale
+- Worktree hygiene snapshot (2026-03-06):
+  - `master` is dirty in docs/protocol/bridge files (`CLAUDE_ARCHITECTURE_REVIEW.md`, `PHIFLOW_WORKSPACE_INDEX.md`, `bridges/web/*`, `examples/browser_shim.js`, etc.)
+  - `compiler` is dirty in runtime/test/QSOP files and is an active integration lane rather than merge-ready state
+  - `cleanup` and `language` are clean worktrees with only minimal branch-specific delta from the shared history
+- Branch divergence snapshot (2026-03-06):
+  - `master...compiler` = 11 / 12 unique commits
+  - `master...cleanup` = 23 / 1 unique commits
+  - `master...language` = 23 / 1 unique commits
+- Operational truth as of 2026-03-06:
+  - Stable execution/demo lane: `master`
+  - Advanced but repair-needed runtime lane: `compiler`
+  - Available capacity lanes for structured work: `cleanup`, `language`
+
+## Council Activation (2026-03-06)
+
+- `Codex` -> `D:\Projects\PhiFlow-compiler`
+  - Mission: restore end-to-end green runtime status
+  - Done condition: `cargo test --quiet` passes again, starting with `phi_ir_conformance_tests::conformance_witness` and example-target compile failures
+- `Lumi` -> `D:\Projects\PhiFlow-lang`
+  - Mission: own browser/WASM-facing language evolution only after ABI review against compiler truth
+  - Done condition: new syntax/features land with docs/examples/tests, and browser-host assumptions match the runtime contracts Codex closes
+- `Qwen` -> `D:\Projects\PhiFlow-cleanup`
+  - Mission: reduce outer-repo entropy and leave a zero-search map of what is real vs dead
+  - Done condition: `TRIAGE.md` + `STRUCT.md` are complete and the sprawl outside `PhiFlow/` is categorized for keep/archive/remove
+- `Witness / docs lane` -> `D:\Projects\PhiFlow`
+  - Mission: keep `QSOP/STATE.md`, `KNOW.md`, and `VISION.md` aligned with executable truth before merge activity
+  - Done condition: all status docs reflect current branch reality and local dirty changelog work is reconciled intentionally, not implicitly
 
 ## Verified (2026-02-28) [Antigravity Phase 5: MCP Bus Guardrails]
 

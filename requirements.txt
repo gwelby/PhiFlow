@@ -40,3 +40,6 @@ scipy>=1.7.0                # Advanced mathematical functions
 # Install with: pip install phiflow[audio]
 sounddevice>=0.4.0          # Audio output for frequency generation
 librosa>=0.8.0              # Audio analysis and processing 
+# Network / Bus Integration
+paho-mqtt>=2.1.0          # Resonance bus bridging to MQTT
+
