@@ -1,9 +1,7 @@
 // PhiFlow Integration Tests - Comprehensive testing for the complete PhiFlow system
 // Tests the full pipeline from source code to quantum execution
 
-use assert_cmd::Command;
-use std::fs;
-use std::time::Duration;
+use phiflow::parser::{PhiLexer, PhiParser};
 use std::collections::HashMap;
 
 #[tokio::test]
