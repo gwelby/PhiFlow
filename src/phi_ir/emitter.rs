@@ -20,7 +20,7 @@
 //!   [TERMINATOR: emit_node]
 //! ```
 
-use crate::phi_ir::{PhiIRBinOp, PhiIRNode, PhiIRProgram, PhiIRValue};
+use crate::phi_ir::{PhiIRBinOp, PhiIRNode, PhiIRProgram, PhiIRValue, TeamDirection};
 use std::collections::HashMap;
 
 // --- Opcodes ---
@@ -398,8 +398,13 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
 
         PhiIRNode::StreamPop => out.push(OP_BREAK_STREAM),
 
-        PhiIRNode::Resonate { value, .. } => {
+        PhiIRNode::Resonate { value, direction, .. } => {
             out.push(OP_RESONATE);
+            // Serialize direction: 0 = TeamA, 1 = TeamB
+            match direction {
+                TeamDirection::TeamA => out.push(0),
+                TeamDirection::TeamB => out.push(1),
+            }
             match value {
                 Some(op) => {
                     out.push(1);

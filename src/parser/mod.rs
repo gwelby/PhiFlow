@@ -270,8 +270,10 @@ pub enum PhiExpression {
     // RESONATE: Share state between intention blocks. Code that talks to itself.
     // resonate              -> share current intention's state to the field
     // resonate expression   -> share a specific value to the field
+    // resonate expression toward TEAM_B -> share with inverted direction (Bloch sphere)
     Resonate {
         expression: Option<Box<PhiExpression>>, // what to share (None = share all)
+        direction: TeamDirection,               // TEAM_A (default) or TEAM_B (inverted)
     },
 
     // Persistence & Dialogue
@@ -1761,6 +1763,8 @@ impl PhiParser {
     /// Parse resonate statement:
     ///   resonate              -> share current intention's state
     ///   resonate expression   -> share a specific value
+    ///   resonate expression toward TEAM_A  -> share with TEAM_A direction (default)
+    ///   resonate expression toward TEAM_B  -> share with TEAM_B direction (inverted)
     fn parse_resonate_statement(&mut self) -> Result<PhiExpression, String> {
         self.expect(PhiToken::Resonate)?;
 
@@ -1773,7 +1777,29 @@ impl PhiParser {
             Some(Box::new(self.parse_expression()?))
         };
 
-        Ok(PhiExpression::Resonate { expression })
+        // Parse optional direction: toward TEAM_A | toward TEAM_B
+        let mut direction = TeamDirection::TeamA; // default
+        if self.current_token == PhiToken::Identifier("toward".to_string()) {
+            self.advance(); // consume 'toward'
+            match &self.current_token {
+                PhiToken::Identifier(s) if s.to_uppercase() == "TEAM_A" => {
+                    direction = TeamDirection::TeamA;
+                    self.advance();
+                }
+                PhiToken::Identifier(s) if s.to_uppercase() == "TEAM_B" => {
+                    direction = TeamDirection::TeamB;
+                    self.advance();
+                }
+                _ => {
+                    return Err(format!(
+                        "Expected TEAM_A or TEAM_B after 'toward', found {:?}",
+                        self.current_token
+                    ));
+                }
+            }
+        }
+
+        Ok(PhiExpression::Resonate { expression, direction })
     }
 
     /// Parse intention block:

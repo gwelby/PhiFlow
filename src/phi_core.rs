@@ -1,6 +1,14 @@
 use std::f64::consts::{PI, SQRT_2};
 use num_complex::Complex64;
 
+/// Team direction for resonate operations (quantum backend uses this for Bloch sphere inversion)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TeamDirection {
+    #[default]
+    TeamA, // Default: ry(theta * pi) where theta = confidence
+    TeamB, // Inverted: ry((1 - theta) * pi)
+}
+
 // Core Mathematical Constants
 pub const TRINITY: i64 = 3;
 pub const FIBONACCI_89: i64 = 89; // The 11th Fibonacci number, consciousness bridge frequency

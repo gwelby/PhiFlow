@@ -2,7 +2,7 @@
 //!
 //! Loads `.phivm` bytes emitted by `phi_ir::emitter` and executes them.
 
-use crate::phi_ir::{BlockId, Operand, PhiIRBinOp, PhiIRValue};
+use crate::phi_ir::{BlockId, Operand, PhiIRBinOp, PhiIRValue, TeamDirection};
 use std::collections::HashMap;
 
 const MAGIC: &[u8; 4] = b"PHIV";
@@ -143,6 +143,7 @@ pub enum BytecodeNode {
     IntentionPop,
     Resonate {
         value: Option<Operand>,
+        direction: TeamDirection,
     },
     CoherenceCheck,
     Sleep {
@@ -298,7 +299,8 @@ impl PhiVm {
                 self.intention_stack.pop();
                 None
             }
-            BytecodeNode::Resonate { value } => {
+            BytecodeNode::Resonate { value, .. } => {
+                // direction is quantum-backend specific, ignored by VM
                 if let Some(op) = value {
                     let val = self.get_reg(*op)?.clone();
                     let key = self
@@ -589,13 +591,21 @@ fn parse_node(reader: &mut ByteReader<'_>, string_table: &[String]) -> VmResult<
         },
         OP_INTENTION_POP => BytecodeNode::IntentionPop,
         OP_RESONATE => {
+            // Read direction byte: 0 = TeamA, 1 = TeamB
+            let direction_byte = reader.read_u8()?;
+            let direction = if direction_byte == 0 {
+                TeamDirection::TeamA
+            } else {
+                TeamDirection::TeamB
+            };
+            
             let has_value = reader.read_u8()?;
             let value = if has_value == 1 {
                 Some(reader.read_u32()?)
             } else {
                 None
             };
-            BytecodeNode::Resonate { value }
+            BytecodeNode::Resonate { value, direction }
         }
         OP_COHERENCE_CHECK => BytecodeNode::CoherenceCheck,
         OP_SLEEP => BytecodeNode::Sleep {
@@ -726,7 +736,7 @@ mod tests {
     use super::PhiVm;
     use crate::phi_ir::{
         emitter,
-        PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction,
+        PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction, TeamDirection,
     };
 
     fn single_block_program(instructions: Vec<PhiInstruction>, terminator: PhiIRNode) -> PhiIRProgram {
@@ -840,6 +850,7 @@ mod tests {
                     node: PhiIRNode::Resonate {
                         value: Some(0),
                         frequency_relationship: None,
+                        direction: TeamDirection::TeamA,
                     },
                 },
                 PhiInstruction {
