@@ -213,10 +213,8 @@ async fn spawn_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonRp
                     // Add to entanglement queue
                     // Convert f64 to bits for exact hashing
                     let freq_key = frequency.to_bits();
-                    let mut queue = state_clone.entanglement_queue.lock().unwrap();
-                    let waiting = queue.entry(freq_key).or_insert_with(Vec::new);
-                    waiting.push(id_clone.clone());
 
+<<<<<<< HEAD
                     // If we have at least 2 waiting (for example, simple pair lock), we could auto-resume here.
                     // But maybe we want the MCP client to control resumption, or we auto-resume when count >= N.
                     // Let's implement auto-resume for pairs (n=2)
@@ -230,6 +228,20 @@ async fn spawn_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonRp
                         // For now, let's just log and rely on the client or a dedicated background task.
                         // Actually, this meets the 'entangle' definition: "host phase-locks them"
                         // Since we are the host, let's just leave them in the queue and let the MCP client call `resume_entangled_streams`
+=======
+                    let should_resume = {
+                        let mut queue = state_clone.entanglement_queue.lock().unwrap();
+                        let waiting = queue.entry(freq_key).or_insert_with(Vec::new);
+                        waiting.push(id_clone.clone());
+                        waiting.len() >= 2 // Phase-lock threshold
+                    };
+
+                    if should_resume {
+                        let s = Arc::new(state_clone.clone());
+                        tokio::task::spawn_blocking(move || {
+                            let _ = resume_entangled_streams_internal(frequency, s);
+                        });
+>>>>>>> origin/master
                     }
                 }
                 Err(e) => {
@@ -308,6 +320,7 @@ async fn read_resonance_field(args: Value, state: &McpState) -> Result<Value, Js
     }))
 }
 
+<<<<<<< HEAD
 async fn resume_entangled_streams(args: Value, state: &McpState) -> Result<Value, JsonRpcError> {
     let frequency = args
         .get("frequency")
@@ -318,6 +331,9 @@ async fn resume_entangled_streams(args: Value, state: &McpState) -> Result<Value
             data: None,
         })?;
 
+=======
+fn resume_entangled_streams_internal(frequency: f64, state: Arc<McpState>) -> Result<usize, JsonRpcError> {
+>>>>>>> origin/master
     let freq_key = frequency.to_bits();
 
     // 1. Pop all waiting streams for this frequency
@@ -327,12 +343,7 @@ async fn resume_entangled_streams(args: Value, state: &McpState) -> Result<Value
     };
 
     if streams_to_resume.is_empty() {
-        return Ok(json!({
-            "content": [{
-                "type": "text",
-                "text": format!("No streams waiting on frequency {}", frequency)
-            }]
-        }));
+        return Ok(0);
     }
 
     let mut resumed_count = 0;
@@ -365,7 +376,7 @@ async fn resume_entangled_streams(args: Value, state: &McpState) -> Result<Value
             (fs, prog)
         };
 
-        let state_clone = state.clone();
+        let state_clone = (*state).clone();
         let id_clone = stream_id.clone();
         let timeout_duration = Duration::from_millis(state_clone.config.timeout_ms);
 
@@ -405,9 +416,20 @@ async fn resume_entangled_streams(args: Value, state: &McpState) -> Result<Value
                         ctx.resonance_field = snapshot_shared_resonance(&state_clone);
 
                         let next_freq_key = next_freq.to_bits();
-                        let mut queue = state_clone.entanglement_queue.lock().unwrap();
-                        let waiting = queue.entry(next_freq_key).or_insert_with(Vec::new);
-                        waiting.push(id_clone.clone());
+                        let should_resume = {
+                            let mut queue = state_clone.entanglement_queue.lock().unwrap();
+                            let waiting = queue.entry(next_freq_key).or_insert_with(Vec::new);
+                            waiting.push(id_clone.clone());
+                            waiting.len() >= 2
+                        };
+
+                        if should_resume {
+                            let s = Arc::new(state_clone.clone());
+                            // Since this is a synchronous callback context, spawn it correctly
+                            tokio::task::spawn_blocking(move || {
+                                let _ = resume_entangled_streams_internal(next_freq, s);
+                            });
+                        }
                     }
                     Err(e) => {
                         ctx.status = "failed".to_string();
@@ -419,7 +441,7 @@ async fn resume_entangled_streams(args: Value, state: &McpState) -> Result<Value
 
         // Spawn a background monitor for the timeout (since we're resuming multiple blindly here)
         let sid = stream_id.clone();
-        let state_ref = state.clone();
+        let state_ref = (*state).clone();
         tokio::spawn(async move {
             if let Err(_) = tokio::time::timeout(timeout_duration, eval_handle).await {
                 let mut streams = state_ref.streams.lock().unwrap();
@@ -431,6 +453,28 @@ async fn resume_entangled_streams(args: Value, state: &McpState) -> Result<Value
         });
 
         resumed_count += 1;
+    }
+
+    Ok(resumed_count)
+}
+
+async fn resume_entangled_streams(args: Value, state: &McpState) -> Result<Value, JsonRpcError> {
+    let frequency = args.get("frequency").and_then(|f| f.as_f64()).ok_or_else(|| JsonRpcError {
+        code: -32602,
+        message: "Missing or invalid frequency parameter".to_string(),
+        data: None,
+    })?;
+
+    let state_arc = Arc::new(state.clone());
+    let resumed_count = resume_entangled_streams_internal(frequency, state_arc)?;
+
+    if resumed_count == 0 {
+        return Ok(json!({
+            "content": [{
+                "type": "text",
+                "text": format!("No streams waiting on frequency {}", frequency)
+            }]
+        }));
     }
 
     Ok(json!({
@@ -520,6 +564,21 @@ async fn resume_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonR
                     ctx.status = format!("entangled_{}", frequency);
                     ctx.frozen_state = Some(frozen_state);
                     ctx.resonance_field = snapshot_shared_resonance(&state_clone);
+
+                    let next_freq_key = frequency.to_bits();
+                    let should_resume = {
+                        let mut queue = state_clone.entanglement_queue.lock().unwrap();
+                        let waiting = queue.entry(next_freq_key).or_insert_with(Vec::new);
+                        waiting.push(id_clone.clone());
+                        waiting.len() >= 2
+                    };
+
+                    if should_resume {
+                        let s = Arc::new(state_clone.clone());
+                        tokio::task::spawn_blocking(move || {
+                            let _ = resume_entangled_streams_internal(frequency, s);
+                        });
+                    }
                 }
                 Err(e) => {
                     ctx.status = "failed".to_string();

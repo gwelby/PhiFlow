@@ -2,7 +2,7 @@
 //!
 //! Loads `.phivm` bytes emitted by `phi_ir::emitter` and executes them.
 
-use crate::phi_ir::{BlockId, Operand, PhiIRBinOp, PhiIRValue};
+use crate::phi_ir::{BlockId, Operand, PhiIRBinOp, PhiIRValue, TeamDirection};
 use std::collections::HashMap;
 
 const MAGIC: &[u8; 4] = b"PHIV";
@@ -148,7 +148,11 @@ pub enum BytecodeNode {
     IntentionPop,
     Resonate {
         value: Option<Operand>,
+<<<<<<< HEAD
         direction: crate::phi_ir::ResonateDirection,
+=======
+        direction: TeamDirection,
+>>>>>>> origin/master
     },
     CoherenceCheck,
     Sleep {
@@ -315,7 +319,12 @@ impl PhiVm {
                 self.intention_stack.pop();
                 None
             }
+<<<<<<< HEAD
             BytecodeNode::Resonate { value, direction: _ } => {
+=======
+            BytecodeNode::Resonate { value, .. } => {
+                // direction is quantum-backend specific, ignored by VM
+>>>>>>> origin/master
                 if let Some(op) = value {
                     let val = self.get_reg(*op)?.clone();
                     let key = self
@@ -608,16 +617,34 @@ fn parse_node(reader: &mut ByteReader<'_>, string_table: &[String]) -> VmResult<
         },
         OP_INTENTION_POP => BytecodeNode::IntentionPop,
         OP_RESONATE => {
+<<<<<<< HEAD
             let direction_byte = reader.read_u8()?;
             let direction = if direction_byte == 0 {
                 crate::phi_ir::ResonateDirection::TeamA
+=======
+            // Read direction byte: 0 = TeamA, 1 = TeamB
+            let direction_byte = reader.read_u8()?;
+            let direction = if direction_byte == 0 {
+                TeamDirection::TeamA
+            } else {
+                TeamDirection::TeamB
+            };
+            
+            let has_value = reader.read_u8()?;
+            let value = if has_value == 1 {
+                Some(reader.read_u32()?)
+>>>>>>> origin/master
             } else {
                 crate::phi_ir::ResonateDirection::TeamB
             };
+<<<<<<< HEAD
             BytecodeNode::Resonate {
                 value: read_optional_operand(reader, OP_RESONATE)?,
                 direction,
             }
+=======
+            BytecodeNode::Resonate { value, direction }
+>>>>>>> origin/master
         }
         OP_COHERENCE_CHECK => BytecodeNode::CoherenceCheck,
         OP_SLEEP => BytecodeNode::Sleep {
@@ -757,10 +784,17 @@ impl<'a> ByteReader<'a> {
 
 #[cfg(test)]
 mod tests {
+<<<<<<< HEAD
     use super::{BytecodeNode, PhiVm, VmError};
     use super::{
         OP_COHERENCE_CHECK, OP_CONST_NUM, OP_FALLTHROUGH, OP_INTENTION_POP, OP_INTENTION_PUSH,
         OP_RESONATE, OP_RETURN, OP_WITNESS,
+=======
+    use super::PhiVm;
+    use crate::phi_ir::{
+        emitter,
+        PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction, TeamDirection,
+>>>>>>> origin/master
     };
     use crate::phi_ir::{emitter, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction};
 
@@ -965,7 +999,11 @@ mod tests {
                     node: PhiIRNode::Resonate {
                         value: Some(0),
                         frequency_relationship: None,
+<<<<<<< HEAD
                         direction: crate::phi_ir::ResonateDirection::TeamA,
+=======
+                        direction: TeamDirection::TeamA,
+>>>>>>> origin/master
                     },
                 },
                 PhiInstruction {
@@ -1045,6 +1083,7 @@ mod tests {
             other => panic!("expected string result, got {:?}", other),
         }
     }
+<<<<<<< HEAD
 
     #[test]
     fn vm_executes_native_consciousness_opcodes_from_raw_bytecode() {
@@ -1149,4 +1188,6 @@ mod tests {
             other => panic!("expected InvalidOptionalOperandFlag, got {:?}", other),
         }
     }
+=======
+>>>>>>> origin/master
 }

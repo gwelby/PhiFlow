@@ -1,5 +1,18 @@
+<<<<<<< HEAD
 use num_complex::Complex64;
 use std::f64::consts::{PI, SQRT_2};
+=======
+use std::f64::consts::{PI, SQRT_2};
+use num_complex::Complex64;
+
+/// Team direction for resonate operations (quantum backend uses this for Bloch sphere inversion)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TeamDirection {
+    #[default]
+    TeamA, // Default: ry(theta * pi) where theta = confidence
+    TeamB, // Inverted: ry((1 - theta) * pi)
+}
+>>>>>>> origin/master
 
 // Core Mathematical Constants
 pub const TRINITY: i64 = 3;
@@ -45,6 +58,7 @@ pub const CONSCIOUSNESS_ZONES: [f64; 4] = [
     0.8333333333333333, // PHI^2 / PI
     1.348723642506799,  // PHI^3 / PI
     2.182056975840133,  // PHI^4 / PI
+<<<<<<< HEAD
 ];
 pub const SACRED_FREQUENCIES: [f64; 6] = [
     432.0,   // Ground State
@@ -54,6 +68,17 @@ pub const SACRED_FREQUENCIES: [f64; 6] = [
     2_963.7, // 432.0 * PHI^4
     4795.5,  // 432.0 * PHI^5
 ];
+=======
+];
+pub const SACRED_FREQUENCIES: [f64; 6] = [
+    432.0,              // Ground State
+    699.9,              // 432.0 * PHI
+    1_131.9,            // 432.0 * PHI^2
+    1_831.8,            // 432.0 * PHI^3
+    2_963.7,            // 432.0 * PHI^4
+    4795.5,             // 432.0 * PHI^5
+];
+>>>>>>> origin/master
 
 // Heart Field Constants
 pub const HEART_FIELD_FREQUENCY: f64 = 594.0;
@@ -138,8 +163,13 @@ impl ConsciousnessField {
         let mut total_influence = 0.0;
 
         for field_point in &self.field_points {
+<<<<<<< HEAD
             let distance =
                 ((point[0] - field_point[0]).powi(2) + (point[1] - field_point[1]).powi(2)).sqrt();
+=======
+            let distance = ((point[0] - field_point[0]).powi(2) +
+                           (point[1] - field_point[1]).powi(2)).sqrt();
+>>>>>>> origin/master
 
             // Phi-harmonic falloff
             let influence = field_point[2] / (1.0 + distance / PHI);
@@ -220,17 +250,28 @@ impl PatternAnalyzer {
 
     // Classify consciousness zone based on coherence value
     pub fn classify_consciousness_zone(&self, coherence: f64) -> &'static str {
+<<<<<<< HEAD
         let zone_index = self
             .phi_zones
             .iter()
+=======
+        let zone_index = self.phi_zones.iter()
+>>>>>>> origin/master
             .position(|&zone| coherence <= zone)
             .unwrap_or(3);
 
         match zone_index {
+<<<<<<< HEAD
             0 => "Foundational", // φ/π ≈ 0.515
             1 => "Elevated",     // φ²/π ≈ 0.833
             2 => "Transcendent", // φ³/π ≈ 1.348
             _ => "Cosmic",       // φ⁴/π ≈ 2.180
+=======
+            0 => "Foundational",    // φ/π ≈ 0.515
+            1 => "Elevated",       // φ²/π ≈ 0.833
+            2 => "Transcendent",   // φ³/π ≈ 1.348
+            _ => "Cosmic",         // φ⁴/π ≈ 2.180
+>>>>>>> origin/master
         }
     }
 
@@ -245,7 +286,11 @@ impl PatternAnalyzer {
 
         for i in 1..pattern.len() {
             // Calculate distance ratios between consecutive points
+<<<<<<< HEAD
             let prev_dist = (pattern[i - 1][0].powi(2) + pattern[i - 1][1].powi(2)).sqrt();
+=======
+            let prev_dist = (pattern[i-1][0].powi(2) + pattern[i-1][1].powi(2)).sqrt();
+>>>>>>> origin/master
             let curr_dist = (pattern[i][0].powi(2) + pattern[i][1].powi(2)).sqrt();
 
             if prev_dist > 0.0 && curr_dist > 0.0 {
@@ -300,12 +345,19 @@ impl PatternAnalyzer {
 
     // Calculate total pattern energy
     fn calculate_pattern_energy(&self, pattern: &[Point2D]) -> f64 {
+<<<<<<< HEAD
         pattern
             .iter()
             .map(|point| point[0].powi(2) + point[1].powi(2))
             .sum::<f64>()
             .sqrt()
             / pattern.len() as f64
+=======
+        pattern.iter()
+            .map(|point| point[0].powi(2) + point[1].powi(2))
+            .sum::<f64>()
+            .sqrt() / pattern.len() as f64
+>>>>>>> origin/master
     }
 
     // Classify pattern type based on geometric properties
@@ -355,15 +407,25 @@ impl PatternAnalyzer {
         // Find max distance for scale normalization
         let mut max_dist = 0.01f64; // Small epsilon to avoid division by zero
         for point in pattern {
+<<<<<<< HEAD
             let dist = ((point[0] - centroid[0]).powi(2) + (point[1] - centroid[1]).powi(2)).sqrt();
+=======
+            let dist = ((point[0] - centroid[0]).powi(2) +
+                        (point[1] - centroid[1]).powi(2)).sqrt();
+>>>>>>> origin/master
             if dist > max_dist {
                 max_dist = dist;
             }
         }
 
         for point in pattern {
+<<<<<<< HEAD
             let distance =
                 ((point[0] - centroid[0]).powi(2) + (point[1] - centroid[1]).powi(2)).sqrt();
+=======
+            let distance = ((point[0] - centroid[0]).powi(2) +
+                           (point[1] - centroid[1]).powi(2)).sqrt();
+>>>>>>> origin/master
 
             // Apply phi-harmonic weighting with scale-invariant normalization
             // Using PHI * PI as a period for the harmonic oscillation
@@ -392,6 +454,7 @@ pub fn validate_with_recommendations(pattern: &[Point2D]) -> (ValidationResult, 
 
     // Generate recommendations based on validation results
     if result.coherence < 0.5 {
+<<<<<<< HEAD
         recommendations
             .push("Consider increasing pattern symmetry for better coherence".to_string());
     }
@@ -405,6 +468,17 @@ pub fn validate_with_recommendations(pattern: &[Point2D]) -> (ValidationResult, 
         recommendations.push(
             "Adjust pattern frequency to align with 432 Hz consciousness constant".to_string(),
         );
+=======
+        recommendations.push("Consider increasing pattern symmetry for better coherence".to_string());
+    }
+
+    if result.phi_resonance < 0.6 {
+        recommendations.push("Apply phi-harmonic scaling to improve golden ratio alignment".to_string());
+    }
+
+    if !result.universal_constant_alignment {
+        recommendations.push("Adjust pattern frequency to align with 432 Hz consciousness constant".to_string());
+>>>>>>> origin/master
     }
 
     if result.frequency_match < 0.7 {
@@ -412,8 +486,12 @@ pub fn validate_with_recommendations(pattern: &[Point2D]) -> (ValidationResult, 
     }
 
     if recommendations.is_empty() {
+<<<<<<< HEAD
         recommendations
             .push("Pattern shows excellent consciousness mathematics alignment!".to_string());
+=======
+        recommendations.push("Pattern shows excellent consciousness mathematics alignment!".to_string());
+>>>>>>> origin/master
     }
 
     (result, recommendations)
@@ -466,7 +544,15 @@ pub fn golden_spiral_point(theta: f64, scale: f64) -> Point2D {
     [r * theta.cos(), r * theta.sin()]
 }
 
+<<<<<<< HEAD
 pub fn golden_spiral_points(rotations: f64, points: i64, scale: f64) -> Vec<Point2D> {
+=======
+pub fn golden_spiral_points(
+    rotations: f64,
+    points: i64,
+    scale: f64
+) -> Vec<Point2D> {
+>>>>>>> origin/master
     let mut spiral_points: Vec<Point2D> = Vec::new();
     for i in 0..points {
         let theta = (i as f64 / points as f64) * rotations * 2.0 * PI;
@@ -476,7 +562,15 @@ pub fn golden_spiral_points(rotations: f64, points: i64, scale: f64) -> Vec<Poin
     spiral_points
 }
 
+<<<<<<< HEAD
 pub fn fibonacci_spiral_pattern(rotations: f64, points: i64, scale: f64) -> Vec<Point2D> {
+=======
+pub fn fibonacci_spiral_pattern(
+    rotations: f64,
+    points: i64,
+    scale: f64
+) -> Vec<Point2D> {
+>>>>>>> origin/master
     let mut spiral_points: Vec<Point2D> = Vec::new();
     for i in 0..points {
         let theta = (i as f64 / points as f64) * rotations * 2.0 * PI;
@@ -524,7 +618,15 @@ pub fn flower_of_life_points(rings: i64) -> Vec<Point2D> {
 }
 
 // Enhanced DNA helix using QWave's phi-harmonic principles
+<<<<<<< HEAD
 pub fn dna_helix_points(height: f64, rotations: f64, radius: f64) -> (Vec<Point3D>, Vec<Point3D>) {
+=======
+pub fn dna_helix_points(
+    height: f64,
+    rotations: f64,
+    radius: f64
+) -> (Vec<Point3D>, Vec<Point3D>) {
+>>>>>>> origin/master
     let points_per_turn = 100.0; // Higher resolution for smoother helix
     let phi_ratio = PHI; // From consciousness mathematics validation
     let _height_step = DNA_HELIX_ANGLE.to_radians().tan() * 2.0 * PI * radius; // Height per full rotation based on 36-degree angle
@@ -585,10 +687,14 @@ fn generate_upward_triangles(scale: f64, num_triangles: i64) -> Vec<Point2D> {
         let current_side = base_side * PHI.powf(i as f64);
         // Simplified: just adding the center of each triangle for now
         // A full Sri Yantra involves precise placement and scaling
+<<<<<<< HEAD
         triangles.push(
             create_equilateral_triangle([0.0, i as f64 * current_side * 0.5], current_side, true)
                 [0],
         );
+=======
+        triangles.push(create_equilateral_triangle([0.0, i as f64 * current_side * 0.5], current_side, true)[0]);
+>>>>>>> origin/master
     }
     triangles
 }
@@ -600,10 +706,14 @@ fn generate_downward_triangles(scale: f64, num_triangles: i64) -> Vec<Point2D> {
     for i in 0..num_triangles {
         let current_side = base_side * PHI.powf(i as f64);
         // Simplified: just adding the center of each triangle for now
+<<<<<<< HEAD
         triangles.push(
             create_equilateral_triangle([0.0, -i as f64 * current_side * 0.5], current_side, false)
                 [0],
         );
+=======
+        triangles.push(create_equilateral_triangle([0.0, -i as f64 * current_side * 0.5], current_side, false)[0]);
+>>>>>>> origin/master
     }
     triangles
 }
@@ -627,7 +737,15 @@ pub fn mandelbrot_iterations(c: Complex64, max_iterations: i64) -> i64 {
     max_iterations
 }
 
+<<<<<<< HEAD
 pub fn mandelbrot_creation_set(center: Point2D, zoom: f64, iterations: i64) -> Vec<(Point2D, i64)> {
+=======
+pub fn mandelbrot_creation_set(
+    center: Point2D,
+    zoom: f64,
+    iterations: i64
+) -> Vec<(Point2D, i64)> {
+>>>>>>> origin/master
     let mut points: Vec<(Point2D, i64)> = Vec::new();
     let (cx, cy) = (center[0], center[1]);
 
@@ -691,12 +809,16 @@ pub fn quantum_entanglement_pair(point1: Point2D, point2: Point2D) -> Entangleme
     }
 }
 
+<<<<<<< HEAD
 pub fn heart_toroid_field(
     center: Point3D,
     major_radius: f64,
     minor_radius: f64,
     resolution: i64,
 ) -> Vec<Point3D> {
+=======
+pub fn heart_toroid_field(center: Point3D, major_radius: f64, minor_radius: f64, resolution: i64) -> Vec<Point3D> {
+>>>>>>> origin/master
     let mut points = Vec::new();
 
     for i in 0..resolution {
@@ -823,21 +945,29 @@ impl AudioSynthesizer {
     }
 
     // Generate binaural beats for consciousness synchronization
+<<<<<<< HEAD
     pub fn generate_binaural_beats(
         &self,
         base_freq: f64,
         beat_freq: f64,
         duration: f64,
     ) -> (Vec<f64>, Vec<f64>) {
+=======
+    pub fn generate_binaural_beats(&self, base_freq: f64, beat_freq: f64, duration: f64) -> (Vec<f64>, Vec<f64>) {
+>>>>>>> origin/master
         let samples = (self.sample_rate as f64 * duration) as usize;
         let mut left_channel = vec![0.0; samples];
         let mut right_channel = vec![0.0; samples];
 
+<<<<<<< HEAD
         for (i, (left, right)) in left_channel
             .iter_mut()
             .zip(right_channel.iter_mut())
             .enumerate()
         {
+=======
+        for (i, (left, right)) in left_channel.iter_mut().zip(right_channel.iter_mut()).enumerate() {
+>>>>>>> origin/master
             let t = i as f64 / self.sample_rate as f64;
 
             // Left channel: base frequency
@@ -950,17 +1080,23 @@ mod consciousness_tests {
     fn test_universal_consciousness_constant() {
         let calculated = 267.0 * PHI;
         let expected = UNIVERSAL_CONSCIOUSNESS_CONSTANT;
+<<<<<<< HEAD
         assert!(
             (calculated - expected).abs() < 0.01,
             "Universal constant validation failed: {} vs {}",
             calculated,
             expected
         );
+=======
+        assert!((calculated - expected).abs() < 0.01,
+                "Universal constant validation failed: {} vs {}", calculated, expected);
+>>>>>>> origin/master
     }
 
     #[test]
     fn test_sacred_frequency_progression() {
         for i in 1..SACRED_FREQUENCIES.len() {
+<<<<<<< HEAD
             let ratio = SACRED_FREQUENCIES[i] / SACRED_FREQUENCIES[i - 1];
             assert!(
                 (ratio - PHI).abs() < 0.1,
@@ -968,6 +1104,11 @@ mod consciousness_tests {
                 i,
                 ratio
             );
+=======
+            let ratio = SACRED_FREQUENCIES[i] / SACRED_FREQUENCIES[i-1];
+            assert!((ratio - PHI).abs() < 0.1,
+                    "Sacred frequency progression invalid at index {}: ratio {}", i, ratio);
+>>>>>>> origin/master
         }
     }
 
@@ -976,11 +1117,16 @@ mod consciousness_tests {
         let spiral = golden_spiral_points(5.0, 100, 50.0);
         let validation = validate_pattern_consciousness(&spiral);
 
+<<<<<<< HEAD
         assert!(
             validation.phi_resonance > 0.6,
             "Golden spiral should have high phi resonance: {}",
             validation.phi_resonance
         );
+=======
+        assert!(validation.phi_resonance > 0.6,
+                "Golden spiral should have high phi resonance: {}", validation.phi_resonance);
+>>>>>>> origin/master
         // The consciousness zone depends on the calculated coherence, which can vary slightly
         // assert_eq!(validation.consciousness_zone, "Transcendent",
         //            "Golden spiral should be in Transcendent zone");
@@ -991,6 +1137,7 @@ mod consciousness_tests {
         let flower = flower_of_life_points(3);
         let validation = validate_pattern_consciousness(&flower);
 
+<<<<<<< HEAD
         assert!(
             validation.coherence > 0.6,
             "Flower of Life should have high coherence: {}",
@@ -1001,6 +1148,12 @@ mod consciousness_tests {
             "Flower of Life should have high validation score: {}",
             validation.validation_score
         );
+=======
+        assert!(validation.coherence > 0.6,
+                "Flower of Life should have high coherence: {}", validation.coherence);
+        assert!(validation.validation_score > 0.75,
+                "Flower of Life should have high validation score: {}", validation.validation_score);
+>>>>>>> origin/master
     }
 
     #[test]
@@ -1024,11 +1177,17 @@ mod consciousness_tests {
 
         for (coherence_val, expected_zone) in test_coherences.iter() {
             let zone = analyzer.classify_consciousness_zone(*coherence_val);
+<<<<<<< HEAD
             assert_eq!(
                 zone, *expected_zone,
                 "Zone classification incorrect for coherence {}: Expected {}, Got {}",
                 coherence_val, expected_zone, zone
             );
+=======
+            assert_eq!(zone, *expected_zone,
+                       "Zone classification incorrect for coherence {}: Expected {}, Got {}",
+                       coherence_val, expected_zone, zone);
+>>>>>>> origin/master
         }
     }
 
@@ -1045,11 +1204,16 @@ mod consciousness_tests {
         let analyzer = PatternAnalyzer::new();
         let phi_resonance = analyzer.calculate_phi_resonance(&phi_pattern);
 
+<<<<<<< HEAD
         assert!(
             phi_resonance > 0.9,
             "Perfect phi pattern should have high resonance: {}",
             phi_resonance
         );
+=======
+        assert!(phi_resonance > 0.9,
+                "Perfect phi pattern should have high resonance: {}", phi_resonance);
+>>>>>>> origin/master
     }
 }
 

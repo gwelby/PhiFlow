@@ -1,7 +1,11 @@
 // PhiFlow Integration Tests - Comprehensive testing for the complete PhiFlow system
 // Tests the full pipeline from source code to quantum execution
 
+<<<<<<< HEAD
 use phiflow::parser::{PhiLexer, PhiParser};
+=======
+use phiflow::parser::{PhiLexer, PhiParser};
+>>>>>>> origin/master
 use std::collections::HashMap;
 
 #[tokio::test]

@@ -138,7 +138,10 @@ pub enum PhiToken {
     Colon,
     Arrow,
     Dot,
+<<<<<<< HEAD
     MidCircuit,
+=======
+>>>>>>> origin/master
 
     // Special
     Newline,
@@ -250,7 +253,10 @@ pub enum PhiExpression {
     // WITNESS: Pause execution, hold state, be present with it.
     // Not a breakpoint. Not a sleep. The program observes itself.
     Witness {
+<<<<<<< HEAD
         mid_circuit: bool,
+=======
+>>>>>>> origin/master
         expression: Option<Box<PhiExpression>>, // what to witness (None = witness everything)
         body: Option<Box<PhiExpression>>,       // optional block to execute after witnessing
     },
@@ -272,10 +278,17 @@ pub enum PhiExpression {
     // RESONATE: Share state between intention blocks. Code that talks to itself.
     // resonate              -> share current intention's state to the field
     // resonate expression   -> share a specific value to the field
+<<<<<<< HEAD
     // resonate ... toward TEAM_B -> invert binary vote direction for quantum lowering
     Resonate {
         expression: Option<Box<PhiExpression>>, // what to share (None = share all)
         direction: ResonateDirection,
+=======
+    // resonate expression toward TEAM_B -> share with inverted direction (Bloch sphere)
+    Resonate {
+        expression: Option<Box<PhiExpression>>, // what to share (None = share all)
+        direction: TeamDirection,               // TEAM_A (default) or TEAM_B (inverted)
+>>>>>>> origin/master
     },
 
     // Persistence & Dialogue
@@ -399,12 +412,15 @@ pub enum UnaryOperator {
     Not,
 }
 
+<<<<<<< HEAD
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResonateDirection {
     TeamA,
     TeamB,
 }
 
+=======
+>>>>>>> origin/master
 pub struct PhiLexer {
     input: Vec<char>,
     position: usize,
@@ -714,6 +730,7 @@ impl PhiLexer {
             "Audio" => PhiToken::Audio,
             "ValidationResult" => PhiToken::Identifier(value), // Handled as Identifier
 
+<<<<<<< HEAD
             // true/false literals
             "true" => PhiToken::Boolean(true),
             "false" => PhiToken::Boolean(false),
@@ -721,6 +738,12 @@ impl PhiLexer {
             // Quantum measurement policy modifier
             "mid_circuit" => PhiToken::MidCircuit,
 
+=======
+            // Literals
+            "true" => PhiToken::Boolean(true),
+            "false" => PhiToken::Boolean(false),
+
+>>>>>>> origin/master
             _ => PhiToken::Identifier(value),
         }
     }
@@ -1506,6 +1529,46 @@ impl PhiParser {
                 // Handle validate statements as expressions
                 self.parse_validation_statement()?
             }
+<<<<<<< HEAD
+=======
+            PhiToken::Identifier(name) => {
+                let var_name = name.clone();
+                self.advance();
+
+                // Check for assignment
+                if self.current_token == PhiToken::Equal {
+                    self.advance();
+                    let value = Box::new(self.parse_expression()?);
+                    return Ok(PhiExpression::LetBinding {
+                        name: var_name,
+                        value,
+                        phi_type: None,
+                    });
+                }
+
+                // Check for function call
+                if self.current_token == PhiToken::LeftParen {
+                    self.advance();
+                    let mut arguments = Vec::new();
+
+                    while self.current_token != PhiToken::RightParen {
+                        arguments.push(self.parse_expression()?);
+                        if self.current_token == PhiToken::Comma {
+                            self.advance();
+                        }
+                    }
+
+                    self.expect(PhiToken::RightParen)?;
+
+                    PhiExpression::FunctionCall {
+                        name: var_name,
+                        arguments,
+                    }
+                } else {
+                    PhiExpression::Variable(var_name)
+                }
+            }
+>>>>>>> origin/master
             PhiToken::LeftParen => {
                 self.advance();
 
@@ -1540,7 +1603,11 @@ impl PhiParser {
                 PhiExpression::Block(expressions)
             }
             PhiToken::LeftBracket => {
+<<<<<<< HEAD
                 // Parse list literals directly as expressions
+=======
+                // Parse list literals directly as expressions (not through parse_phi_value)
+>>>>>>> origin/master
                 self.advance(); // Consume '['
                 let mut elements = Vec::new();
 
@@ -1550,6 +1617,10 @@ impl PhiParser {
                     PhiExpression::List(elements)
                 } else {
                     loop {
+<<<<<<< HEAD
+=======
+                        // Parse each element as a full expression (not just simple values)
+>>>>>>> origin/master
                         elements.push(self.parse_expression()?);
                         if self.current_token == PhiToken::Comma {
                             self.advance();
@@ -1561,6 +1632,7 @@ impl PhiParser {
                     PhiExpression::List(elements)
                 }
             }
+<<<<<<< HEAD
             _ => {
                 // If it's not a recognized expression-starter like Number or String,
                 // try to parse it as an identifier (this allows keywords as variables - P-1 fix)
@@ -1601,6 +1673,9 @@ impl PhiParser {
                     return Err(format!("Unexpected token: {:?}", self.current_token));
                 }
             }
+=======
+            _ => return Err(format!("Unexpected token: {:?}", self.current_token)),
+>>>>>>> origin/master
         }; // Note the '?' here to propagate errors
 
         // Handle list access
@@ -1739,12 +1814,17 @@ impl PhiParser {
     fn parse_witness_statement(&mut self) -> Result<PhiExpression, String> {
         self.expect(PhiToken::Witness)?;
 
+<<<<<<< HEAD
         let mut mid_circuit = false;
         if self.current_token == PhiToken::MidCircuit {
             mid_circuit = true;
             self.advance();
         }
 
+=======
+        // Check what IMMEDIATELY follows witness (before consuming newlines)
+        // This determines: bare witness, witness with expression, or witness with block
+>>>>>>> origin/master
         let (expression, body) = if self.current_token == PhiToken::Newline
             || self.current_token == PhiToken::Eof
             || self.current_token == PhiToken::RightBrace
@@ -1773,25 +1853,38 @@ impl PhiParser {
             (expr, None)
         };
 
+<<<<<<< HEAD
         Ok(PhiExpression::Witness { mid_circuit, expression, body })
+=======
+        Ok(PhiExpression::Witness { expression, body })
+>>>>>>> origin/master
     }
 
     /// Parse resonate statement:
     ///   resonate              -> share current intention's state
     ///   resonate expression   -> share a specific value
+<<<<<<< HEAD
+=======
+    ///   resonate expression toward TEAM_A  -> share with TEAM_A direction (default)
+    ///   resonate expression toward TEAM_B  -> share with TEAM_B direction (inverted)
+>>>>>>> origin/master
     fn parse_resonate_statement(&mut self) -> Result<PhiExpression, String> {
         self.expect(PhiToken::Resonate)?;
 
         let expression = if self.current_token == PhiToken::Newline
             || self.current_token == PhiToken::Eof
             || self.current_token == PhiToken::RightBrace
+<<<<<<< HEAD
             || self.is_resonate_direction_marker()
+=======
+>>>>>>> origin/master
         {
             None
         } else {
             Some(Box::new(self.parse_expression()?))
         };
 
+<<<<<<< HEAD
         let direction = if self.is_resonate_direction_marker() {
             self.parse_resonate_direction()?
         } else {
@@ -1802,6 +1895,31 @@ impl PhiParser {
             expression,
             direction,
         })
+=======
+        // Parse optional direction: toward TEAM_A | toward TEAM_B
+        let mut direction = TeamDirection::TeamA; // default
+        if self.current_token == PhiToken::Identifier("toward".to_string()) {
+            self.advance(); // consume 'toward'
+            match &self.current_token {
+                PhiToken::Identifier(s) if s.to_uppercase() == "TEAM_A" => {
+                    direction = TeamDirection::TeamA;
+                    self.advance();
+                }
+                PhiToken::Identifier(s) if s.to_uppercase() == "TEAM_B" => {
+                    direction = TeamDirection::TeamB;
+                    self.advance();
+                }
+                _ => {
+                    return Err(format!(
+                        "Expected TEAM_A or TEAM_B after 'toward', found {:?}",
+                        self.current_token
+                    ));
+                }
+            }
+        }
+
+        Ok(PhiExpression::Resonate { expression, direction })
+>>>>>>> origin/master
     }
 
     /// Parse intention block:
@@ -1900,6 +2018,7 @@ impl PhiParser {
         }
     }
 
+<<<<<<< HEAD
     fn is_resonate_direction_marker(&self) -> bool {
         matches!(
             &self.current_token,
@@ -1936,6 +2055,8 @@ impl PhiParser {
         }
     }
 
+=======
+>>>>>>> origin/master
     fn expect_identifier(&mut self) -> Result<String, String> {
         // Skip any newlines before looking for identifier
         while self.current_token == PhiToken::Newline {
@@ -2010,7 +2131,10 @@ impl PhiParser {
             PhiToken::Pattern2D => Ok("pattern2d".to_string()),
             PhiToken::Pattern3D => Ok("pattern3d".to_string()),
             PhiToken::Audio => Ok("audio".to_string()),
+<<<<<<< HEAD
             PhiToken::MidCircuit => Ok("mid_circuit".to_string()),
+=======
+>>>>>>> origin/master
             _ => Err(format!(
                 "Expected identifier, found {:?}",
                 self.current_token
