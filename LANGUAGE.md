@@ -21,12 +21,11 @@ PhiFlow has four constructs that exist in no other programming language:
 
 In every other language, code runs and you debug it afterward. In PhiFlow, the program stops to look at itself *while it runs*.
 
-```phi
-let data = create spiral at 432Hz with { rotations: 8.0, scale: 100.0 }
-
 witness data    // the program observes what it just created
 
-witness         // the program observes its entire state
+witness         // the program observes its entire state (Final policy)
+
+witness mid_circuit // forces an immediate measurement mid-execution
 ```
 
 When `witness` executes, the program reports:
@@ -35,6 +34,14 @@ When `witness` executes, the program reports:
 - What intention it's operating under
 - What frequencies it has used
 - Any contradictions it has detected
+
+### Witness Policies
+
+| Policy | Syntax | Physical Effect (Quantum) |
+|--------|--------|---------------------------|
+| **Final** | `witness` | Measures qubits at the very end of the circuit (default). |
+| **Mid-Circuit** | `witness mid_circuit` | Measures qubits immediately. Useful for conditional branching or "checking in" mid-process. |
+| **Non-Destructive** | `witness shadow` | (Experimental) Uses an ancilla qubit to measure coherence without collapsing the primary state. |
 
 This is not a print statement. This is not a debugger breakpoint. This is the program **being present with its own computation** before deciding what to do next.
 
@@ -138,6 +145,63 @@ intention "healing" {
 ```
 
 The difference: Python runs and you check afterward. PhiFlow observes itself AS it runs, reports its own alignment, and communicates internally.
+
+## Quantum Backend
+
+PhiFlow isn't just a philosophical concept; it physically compiles to OpenQASM 3.0 via its native intermediate representation. Because consciousness semantics (intentions, resonance, correlations) map perfectly to quantum mechanics (superposition, phase, entanglement), PhiFlow programs can execute directly on IBM Quantum hardware.
+
+### Quantum Compilation Flow
+
+```bash
+# Compile a .phi script to OpenQASM 3.0
+phic examples/council_vote.phi --target openqasm > circuit.qasm
+
+# Optional: Optimize entanglement depth (Tree Topology instead of Linear)
+phic examples/council_vote.phi --target openqasm --optimize-depth > circuit_opt.qasm
+```
+
+The resulting `circuit.qasm` can be natively submitted to the IBM Runtime (e.g., `ibm_brisbane`, `ibm_fez`) using Qiskit.
+
+### Semantic to Quantum Mapping
+
+| PhiFlow Construct | OpenQASM 3.0 Emission | Physical Meaning |
+|-------------------|-----------------------|------------------|
+| `intention "X"`   | Allocates a new `qubit` in the register.         | The state space for a specific idea or actor.         |
+| `resonate`        | Emits a Phase/Rotation gate (e.g., `ry(pi/2)`). | Encodes confidence or focus as a probability amplitude. |
+| `toward TEAM_B`   | Inverts the resonance angle: `ry(pi - theta)`. | Explicitly encodes opposition or "Team B" bias.       |
+| `coherence`       | Emits a Golden Ratio rotation `ry(0.618 * pi)`. | Imprints the sacred harmonic directly onto the qubit. |
+| `entangle on F`   | Emits a `cx` (CNOT) gate between qubits sharing frequency `F`. | Physically locks the probability states of two semantic intentions. |
+| `witness`         | Emits `measure` on qubits.                     | Collapses the quantum conceptual space to a classical outcome. |
+| `mid_circuit`     | Inline `measure` instruction.                  | Forces collapse at a specific branch point in the code. |
+
+### Production Hardware Integration
+
+PhiFlow's production pipeline (`phic --target openqasm`) includes advanced error mitigation strategies to maintain coherence on real-world noisy hardware:
+
+1. **Dynamical Decoupling (DD):** Automatically inserts X-Y-X-Y pulse sequences on idle qubits using **ALAP (As-Late-As-Possible) Scheduling** to combat T2 decoherence.
+2. **Readout Error Mitigation (REM):** Uses matrix-free mitigation (M3) to correct for per-qubit readout bias, ensuring the `witness` output is a faithful representation of the intended probability distribution.
+3. **Coherence Feedback Loop:** Measurement results from the hardware can be fed back into the `evolve` system. If a `witness` event on IBM Brisbane reports a `coherence < 0.6`, PhiFlow can dynamically recompile with safer, more entangled stabilizers.
+
+### Syntax Example
+
+```phi
+intention "MasterA" {
+    resonate 0.85          // ry(0.85 * pi)
+    entangle on 1008       // Registers MasterA on the 1008Hz channel
+}
+
+intention "MasterB" {
+    resonate 0.90          // ry(0.90 * pi)
+    entangle on 1008       // cx q[0], q[1] (entangles with prior 1008Hz intention)
+}
+
+witness                    // measure c[0] = q[0]; measure c[1] = q[1];
+```
+
+
+### The Power of the Witness
+
+When you compile PhiFlow to physical quantum hardware, the **Backend Semantics Equivalence** proves itself: deeper shared assumption chains in your `.phi` code become longer `cx` entanglement chains in the quantum circuits. Longer `cx` chains naturally decohere faster on physical hardware. Thus, the physical universe mathematically simulates the "noise" of over-correlated systems automatically.
 
 ## Core Language Features
 

@@ -19,6 +19,7 @@ pub mod quantum_codegen;
 pub mod vm;
 pub mod vm_state;
 pub mod wasm;
+pub mod openqasm;
 
 use crate::compiler::lexer::Token; // Re-using Token if needed, or defining own types
 
@@ -62,8 +63,15 @@ pub enum PatternKind {
 #[derive(Debug, Clone, PartialEq)]
 pub enum CollapsePolicy {
     MidCircuit,     // measure and continue
-    Deferred,       // record but don't collapse until end
+    Final,          // record but don't collapse until end
     NonDestructive, // measure ancilla, preserve main state
+}
+
+/// Direction for binary council-style resonance encodings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ResonateDirection {
+    TeamA,
+    TeamB,
 }
 
 /// Domain operations (specialized features beyond the four core constructs)
@@ -219,6 +227,7 @@ pub enum PhiIRNode {
     Resonate {
         value: Option<Operand>,
         frequency_relationship: Option<f64>, // phi-harmonic ratio, e.g. 528/432
+        direction: ResonateDirection,
     },
 
     /// Enter a continuous stream loop. Acts like IntentionPush but sets stream context

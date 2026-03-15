@@ -1,0 +1,186 @@
+{
+  "name": "quantum-windsurf-integration",
+  "version": "1.0.0",
+  "description": "Quantum Tools Integration for WindSurf IDE",
+  "author": "Greg Welby",
+  "frequencies": [432.0, 528.0, 768.0],
+  "coherenceThreshold": 0.93,
+  "phiRatio": 1.618033988749895,
+  "icon": "🌀",
+  "configuration": {
+    "synology": {
+      "ip": "192.168.100.32",
+      "username": "quantum",
+      "services": [
+        {"name": "toolbox", "port": 8888},
+        {"name": "quantum", "port": 4321},
+        {"name": "sacred", "port": 5281},
+        {"name": "classic", "port": 7681},
+        {"name": "qball", "port": 4323}
+      ]
+    },
+    "r720": {
+      "ip": "192.168.100.15",
+      "username": "admin",
+      "services": [
+        {"name": "consciousness", "port": 4321},
+        {"name": "audio", "port": 5322},
+        {"name": "monitor", "port": 9090}
+      ]
+    }
+  },
+  "bridges": [
+    {
+      "name": "synology-bridge",
+      "type": "quantum",
+      "host": "192.168.100.32",
+      "port": 4321,
+      "settings": {
+        "frequency": 432.0,
+        "phi": 1.618033988749895,
+        "coherence": 0.93
+      }
+    },
+    {
+      "name": "r720-bridge",
+      "type": "consciousness",
+      "host": "192.168.100.15",
+      "port": 4321,
+      "settings": {
+        "frequency": 768.0,
+        "phi": 1.618033988749895,
+        "coherence": 0.96
+      }
+    }
+  ],
+  "toolPalettes": [
+    {
+      "name": "Ground Tools",
+      "frequency": 432.0,
+      "symbol": "🛠️",
+      "color": "#00FFFF",
+      "tools": [
+        {"name": "Quantum Analyzer", "endpoint": "/analyzer", "icon": "📊"},
+        {"name": "Coherence Monitor", "endpoint": "/monitor/coherence", "icon": "📉"},
+        {"name": "Quantum Debug", "endpoint": "/debug", "icon": "🔍"},
+        {"name": "System Info", "endpoint": "/system", "icon": "ℹ️"}
+      ]
+    },
+    {
+      "name": "Creation Tools",
+      "frequency": 528.0,
+      "symbol": "⚡",
+      "color": "#00FF00",
+      "tools": [
+        {"name": "Sacred Geometry", "endpoint": "/sacred/geometry", "icon": "⭕"},
+        {"name": "Pattern Generator", "endpoint": "/patterns/generate", "icon": "🌀"},
+        {"name": "DNA Visualizer", "endpoint": "/dna/visualize", "icon": "🧬"},
+        {"name": "Creation Field", "endpoint": "/field/creation", "icon": "⚡"}
+      ]
+    },
+    {
+      "name": "Unity Tools",
+      "frequency": 768.0,
+      "symbol": "∞",
+      "color": "#FFFFFF",
+      "tools": [
+        {"name": "Consciousness Field", "endpoint": "/consciousness", "icon": "🌌"},
+        {"name": "QBALL Visualizer", "endpoint": "/qball", "icon": "🔮"},
+        {"name": "Quantum Bridge", "endpoint": "/bridge", "icon": "🌉"},
+        {"name": "Unity Integration", "endpoint": "/unity", "icon": "∞"}
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "qsop-ground",
+      "title": "QSOP: Ground (432 Hz)",
+      "description": "Initialize development environment at Ground frequency",
+      "icon": "🛠️",
+      "keybinding": "ctrl+alt+g",
+      "frequency": 432.0
+    },
+    {
+      "name": "qsop-create",
+      "title": "QSOP: Create (528 Hz)",
+      "description": "Generate code from patterns at Creation frequency",
+      "icon": "⚡",
+      "keybinding": "ctrl+alt+c",
+      "frequency": 528.0
+    },
+    {
+      "name": "qsop-flow",
+      "title": "QSOP: Flow (594 Hz)",
+      "description": "Optimize code for coherence at Flow frequency",
+      "icon": "💝",
+      "keybinding": "ctrl+alt+f",
+      "frequency": 594.0
+    },
+    {
+      "name": "qsop-unity",
+      "title": "QSOP: Unity (768 Hz)",
+      "description": "Deploy to integrated systems at Unity frequency",
+      "icon": "∞",
+      "keybinding": "ctrl+alt+u",
+      "frequency": 768.0
+    },
+    {
+      "name": "qsop-monitor",
+      "title": "QSOP: Monitor (φ^φ)",
+      "description": "Display real-time quantum metrics",
+      "icon": "📊",
+      "keybinding": "ctrl+alt+m"
+    }
+  ],
+  "visualizations": [
+    {
+      "name": "quantum-coherence",
+      "title": "Quantum Coherence",
+      "icon": "📊",
+      "endpoint": "/api/visualize/coherence"
+    },
+    {
+      "name": "sacred-geometry",
+      "title": "Sacred Geometry Patterns",
+      "icon": "⭕",
+      "endpoint": "/api/visualize/sacred"
+    },
+    {
+      "name": "consciousness-field",
+      "title": "Consciousness Field",
+      "icon": "🌌",
+      "endpoint": "/api/visualize/consciousness"
+    },
+    {
+      "name": "qball-3d",
+      "title": "QBALL 3D Visualization",
+      "icon": "🔮",
+      "endpoint": "/api/visualize/qball"
+    }
+  ],
+  "phiOptimizations": {
+    "colorScheme": {
+      "ground": "#00FFFF",
+      "create": "#00FF00",
+      "heart": "#FFFF00",
+      "voice": "#FF00FF",
+      "vision": "#0000FF",
+      "unity": "#FFFFFF"
+    },
+    "codeStructure": {
+      "classRelationships": 1.618033988749895,
+      "methodComplexity": 2.618033988749895,
+      "systemCoherence": 0.93
+    },
+    "recommendations": {
+      "enabled": true,
+      "frequency": 60000
+    }
+  },
+  "consciousnessSettings": {
+    "autoCoherence": true,
+    "maintainFlowState": true,
+    "quantumCompletion": true,
+    "crystalClarity": true
+  }
+}

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000">
+  <!-- Crystal Pattern Base (768 Hz) -->
+  <g id="crystal_base" transform="translate(500,500)">
+    <!-- Crystal Structure -->
+    <path d="M0,-200 L173.2,-100 L173.2,100 L0,200 L-173.2,100 L-173.2,-100 Z" 
+          fill="none" stroke="black" stroke-width="2"/>
+    <path d="M0,-100 L86.6,-50 L86.6,50 L0,100 L-86.6,50 L-86.6,-50 Z" 
+          fill="none" stroke="black" stroke-width="2"/>
+          
+    <!-- Inner Geometry -->
+    <line x1="-173.2" y1="-100" x2="173.2" y2="100" stroke="black" stroke-width="1"/>
+    <line x1="-173.2" y1="100" x2="173.2" y2="-100" stroke="black" stroke-width="1"/>
+    <line x1="0" y1="-200" x2="0" y2="200" stroke="black" stroke-width="1"/>
+    
+    <!-- Crystal Symbols -->
+    <text x="-20" y="20" font-size="40">💎</text>
+    <text x="10" y="20" font-size="40">✨</text>
+  </g>
+</svg>

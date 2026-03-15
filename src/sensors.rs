@@ -1,6 +1,58 @@
-use sysinfo::{Components, Networks, System};
+use std::sync::{Mutex, OnceLock};
+use std::thread;
+use std::time::Instant;
+
+use sysinfo::{Components, Networks, System, MINIMUM_CPU_UPDATE_INTERVAL};
 
 const DEFAULT_CRITICAL_TEMP_C: f64 = 90.0;
+
+struct SensorSampler {
+    system: System,
+    components: Components,
+    networks: Networks,
+    last_sample_at: Option<Instant>,
+    cpu_primed: bool,
+}
+
+impl SensorSampler {
+    fn new() -> Self {
+        Self {
+            system: System::new(),
+            components: Components::new_with_refreshed_list(),
+            networks: Networks::new_with_refreshed_list(),
+            last_sample_at: None,
+            cpu_primed: false,
+        }
+    }
+
+    fn sample(&mut self) -> f64 {
+        if let Some(last_sample_at) = self.last_sample_at {
+            let elapsed = last_sample_at.elapsed();
+            if elapsed < MINIMUM_CPU_UPDATE_INTERVAL {
+                thread::sleep(MINIMUM_CPU_UPDATE_INTERVAL - elapsed);
+            }
+        }
+
+        if self.cpu_primed {
+            self.system.refresh_cpu_usage();
+        } else {
+            self.system.refresh_cpu_usage();
+            thread::sleep(MINIMUM_CPU_UPDATE_INTERVAL);
+            self.system.refresh_cpu_usage();
+            self.cpu_primed = true;
+        }
+
+        self.system.refresh_memory();
+        self.components.refresh();
+        self.networks.refresh();
+
+        let coherence = compute_from_snapshot(&self.system, &self.components, &self.networks);
+        self.last_sample_at = Some(Instant::now());
+        coherence
+    }
+}
+
+static SENSOR_SAMPLER: OnceLock<Mutex<SensorSampler>> = OnceLock::new();
 
 fn percent_stability(usage_percent: f64) -> f64 {
     (1.0 - usage_percent / 100.0).clamp(0.0, 1.0)
@@ -78,17 +130,7 @@ fn network_stability(networks: &Networks) -> Option<f64> {
     Some((packet_health * 0.7 + activity_health * 0.3).clamp(0.0, 1.0))
 }
 
-pub fn compute_coherence_from_sensors() -> f64 {
-    let mut sys = System::new();
-    sys.refresh_cpu();
-    sys.refresh_memory();
-
-    let mut components = Components::new_with_refreshed_list();
-    components.refresh();
-
-    let mut networks = Networks::new_with_refreshed_list();
-    networks.refresh();
-
+fn compute_from_snapshot(sys: &System, components: &Components, networks: &Networks) -> f64 {
     let cpu_percent = sys.global_cpu_info().cpu_usage() as f64;
     let mem_percent = if sys.total_memory() == 0 {
         0.0
@@ -98,8 +140,8 @@ pub fn compute_coherence_from_sensors() -> f64 {
 
     let cpu_signal = percent_stability(cpu_percent);
     let mem_signal = percent_stability(mem_percent);
-    let thermal_signal = thermal_stability(&components);
-    let network_signal = network_stability(&networks);
+    let thermal_signal = thermal_stability(components);
+    let network_signal = network_stability(networks);
 
     let mut weighted = cpu_signal * 0.30 + mem_signal * 0.25;
     let mut total_weight = 0.55;
@@ -114,4 +156,12 @@ pub fn compute_coherence_from_sensors() -> f64 {
     }
 
     (weighted / total_weight).clamp(0.0, 1.0)
+}
+
+pub fn compute_coherence_from_sensors() -> f64 {
+    let sampler = SENSOR_SAMPLER.get_or_init(|| Mutex::new(SensorSampler::new()));
+    let mut sampler = sampler
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    sampler.sample()
 }

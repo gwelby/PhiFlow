@@ -1,0 +1,43 @@
+// Test file for PhiFlow parser error handling
+
+// Test 1: Invalid frequency format
+INITIALIZE TestObj1 AT 432.XYZ Hz WITH {
+    coherence: 1.0,
+    purpose: "Test invalid frequency"
+}
+
+// Test 2: Malformed PHI^ expression in parameter - Commented out
+// TRANSITION TO TestObj2 AT 528Hz WITH {
+//     phi_level: PHI^abc, // Should fail
+//     intent: "Test malformed PHI"
+// }
+
+// Test 3: Unknown parameter for a known command
+INITIALIZE TestObj3 AT 432Hz WITH {
+    coherence: 0.5,
+    unknown_param: "this should fail", 
+    purpose: "Test unknown parameter"
+}
+
+// Test 4: Missing mandatory parameter (missing coherence)
+INITIALIZE TestObj4 AT 432Hz WITH {
+    purpose: "Test missing mandatory coherence" 
+}
+
+// Test 5: Incorrect parameter type for phi_level (string instead of int)
+TRANSITION TO TestObj5 AT 528Hz WITH {
+    phi_level: "not_an_integer", 
+    intent: "Test wrong type for phi_level"
+}
+
+// Test 6: Incorrect parameter type for coherence (string instead of float)
+INITIALIZE TestObj6 AT 432Hz WITH {
+    coherence: "not_a_float",
+    purpose: "Test wrong type for coherence"
+}
+
+// Test 7: Valid command (should not be reached if previous errors stop execution)
+EVOLVE TO TestObj7 AT 672Hz WITH {
+    phi_level: 3,
+    resonance: "Valid command after errors"
+}

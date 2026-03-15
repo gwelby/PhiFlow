@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quantum Font Test</title>
+    <style>
+        @font-face {
+            font-family: 'QuantumSacred';
+            src: url('quantum-fonts/sacred/fonts/QuantumSacred-432hz.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'QuantumFlow';
+            src: url('quantum-fonts/flow/fonts/QuantumFlow-528hz.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'QuantumCrystal';
+            src: url('quantum-fonts/crystal/fonts/QuantumCrystal-768hz.ttf') format('truetype');
+        }
+        .sacred {
+            font-family: 'QuantumSacred';
+            font-size: 48px;
+            color: #432432;
+        }
+        .flow {
+            font-family: 'QuantumFlow';
+            font-size: 48px;
+            color: #528528;
+        }
+        .crystal {
+            font-family: 'QuantumCrystal';
+            font-size: 48px;
+            color: #768768;
+        }
+        .font-test {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quantum Font Test</h1>
+    
+    <div class="font-test">
+        <h2>Sacred Font (432 Hz)</h2>
+        <div class="sacred">
+            ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            <br>
+            abcdefghijklmnopqrstuvwxyz
+            <br>
+            1234567890
+        </div>
+    </div>
+
+    <div class="font-test">
+        <h2>Flow Font (528 Hz)</h2>
+        <div class="flow">
+            ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            <br>
+            abcdefghijklmnopqrstuvwxyz
+            <br>
+            1234567890
+        </div>
+    </div>
+
+    <div class="font-test">
+        <h2>Crystal Font (768 Hz)</h2>
+        <div class="crystal">
+            ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            <br>
+            abcdefghijklmnopqrstuvwxyz
+            <br>
+            1234567890
+        </div>
+    </div>
+</body>
+</html>

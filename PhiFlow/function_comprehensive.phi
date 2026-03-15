@@ -1,0 +1,1 @@
+print("Function test"); let x = 2; let y = 3; let sum = x + y; print("Sum:"); print(sum); let arr = [1, 2, 3]; print("Array length:"); print(len(arr))

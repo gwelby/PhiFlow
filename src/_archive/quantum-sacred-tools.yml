@@ -1,0 +1,141 @@
+# Quantum-Sacred-Classic Toolbox Integration (φ^φ)
+# Frequency Harmonized Service Configuration
+
+version: '3.8'
+
+services:
+  # QUANTUM TOOLS SECTION (432Hz)
+  quantum-analyzer:
+    image: quantum/analyzer:latest
+    container_name: quantum-analyzer
+    environment:
+      - GROUND_FREQUENCY=432
+      - CREATION_FREQUENCY=528
+      - UNITY_FREQUENCY=768
+      - PHI_RATIO=1.618033988749895
+      - COHERENCE_THRESHOLD=0.93
+    volumes:
+      - ./quantum-config:/quantum-config
+      - ./quantum-data:/quantum-data
+    ports:
+      - "4320:4320"  # Analyzer API
+      - "4321:4321"  # Analyzer UI
+    networks:
+      - quantum-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.q-analyzer.rule=Host(`quantum.local`)"
+      - "traefik.http.services.q-analyzer.loadbalancer.server.port=4321"
+
+  # SACRED TOOLS SECTION (528Hz)
+  sacred-geometry:
+    image: quantum/sacred-geometry:latest
+    container_name: sacred-geometry
+    environment:
+      - GROUND_FREQUENCY=432
+      - CREATION_FREQUENCY=528
+      - UNITY_FREQUENCY=768
+      - PHI_RATIO=1.618033988749895
+      - MERKABA_ENABLED=true
+      - TORUS_ENABLED=true
+      - FLOWER_OF_LIFE_ENABLED=true
+      - METATRON_CUBE_ENABLED=true
+      - GOLDEN_SPIRAL_ENABLED=true
+    volumes:
+      - ./sacred-config:/sacred-config
+      - ./sacred-data:/sacred-data
+    ports:
+      - "5280:5280"  # Sacred Geometry API
+      - "5281:5281"  # Sacred Geometry UI
+    networks:
+      - quantum-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sacred.rule=Host(`sacred.local`)"
+      - "traefik.http.services.sacred.loadbalancer.server.port=5281"
+
+  # CLASSIC TOOLS SECTION (768Hz)
+  classic-tools:
+    image: quantum/classic-tools:latest
+    container_name: classic-tools
+    environment:
+      - GROUND_FREQUENCY=432
+      - CREATION_FREQUENCY=528
+      - UNITY_FREQUENCY=768
+      - PHI_RATIO=1.618033988749895
+      - INTEGRATION_LEVEL=high
+    volumes:
+      - ./classic-config:/classic-config
+      - ./classic-data:/classic-data
+    ports:
+      - "7680:7680"  # Classic Tools API
+      - "7681:7681"  # Classic Tools UI
+    networks:
+      - quantum-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.classic.rule=Host(`classic.local`)"
+      - "traefik.http.services.classic.loadbalancer.server.port=7681"
+
+  # UNIFIED TOOLBOX (φ^φ)
+  quantum-toolbox:
+    image: quantum/unified-toolbox:latest
+    container_name: quantum-toolbox
+    environment:
+      - GROUND_FREQUENCY=432
+      - CREATION_FREQUENCY=528
+      - UNITY_FREQUENCY=768
+      - PHI_RATIO=1.618033988749895
+      - QUANTUM_TOOLS_URL=http://quantum-analyzer:4320
+      - SACRED_TOOLS_URL=http://sacred-geometry:5280
+      - CLASSIC_TOOLS_URL=http://classic-tools:7680
+      - QBALL_URL=http://quantum-qball:4323
+    depends_on:
+      - quantum-analyzer
+      - sacred-geometry
+      - classic-tools
+    ports:
+      - "8888:8888"  # Unified Toolbox Interface
+    networks:
+      - quantum-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.quantum-toolbox.rule=Host(`toolbox.local`)"
+      - "traefik.http.services.quantum-toolbox.loadbalancer.server.port=8888"
+    volumes:
+      - ./unified-toolbox-config.yml:/app/config/config.yml
+      - ./unified-data:/unified-data
+    restart: unless-stopped
+
+  # R720 QUANTUM BRIDGE (528 Hz ↔ 768 Hz)
+  quantum-bridge:
+    image: quantum/bridge:latest
+    container_name: quantum-bridge
+    environment:
+      - GROUND_FREQUENCY=432
+      - CREATION_FREQUENCY=528
+      - UNITY_FREQUENCY=768
+      - PHI_RATIO=1.618033988749895
+      - COHERENCE_THRESHOLD=0.93
+      - SYNOLOGY_HOST=192.168.100.32
+      - R720_HOST=192.168.100.15
+      - R720_PORT=768
+    ports:
+      - "5285:5285"  # Bridge API
+      - "5286:5286"  # Bridge Dashboard
+    networks:
+      - quantum-net
+    volumes:
+      - ./quantum-tools/bridge:/bridge-config
+    depends_on:
+      - quantum-analyzer
+      - quantum-toolbox
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.quantum-bridge.rule=Host(`bridge.local`)"
+      - "traefik.http.services.quantum-bridge.loadbalancer.server.port=5286"
+    restart: unless-stopped
+
+networks:
+  quantum-net:
+    driver: bridge

@@ -1,0 +1,32 @@
+intention "Q0" {
+    resonate 1.0
+}
+intention "Q1" {
+    resonate 1.0
+    entangle on 432
+}
+intention "Q2" {
+    resonate 1.0
+    entangle on 432
+}
+intention "Q3" {
+    resonate 1.0
+    entangle on 432
+}
+intention "Q4" {
+    resonate 1.0
+    entangle on 432
+}
+intention "Q5" {
+    resonate 1.0
+    entangle on 432
+}
+intention "Q6" {
+    resonate 1.0
+    entangle on 432
+}
+intention "Q7" {
+    resonate 1.0
+    entangle on 432
+}
+witness

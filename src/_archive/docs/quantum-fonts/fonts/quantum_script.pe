@@ -1,0 +1,1 @@
+New();SetFontNames("QuantumUnified","Quantum Unified","Quantum Unified","Regular","Copyright (c) 2025","1.000");Select("A");Import("sources/svg/letters/A.svg");RemoveOverlap();Simplify();AutoHint();Generate("builds/QuantumUnified.otf");

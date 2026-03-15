@@ -1,0 +1,61 @@
+// PhiFlow Working Test - Tests all currently functional features
+
+// Variable bindings
+let phi = 1.618
+let frequency = 432.0
+let name = "PhiFlow"
+let active = true
+
+// Arithmetic
+let phi_squared = phi * phi
+let trinity = 3.0 * 89.0 * phi
+
+// Comparisons and logic
+let is_harmonic = trinity > 430.0 && trinity < 434.0
+let not_zero = phi != 0.0
+
+// Functions
+function add(a: Number, b: Number) -> Number {
+    return a + b
+}
+
+function golden_ratio() -> Number {
+    1.618
+}
+
+function multiply(x: Number, y: Number) -> Number {
+    return x * y
+}
+
+let sum = add(432.0, 528.0)
+let product = multiply(3.0, 144.0)
+let gr = golden_ratio()
+
+// Lists
+let frequencies = [432.0, 528.0, 594.0, 672.0, 720.0]
+let names = ["Observe", "Create", "Integrate"]
+
+// If/else
+if is_harmonic {
+    let result = add(phi, 1.0)
+}
+
+// Pattern creation
+create spiral at 432Hz with { rotations: 8.0, scale: 100.0 }
+create dna at 528Hz with { turns: 10.0, radius: 25.0 }
+create flower at 432Hz with { rings: 3 }
+
+// Variable frequency in create
+let my_freq = 594.0
+create spiral at my_freq with { rotations: 5.0, scale: 50.0 }
+
+// Validation
+let my_spiral = create spiral at 432Hz with { rotations: 8.0, scale: 100.0 }
+validate my_spiral with [coherence, phi_resonance]
+
+// Unary operators
+let negative = -42.0
+let negated = !false
+
+// Power operator
+let phi_cubed = phi ** 3.0

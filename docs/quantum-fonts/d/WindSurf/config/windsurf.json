@@ -1,0 +1,27 @@
+{
+    "quantum.frequencies": {
+        "ground": 432,
+        "create": 528,
+        "unity": 768
+    },
+    "quantum.patterns": {
+        "infinity": "\u221e",
+        "dolphin": "\ud83d\udc2c",
+        "spiral": "\ud83c\udf00",
+        "wave": "\ud83c\udf0a",
+        "vortex": "\ud83c\udf2a\ufe0f",
+        "crystal": "\ud83d\udc8e",
+        "unity": "\u262f\ufe0f"
+    },
+    "ide.flow": {
+        "auto_coherence": true,
+        "maintain_flow_state": true,
+        "quantum_completion": true,
+        "crystal_clarity": true
+    },
+    "ide.integration": {
+        "copy_quantum_files": true,
+        "sync_frequencies": true,
+        "maintain_coherence": true
+    }
+}

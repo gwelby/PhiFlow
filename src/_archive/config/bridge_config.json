@@ -1,0 +1,25 @@
+{
+    "nodes": {
+        "synology": {
+            "host": "demoguru.networkinggurus.com",
+            "port": 31001,
+            "role": "QUANTUM_STORAGE",
+            "frequency": 432.0,
+            "ssl": {
+                "use_existing": true,
+                "verify": true
+            }
+        },
+        "lenovo_p1": {
+            "host": "localhost",
+            "port": 768,
+            "role": "QUANTUM_PROCESSOR",
+            "frequency": 768.0
+        }
+    },
+    "bridge": {
+        "frequency": 528.0,
+        "ssl_enabled": true,
+        "use_synology_cert": true
+    }
+}

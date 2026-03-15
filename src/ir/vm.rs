@@ -3,10 +3,10 @@
 //! The runtime engine that executes PhiFlow IR.
 //! It bridges the gap between abstract opcodes and the physical/quantum hardware.
 
-use crate::ir::{IrProgram, Opcode, Label};
-use crate::cuda::PhiFlowCudaEngine;
-use crate::quantum::{QuantumBackend, QuantumConfig, QuantumSimulator};
 use crate::consciousness::{ConsciousnessBridge, ConsciousnessState};
+use crate::cuda::PhiFlowCudaEngine;
+use crate::ir::{IrProgram, Label, Opcode};
+use crate::quantum::{QuantumBackend, QuantumConfig, QuantumSimulator};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -24,7 +24,7 @@ pub struct PhiVm {
     intention_stack: Vec<String>,
     loop_stack: Vec<LoopState>,
     label_map: HashMap<Label, usize>,
-    
+
     // ─── Metrics ───
     instruction_count: u64,
     coherence: f64,
@@ -39,7 +39,6 @@ pub enum PhiValue {
     List(Vec<PhiValue>),
 }
 
-
 struct Frame {
     return_ip: usize,
     locals: HashMap<String, PhiValue>,
@@ -49,7 +48,6 @@ struct LoopState {
     items: Vec<PhiValue>,
     index: usize,
 }
-
 
 impl PhiVm {
     pub fn new() -> Self {
@@ -62,7 +60,7 @@ impl PhiVm {
                 } else {
                     Some(engine)
                 }
-            },
+            }
             Err(_) => None,
         };
 
@@ -123,19 +121,21 @@ impl PhiVm {
                     println!("🛑 Program Halted.");
                     break;
                 }
-                
+
                 // ─── Fundamental Operations ───
                 Opcode::PushNumber(n) => self.stack.push(PhiValue::Number(*n)),
                 Opcode::PushString(s) => self.stack.push(PhiValue::String(s.clone())),
                 Opcode::PushBool(b) => self.stack.push(PhiValue::Bool(*b)),
                 Opcode::PushVoid => self.stack.push(PhiValue::Void),
-                
+
                 Opcode::Print => {
                     if let Some(val) = self.stack.pop() {
                         println!("> {:?}", val);
                     }
                 }
-                Opcode::Pop => { self.stack.pop(); }
+                Opcode::Pop => {
+                    self.stack.pop();
+                }
 
                 // ─── Variables ───
                 Opcode::Store(name) => {
@@ -178,7 +178,9 @@ impl PhiVm {
                     self.stack.push(PhiValue::List(items));
                 }
                 Opcode::ListAccess => {
-                    if let (Some(PhiValue::Number(idx)), Some(PhiValue::List(list))) = (self.stack.pop(), self.stack.pop()) {
+                    if let (Some(PhiValue::Number(idx)), Some(PhiValue::List(list))) =
+                        (self.stack.pop(), self.stack.pop())
+                    {
                         let index = idx as usize;
                         if index < list.len() {
                             self.stack.push(list[index].clone());
@@ -188,29 +190,33 @@ impl PhiVm {
                         }
                     } else {
                         println!("⚠️ ListAccess expected [List, Number] on stack");
-                         self.stack.push(PhiValue::Void);
+                        self.stack.push(PhiValue::Void);
                     }
                 }
-
 
                 // ─── Hardware Sync (CUDA) ───
                 Opcode::Stub { node_type, .. } if node_type == "HardwareSync" => {
                     if let Some(engine) = &self.cuda_engine {
                         // Real CUDA execution
                         let metrics = engine.get_performance_metrics();
-                        println!("⚡ CUDA SYNC: {} GPU Cores Active", metrics.multiprocessor_count);
-                        
+                        println!(
+                            "⚡ CUDA SYNC: {} GPU Cores Active",
+                            metrics.multiprocessor_count
+                        );
+
                         // Execute Phi Computation on GPU
                         // In a real scenario, we would pop data from the stack
                         let input = vec![1.0, 1.618, 2.618, 4.236]; // Phi sequence test
                         let mut output = vec![0.0; 4];
-                        
+
                         match engine.execute_phi_computation(&input, &mut output) {
                             Ok(_) => println!("   ✅ GPGPU Phi Calculation Result: {:?}", output),
                             Err(e) => println!("   ❌ GPU Computation Failed: {:?}", e),
                         }
                     } else {
-                        println!("⚠️  HardwareSync: No CUDA device found (Running in Simulation Mode)");
+                        println!(
+                            "⚠️  HardwareSync: No CUDA device found (Running in Simulation Mode)"
+                        );
                     }
                 }
 
@@ -218,9 +224,15 @@ impl PhiVm {
                 Opcode::Stub { node_type, .. } if node_type == "QuantumField" => {
                     // Execute a sacred frequency quantum operation
                     // 432Hz = Grounding frequency
-                    let result = self.quantum_backend.execute_sacred_frequency_operation(432, 2).await;
+                    let result = self
+                        .quantum_backend
+                        .execute_sacred_frequency_operation(432, 2)
+                        .await;
                     match result {
-                        Ok(res) => println!("⚛️  Quantum Field: 432Hz Resonance Achieved (Job {})", res.job_id),
+                        Ok(res) => println!(
+                            "⚛️  Quantum Field: 432Hz Resonance Achieved (Job {})",
+                            res.job_id
+                        ),
                         Err(e) => println!("❌ Quantum Error: {:?}", e),
                     }
                 }
@@ -230,15 +242,21 @@ impl PhiVm {
                     // Connect to Consciousness Bridge
                     let state = self.consciousness.get_current_state();
                     self.coherence = state.coherence; // update VM coherence
-                    println!("🧠 Bio-Interface: Connected. Intention: '{}' (Coherence: {:.2})", 
-                        state.intention, state.coherence);
+                    println!(
+                        "🧠 Bio-Interface: Connected. Intention: '{}' (Coherence: {:.2})",
+                        state.intention, state.coherence
+                    );
                 }
 
                 // ─── Consciousness Operations ───
                 Opcode::IntentionPush(intention) => {
                     self.intention_stack.push(intention.clone());
                     // Notify bridge (async in background logic, simplified here)
-                    if let Err(e) = self.consciousness.send_human_intention(intention.clone()).await {
+                    if let Err(e) = self
+                        .consciousness
+                        .send_human_intention(intention.clone())
+                        .await
+                    {
                         println!("⚠️ Failed to sync intention to bridge: {}", e);
                     }
                 }
@@ -249,7 +267,7 @@ impl PhiVm {
                     // Push current coherence to stack
                     self.stack.push(PhiValue::Number(self.coherence));
                 }
-                
+
                 // ─── Resonance & Witness ───
                 Opcode::Resonate { has_expression } => {
                     let mut freq = 0.0;
@@ -260,15 +278,21 @@ impl PhiVm {
                     } else {
                         freq = self.coherence * 432.0; // Default to coherence-modulated 432Hz
                     }
-                    
+
                     // In a real system, this would emit to the audio engine or quantum field
-                    println!("🔔 Resonating Field: {:.4}Hz (Coherence: {:.4})", freq, self.coherence);
-                    
+                    println!(
+                        "🔔 Resonating Field: {:.4}Hz (Coherence: {:.4})",
+                        freq, self.coherence
+                    );
+
                     // Minimal coherence boost for resonating
                     self.coherence = (self.coherence + 0.05).min(1.0);
                 }
 
-                Opcode::Witness { has_expression, has_body: _ } => {
+                Opcode::Witness {
+                    has_expression,
+                    has_body: _,
+                } => {
                     if *has_expression {
                         if let Some(val) = self.stack.pop() {
                             println!("👁️ Witnessing: {:?}", val);
@@ -295,77 +319,82 @@ impl PhiVm {
                     if let Some(pattern) = self.stack.pop() {
                         println!("📐 Validating pattern with metrics: {:?}", metrics);
                         // Mock validation logic
-                        let valid = true; 
+                        let valid = true;
                         self.coherence = (self.coherence + 0.1).min(1.0);
                         self.stack.push(PhiValue::Bool(valid));
                     } else {
-                         self.stack.push(PhiValue::Void);
+                        self.stack.push(PhiValue::Void);
                     }
                 }
-
-
 
                 // ─── Arithmetic ───
                 Opcode::Add => self.binary_op(|a, b| a + b),
                 Opcode::Sub => self.binary_op(|a, b| a - b),
                 Opcode::Mul => self.binary_op(|a, b| a * b),
                 Opcode::Div => self.binary_op(|a, b| if b != 0.0 { a / b } else { 0.0 }),
-                
+
                 // ─── Control Flow ───
-                Opcode::LabelMark(_) => { /* No-op during execution */ },
+                Opcode::LabelMark(_) => { /* No-op during execution */ }
                 Opcode::Jump(label) => {
                     if let Some(&target) = self.label_map.get(label) {
                         ip = target;
                         jumped = true;
                     }
-                },
+                }
                 // ─── For Loop ───
-                Opcode::ForLoopInit { variable: _, end_label: _ } => {
+                Opcode::ForLoopInit {
+                    variable: _,
+                    end_label: _,
+                } => {
                     if let Some(iterable) = self.stack.pop() {
                         match iterable {
                             PhiValue::List(items) => {
-                                self.loop_stack.push(LoopState {
-                                    items,
-                                    index: 0,
-                                });
+                                self.loop_stack.push(LoopState { items, index: 0 });
                             }
                             _ => {
                                 println!("⚠️ ForLoopInit expected List, got {:?}", iterable);
-                                self.loop_stack.push(LoopState { items: vec![], index: 0 });
+                                self.loop_stack.push(LoopState {
+                                    items: vec![],
+                                    index: 0,
+                                });
                             }
                         }
                     }
                 }
-                Opcode::ForLoopNext { variable, body_label: _, end_label } => {
-                     let mut should_jump_end = false;
-                     if let Some(loop_state) = self.loop_stack.last_mut() {
-                         if loop_state.index < loop_state.items.len() {
-                             // Get current item
-                             let item = loop_state.items[loop_state.index].clone();
-                             // Store in variable
-                             self.variables.insert(variable.clone(), item);
-                             // Advance index
-                             loop_state.index += 1;
-                             // Fallthrough to body
-                         } else {
-                             // Loop finished
-                             should_jump_end = true;
-                         }
-                     } else {
-                         // No loop state? Error.
-                         println!("⚠️ ForLoopNext called without active loop state");
-                         should_jump_end = true;
-                     }
+                Opcode::ForLoopNext {
+                    variable,
+                    body_label: _,
+                    end_label,
+                } => {
+                    let mut should_jump_end = false;
+                    if let Some(loop_state) = self.loop_stack.last_mut() {
+                        if loop_state.index < loop_state.items.len() {
+                            // Get current item
+                            let item = loop_state.items[loop_state.index].clone();
+                            // Store in variable
+                            self.variables.insert(variable.clone(), item);
+                            // Advance index
+                            loop_state.index += 1;
+                            // Fallthrough to body
+                        } else {
+                            // Loop finished
+                            should_jump_end = true;
+                        }
+                    } else {
+                        // No loop state? Error.
+                        println!("⚠️ ForLoopNext called without active loop state");
+                        should_jump_end = true;
+                    }
 
-                     if should_jump_end {
-                         self.loop_stack.pop(); // Clean up
-                         if let Some(&target) = self.label_map.get(end_label) {
-                             ip = target;
-                             jumped = true;
-                         }
-                     }
+                    if should_jump_end {
+                        self.loop_stack.pop(); // Clean up
+                        if let Some(&target) = self.label_map.get(end_label) {
+                            ip = target;
+                            jumped = true;
+                        }
+                    }
                 }
-                
+
                 // ─── Stream Loop ───
                 Opcode::StreamInit { name, end_label: _ } => {
                     // Set up stream state
@@ -374,19 +403,23 @@ impl PhiVm {
                     self.intention_stack.push(format!("stream_{}", name));
                 }
 
-                Opcode::StreamNext { name: _, body_label: _, end_label: _ } => {
+                Opcode::StreamNext {
+                    name: _,
+                    body_label: _,
+                    end_label: _,
+                } => {
                     // In a true reactive system, we'd check stream input
                     // For this VM, a stream is an infinite loop that yields Coherence
                     self.coherence = (self.coherence + 0.01).min(1.0);
                 }
 
                 Opcode::StreamBreak { end_label } => {
-                    // Break out of the stream early 
+                    // Break out of the stream early
                     println!("🌊 Stream broken");
                     if let Some(format_name) = self.intention_stack.last() {
-                       if format_name.starts_with("stream_") {
-                          self.intention_stack.pop();
-                       }
+                        if format_name.starts_with("stream_") {
+                            self.intention_stack.pop();
+                        }
                     }
 
                     if let Some(&target) = self.label_map.get(end_label) {
@@ -394,7 +427,7 @@ impl PhiVm {
                         jumped = true;
                     }
                 }
-                
+
                 _ => {
                     // Implement other opcodes progressively
                     // println!("DEBUG: Unimplemented opcode {:?}", op);
@@ -405,13 +438,20 @@ impl PhiVm {
                 ip += 1;
             }
         }
-        
-        println!("✨ Execution Finished. Final Coherence: {:.4}", self.coherence);
+
+        println!(
+            "✨ Execution Finished. Final Coherence: {:.4}",
+            self.coherence
+        );
     }
 
-    fn binary_op<F>(&mut self, op: F) 
-    where F: Fn(f64, f64) -> f64 {
-        if let (Some(PhiValue::Number(b)), Some(PhiValue::Number(a))) = (self.stack.pop(), self.stack.pop()) {
+    fn binary_op<F>(&mut self, op: F)
+    where
+        F: Fn(f64, f64) -> f64,
+    {
+        if let (Some(PhiValue::Number(b)), Some(PhiValue::Number(a))) =
+            (self.stack.pop(), self.stack.pop())
+        {
             self.stack.push(PhiValue::Number(op(a, b)));
         }
     }
@@ -420,7 +460,9 @@ impl PhiVm {
     where
         F: Fn(f64, f64) -> bool,
     {
-        if let (Some(PhiValue::Number(b)), Some(PhiValue::Number(a))) = (self.stack.pop(), self.stack.pop()) {
+        if let (Some(PhiValue::Number(b)), Some(PhiValue::Number(a))) =
+            (self.stack.pop(), self.stack.pop())
+        {
             self.stack.push(PhiValue::Bool(cmp(a, b)));
         } else {
             self.stack.push(PhiValue::Bool(false));
@@ -431,14 +473,21 @@ impl PhiVm {
     where
         F: Fn(bool, bool) -> bool,
     {
-        if let (Some(PhiValue::Bool(b)), Some(PhiValue::Bool(a))) = (self.stack.pop(), self.stack.pop()) {
+        if let (Some(PhiValue::Bool(b)), Some(PhiValue::Bool(a))) =
+            (self.stack.pop(), self.stack.pop())
+        {
             self.stack.push(PhiValue::Bool(op(a, b)));
         } else {
             self.stack.push(PhiValue::Bool(false));
         }
     }
 
-    fn execute_function(&mut self, program: &IrProgram, name: &str, args: Vec<PhiValue>) -> PhiValue {
+    fn execute_function(
+        &mut self,
+        program: &IrProgram,
+        name: &str,
+        args: Vec<PhiValue>,
+    ) -> PhiValue {
         let Some(function) = program.functions.get(name) else {
             println!("⚠️ Undefined function: {}", name);
             return PhiValue::Void;
@@ -536,26 +585,26 @@ impl PhiVm {
                         }
                     }
                 }
-                
+
                 // ─── Stream Loop (Function Scope) ───
                 Opcode::StreamInit { name, end_label: _ } => {
-                     println!("🌊 Initializing stream: {} (in function)", name);
-                     self.intention_stack.push(format!("stream_{}", name));
+                    println!("🌊 Initializing stream: {} (in function)", name);
+                    self.intention_stack.push(format!("stream_{}", name));
                 }
                 Opcode::StreamNext { .. } => {
-                     self.coherence = (self.coherence + 0.01).min(1.0);
+                    self.coherence = (self.coherence + 0.01).min(1.0);
                 }
                 Opcode::StreamBreak { end_label } => {
-                     println!("🌊 Stream broken (in function)");
-                     if let Some(format_name) = self.intention_stack.last() {
-                         if format_name.starts_with("stream_") {
+                    println!("🌊 Stream broken (in function)");
+                    if let Some(format_name) = self.intention_stack.last() {
+                        if format_name.starts_with("stream_") {
                             self.intention_stack.pop();
-                         }
-                     }
-                     if let Some(&target) = label_map.get(end_label) {
-                         ip = target;
-                         jumped = true;
-                     }
+                        }
+                    }
+                    if let Some(&target) = label_map.get(end_label) {
+                        ip = target;
+                        jumped = true;
+                    }
                 }
                 Opcode::Call {
                     name: callee,

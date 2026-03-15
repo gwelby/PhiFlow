@@ -4,11 +4,11 @@ use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 
-use super::types::*;
-use super::simulator::QuantumSimulator;
 use super::ibm_quantum::IBMQuantumBackend;
+use super::simulator::QuantumSimulator;
+use super::types::*;
 
 pub struct QuantumBackendManager {
     backends: HashMap<String, Arc<Mutex<dyn QuantumBackend>>>,
@@ -27,18 +27,22 @@ impl QuantumBackendManager {
 
     pub async fn initialize(&mut self, config: QuantumConfig) -> Result<(), QuantumError> {
         info!("🔧 Initializing quantum backend manager");
-        
+
         self.config = config.clone();
-        
+
         // Always register the simulator
-        let simulator = Arc::new(Mutex::new(QuantumSimulator::with_max_qubits(config.max_qubits)));
+        let simulator = Arc::new(Mutex::new(QuantumSimulator::with_max_qubits(
+            config.max_qubits,
+        )));
         simulator.lock().await.initialize(config.clone()).await?;
         self.backends.insert("simulator".to_string(), simulator);
         info!("✅ Quantum simulator registered");
 
         // Register IBM Quantum if token is provided
         if config.api_token.is_some() {
-            let ibm_backend = Arc::new(Mutex::new(IBMQuantumBackend::with_backend(config.backend_name.clone())));
+            let ibm_backend = Arc::new(Mutex::new(IBMQuantumBackend::with_backend(
+                config.backend_name.clone(),
+            )));
             let init_result = {
                 let mut backend = ibm_backend.lock().await;
                 backend.initialize(config.clone()).await
@@ -65,66 +69,94 @@ impl QuantumBackendManager {
         Ok(())
     }
 
-    pub async fn execute_circuit(&self, circuit: QuantumCircuit, backend_name: Option<&str>) -> Result<QuantumResult, QuantumError> {
+    pub async fn execute_circuit(
+        &self,
+        circuit: QuantumCircuit,
+        backend_name: Option<&str>,
+    ) -> Result<QuantumResult, QuantumError> {
         let backend_key = backend_name.unwrap_or(&self.default_backend);
-        
-        let backend = self.backends.get(backend_key)
-            .ok_or_else(|| QuantumError::BackendError { 
-                message: format!("Backend '{}' not found", backend_key) 
+
+        let backend = self
+            .backends
+            .get(backend_key)
+            .ok_or_else(|| QuantumError::BackendError {
+                message: format!("Backend '{}' not found", backend_key),
             })?;
 
         backend.lock().await.execute_circuit(circuit).await
     }
 
     pub async fn execute_sacred_frequency_operation(
-        &self, 
-        frequency: u32, 
-        qubits: u32, 
-        backend_name: Option<&str>
+        &self,
+        frequency: u32,
+        qubits: u32,
+        backend_name: Option<&str>,
     ) -> Result<QuantumResult, QuantumError> {
         let backend_key = backend_name.unwrap_or(&self.default_backend);
-        
-        let backend = self.backends.get(backend_key)
-            .ok_or_else(|| QuantumError::BackendError { 
-                message: format!("Backend '{}' not found", backend_key) 
+
+        let backend = self
+            .backends
+            .get(backend_key)
+            .ok_or_else(|| QuantumError::BackendError {
+                message: format!("Backend '{}' not found", backend_key),
             })?;
 
-        backend.lock().await.execute_sacred_frequency_operation(frequency, qubits).await
+        backend
+            .lock()
+            .await
+            .execute_sacred_frequency_operation(frequency, qubits)
+            .await
     }
 
     pub async fn execute_phi_gate(
-        &self, 
-        qubit: u32, 
-        phi_power: f64, 
-        backend_name: Option<&str>
+        &self,
+        qubit: u32,
+        phi_power: f64,
+        backend_name: Option<&str>,
     ) -> Result<QuantumResult, QuantumError> {
         let backend_key = backend_name.unwrap_or(&self.default_backend);
-        
-        let backend = self.backends.get(backend_key)
-            .ok_or_else(|| QuantumError::BackendError { 
-                message: format!("Backend '{}' not found", backend_key) 
+
+        let backend = self
+            .backends
+            .get(backend_key)
+            .ok_or_else(|| QuantumError::BackendError {
+                message: format!("Backend '{}' not found", backend_key),
             })?;
 
-        backend.lock().await.execute_phi_gate(qubit, phi_power).await
+        backend
+            .lock()
+            .await
+            .execute_phi_gate(qubit, phi_power)
+            .await
     }
 
-    pub async fn get_backend_capabilities(&self, backend_name: Option<&str>) -> Result<QuantumCapabilities, QuantumError> {
+    pub async fn get_backend_capabilities(
+        &self,
+        backend_name: Option<&str>,
+    ) -> Result<QuantumCapabilities, QuantumError> {
         let backend_key = backend_name.unwrap_or(&self.default_backend);
-        
-        let backend = self.backends.get(backend_key)
-            .ok_or_else(|| QuantumError::BackendError { 
-                message: format!("Backend '{}' not found", backend_key) 
+
+        let backend = self
+            .backends
+            .get(backend_key)
+            .ok_or_else(|| QuantumError::BackendError {
+                message: format!("Backend '{}' not found", backend_key),
             })?;
 
         Ok(backend.lock().await.get_capabilities())
     }
 
-    pub async fn get_backend_status(&self, backend_name: Option<&str>) -> Result<BackendStatus, QuantumError> {
+    pub async fn get_backend_status(
+        &self,
+        backend_name: Option<&str>,
+    ) -> Result<BackendStatus, QuantumError> {
         let backend_key = backend_name.unwrap_or(&self.default_backend);
-        
-        let backend = self.backends.get(backend_key)
-            .ok_or_else(|| QuantumError::BackendError { 
-                message: format!("Backend '{}' not found", backend_key) 
+
+        let backend = self
+            .backends
+            .get(backend_key)
+            .ok_or_else(|| QuantumError::BackendError {
+                message: format!("Backend '{}' not found", backend_key),
             })?;
 
         backend.lock().await.get_status().await
@@ -132,12 +164,12 @@ impl QuantumBackendManager {
 
     pub async fn list_backends(&self) -> Vec<(String, bool)> {
         let mut result = Vec::new();
-        
+
         for (name, backend) in &self.backends {
             let available = backend.lock().await.is_available().await;
             result.push((name.clone(), available));
         }
-        
+
         result
     }
 
@@ -151,18 +183,18 @@ impl QuantumBackendManager {
             info!("🎯 Default backend changed to: {}", self.default_backend);
             Ok(())
         } else {
-            Err(QuantumError::BackendError { 
-                message: format!("Backend '{}' not found", backend_name) 
+            Err(QuantumError::BackendError {
+                message: format!("Backend '{}' not found", backend_name),
             })
         }
     }
 
     pub async fn test_all_backends(&self) -> HashMap<String, Result<(), QuantumError>> {
         let mut results = HashMap::new();
-        
+
         for (name, backend) in &self.backends {
             info!("🧪 Testing backend: {}", name);
-            
+
             // Create simple test circuit
             let test_circuit = QuantumCircuit {
                 qubits: 1,
@@ -170,7 +202,7 @@ impl QuantumBackendManager {
                 measurements: vec![0],
                 metadata: HashMap::new(),
             };
-            
+
             let result = match backend.lock().await.execute_circuit(test_circuit).await {
                 Ok(_) => {
                     info!("✅ Backend {} test passed", name);
@@ -181,32 +213,32 @@ impl QuantumBackendManager {
                     Err(e)
                 }
             };
-            
+
             results.insert(name.clone(), result);
         }
-        
+
         results
     }
 
     pub async fn get_sacred_frequency_support(&self) -> HashMap<String, bool> {
         let mut support = HashMap::new();
-        
+
         for (name, backend) in &self.backends {
             let capabilities = backend.lock().await.get_capabilities();
             support.insert(name.clone(), capabilities.supports_sacred_frequencies);
         }
-        
+
         support
     }
 
     pub async fn get_phi_harmonic_support(&self) -> HashMap<String, bool> {
         let mut support = HashMap::new();
-        
+
         for (name, backend) in &self.backends {
             let capabilities = backend.lock().await.get_capabilities();
             support.insert(name.clone(), capabilities.supports_phi_harmonic);
         }
-        
+
         support
     }
 
@@ -214,20 +246,26 @@ impl QuantumBackendManager {
         &self,
         circuit: QuantumCircuit,
         consciousness_coupling: ConsciousnessQuantumCoupling,
-        backend_name: Option<&str>
+        backend_name: Option<&str>,
     ) -> Result<QuantumResult, QuantumError> {
         if !consciousness_coupling.quantum_authorization {
             return Err(QuantumError::BackendError {
-                message: "Quantum operations not authorized by consciousness monitor".to_string()
+                message: "Quantum operations not authorized by consciousness monitor".to_string(),
             });
         }
 
         info!("🧠 Executing consciousness-coupled quantum circuit");
-        info!("   Coherence: {:.3}", consciousness_coupling.coherence_threshold);
+        info!(
+            "   Coherence: {:.3}",
+            consciousness_coupling.coherence_threshold
+        );
         if let Some(freq) = consciousness_coupling.sacred_frequency_lock {
             info!("   Sacred frequency lock: {} Hz", freq);
         }
-        info!("   Phi resonance: {:.3}", consciousness_coupling.phi_resonance);
+        info!(
+            "   Phi resonance: {:.3}",
+            consciousness_coupling.phi_resonance
+        );
 
         self.execute_circuit(circuit, backend_name).await
     }
@@ -251,7 +289,7 @@ pub fn create_ibm_backend(backend_name: String) -> Box<dyn QuantumBackend> {
 // Utility function to detect available backends
 pub async fn detect_available_backends(config: &QuantumConfig) -> Vec<String> {
     let mut available = vec!["simulator".to_string()];
-    
+
     // Test IBM Quantum connectivity
     if config.api_token.is_some() {
         let mut ibm_backend = IBMQuantumBackend::new();
@@ -259,6 +297,6 @@ pub async fn detect_available_backends(config: &QuantumConfig) -> Vec<String> {
             available.push("ibm".to_string());
         }
     }
-    
+
     available
 }

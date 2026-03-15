@@ -1,0 +1,16 @@
+{
+  "objective_id": "OBJ-20260221-001",
+  "origin": "codex",
+  "target": "codex",
+  "intent": "seed_qsop_live_objective_cycle",
+  "status": "completed",
+  "created_at": "2026-02-21T00:30:00Z",
+  "payload_path": "QSOP/mail/payloads/OBJ-20260221-001.md",
+  "checksum": "sha256:f601bd87601cfa74f1efa126b47d8d7b337a4353672455d7f2d0e07095602d0a",
+  "ownership": [
+    "QSOP/mail",
+    "QSOP/metrics"
+  ],
+  "verification_required": true,
+  "priority": "high"
+}

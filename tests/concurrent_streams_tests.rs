@@ -22,8 +22,16 @@ async fn test_concurrent_streams_shared_resonance() {
     "#;
 
     // Parse and lower both programs
-    let program1 = lower_program(&PhiParser::new(PhiLexer::new(source1).tokenize().unwrap()).parse().unwrap());
-    let program2 = lower_program(&PhiParser::new(PhiLexer::new(source2).tokenize().unwrap()).parse().unwrap());
+    let program1 = lower_program(
+        &PhiParser::new(PhiLexer::new(source1).tokenize().unwrap())
+            .parse()
+            .unwrap(),
+    );
+    let program2 = lower_program(
+        &PhiParser::new(PhiLexer::new(source2).tokenize().unwrap())
+            .parse()
+            .unwrap(),
+    );
 
     // Create a shared resonance field
     let shared_resonance = Arc::new(Mutex::new(HashMap::new()));
@@ -53,16 +61,21 @@ async fn test_concurrent_streams_shared_resonance() {
 
     // Verify shared resonance field
     let guard = shared_resonance.lock().unwrap();
-    let values = guard.get("global_peace").expect("Should have global_peace intention");
-    
+    let values = guard
+        .get("global_peace")
+        .expect("Should have global_peace intention");
+
     assert_eq!(values.len(), 2, "Should have 2 values resonated");
-    
+
     // Convert to float to check simply
-    let mut num_values: Vec<f64> = values.iter().map(|v| match v {
-        phiflow::phi_ir::PhiIRValue::Number(n) => *n,
-        _ => panic!("Expected number"),
-    }).collect();
-    
+    let mut num_values: Vec<f64> = values
+        .iter()
+        .map(|v| match v {
+            phiflow::phi_ir::PhiIRValue::Number(n) => *n,
+            _ => panic!("Expected number"),
+        })
+        .collect();
+
     num_values.sort_by(|a, b| a.partial_cmp(b).unwrap());
     assert_eq!(num_values, vec![1.0, 2.0]);
 }

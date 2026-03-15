@@ -1,0 +1,32 @@
+// PhiFlow Basic Test - Demonstrates core language features
+
+// Basic arithmetic with phi
+let golden_ratio = PHI
+let phi_squared = PHI * PHI
+print("Golden ratio:", golden_ratio)
+print("Phi squared:", phi_squared)
+
+// Sacred frequency operations
+Sacred(432) {
+    print("Earth frequency activated - 432 Hz")
+    let coherence = 0.9
+}
+
+Sacred(528) {
+    print("Love frequency activated - 528 Hz")
+    let healing_power = PHI * 528
+    print("Healing power:", healing_power)
+}
+
+// Phi spiral generation
+let spiral = phi_spiral(8)
+print("Phi spiral points:", spiral)
+
+// Basic quantum circuit
+circuit {
+    qubit q0;
+    gate H(q0);
+    print("Hadamard gate applied to q0")
+}
+
+print("PhiFlow basic test completed!")

@@ -1,0 +1,20 @@
+// mid_circuit_witness.phi
+// Demonstrates mid-circuit measurement support:
+//   witness mid_circuit x  -> measures immediately (classical register ready for feedback)
+//   witness x              -> defers to end-of-circuit (default Final policy)
+
+intention "healing" {
+    let amplitude = 0.9
+
+    // This witnesses the qubit state IMMEDIATELY during the circuit.
+    // The measured classical bit is available mid-circuit for conditional gates.
+    witness mid_circuit amplitude
+
+    // This gate executes AFTER the mid-circuit measurement.
+    // On real hardware this can be conditioned on the classical result.
+    resonate amplitude
+
+    // This defers to end-of-circuit (Final policy — default).
+    // Measurement appended after all gates complete.
+    witness amplitude
+}

@@ -1,0 +1,17 @@
+{
+  "objective_id": "OBJ-20260221-002",
+  "origin": "codex",
+  "target": "codex",
+  "intent": "exercise_blocked_recovered_reopen_metrics",
+  "status": "completed",
+  "created_at": "2026-02-21T02:00:00Z",
+  "payload_path": "QSOP/mail/payloads/OBJ-20260221-002.md",
+  "checksum": "sha256:ed4d9097c95c6c61600d4f253a1e2276fd1969256ca4c7d6b45497ea61cdf111",
+  "ownership": [
+    "QSOP/mail",
+    "QSOP/metrics",
+    "QSOP/tools/log_objective_metrics.py"
+  ],
+  "verification_required": true,
+  "priority": "high"
+}

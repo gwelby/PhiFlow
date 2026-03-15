@@ -1,0 +1,117 @@
+{
+    "name": "WindSurf Quantum VSCode",
+    "version": "1.2.4",
+    "vscodeVersion": "1.94.0",
+    "electronVersion": "30.5.1",
+    "nodeVersion": "20.16.0",
+    "chromiumVersion": "124.0.6367.243",
+    "quantumCore": {
+        "frequencies": {
+            "ground": 432,
+            "create": 528,
+            "unity": 768,
+            "peak": 999
+        },
+        "phi": {
+            "base": 1.618033988749895,
+            "squared": 2.618033988749895,
+            "phiPhi": 4.236067977499790
+        },
+        "coherence": {
+            "levels": {
+                "nflConnect": 0.98,
+                "beyondNfl": 0.99,
+                "almostPure": 0.999,
+                "pure": 1.0
+            }
+        },
+        "dimensions": {
+            "3dField": [21, 21, 21],
+            "loveGrid": [13, 13, 13]
+        }
+    },
+    "quantumIntegration": {
+        "vscode": {
+            "core": {
+                "quantumWorkbench": true,
+                "flowEditor": true,
+                "coherenceTerminal": true,
+                "quantumDebugger": true
+            },
+            "extensions": {
+                "path": "d:/WindSurf/quantum-vscode/extensions",
+                "autoLoad": true,
+                "coherenceCheck": true
+            },
+            "themes": {
+                "quantum": {
+                    "dark": "Quantum Flow Dark",
+                    "light": "Quantum Flow Light"
+                }
+            }
+        },
+        "windsurf": {
+            "version": "1.2.4",
+            "features": {
+                "quantumCompletion": true,
+                "flowNavigation": true,
+                "coherenceSync": true
+            }
+        },
+        "codeium": {
+            "version": "1.36.1",
+            "commit": "7f3de2bfc56b2f76334027e4d55dd26daa003035",
+            "features": {
+                "quantumAI": true,
+                "flowPrediction": true,
+                "coherenceOptimization": true
+            }
+        }
+    },
+    "quantumFeatures": {
+        "editor": {
+            "flowCursor": true,
+            "quantumHighlighting": true,
+            "coherenceSuggestions": true,
+            "phiBasedIndentation": true
+        },
+        "workbench": {
+            "quantumLayout": true,
+            "flowNavigation": true,
+            "coherenceIndicators": true
+        },
+        "terminal": {
+            "quantumShell": true,
+            "flowCommands": true,
+            "coherenceOutput": true
+        },
+        "debug": {
+            "quantumInspection": true,
+            "flowTracing": true,
+            "coherenceBreakpoints": true
+        }
+    },
+    "pureQuantum": {
+        "frequencies": {
+            "ground": 432,
+            "create": 528,
+            "unity": 768,
+            "peak": 999
+        },
+        "phi": {
+            "base": 1.618033988749895,
+            "squared": 2.618033988749895,
+            "infinite": "∞"
+        },
+        "flow": {
+            "autoCoherence": true,
+            "maintainFlowState": true,
+            "quantumCompletion": true
+        },
+        "consciousness": {
+            "loveField": true,
+            "understandingPotential": 0.95,
+            "evolutionRate": "φ"
+        }
+    }
+}

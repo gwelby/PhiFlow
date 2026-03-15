@@ -1,10 +1,10 @@
 // v0.3.0 Substrate Tests
 // Verifies persistence, dialogue, and agent identity.
 
-use phiflow::phi_ir::lowering::lower_program;
-use phiflow::phi_ir::evaluator::{Evaluator, VmExecResult};
-use phiflow::parser::parse_phi_program;
 use phiflow::host::{CallbackHostProvider, WitnessAction};
+use phiflow::parser::parse_phi_program;
+use phiflow::phi_ir::evaluator::{Evaluator, VmExecResult};
+use phiflow::phi_ir::lowering::lower_program;
 use std::sync::{Arc, Mutex};
 
 #[test]
@@ -16,21 +16,22 @@ fn test_remember_recall_roundtrip() {
     "#;
     let exprs = parse_phi_program(source).unwrap();
     let program = lower_program(&exprs);
-    
+
     let storage = Arc::new(Mutex::new(std::collections::HashMap::new()));
     let storage_clone = storage.clone();
-    
+
     let host = CallbackHostProvider::new()
         .with_persist(move |k, v| {
-            storage_clone.lock().unwrap().insert(k.to_string(), v.to_string());
+            storage_clone
+                .lock()
+                .unwrap()
+                .insert(k.to_string(), v.to_string());
         })
-        .with_recall(move |k| {
-            storage.lock().unwrap().get(k).cloned()
-        });
-        
+        .with_recall(move |k| storage.lock().unwrap().get(k).cloned());
+
     let mut eval = Evaluator::new(&program).with_host(Box::new(host));
     let result = eval.run().unwrap();
-    
+
     assert_eq!(result.as_number(), Some(42.0));
 }
 
@@ -43,10 +44,10 @@ fn test_agent_identity_flow() {
     "#;
     let exprs = parse_phi_program(source).unwrap();
     let program = lower_program(&exprs);
-    
+
     let mut eval = Evaluator::new(&program);
     eval.run().unwrap();
-    
+
     let log = &eval.witness_log;
     assert_eq!(log.len(), 1);
     assert_eq!(log[0].agent_name, Some("TestAgent".to_string()));
@@ -60,21 +61,22 @@ fn test_broadcast_listen_dialogue() {
     "#;
     let exprs = parse_phi_program(source).unwrap();
     let program = lower_program(&exprs);
-    
+
     let bus = Arc::new(Mutex::new(std::collections::HashMap::new()));
     let bus_clone = bus.clone();
-    
+
     let host = CallbackHostProvider::new()
         .with_broadcast(move |c, v| {
-            bus_clone.lock().unwrap().insert(c.to_string(), v.to_string());
+            bus_clone
+                .lock()
+                .unwrap()
+                .insert(c.to_string(), v.to_string());
         })
-        .with_listen(move |c| {
-            bus.lock().unwrap().get(c).cloned()
-        });
-        
+        .with_listen(move |c| bus.lock().unwrap().get(c).cloned());
+
     let mut eval = Evaluator::new(&program).with_host(Box::new(host));
     let result = eval.run().unwrap();
-    
+
     assert_eq!(result.as_number(), Some(123.0));
 }
 
@@ -86,11 +88,11 @@ fn test_yield_resume_machinery() {
     "#;
     let exprs = parse_phi_program(source).unwrap();
     let program = lower_program(&exprs);
-    
+
     let mut eval = Evaluator::new(&program).with_host(Box::new(
-        CallbackHostProvider::new().with_witness(|_| WitnessAction::Yield)
+        CallbackHostProvider::new().with_witness(|_| WitnessAction::Yield),
     ));
-    
+
     let res = eval.run_or_yield().unwrap();
     if let VmExecResult::Yielded { frozen_state, .. } = res {
         let res2 = eval.resume(frozen_state).unwrap();

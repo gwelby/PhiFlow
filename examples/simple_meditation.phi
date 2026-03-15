@@ -1,0 +1,28 @@
+// simple_meditation.phi - Basic PhiFlow Example
+// A simple meditation sequence through phi-harmonic frequencies
+
+// Start at ground state - foundation frequency
+INITIALIZE ground_center AT 432Hz WITH {
+  coherence: 1.0,
+  purpose: "Establish stable foundation for meditation"
+}
+
+// Move to creation frequency - manifestation
+TRANSITION TO love_frequency AT 528Hz WITH {
+  phi_level: 1,
+  intent: "Open heart to divine love"
+}
+
+// Ascend to unity consciousness
+EVOLVE TO unity_field AT 768Hz WITH {
+  phi_level: 3,
+  resonance: "Perfect toroidal balance",
+  field_integrity: "Complete quantum coherence"
+}
+
+// Return to grounded state with wisdom
+RETURN TO grounded_wisdom AT 432Hz WITH {
+  compression: 0.618, // Golden ratio compression
+  coherence: 0.95,
+  state: "Integrated and peaceful"
+}

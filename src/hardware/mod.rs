@@ -7,4 +7,4 @@ pub mod feedback_systems;
 
 pub use consciousness_detection::{ConsciousnessDetector, ConsciousnessSource};
 pub use device_mapping::{DeviceMapper, RGBVisualization};
-pub use feedback_systems::{FeedbackSystem, EmergencyProtocol};
+pub use feedback_systems::{EmergencyProtocol, FeedbackSystem};

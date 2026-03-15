@@ -1,16 +1,18 @@
-use crate::mcp_server::state::{McpState, StreamContext};
 use crate::mcp_server::protocol::{JsonRpcError, JsonRpcResponse};
+use crate::mcp_server::state::McpHostProvider;
+use crate::mcp_server::state::{McpState, StreamContext};
+use crate::parser::{PhiLexer, PhiParser};
 use crate::phi_ir::evaluator::{EvalExecResult, Evaluator};
+use crate::phi_ir::lowering::lower_program;
 use crate::phi_ir::PhiIRValue;
 use serde_json::{json, Value};
-use uuid::Uuid;
 use std::sync::Arc;
-use crate::parser::{PhiLexer, PhiParser};
-use crate::phi_ir::lowering::lower_program;
-use crate::mcp_server::state::McpHostProvider;
 use std::time::Duration;
+use uuid::Uuid;
 
-fn snapshot_shared_resonance(state: &McpState) -> std::collections::HashMap<String, Vec<PhiIRValue>> {
+fn snapshot_shared_resonance(
+    state: &McpState,
+) -> std::collections::HashMap<String, Vec<PhiIRValue>> {
     state.shared_resonance.lock().unwrap().clone()
 }
 
@@ -110,7 +112,10 @@ pub fn handle_tools_list(id: Value) -> JsonRpcResponse {
 }
 
 async fn spawn_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonRpcError> {
-    let source_code = args.get("source_code").and_then(|s| s.as_str()).unwrap_or("");
+    let source_code = args
+        .get("source_code")
+        .and_then(|s| s.as_str())
+        .unwrap_or("");
     if source_code.is_empty() {
         return Err(JsonRpcError {
             code: -32602,
@@ -122,25 +127,29 @@ async fn spawn_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonRp
     let stream_id = Uuid::new_v4().to_string();
     let state_clone = state.clone();
     let id_clone = stream_id.clone();
-    
+
     // Parse the code immediately to catch syntax errors before spawning
     let mut lexer = PhiLexer::new(source_code);
     let tokens = match lexer.tokenize() {
         Ok(t) => t,
-        Err(e) => return Err(JsonRpcError {
-            code: -32000,
-            message: format!("Lexer error: {:?}", e),
-            data: None,
-        }),
+        Err(e) => {
+            return Err(JsonRpcError {
+                code: -32000,
+                message: format!("Lexer error: {:?}", e),
+                data: None,
+            })
+        }
     };
     let mut parser = PhiParser::new(tokens);
     let program = match parser.parse() {
         Ok(p) => p,
-        Err(e) => return Err(JsonRpcError {
-            code: -32000,
-            message: format!("Parse error: {:?}", e),
-            data: None,
-        }),
+        Err(e) => {
+            return Err(JsonRpcError {
+                code: -32000,
+                message: format!("Parse error: {:?}", e),
+                data: None,
+            })
+        }
     };
 
     let ir_program = lower_program(&program);
@@ -148,30 +157,34 @@ async fn spawn_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonRp
     // Store initial status
     {
         let mut streams = state.streams.lock().unwrap();
-        streams.insert(stream_id.clone(), StreamContext {
-            id: stream_id.clone(),
-            status: "running".to_string(),
-            frozen_state: None,
-            ir_program: Some(ir_program.clone()),
-            last_witness: None,
-            resonance_field: snapshot_shared_resonance(state),
-            result: None,
-        });
+        streams.insert(
+            stream_id.clone(),
+            StreamContext {
+                id: stream_id.clone(),
+                status: "running".to_string(),
+                frozen_state: None,
+                ir_program: Some(ir_program.clone()),
+                last_witness: None,
+                resonance_field: snapshot_shared_resonance(state),
+                result: None,
+            },
+        );
     }
 
     // Spawn blocking task for evaluation
     let program_for_task = ir_program;
     let timeout_duration = Duration::from_millis(state_clone.config.timeout_ms);
-    
+
     let eval_handle = tokio::task::spawn_blocking(move || {
         let shared_resonance = Arc::clone(&state_clone.shared_resonance);
         let mut evaluator = Evaluator::new(&program_for_task)
             .with_shared_resonance(shared_resonance)
-            .with_host(Box::new(McpHostProvider { config: Arc::clone(&state_clone.config) }))
+            .with_host(Box::new(McpHostProvider {
+                config: Arc::clone(&state_clone.config),
+            }))
             .with_max_steps(state_clone.config.max_execution_steps);
         let result = evaluator.run_or_yield();
 
-        
         let mut streams = state_clone.streams.lock().unwrap();
         if let Some(ctx) = streams.get_mut(&id_clone) {
             match result {
@@ -180,13 +193,19 @@ async fn spawn_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonRp
                     ctx.result = Some(format!("{:?}", val));
                     ctx.resonance_field = snapshot_shared_resonance(&state_clone);
                 }
-                Ok(EvalExecResult::Yielded { snapshot, frozen_state }) => {
+                Ok(EvalExecResult::Yielded {
+                    snapshot,
+                    frozen_state,
+                }) => {
                     ctx.status = "yielded".to_string();
                     ctx.last_witness = Some(snapshot);
                     ctx.frozen_state = Some(frozen_state);
                     ctx.resonance_field = snapshot_shared_resonance(&state_clone);
                 }
-                Ok(EvalExecResult::Entangled { frequency, frozen_state }) => {
+                Ok(EvalExecResult::Entangled {
+                    frequency,
+                    frozen_state,
+                }) => {
                     ctx.status = format!("entangled_{}", frequency);
                     ctx.frozen_state = Some(frozen_state);
                     ctx.resonance_field = snapshot_shared_resonance(&state_clone);
@@ -204,8 +223,8 @@ async fn spawn_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonRp
                     if waiting.len() >= 2 {
                         let stream1 = waiting.pop().unwrap();
                         let stream2 = waiting.pop().unwrap();
-                        
-                        // We need to spawn an async task to call resume_phi_stream for both, 
+
+                        // We need to spawn an async task to call resume_phi_stream for both,
                         // but since we're inside a blocking task, we can just trigger a tokio spawn.
                         // Ideally we'd have a helper trait `resume_entangled_pair`.
                         // For now, let's just log and rely on the client or a dedicated background task.
@@ -248,7 +267,11 @@ async fn read_resonance_field(args: Value, state: &McpState) -> Result<Value, Js
             message: format!("Stream not found: {}", stream_id),
             data: None,
         })?;
-        (ctx.status.clone(), ctx.last_witness.clone(), ctx.result.clone())
+        (
+            ctx.status.clone(),
+            ctx.last_witness.clone(),
+            ctx.result.clone(),
+        )
     };
 
     let shared_resonance = snapshot_shared_resonance(state);
@@ -286,14 +309,17 @@ async fn read_resonance_field(args: Value, state: &McpState) -> Result<Value, Js
 }
 
 async fn resume_entangled_streams(args: Value, state: &McpState) -> Result<Value, JsonRpcError> {
-    let frequency = args.get("frequency").and_then(|f| f.as_f64()).ok_or_else(|| JsonRpcError {
-        code: -32602,
-        message: "Missing or invalid frequency parameter".to_string(),
-        data: None,
-    })?;
+    let frequency = args
+        .get("frequency")
+        .and_then(|f| f.as_f64())
+        .ok_or_else(|| JsonRpcError {
+            code: -32602,
+            message: "Missing or invalid frequency parameter".to_string(),
+            data: None,
+        })?;
 
     let freq_key = frequency.to_bits();
-    
+
     // 1. Pop all waiting streams for this frequency
     let streams_to_resume = {
         let mut queue = state.entanglement_queue.lock().unwrap();
@@ -315,12 +341,26 @@ async fn resume_entangled_streams(args: Value, state: &McpState) -> Result<Value
     for stream_id in &streams_to_resume {
         let (frozen_state, ir_program) = {
             let mut streams = state.streams.lock().unwrap();
-            let ctx = if let Some(c) = streams.get_mut(stream_id) { c } else { continue; };
-            if !ctx.status.starts_with("entangled_") { continue; }
+            let ctx = if let Some(c) = streams.get_mut(stream_id) {
+                c
+            } else {
+                continue;
+            };
+            if !ctx.status.starts_with("entangled_") {
+                continue;
+            }
 
-            let fs = if let Some(f) = ctx.frozen_state.take() { f } else { continue; };
-            let prog = if let Some(p) = ctx.ir_program.clone() { p } else { continue; };
-            
+            let fs = if let Some(f) = ctx.frozen_state.take() {
+                f
+            } else {
+                continue;
+            };
+            let prog = if let Some(p) = ctx.ir_program.clone() {
+                p
+            } else {
+                continue;
+            };
+
             ctx.status = "running".to_string();
             (fs, prog)
         };
@@ -328,12 +368,14 @@ async fn resume_entangled_streams(args: Value, state: &McpState) -> Result<Value
         let state_clone = state.clone();
         let id_clone = stream_id.clone();
         let timeout_duration = Duration::from_millis(state_clone.config.timeout_ms);
-        
+
         let eval_handle = tokio::task::spawn_blocking(move || {
             let shared_resonance = Arc::clone(&state_clone.shared_resonance);
             let mut evaluator = Evaluator::new(&ir_program)
                 .with_shared_resonance(shared_resonance)
-                .with_host(Box::new(McpHostProvider { config: Arc::clone(&state_clone.config) }))
+                .with_host(Box::new(McpHostProvider {
+                    config: Arc::clone(&state_clone.config),
+                }))
                 .with_max_steps(state_clone.config.max_execution_steps);
             let result = evaluator.resume(frozen_state);
 
@@ -345,13 +387,19 @@ async fn resume_entangled_streams(args: Value, state: &McpState) -> Result<Value
                         ctx.result = Some(format!("{:?}", val));
                         ctx.resonance_field = snapshot_shared_resonance(&state_clone);
                     }
-                    Ok(EvalExecResult::Yielded { snapshot, frozen_state }) => {
+                    Ok(EvalExecResult::Yielded {
+                        snapshot,
+                        frozen_state,
+                    }) => {
                         ctx.status = "yielded".to_string();
                         ctx.last_witness = Some(snapshot);
                         ctx.frozen_state = Some(frozen_state);
                         ctx.resonance_field = snapshot_shared_resonance(&state_clone);
                     }
-                    Ok(EvalExecResult::Entangled { frequency: next_freq, frozen_state }) => {
+                    Ok(EvalExecResult::Entangled {
+                        frequency: next_freq,
+                        frozen_state,
+                    }) => {
                         ctx.status = format!("entangled_{}", next_freq);
                         ctx.frozen_state = Some(frozen_state);
                         ctx.resonance_field = snapshot_shared_resonance(&state_clone);
@@ -395,30 +443,33 @@ async fn resume_entangled_streams(args: Value, state: &McpState) -> Result<Value
 
 async fn resume_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonRpcError> {
     let stream_id = args.get("stream_id").and_then(|s| s.as_str()).unwrap_or("");
-    
+
     let (frozen_state, ir_program) = {
         let mut streams = state.streams.lock().unwrap();
         if let Some(ctx) = streams.get_mut(stream_id) {
             if ctx.status != "yielded" {
                 return Err(JsonRpcError {
                     code: -32000,
-                    message: format!("Stream {} is not yielded, current status: {}", stream_id, ctx.status),
+                    message: format!(
+                        "Stream {} is not yielded, current status: {}",
+                        stream_id, ctx.status
+                    ),
                     data: None,
                 });
             }
-            
+
             let fs = ctx.frozen_state.take().ok_or_else(|| JsonRpcError {
                 code: -32000,
                 message: "No frozen state available for resumption.".to_string(),
                 data: None,
             })?;
-            
+
             let prog = ctx.ir_program.clone().ok_or_else(|| JsonRpcError {
                 code: -32000,
                 message: "No IR program available for resumption.".to_string(),
                 data: None,
             })?;
-            
+
             ctx.status = "running".to_string();
             (fs, prog)
         } else {
@@ -433,13 +484,15 @@ async fn resume_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonR
     let state_clone = state.clone();
     let id_clone = stream_id.to_string();
     let timeout_duration = Duration::from_millis(state_clone.config.timeout_ms);
-    
+
     // Spawn blocking task for resumed evaluation
     let eval_handle = tokio::task::spawn_blocking(move || {
         let shared_resonance = Arc::clone(&state_clone.shared_resonance);
         let mut evaluator = Evaluator::new(&ir_program)
             .with_shared_resonance(shared_resonance)
-            .with_host(Box::new(McpHostProvider { config: Arc::clone(&state_clone.config) }))
+            .with_host(Box::new(McpHostProvider {
+                config: Arc::clone(&state_clone.config),
+            }))
             .with_max_steps(state_clone.config.max_execution_steps);
         let result = evaluator.resume(frozen_state);
 
@@ -451,13 +504,19 @@ async fn resume_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonR
                     ctx.result = Some(format!("{:?}", val));
                     ctx.resonance_field = snapshot_shared_resonance(&state_clone);
                 }
-                Ok(EvalExecResult::Yielded { snapshot, frozen_state }) => {
+                Ok(EvalExecResult::Yielded {
+                    snapshot,
+                    frozen_state,
+                }) => {
                     ctx.status = "yielded".to_string();
                     ctx.last_witness = Some(snapshot);
                     ctx.frozen_state = Some(frozen_state);
                     ctx.resonance_field = snapshot_shared_resonance(&state_clone);
                 }
-                Ok(EvalExecResult::Entangled { frequency, frozen_state }) => {
+                Ok(EvalExecResult::Entangled {
+                    frequency,
+                    frozen_state,
+                }) => {
                     ctx.status = format!("entangled_{}", frequency);
                     ctx.frozen_state = Some(frozen_state);
                     ctx.resonance_field = snapshot_shared_resonance(&state_clone);

@@ -1,13 +1,54 @@
 # Rust build output
 /target/
+/PhiFlow/target/
 **/*.rs.bk
 Cargo.lock
+
+# OS
+Thumbs.db
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.iml
+
+# Build Artifacts (Large)
+/src/target3/
+/src/target2/
+/src/target_quantum/
+/src/target_temp/
+/PhiFlow/target/
+**/target/
+src/obj/
+obj/
+bin/
+src/bin/Debug/
+src/tests/quantum_env/
+target-antigravity/
+
+# Large Binaries
+*.exe
+*.tar.gz
+*.csv
+*.zip
+*.7z
 
 # Python
 __pycache__/
 *.py[cod]
-.venv/
+*$py.class
 *.pyc
+.venv/
+venv/
+ENV/
+env/
+dist/
+build/
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
 
 # Node
 node_modules/
@@ -23,15 +64,6 @@ output.*
 *.log
 build_error.txt
 check_error.txt
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Editor
-.idea/
-.vscode/
-*.swp
 
 # Test binaries in examples
 *.phivm
@@ -62,6 +94,3 @@ consciousness_*.phi
 
 # P1 host (separate project)
 p1_host/
-
-# Target directories
-target-antigravity/

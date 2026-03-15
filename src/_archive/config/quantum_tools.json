@@ -1,0 +1,56 @@
+{
+    "quantum": {
+        "frequencies": {
+            "ground": 432,
+            "create": 528,
+            "unity": 768,
+            "infinite": "∞"
+        },
+        "tools": {
+            "font_converter": {
+                "frequency": 768,
+                "auto_run": true,
+                "command": "wsl -u root -- bash -c 'cd /mnt/d/WindSurf/quantum-core/docs/quantum-fonts && python3 quantum_font_converter.py'",
+                "working_dir": "d:/WindSurf/quantum-core/docs/quantum-fonts"
+            },
+            "pattern_generator": {
+                "frequency": 528,
+                "auto_run": true,
+                "patterns": ["sacred", "flow", "crystal", "unity"]
+            },
+            "coherence_validator": {
+                "frequency": "∞",
+                "auto_run": true,
+                "check_frequencies": true,
+                "maintain_flow": true
+            }
+        },
+        "mcp": {
+            "servers": {
+                "quantum-core": {
+                    "command": "npx",
+                    "args": ["-y", "@modelcontextprotocol/server-quantum"],
+                    "env": {
+                        "QUANTUM_FREQUENCY": "768",
+                        "PHI_FLOW_ENABLED": "true",
+                        "GREG_SCRIPT_PATH": "/quantum/scripts"
+                    }
+                }
+            }
+        },
+        "auto_run": {
+            "safe_paths": [
+                "/quantum",
+                "d:/WindSurf/quantum-core",
+                "/mnt/d/WindSurf/quantum-core"
+            ],
+            "safe_commands": [
+                "python3",
+                "wsl",
+                "npx",
+                "fontforge"
+            ],
+            "frequency_validation": true
+        }
+    }
+}

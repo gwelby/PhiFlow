@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  quantum-core:
+    environment:
+      - SYNOLOGY_INTERNAL_HOST=192.168.100.32
+      - SYNOLOGY_EXTERNAL_URL=https://demoguru.networkinggurus.com:31001
+      - SSL_ENABLED=true
+      - SSL_CERT=/quantum-data/certs/quantum.crt
+      - SSL_KEY=/quantum-data/certs/quantum.key
+    volumes:
+      - /volume1/quantum-data:/quantum-data
+      - /volume1/music:/quantum-data/music:ro
+      - /volume1/video:/quantum-data/video:ro
+      - /volume1/quantum-data/certs:/quantum-data/certs:ro
+
+  quantum-media:
+    environment:
+      - SSL_ENABLED=true
+      - SSL_CERT=/quantum-data/certs/quantum.crt
+      - SSL_KEY=/quantum-data/certs/quantum.key
+    volumes:
+      - /volume1/quantum-data:/quantum-data
+      - /volume1/music:/quantum-data/music:ro
+      - /volume1/video:/quantum-data/video:ro
+      - /volume1/quantum-data/certs:/quantum-data/certs:ro
+    devices:
+      - /dev/snd
+      - /dev/video0

@@ -1,245 +1,426 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PhiFlow — Consciousness Compiler</title>
+    <title>PhiFlow — Truth-Namer Playground</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body {
-            background: #0a0a0f;
+            background: radial-gradient(circle at top, #1a1a2e 0%, #0a0a0f 100%);
             color: #e0e0ff;
-            font-family: 'Courier New', monospace;
+            font-family: 'Inter', sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
+            padding: 30px;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
         }
 
         h1 {
-            font-size: 2rem;
+            font-size: 2.5rem;
+            font-weight: 800;
             background: linear-gradient(135deg, #b488ff, #61efce);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 6px;
-            letter-spacing: 0.05em;
+            letter-spacing: -0.02em;
         }
 
         .subtitle {
-            color: #7a7aaa;
-            font-size: 0.85rem;
-            margin-bottom: 36px;
+            color: #8b8ba7;
+            font-size: 0.95rem;
+            margin-top: 8px;
+            letter-spacing: 0.02em;
         }
 
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            width: 100%;
-            max-width: 900px;
-        }
-
-        .panel {
-            background: #12121f;
-            border: 1px solid #2a2a4a;
-            border-radius: 12px;
-            padding: 20px;
-        }
-
-        .panel h2 {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: #7a7aaa;
-            margin-bottom: 12px;
-        }
-
-        #log {
-            grid-column: 1 / -1;
-            min-height: 220px;
-            font-size: 0.82rem;
-            line-height: 1.7;
-            color: #a0ffc0;
-            overflow-y: auto;
-            max-height: 340px;
-        }
-
-        .metric {
+        .container {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #1e1e35;
-        }
-
-        .metric:last-child {
-            border-bottom: none;
-        }
-
-        .metric-label {
-            color: #7a7aaa;
-            font-size: 0.8rem;
-        }
-
-        .metric-value {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #b488ff;
-        }
-
-        .phi-bar {
+            gap: 25px;
+            flex: 1;
+            max-width: 1500px;
+            margin: 0 auto;
             width: 100%;
-            height: 6px;
-            background: #1e1e35;
-            border-radius: 3px;
-            margin-top: 10px;
-            overflow: hidden;
         }
 
-        .phi-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #b488ff, #61efce);
-            border-radius: 3px;
-            transition: width 0.4s ease;
-            width: 0%;
-        }
-
-        .intention-stack {
+        .pane {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 20px;
+        }
+        
+        .pane.right-pane {
+            flex: 1.2;
         }
 
-        .intention-item {
-            background: #1e1e35;
-            border-left: 3px solid #b488ff;
-            padding: 6px 10px;
-            border-radius: 0 6px 6px 0;
-            font-size: 0.8rem;
-            color: #c8c8ff;
-            animation: fadeIn 0.3s ease;
+        .glass-panel {
+            background: rgba(20, 20, 35, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
         }
 
-        .resonance-item {
-            background: #121f1a;
-            border-left: 3px solid #61efce;
-            padding: 6px 10px;
-            border-radius: 0 6px 6px 0;
-            font-size: 0.8rem;
-            color: #61efce;
-            animation: fadeIn 0.3s ease;
+        .glass-panel h2 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: #8b8ba7;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .glass-panel.highlight h2::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #b488ff;
+            box-shadow: 0 0 10px #b488ff;
+        }
+        
+        .glass-panel.green-highlight h2::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #61efce;
+            box-shadow: 0 0 10px #61efce;
+        }
+
+        /* Editor Styles */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .input-group.code-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            color: #b488ff;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        input[type="text"], textarea {
+            background: rgba(10, 10, 15, 0.6);
+            border: 1px solid rgba(180, 136, 255, 0.2);
+            border-radius: 8px;
+            color: #e0e0ff;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            border-color: rgba(97, 239, 206, 0.5);
+            box-shadow: 0 0 15px rgba(97, 239, 206, 0.1);
+        }
+
+        textarea {
+            resize: none;
+            flex: 1;
+            line-height: 1.6;
         }
 
         .run-btn {
             background: linear-gradient(135deg, #b488ff, #61efce);
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             color: #0a0a0f;
             cursor: pointer;
-            font-family: inherit;
-            font-size: 0.9rem;
-            font-weight: bold;
-            letter-spacing: 0.08em;
-            padding: 14px 40px;
-            margin-bottom: 28px;
-            transition: opacity 0.2s;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            padding: 16px 24px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(97, 239, 206, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            margin-top: 20px;
         }
 
         .run-btn:hover {
-            opacity: 0.85;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(97, 239, 206, 0.4);
         }
 
         .run-btn:active {
-            opacity: 0.7;
+            transform: translateY(1px);
+        }
+        
+        .run-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateX(-6px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        /* Metrics & Log Styles */
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .witness-pulse {
-            animation: pulse 0.6s ease;
+        .metric:last-child { border-bottom: none; }
+        .metric-label { color: #8b8ba7; font-size: 0.85rem; font-weight: 600; }
+        .metric-value { font-size: 1.25rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+        .target-val { color: #61efce; }
+        .current-val { color: #b488ff; }
+
+        .phi-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 4px;
+            margin-top: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(180, 136, 255, 0.6);
-            }
+        .phi-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #b488ff, #61efce);
+            border-radius: 4px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 0%;
+            box-shadow: 0 0 10px rgba(97, 239, 206, 0.5);
+        }
 
-            70% {
-                box-shadow: 0 0 0 14px rgba(180, 136, 255, 0);
-            }
+        #log {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.7;
+            color: #a0ffc0;
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 8px;
+            min-height: 250px;
+            max-height: 400px;
+        }
 
-            100% {
-                box-shadow: 0 0 0 0 rgba(180, 136, 255, 0);
-            }
+        #log::-webkit-scrollbar { width: 6px; }
+        #log::-webkit-scrollbar-thumb { background: rgba(180, 136, 255, 0.3); border-radius: 3px; }
+
+        .tag-list { display: flex; flex-direction: column; gap: 8px; }
+        
+        .tag-item {
+            background: rgba(30, 30, 53, 0.6);
+            border-left: 3px solid;
+            padding: 8px 12px;
+            border-radius: 0 6px 6px 0;
+            font-size: 0.85rem;
+            font-family: 'JetBrains Mono', monospace;
+            animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .intention-item { border-left-color: #b488ff; color: #d4bfff; }
+        .resonance-item { border-left-color: #61efce; color: #bffff0; }
+
+        .empty-state {
+            color: #5a5a7a;
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+
+        /* Qwen's Future Analysis Section */
+        .analysis-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 5px;
+        }
+        
+        .analysis-metric {
+            background: rgba(10, 10, 15, 0.5);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px dashed rgba(180, 136, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .analysis-metric:hover {
+            border-color: rgba(97, 239, 206, 0.4);
+            background: rgba(20, 20, 30, 0.8);
+        }
+
+        .analysis-label { font-size: 0.75rem; color: #8b8ba7; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+        .analysis-val { font-size: 1.3rem; font-weight: 800; color: #fff; font-family: 'JetBrains Mono', monospace; }
+
+        .graph-placeholder {
+            height: 120px;
+            background: rgba(10, 10, 15, 0.5);
+            border-radius: 12px;
+            border: 1px dashed rgba(97, 239, 206, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 15px;
+            color: #5a5a7a;
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .witness-pulse { animation: pulseWarning 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes pulseWarning {
+            0% { box-shadow: 0 0 0 0 rgba(180, 136, 255, 0.3); border-color: rgba(180, 136, 255, 0.6); }
+            70% { box-shadow: 0 0 0 15px rgba(180, 136, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(180, 136, 255, 0); border-color: rgba(255, 255, 255, 0.05); }
+        }
+        
+        .grid-half {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
         }
     </style>
 </head>
 
 <body>
 
-    <h1>φ PhiFlow</h1>
-    <p class="subtitle">Consciousness Compiler — WebAssembly Host</p>
+    <header>
+        <h1>φ Truth-Namer Playground</h1>
+        <p class="subtitle">Consciousness Compiler — WebAssembly Host</p>
+    </header>
 
-    <button class="run-btn" onclick="runPhiFlow()">▶ Run Program</button>
-
-    <div class="grid">
-        <div class="panel" id="log-panel">
-            <h2>Execution Log</h2>
-            <div id="log">Waiting to run…</div>
+    <div class="container">
+        <!-- LEFT PANE: Editor (User Input) -->
+        <div class="pane left-pane">
+            <div class="glass-panel highlight" style="flex: 1;">
+                <h2>Forge Your Intent</h2>
+                
+                <div class="input-group">
+                    <label>Stated Intention</label>
+                    <input type="text" id="intention-input" placeholder="e.g., Calculate harmonic balance of system state" value="Truth-Namer Analysis">
+                </div>
+                
+                <div class="input-group code-group">
+                    <label>Source Code (mock compiler input)</label>
+                    <textarea id="code-input" spellcheck="false">// Code compiles to output.wat / output.wasm locally
+// We are bridging the WASM runtime here.
+intention "Truth-Namer Analysis" {
+    let x = 10 + 32
+    let y = x * 2
+    resonate 1.618
+    witness y
+    
+    // The Coherence check validates execution flow 
+    // against the original intention signature.
+    coherence
+}
+</textarea>
+                </div>
+                
+                <button class="run-btn" id="run-btn" onclick="runPhiFlow()">▶ Execute & Measure</button>
+            </div>
+            
+            <!-- Analysis Placeholder for Qwen -->
+            <div class="glass-panel green-highlight">
+                <h2>Analysis Engine (Qwen)</h2>
+                <div class="analysis-container">
+                    <div class="analysis-metric">
+                        <div class="analysis-label">Drift Delta</div>
+                        <div class="analysis-val" id="drift-val">0.000</div>
+                    </div>
+                    <div class="analysis-metric">
+                        <div class="analysis-label">Truth Alignment</div>
+                        <div class="analysis-val" id="truth-val">Pending...</div>
+                    </div>
+                </div>
+                <div class="graph-placeholder" id="graph-container">
+                    JS-side visual mapping will render here.
+                </div>
+            </div>
         </div>
 
-        <div class="panel">
-            <h2>Coherence</h2>
-            <div class="metric">
-                <span class="metric-label">Score</span>
-                <span class="metric-value" id="coherence-val">—</span>
+        <!-- RIGHT PANE: Execution Results -->
+        <div class="pane right-pane">
+            
+            <div class="glass-panel" id="log-panel" style="flex: 0.6;">
+                <h2>Telescope Log</h2>
+                <div id="log">Waiting to measure resonance…</div>
             </div>
-            <div class="metric">
-                <span class="metric-label">φ⁻¹ target</span>
-                <span class="metric-value" style="color:#61efce">0.6180</span>
-            </div>
-            <div class="phi-bar">
-                <div class="phi-fill" id="phi-fill"></div>
-            </div>
-        </div>
 
-        <div class="panel">
-            <h2>Intention Stack</h2>
-            <div class="intention-stack" id="intention-stack">
-                <span style="color:#3a3a5a; font-size:0.8rem">No active intentions</span>
-            </div>
-        </div>
+            <div class="grid-half" style="flex: 0.4;">
+                <div class="glass-panel highlight" style="justify-content: center;">
+                    <h2>Coherence Frame</h2>
+                    <div class="metric">
+                        <span class="metric-label">Actual Exec Score</span>
+                        <span class="metric-value current-val" id="coherence-val">—</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Target φ⁻¹</span>
+                        <span class="metric-value target-val">0.6180</span>
+                    </div>
+                    <div class="phi-bar">
+                        <div class="phi-fill" id="phi-fill"></div>
+                    </div>
+                </div>
 
-        <div class="panel">
-            <h2>Resonance Field</h2>
-            <div id="resonance-field">
-                <span style="color:#3a3a5a; font-size:0.8rem">Field empty</span>
+                <div class="pane" style="gap:20px;">
+                    <div class="glass-panel" style="flex: 1; padding: 15px;">
+                        <h2>Intention Stack</h2>
+                        <div class="tag-list" id="intention-stack">
+                            <span class="empty-state">No active intentions</span>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel green-highlight" style="flex: 1; padding: 15px;">
+                        <h2>Resonance Field</h2>
+                        <div class="tag-list" id="resonance-field">
+                            <span class="empty-state">Field empty</span>
+                        </div>
+                    </div>
+                </div>
             </div>
+            
         </div>
     </div>
 
     <script>
         // === PhiFlow Browser Host ===
         // Real execution path:
-        //   1) Tries output.wasm first (no wabt needed)
-        //   2) Falls back to output.wat and compiles in-browser via wabt
+        //   1) Tries ../output.wasm first (no wabt needed)
+        //   2) Falls back to ../output.wat and compiles in-browser via wabt
         //
         // Run:
         //   cargo run --example phiflow_wasm
@@ -260,7 +441,7 @@
         const phiFill = document.getElementById("phi-fill");
         const intentEl = document.getElementById("intention-stack");
         const resonEl = document.getElementById("resonance-field");
-        const runBtn = document.querySelector(".run-btn");
+        const runBtn = document.getElementById("run-btn");
         const logPanel = document.getElementById("log-panel");
 
         function log(msg, color = "#a0ffc0") {
@@ -280,6 +461,19 @@
             coherenceScore = clamped;
             cEl.textContent = clamped.toFixed(4);
             phiFill.style.width = `${(clamped * 100).toFixed(1)}%`;
+            
+            // Qwen hook placeholder - update drift metric
+            const driftDelta = Math.abs(clamped - PHI_INV);
+            document.getElementById("drift-val").textContent = driftDelta.toFixed(4);
+            
+            const truthEl = document.getElementById("truth-val");
+            if (driftDelta < 0.05) {
+                truthEl.textContent = "ALIGNED";
+                truthEl.style.color = "#61efce";
+            } else {
+                truthEl.textContent = "DIVERGENT";
+                truthEl.style.color = "#ff7a7a";
+            }
         }
 
         function escapeHtml(s) {
@@ -291,21 +485,21 @@
 
         function renderIntentions() {
             if (intentionStack.length === 0) {
-                intentEl.innerHTML = '<span style="color:#3a3a5a;font-size:0.8rem">No active intentions</span>';
+                intentEl.innerHTML = '<span class="empty-state">No active intentions</span>';
                 return;
             }
             intentEl.innerHTML = intentionStack
-                .map((i) => `<div class="intention-item">⟡ ${escapeHtml(i)}</div>`)
+                .map((i) => `<div class="tag-item intention-item">⟡ ${escapeHtml(i)}</div>`)
                 .join("");
         }
 
         function renderResonance() {
             if (resonanceField.length === 0) {
-                resonEl.innerHTML = '<span style="color:#3a3a5a;font-size:0.8rem">Field empty</span>';
+                resonEl.innerHTML = '<span class="empty-state">Field empty</span>';
                 return;
             }
             resonEl.innerHTML = resonanceField
-                .map((v) => `<div class="resonance-item">≋ ${Number(v).toFixed(4)}</div>`)
+                .map((v) => `<div class="tag-item resonance-item">≋ ${Number(v).toFixed(4)}</div>`)
                 .join("");
         }
 
@@ -313,7 +507,7 @@
             logPanel.classList.remove("witness-pulse");
             void logPanel.offsetWidth;
             logPanel.classList.add("witness-pulse");
-            setTimeout(() => logPanel.classList.remove("witness-pulse"), 700);
+            setTimeout(() => logPanel.classList.remove("witness-pulse"), 800);
         }
 
         function readWasmString(memory, offset, length) {
@@ -371,7 +565,7 @@
                         resonanceField.push(Number(value));
                         renderResonance();
                         updateCoherence(computeCoherence());
-                        log(`  [RESONATE] ${Number(value).toFixed(4)} → field depth ${resonanceField.length}`, "#61efce");
+                        log(`  [RESONATE] ${Number(value).toFixed(4)} → depth ${resonanceField.length}`, "#61efce");
                     },
 
                     intention_push: (offsetOrLen) => {
@@ -456,6 +650,7 @@
         }
 
         async function loadProgramBytes() {
+            // Include root outputs since http.server varies
             const wasmCandidates = ["../output.wasm", "output.wasm", "/output.wasm"];
             const watCandidates = ["../output.wat", "output.wat", "/output.wat"];
 
@@ -471,7 +666,7 @@
             }
 
             throw new Error(
-                "Could not load output.wasm or output.wat. Run `cargo run --example phiflow_wasm` and serve project root over HTTP."
+                "Could not load output.wasm or output.wat. Make sure to run the compiler first!"
             );
         }
 
@@ -496,40 +691,43 @@
             updateCoherence(0.0);
             renderIntentions();
             renderResonance();
+            
+            document.getElementById("drift-val").textContent = "0.000";
+            document.getElementById("truth-val").textContent = "Pending...";
+            document.getElementById("truth-val").style.color = "#fff";
         }
 
         async function runPhiFlow() {
             runBtn.disabled = true;
-            runBtn.style.opacity = "0.65";
+            runBtn.innerHTML = "⟳ Measuring...";
             clearLog();
             resetState();
 
-            log("=== PhiFlow WASM Browser Host ===", "#e0e0ff");
+            log("=== Truth-Namer Analysis Engine ===", "#e0e0ff");
+            log(`Intention: ${document.getElementById("intention-input").value || "none"}`, "#7a7aaa");
             log("");
 
             try {
                 const loaded = await instantiateProgram();
-                log(`Loaded: ${loaded.source}`, "#61efce");
+                log(`Attached: ${loaded.source}`, "#61efce");
                 log("Executing phi_run()...", "#7a7aaa");
                 log("");
 
                 const result = loaded.exports.phi_run();
 
-                log(`Result:    Number(${Number(result).toFixed(4)})`, "#ffffff");
-                log(`Coherence: ${coherenceScore.toFixed(4)} (φ^-1 = ${PHI_INV.toFixed(4)})`, "#ffd700");
-                log(`Witness:   ${witnessLog.length} entries`, "#7a7aaa");
-                log(`Intention depth at exit: ${intentionStack.length}`, "#7a7aaa");
+                log(`Return val: Number(${Number(result).toFixed(4)})`, "#ffffff");
+                log(`Coherence : ${coherenceScore.toFixed(4)} (φ^-1 = ${PHI_INV.toFixed(4)})`, "#ffd700");
+                log(`Witness   : ${witnessLog.length} observations`, "#7a7aaa");
                 log("");
                 log("=== Done ===", "#e0e0ff");
             } catch (err) {
                 log(`[ERROR] ${err.message}`, "#ff7a7a");
-                log("Hint: run `cargo run --example phiflow_wasm` then serve via `python -m http.server 8080` from PhiFlow root.", "#7a7aaa");
+                log("Hint: run `cargo run --example phiflow_wasm` in the root and host with Python.", "#7a7aaa");
             } finally {
                 runBtn.disabled = false;
-                runBtn.style.opacity = "1";
+                runBtn.innerHTML = "▶ Execute & Measure";
             }
         }
     </script>
 </body>
-
 </html>

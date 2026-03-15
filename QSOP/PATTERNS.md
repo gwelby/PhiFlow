@@ -59,6 +59,15 @@
 - **Invalidates if**: witness execution lifecycle is rewritten with a new dispatch model.
 - **Promoted to STATE**: Yes
 
+### P-7: Two lowering paths drift unless degraded semantics are explicit
+
+- **What happens**: New semantics can land in AST/PhiIR/OpenQASM first (`witness mid_circuit`, `resonate ... toward TEAM_B`) while the legacy interpreter and flat-IR path silently treat them as older constructs.
+- **Instances**: 1 (Semantics review, 2026-03-14)
+- **Root cause**: PhiIR is evolving as the canonical path while compatibility paths still exist for older demos/tests.
+- **Fix**: Treat PhiIR as the source of truth, emit explicit warnings in legacy paths when semantics degrade, and document the contract in `QSOP/ARCHITECTURE.md`.
+- **Invalidates if**: legacy paths reach full parity or are fully removed.
+- **Promoted to STATE**: Yes
+
 ## Active Patterns (Successes)
 
 ### S-1: Four constructs map to QSOP operations
@@ -76,6 +85,45 @@
 - **Invalidates if**: New frequencies added that break the tolerance bands
 
 ## Resolved Patterns
+
+### R-6: OpenQASM emitter silently ignored confidence operands and undeclared intentions
+
+- **What happened**: The OpenQASM backend emitted `ry(pi/2)` for every `Resonate`, even when the IR carried a numeric confidence operand, and `current_qubit_idx()` silently defaulted undeclared intentions to qubit `q[0]`.
+- **Root cause**: The emitter never resolved `Const(Number(...))` operands inside a block and used `unwrap_or(&0)` for missing intention mappings.
+- **Fix**:
+  - Collect block-local numeric constants and emit `ry(value * pi)` when `Resonate { value: Some(op) }` points to a constant operand.
+  - Preserve explicit `ResonateDirection` semantics so `TEAM_B` emits the inverted binary council vote encoding.
+  - Return `OpenQasmEmitError::UndeclaredIntention` instead of silently aliasing missing intentions to `q[0]`.
+  - Add regression coverage for frequency chains, multi-channel entanglement, mid-circuit witness ordering, numeric resonance, TEAM_B direction, and undeclared intentions.
+- **Verification**:
+  - `cargo test --lib openqasm`
+  - `cargo build --release`
+
+### R-5: Unpaced hardware coherence sampling let stream demos outrun live sensor updates
+
+- **What happened**: The sensor-backed coherence provider could be called repeatedly faster than `sysinfo` can refresh CPU usage, so tight stream loops reused stale values and `healing_bed.phi` hit the evaluator's infinite-loop panic before host state had time to change.
+- **Root cause**: `sysinfo` CPU sampling requires a minimum refresh interval, but the provider returned immediately on early re-reads instead of pacing them.
+- **Fix**:
+  - Prime CPU usage with an initial refresh + `MINIMUM_CPU_UPDATE_INTERVAL` sleep.
+  - Sleep the remaining interval before subsequent fast re-reads.
+  - Add a `max_cycles` safety brake to `examples/healing_bed.phi`.
+- **Verification**:
+  - `cargo test --release --test phi_ir_evaluator_tests test_resolved_coherence_exposes_injected_value -- --nocapture`
+  - `cargo run --release --bin phic -- examples/healing_bed.phi`
+
+### R-4: WASM witness return drifted from evaluator semantics
+
+- **What happened**: `PhiIRNode::Witness` returned `PhiIRValue::Number(coherence)` in the evaluator, but WASM codegen dropped the imported `phi_witness` result and emitted `TAG_VOID`, so conformance saw `lhs=0.0`, `rhs=NaN`.
+- **Root cause**: The WASM backend treated witness as a side-effect-only observation even after the evaluator and conformance harness standardized witness as a numeric coherence-producing expression.
+- **Fix**:
+  - Updated `src/phi_ir/wasm.rs` to leave the `phi_witness` `f64` on the stack.
+  - Updated `src/wasm_host.rs` witness assertions to expect `PhiIRValue::Number(coherence)`.
+  - Replaced stale `tests/test_phiflow.rs` coverage that depended on external `quantum_core` symbols with a local `compile_and_run_phi_ir` smoke test.
+- **Verification**:
+  - `cargo test --test phi_ir_conformance_tests conformance_witness -- --nocapture`
+  - `cargo test --test phi_ir_conformance_tests`
+  - `cargo test --quiet --lib --tests`
+  - `cargo build --release`
 
 ### R-3: Snapshot queue rewrites shred MCP state under concurrent writers
 

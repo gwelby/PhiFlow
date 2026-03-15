@@ -316,6 +316,11 @@ impl<'a> Evaluator<'a> {
         self.compute_coherence()
     }
 
+    /// Expose the host-resolved coherence, including injected hardware metrics.
+    pub fn resolved_coherence(&self) -> f64 {
+        self.resolve_coherence()
+    }
+
     /// Expose a read-only view of values resonated under a given intention.
     pub fn resonated_values(&self, intention: &str) -> &[PhiIRValue] {
         self.resonance_field
@@ -422,7 +427,7 @@ impl<'a> Evaluator<'a> {
                 None
             }
 
-            PhiIRNode::Resonate { value, .. } => {
+            PhiIRNode::Resonate { value, direction: _, .. } => {
                 let key = self
                     .intention_stack
                     .last()

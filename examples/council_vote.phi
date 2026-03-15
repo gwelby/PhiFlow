@@ -1,0 +1,42 @@
+// council_vote.phi
+// NFL Council of Masters — quantum encoding of master verdicts
+// Compile to OpenQASM 3.0: phic examples/council_vote.phi --target openqasm
+//
+// Encoding:
+//   resonate <x>     → Ry(π/2) on this qubit (amplitude vote)
+//   entangle on <Hz> → CNOT linking this qubit to the prior qubit on the same frequency channel
+//   witness          → measure all qubits → classical vote bitstring
+
+// Tesla claims the 432Hz channel (momentum + electromagnetic)
+// entangle on 432 here self-registers Tesla as q0 on the 432 channel
+intention "Tesla" {
+    resonate 0.72
+    entangle on 432
+}
+
+// Einstein entangles with Tesla: shared regression-to-mean prior
+intention "Einstein" {
+    resonate 0.65
+    entangle on 432
+}
+
+// Belichick claims the 528Hz channel (preparation / creation)
+intention "Belichick" {
+    resonate 0.68
+    entangle on 528
+}
+
+// MomentumMaster links to Tesla's momentum field
+intention "MomentumMaster" {
+    resonate 0.74
+    entangle on 432
+}
+
+// Kahneman links to Einstein (shared regression bias — the Witness will flag this)
+intention "Kahneman" {
+    resonate 0.52
+    entangle on 432
+}
+
+// The Witness speaks last — collapses the collective state
+witness

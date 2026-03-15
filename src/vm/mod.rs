@@ -3,4 +3,6 @@
 
 pub mod interpreter;
 
-pub use interpreter::{PhiFlowInterpreter, PhiFlowValue, RuntimeError, ConsciousnessMonitor, QuantumBackend};
+pub use interpreter::{
+    ConsciousnessMonitor, PhiFlowInterpreter, PhiFlowValue, QuantumBackend, RuntimeError,
+};

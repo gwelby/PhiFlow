@@ -3,6 +3,7 @@ use phiflow::parser::parse_phi_program_with_diagnostics;
 use phiflow::phi_ir::evaluator::Evaluator;
 use phiflow::phi_ir::lowering::lower_program;
 use phiflow::phi_ir::quantum_codegen::compile_ir_to_quantum;
+use phiflow::phi_ir::openqasm::OpenQasmEmitter;
 use phiflow::phi_ir::PhiIRValue;
 use phiflow::sensors;
 use phiflow::PhiDiagnostic;
@@ -24,6 +25,10 @@ struct Args {
     /// The target backend to compile to (e.g., 'quantum'). If not specified, runs in the interpreter.
     #[arg(long)]
     target: Option<String>,
+
+    /// Optimize quantum circuit depth using tree topology.
+    #[arg(long, default_value_t = false)]
+    optimize_depth: bool,
 }
 
 #[derive(Debug)]
@@ -42,7 +47,7 @@ struct RunReport {
 fn main() {
     let args = Args::parse();
 
-    match run(&args.file, args.json_errors, args.target) {
+    match run(&args.file, args.json_errors, args.target, args.optimize_depth) {
         Ok(Some(report)) => {
             if args.json_errors {
                 // Contract: parse success emits pure JSON array and nothing else.
@@ -111,6 +116,7 @@ fn run(
     file_path: &PathBuf,
     json_errors: bool,
     target: Option<String>,
+    optimize_depth: bool,
 ) -> Result<Option<RunReport>, CliError> {
     let source = fs::read_to_string(file_path)
         .map_err(|e| CliError::Io(format!("Failed to read file: {}", e)))?;
@@ -141,6 +147,15 @@ fn run(
                 println!("{:#?}", circuit);
                 return Ok(None);
             }
+            "openqasm" => {
+                let mut emitter = OpenQasmEmitter::new();
+                emitter.optimize_depth = optimize_depth;
+                let qasm = emitter
+                    .emit(&ir_program)
+                    .map_err(|e| CliError::Eval(e.to_string()))?;
+                print!("{}", qasm);
+                return Ok(None);
+            }
             _ => {
                 return Err(CliError::Eval(format!("Unknown target: {}", t)));
             }
@@ -153,7 +168,7 @@ fn run(
     let _result = evaluator.run().map_err(|e| CliError::Eval(e.to_string()))?;
 
     Ok(Some(RunReport {
-        final_coherence: evaluator.coherence(),
+        final_coherence: evaluator.resolved_coherence(),
         resonance_events: evaluator.resonance_events().to_vec(),
         ended_streams: evaluator.ended_streams().to_vec(),
     }))

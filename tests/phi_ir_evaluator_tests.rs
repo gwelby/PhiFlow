@@ -6,6 +6,7 @@
 
 use phiflow::host::{CallbackHostProvider, WitnessAction};
 use phiflow::parser::{parse_phi_program, BinaryOperator, PhiExpression};
+use phiflow::phi_ir::ResonateDirection;
 use phiflow::phi_ir::evaluator::{EvalExecResult, Evaluator, FrozenEvalState};
 use phiflow::phi_ir::lowering::lower_program;
 use phiflow::phi_ir::optimizer::{OptimizationLevel, Optimizer};
@@ -149,7 +150,7 @@ fn test_witness_outside_intention_returns_zero_coherence() {
             Some(0),
             PhiIRNode::Witness {
                 target: None,
-                collapse_policy: CollapsePolicy::Deferred,
+                collapse_policy: CollapsePolicy::Final,
             },
         )],
         0,
@@ -180,7 +181,7 @@ fn test_witness_inside_intention_returns_nonzero_coherence() {
                 Some(0),
                 PhiIRNode::Witness {
                     target: None,
-                    collapse_policy: CollapsePolicy::Deferred,
+                    collapse_policy: CollapsePolicy::Final,
                 },
             ),
             instr(None, PhiIRNode::IntentionPop),
@@ -217,7 +218,7 @@ fn test_witness_records_event_in_log() {
                 Some(0),
                 PhiIRNode::Witness {
                     target: None,
-                    collapse_policy: CollapsePolicy::Deferred,
+                    collapse_policy: CollapsePolicy::Final,
                 },
             ),
             instr(None, PhiIRNode::IntentionPop),
@@ -241,7 +242,7 @@ fn test_witness_callback_called_once_per_instruction() {
             Some(0),
             PhiIRNode::Witness {
                 target: None,
-                collapse_policy: CollapsePolicy::Deferred,
+                collapse_policy: CollapsePolicy::Final,
             },
         )],
         0,
@@ -273,7 +274,7 @@ fn test_witness_yield_preserves_observed_value_snapshot() {
                 Some(1),
                 PhiIRNode::Witness {
                     target: Some(0),
-                    collapse_policy: CollapsePolicy::Deferred,
+                    collapse_policy: CollapsePolicy::Final,
                 },
             ),
         ],
@@ -332,7 +333,7 @@ fn test_frozen_eval_state_roundtrips_through_json() {
                 Some(1),
                 PhiIRNode::Witness {
                     target: Some(0),
-                    collapse_policy: CollapsePolicy::Deferred,
+                    collapse_policy: CollapsePolicy::Final,
                 },
             ),
         ],
@@ -390,7 +391,7 @@ fn test_two_nested_intentions_yield_golden_ratio() {
                 Some(0),
                 PhiIRNode::Witness {
                     target: None,
-                    collapse_policy: CollapsePolicy::Deferred,
+                    collapse_policy: CollapsePolicy::Final,
                 },
             ),
             instr(None, PhiIRNode::IntentionPop),
@@ -491,6 +492,7 @@ fn test_resonate_stores_value_under_current_intention() {
             instr(
                 None,
                 PhiIRNode::Resonate {
+                    direction: ResonateDirection::TeamA,
                     value: Some(0),
                     frequency_relationship: None,
                 },
@@ -517,6 +519,7 @@ fn test_resonate_without_intention_uses_global() {
             instr(
                 None,
                 PhiIRNode::Resonate {
+                    direction: ResonateDirection::TeamA,
                     value: Some(0),
                     frequency_relationship: None,
                 },
@@ -550,6 +553,7 @@ fn test_resonance_adds_bonus_to_coherence() {
             instr(
                 None,
                 PhiIRNode::Resonate {
+                    direction: ResonateDirection::TeamA,
                     value: Some(0),
                     frequency_relationship: None,
                 },
@@ -602,7 +606,7 @@ fn test_coherence_check_matches_witness() {
                 Some(1),
                 PhiIRNode::Witness {
                     target: None,
-                    collapse_policy: CollapsePolicy::Deferred,
+                    collapse_policy: CollapsePolicy::Final,
                 },
             ),
             instr(None, PhiIRNode::IntentionPop),
@@ -635,6 +639,19 @@ intention "test" {
 "#;
     let output = evaluate_with_coherence(source, || 0.75);
     assert!((output.resonance_field["test"][0] - 0.75).abs() < 0.001);
+}
+
+#[test]
+fn test_resolved_coherence_exposes_injected_value() {
+    let prog = single_block(
+        vec![instr(Some(0), PhiIRNode::Const(PhiIRValue::Number(0.0)))],
+        0,
+    );
+
+    let evaluator = Evaluator::new(&prog).with_coherence_provider(|| 0.75);
+
+    assert!((evaluator.coherence() - 0.0).abs() < 1e-9);
+    assert!((evaluator.resolved_coherence() - 0.75).abs() < 1e-9);
 }
 
 #[test]
@@ -724,13 +741,14 @@ fn test_all_four_constructs_together() {
                 Some(0),
                 PhiIRNode::Witness {
                     target: None,
-                    collapse_policy: CollapsePolicy::Deferred,
+                    collapse_policy: CollapsePolicy::Final,
                 },
             ),
             instr(Some(1), PhiIRNode::Const(PhiIRValue::Number(432.0))),
             instr(
                 None,
                 PhiIRNode::Resonate {
+                    direction: ResonateDirection::TeamA,
                     value: Some(1),
                     frequency_relationship: None,
                 },
@@ -740,7 +758,7 @@ fn test_all_four_constructs_together() {
                 Some(2),
                 PhiIRNode::Witness {
                     target: None,
-                    collapse_policy: CollapsePolicy::Deferred,
+                    collapse_policy: CollapsePolicy::Final,
                 },
             ),
             instr(None, PhiIRNode::IntentionPop),

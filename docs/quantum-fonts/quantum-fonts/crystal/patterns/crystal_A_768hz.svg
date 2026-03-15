@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000">
+  <!-- Crystal Letter A (768 Hz) -->
+  <g transform="translate(500,500)">
+    <!-- Crystal Structure -->
+    <path d="M0,-400 L-300,300 L300,300 Z" 
+          fill="none" stroke="black" stroke-width="2"/>
+          
+    <!-- Crystal Lattice -->
+    <path d="M0,-400 L-300,300 M0,-400 L300,300 M-300,300 L300,300" 
+          fill="none" stroke="black" stroke-width="1"/>
+          
+    <!-- Inner Hexagons -->
+    <path d="M0,-200 L150,-100 L150,100 L0,200 L-150,100 L-150,-100 Z" 
+          fill="none" stroke="black" stroke-width="2"/>
+    <path d="M0,-100 L75,-50 L75,50 L0,100 L-75,50 L-75,-50 Z" 
+          fill="none" stroke="black" stroke-width="2"/>
+    
+    <!-- Crystal Symbols -->
+    <text x="-25" y="50" font-size="60">💎</text>
+    <text x="25" y="50" font-size="60">✨</text>
+  </g>
+</svg>

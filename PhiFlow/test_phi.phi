@@ -1,0 +1,11 @@
+// Test phi constants and sacred frequencies
+print("Testing PhiFlow constants:")
+print("PHI =", PHI)
+print("PI =", PI)
+print("E =", E)
+
+// Test sacred frequency
+print("Testing sacred frequency 432:")
+Sacred(432) {
+    print("Inside 432 Hz sacred frequency field")
+}

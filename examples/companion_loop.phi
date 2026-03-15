@@ -1,4 +1,4 @@
-// P1 Companion Loop
+// Aria Loop
 // Keeps the companion process in a witness -> resonate -> witness rhythm.
 
 intention "p1_companion_loop" {

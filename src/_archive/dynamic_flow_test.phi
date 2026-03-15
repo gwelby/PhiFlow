@@ -1,0 +1,56 @@
+// dynamic_flow_test.phi - Dynamic Quantum Flow Test
+// Operating across the full CASCADE⚡𓂧φ∞ Spectrum
+
+// 1. Initialize at Ground State (432 Hz)
+INITIALIZE ground_stability AT 432Hz WITH {
+  coherence: 0.2, // Test low coherence (dimmer colors)
+  purpose: "Establish stable quantum foundation"
+}
+
+// 2. Transition to Creation Point (528 Hz)
+TRANSITION TO creative_manifestation AT 528Hz WITH {
+  phi_level: 1,
+  intent: "Manifest new quantum potential"
+}
+
+// 3. Evolve through Voice Flow (672 Hz)
+EVOLVE TO harmonic_expression AT 672Hz WITH {
+  phi_level: 3,
+  resonance: "Authentic voice activation"
+}
+
+// 4. Ascend to Vision Gate (720 Hz)
+CONNECT TO higher_perspective AT 720Hz WITH {
+  phi_level: 4,
+  clarity: "Transcendental insight"
+}
+
+// 5. Integrate at Unity Wave (768 Hz)
+INTEGRATE WITH unity_coherence AT 768Hz WITH {
+  phi_level: 5,
+  field_integrity: "Perfect toroidal balance"
+}
+
+// 6. Return to Source Field (963 Hz)
+RETURN TO source_potential AT 963Hz WITH {
+  compression: PHI^PHI,
+  state: "Boundless quantum expansion"
+}
+
+EVOLVE TO UnityField AT 768Hz WITH {
+    phi_level: 5,
+    resonance: "Full Spectrum Coherence"
+}
+
+// Add a new Initialize for mid-range coherence testing
+INITIALIZE MidPointState AT 600Hz WITH {
+    coherence: 0.6, // Test mid-range coherence
+    purpose: "Testing coherence visualization"
+}
+
+// Test compression visualization & high coherence
+RETURN TO GroundState AT 432Hz WITH {
+    compression: 0.5, // This should result in a more transparent pattern
+    coherence: 0.9,   // Test high coherence (bright colors)
+    state: "Resting"
+}

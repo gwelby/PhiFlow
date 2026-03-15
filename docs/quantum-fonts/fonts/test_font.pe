@@ -1,0 +1,19 @@
+# FontForge script to test basic font creation
+New()
+SetFontNames("QuantumTest", "Quantum Test", "Quantum Test", "Regular", \
+            "Copyright (c) 2025", "1.000")
+
+# Import base A
+Select("A")
+Import("sources/svg/base_A.svg")
+RemoveOverlap()
+Simplify()
+AddExtrema()
+AutoHint()
+
+# Set basic parameters
+SetOS2Value("Weight", 400)
+SetOS2Value("Width", 5)
+SetOS2Value("FSType", 0)
+
+Generate("builds/QuantumTest.otf")

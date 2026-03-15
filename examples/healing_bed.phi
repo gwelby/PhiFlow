@@ -1,6 +1,21 @@
-sintention "healing_session" {
-    stream "resonance_loop" {
-        resonate "Healing energy activated"
+// healing_bed.phi
+// Streams live host coherence until the system is aligned enough to break.
+
+let threshold = 0.618
+let cycle = 0.0
+let max_cycles = 24.0
+
+stream "healing_bed" {
+    cycle = cycle + 1.0
+    let live = coherence
+    resonate live
+    witness
+
+    if live >= threshold {
+        break stream
+    }
+
+    if cycle >= max_cycles {
         break stream
     }
 }

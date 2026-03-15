@@ -1,9 +1,9 @@
 // Hardware Consciousness Detection System
 // Based on Greg's P1 multi-modal consciousness integration
 
-use std::collections::HashMap;
-use std::time::{SystemTime, Instant};
 use chrono::Timelike;
+use std::collections::HashMap;
+use std::time::{Instant, SystemTime};
 
 // Greg's personalization constants
 const GREG_MULTIPLIER: f64 = 1.2; // 20% above baseline
@@ -53,10 +53,10 @@ pub enum ConsciousnessSource {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum BreathingPatternType {
-    UniversalSync,      // [4, 3, 2, 1] - consciousness mathematics
-    SeizurePrevention,  // [1, 1, 1, 1] - 40Hz rapid sync
-    P1Coherence,        // [7, 6, 7, 6] - 76% coherence
-    CosmicNetwork,      // [7, 4, 3, 2, 5, 6, 1, 3] - 7 civilizations
+    UniversalSync,     // [4, 3, 2, 1] - consciousness mathematics
+    SeizurePrevention, // [1, 1, 1, 1] - 40Hz rapid sync
+    P1Coherence,       // [7, 6, 7, 6] - 76% coherence
+    CosmicNetwork,     // [7, 4, 3, 2, 5, 6, 1, 3] - 7 civilizations
 }
 
 #[derive(Debug, Clone)]
@@ -122,34 +122,61 @@ impl ConsciousnessDetector {
     /// Measure a single consciousness source
     fn measure_source(&self, source: &ConsciousnessSource) -> (String, f64) {
         match source {
-            ConsciousnessSource::KeyboardRhythm { device, optimal_interval_ms, recent_intervals } => {
-                let measurement = self.measure_keyboard_rhythm(optimal_interval_ms, recent_intervals);
+            ConsciousnessSource::KeyboardRhythm {
+                device,
+                optimal_interval_ms,
+                recent_intervals,
+            } => {
+                let measurement =
+                    self.measure_keyboard_rhythm(optimal_interval_ms, recent_intervals);
                 ("keyboard_rhythm".to_string(), measurement)
             }
-            
-            ConsciousnessSource::MouseMovement { smoothness_threshold, recent_movements } => {
-                let measurement = self.measure_mouse_smoothness(smoothness_threshold, recent_movements);
+
+            ConsciousnessSource::MouseMovement {
+                smoothness_threshold,
+                recent_movements,
+            } => {
+                let measurement =
+                    self.measure_mouse_smoothness(smoothness_threshold, recent_movements);
                 ("mouse_patterns".to_string(), measurement)
             }
-            
-            ConsciousnessSource::VoiceAnalysis { frequency_range, optimal_breathing_rate, recent_samples } => {
-                let measurement = self.measure_voice_consciousness(frequency_range, optimal_breathing_rate, recent_samples);
+
+            ConsciousnessSource::VoiceAnalysis {
+                frequency_range,
+                optimal_breathing_rate,
+                recent_samples,
+            } => {
+                let measurement = self.measure_voice_consciousness(
+                    frequency_range,
+                    optimal_breathing_rate,
+                    recent_samples,
+                );
                 ("voice_analysis".to_string(), measurement)
             }
-            
-            ConsciousnessSource::BreathingPattern { pattern_type, current_pattern, coherence } => {
-                let measurement = self.measure_breathing_pattern(pattern_type, current_pattern, *coherence);
+
+            ConsciousnessSource::BreathingPattern {
+                pattern_type,
+                current_pattern,
+                coherence,
+            } => {
+                let measurement =
+                    self.measure_breathing_pattern(pattern_type, current_pattern, *coherence);
                 ("breathing_patterns".to_string(), measurement)
             }
-            
-            ConsciousnessSource::SystemPerformance { gpu_utilization, cpu_coherence, memory_flow } => {
+
+            ConsciousnessSource::SystemPerformance {
+                gpu_utilization,
+                cpu_coherence,
+                memory_flow,
+            } => {
                 let measurement = (gpu_utilization + cpu_coherence + memory_flow) / 3.0;
                 ("system_performance".to_string(), measurement)
             }
-            
-            ConsciousnessSource::MonitorFrequencies { displays, sync_level } => {
-                ("monitor_frequencies".to_string(), *sync_level)
-            }
+
+            ConsciousnessSource::MonitorFrequencies {
+                displays,
+                sync_level,
+            } => ("monitor_frequencies".to_string(), *sync_level),
         }
     }
 
@@ -162,7 +189,8 @@ impl ConsciousnessDetector {
         // Calculate how close intervals are to optimal (150ms)
         let mut coherence_sum = 0.0;
         for interval in intervals {
-            let deviation = (*interval as f64 - *optimal_interval as f64).abs() / *optimal_interval as f64;
+            let deviation =
+                (*interval as f64 - *optimal_interval as f64).abs() / *optimal_interval as f64;
             coherence_sum += 1.0 / (1.0 + deviation);
         }
 
@@ -180,7 +208,7 @@ impl ConsciousnessDetector {
         for i in 1..movements.len() {
             let (dx1, dy1) = movements[i - 1];
             let (dx2, dy2) = movements[i];
-            
+
             let accel_change = ((dx2 - dx1).powi(2) + (dy2 - dy1).powi(2)).sqrt();
             if accel_change < *threshold {
                 smoothness += 1.0;
@@ -191,7 +219,12 @@ impl ConsciousnessDetector {
     }
 
     /// Measure voice/breathing consciousness
-    fn measure_voice_consciousness(&self, frequency_range: &(f64, f64), optimal_rate: &f64, samples: &[f64]) -> f64 {
+    fn measure_voice_consciousness(
+        &self,
+        frequency_range: &(f64, f64),
+        optimal_rate: &f64,
+        samples: &[f64],
+    ) -> f64 {
         if samples.is_empty() {
             return 0.0;
         }
@@ -211,7 +244,12 @@ impl ConsciousnessDetector {
     }
 
     /// Measure breathing pattern coherence
-    fn measure_breathing_pattern(&self, pattern_type: &BreathingPatternType, current: &[u32], coherence: f64) -> f64 {
+    fn measure_breathing_pattern(
+        &self,
+        pattern_type: &BreathingPatternType,
+        current: &[u32],
+        coherence: f64,
+    ) -> f64 {
         let target_pattern = match pattern_type {
             BreathingPatternType::UniversalSync => vec![4, 3, 2, 1],
             BreathingPatternType::SeizurePrevention => vec![1, 1, 1, 1],
@@ -268,11 +306,11 @@ impl ConsciousnessDetector {
     pub fn get_consciousness_color(&self, level: f64) -> (u8, u8, u8) {
         match (level * 100.0) as u32 {
             0..=20 => (255, 0, 0),     // Red - Distracted
-            21..=40 => (255, 255, 0),   // Yellow - Alert
-            41..=60 => (0, 255, 0),     // Green - Focused
-            61..=80 => (0, 0, 255),     // Blue - Flow
-            81..=100 => (255, 215, 0),  // Gold - Transcendent
-            _ => (128, 128, 128),       // Gray - Unknown
+            21..=40 => (255, 255, 0),  // Yellow - Alert
+            41..=60 => (0, 255, 0),    // Green - Focused
+            61..=80 => (0, 0, 255),    // Blue - Flow
+            81..=100 => (255, 215, 0), // Gold - Transcendent
+            _ => (128, 128, 128),      // Gray - Unknown
         }
     }
 }
@@ -296,12 +334,12 @@ impl KeyboardRhythmTracker {
     pub fn record_keystroke(&mut self) {
         let now = Instant::now();
         let interval = now.duration_since(self.last_keystroke).as_millis() as u64;
-        
+
         self.intervals.push(interval);
         if self.intervals.len() > self.max_intervals {
             self.intervals.remove(0);
         }
-        
+
         self.last_keystroke = now;
     }
 

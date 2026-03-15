@@ -1,7 +1,5 @@
 use phiflow::phi_ir::{
-    emitter,
-    vm::PhiVm,
-    PhiIRBinOp, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction,
+    emitter, vm::PhiVm, PhiIRBinOp, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction,
 };
 
 fn single_block_program(instructions: Vec<PhiInstruction>, terminator: PhiIRNode) -> PhiIRProgram {

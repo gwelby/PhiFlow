@@ -81,11 +81,15 @@ fn format_instr(node: &PhiIRNode) -> String {
         }
         PhiIRNode::IntentionPush { name, .. } => format!("IntentionPush \"{}\"", name),
         PhiIRNode::IntentionPop => "IntentionPop".to_string(),
-        PhiIRNode::Resonate { value, .. } => {
+        PhiIRNode::Resonate {
+            value,
+            direction,
+            ..
+        } => {
             let v_str = value
                 .map(|v| format!("%{}", v))
                 .unwrap_or("Self".to_string());
-            format!("Resonate value={}", v_str)
+            format!("Resonate value={} direction={:?}", v_str, direction)
         }
         PhiIRNode::CreatePattern {
             kind, frequency, ..

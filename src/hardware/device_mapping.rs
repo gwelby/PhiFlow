@@ -31,15 +31,15 @@ impl DeviceMapper {
             device_type,
         }
     }
-    
+
     pub fn map_consciousness_to_rgb(&self, level: f64) -> (u8, u8, u8) {
         match (level * 100.0) as u32 {
             0..=20 => (255, 0, 0),     // Red - Distracted
-            21..=40 => (255, 255, 0),   // Yellow - Alert
-            41..=60 => (0, 255, 0),     // Green - Focused
-            61..=80 => (0, 0, 255),     // Blue - Flow
-            81..=100 => (255, 215, 0),  // Gold - Transcendent
-            _ => (128, 128, 128),       // Gray - Unknown
+            21..=40 => (255, 255, 0),  // Yellow - Alert
+            41..=60 => (0, 255, 0),    // Green - Focused
+            61..=80 => (0, 0, 255),    // Blue - Flow
+            81..=100 => (255, 215, 0), // Gold - Transcendent
+            _ => (128, 128, 128),      // Gray - Unknown
         }
     }
 }

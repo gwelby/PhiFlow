@@ -125,7 +125,11 @@ async fn test_mcp_shared_resonance_visible_across_streams() {
     let values = completed_two["resonance_field"]["global_peace"]
         .as_array()
         .expect("global_peace resonance field should exist");
-    assert_eq!(values.len(), 2, "shared resonance should collect both streams");
+    assert_eq!(
+        values.len(),
+        2,
+        "shared resonance should collect both streams"
+    );
 
     let mut value_strings: Vec<String> = values
         .iter()

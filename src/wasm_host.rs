@@ -356,8 +356,8 @@ mod tests {
         assert_eq!(resonated.load(Ordering::SeqCst), 1);
         assert_eq!(witnessed.load(Ordering::SeqCst), 1);
 
-        // Return is the last expression (Witness), which returns Void via NaN boxing.
-        assert_eq!(run.result, PhiIRValue::Void);
+        // Return is the last expression (Witness), which yields the observed coherence score.
+        assert_eq!(run.result, PhiIRValue::Number(0.66));
     }
 
     /// BSEI (Backend Semantics Equivalence Invariant) conformance test.

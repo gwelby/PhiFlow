@@ -1,0 +1,28 @@
+{
+  "generated_at": "2026-02-26T05:51:45Z",
+  "counts": {
+    "total_objectives": 3,
+    "acked_objectives": 3,
+    "completed_objectives": 3,
+    "blocked_objectives": 0,
+    "reopened_objectives": 1
+  },
+  "rates": {
+    "ack_coverage": 1.0,
+    "verification_coverage": 1.0,
+    "reopen_rate": 0.3333333333333333
+  },
+  "timing": {
+    "average_lead_time_hours_for_completed": 5.944444444444444,
+    "completed_lead_time_hours": [
+      0.6666666666666666,
+      1.6666666666666667,
+      15.5
+    ]
+  },
+  "invalid_packets": {
+    "objectives": [],
+    "acks": []
+  },
+  "no_ack_objectives": []
+}

@@ -148,6 +148,7 @@ pub enum BytecodeNode {
     IntentionPop,
     Resonate {
         value: Option<Operand>,
+        direction: crate::phi_ir::ResonateDirection,
     },
     CoherenceCheck,
     Sleep {
@@ -217,6 +218,11 @@ impl PhiVm {
     /// Return the loaded string table.
     pub fn string_table(&self) -> &[String] {
         &self.program.string_table
+    }
+
+    /// Return the decoded bytecode program.
+    pub fn program(&self) -> &BytecodeProgram {
+        &self.program
     }
 
     /// Return the current value stack.
@@ -309,7 +315,7 @@ impl PhiVm {
                 self.intention_stack.pop();
                 None
             }
-            BytecodeNode::Resonate { value } => {
+            BytecodeNode::Resonate { value, direction: _ } => {
                 if let Some(op) = value {
                     let val = self.get_reg(*op)?.clone();
                     let key = self
@@ -601,9 +607,18 @@ fn parse_node(reader: &mut ByteReader<'_>, string_table: &[String]) -> VmResult<
             name: read_string_ref(reader, string_table)?,
         },
         OP_INTENTION_POP => BytecodeNode::IntentionPop,
-        OP_RESONATE => BytecodeNode::Resonate {
-            value: read_optional_operand(reader, OP_RESONATE)?,
-        },
+        OP_RESONATE => {
+            let direction_byte = reader.read_u8()?;
+            let direction = if direction_byte == 0 {
+                crate::phi_ir::ResonateDirection::TeamA
+            } else {
+                crate::phi_ir::ResonateDirection::TeamB
+            };
+            BytecodeNode::Resonate {
+                value: read_optional_operand(reader, OP_RESONATE)?,
+                direction,
+            }
+        }
         OP_COHERENCE_CHECK => BytecodeNode::CoherenceCheck,
         OP_SLEEP => BytecodeNode::Sleep {
             duration: reader.read_u32()?,
@@ -742,7 +757,7 @@ impl<'a> ByteReader<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::{PhiVm, VmError};
+    use super::{BytecodeNode, PhiVm, VmError};
     use super::{
         OP_COHERENCE_CHECK, OP_CONST_NUM, OP_FALLTHROUGH, OP_INTENTION_POP, OP_INTENTION_PUSH,
         OP_RESONATE, OP_RETURN, OP_WITNESS,
@@ -795,6 +810,7 @@ mod tests {
         // resonate r0
         out.push(0);
         out.push(OP_RESONATE);
+        out.push(0); // TeamA
         out.push(1);
         emit_u32(&mut out, 0);
 
@@ -949,6 +965,7 @@ mod tests {
                     node: PhiIRNode::Resonate {
                         value: Some(0),
                         frequency_relationship: None,
+                        direction: crate::phi_ir::ResonateDirection::TeamA,
                     },
                 },
                 PhiInstruction {
@@ -1077,6 +1094,44 @@ mod tests {
             result, second_run,
             "native opcode execution must be deterministic"
         );
+    }
+
+    #[test]
+    fn vm_decodes_resonate_direction_from_emitted_bytecode() {
+        let program = single_block_program(
+            vec![
+                PhiInstruction {
+                    result: Some(0),
+                    node: PhiIRNode::Const(PhiIRValue::Number(0.72)),
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::Resonate {
+                        value: Some(0),
+                        frequency_relationship: None,
+                        direction: crate::phi_ir::ResonateDirection::TeamB,
+                    },
+                },
+            ],
+            PhiIRNode::Fallthrough,
+        );
+
+        let bytes = emitter::emit(&program);
+        let vm = PhiVm::from_bytes(&bytes).expect("VM should decode emitted bytecode");
+        let block = vm
+            .program()
+            .blocks
+            .first()
+            .expect("decoded program should contain an entry block");
+        let resonate = &block.instructions[1].node;
+
+        match resonate {
+            BytecodeNode::Resonate { value, direction } => {
+                assert_eq!(*value, Some(0));
+                assert_eq!(*direction, crate::phi_ir::ResonateDirection::TeamB);
+            }
+            other => panic!("expected decoded resonate node, got {:?}", other),
+        }
     }
 
     #[test]

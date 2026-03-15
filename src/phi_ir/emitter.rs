@@ -398,8 +398,12 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
 
         PhiIRNode::StreamPop => out.push(OP_BREAK_STREAM),
 
-        PhiIRNode::Resonate { value, .. } => {
+        PhiIRNode::Resonate { value, direction, .. } => {
             out.push(OP_RESONATE);
+            match direction {
+                crate::phi_ir::ResonateDirection::TeamA => out.push(0),
+                crate::phi_ir::ResonateDirection::TeamB => out.push(1),
+            }
             match value {
                 Some(op) => {
                     out.push(1);

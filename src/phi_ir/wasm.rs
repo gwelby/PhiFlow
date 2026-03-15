@@ -369,12 +369,8 @@ impl<'a> WatEmitter<'a> {
 
             PhiIRNode::Witness { target, .. } => {
                 let operand = target.map(|r| r as i32).unwrap_or(-1);
-                // phi_witness returns f64 (coherence reading) for the host,
-                // but Witness has Void semantics in PhiFlow — drop it and push TAG_VOID.
-                format!(
-                    "i32.const {}\ncall $phi_witness\ndrop\ni64.const {}\nf64.reinterpret_i64",
-                    operand, TAG_VOID
-                )
+                // Witness evaluates to the observed coherence number, matching the evaluator.
+                format!("i32.const {}\ncall $phi_witness", operand)
             }
 
             PhiIRNode::IntentionPush { name, .. } => {
@@ -398,7 +394,7 @@ impl<'a> WatEmitter<'a> {
 
             PhiIRNode::IntentionPop => "call $phi_intention_pop".to_string(),
 
-            PhiIRNode::Resonate { value, .. } => match value {
+            PhiIRNode::Resonate { value, direction: _, .. } => match value {
                 Some(reg) => format!("local.get $r{}\ncall $phi_resonate", reg),
                 None => "f64.const 0.0\ncall $phi_resonate".to_string(),
             },

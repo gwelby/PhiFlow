@@ -9,10 +9,13 @@
 //! 4. Handling Control Flow (Branch, Jump).
 //! 5. Maintaining scope for variables.
 
-use crate::parser::{BinaryOperator, PhiExpression, UnaryOperator};
+use crate::parser::{
+    BinaryOperator, PhiExpression, ResonateDirection as AstResonateDirection, UnaryOperator,
+};
 use crate::phi_ir::{
-    BlockId, CollapsePolicy, DomainOp, Operand, PatternKind, PhiIRBinOp, PhiIRBlock, PhiIRNode,
-    PhiIRProgram, PhiIRUnOp, PhiIRValue, PhiInstruction, SacredFrequency, Param,
+    BlockId, CollapsePolicy, DomainOp, Operand, Param, PatternKind, PhiIRBinOp, PhiIRBlock,
+    PhiIRNode, PhiIRProgram, PhiIRUnOp, PhiIRValue, PhiInstruction,
+    ResonateDirection as IrResonateDirection, SacredFrequency,
 };
 use std::collections::HashMap;
 
@@ -200,9 +203,7 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
         PhiExpression::LetBinding { name, value, .. } => {
             let val = match lower_expr(ctx, value) {
                 LowerResult::Value(v) => v,
-                LowerResult::None => {
-                    ctx.emit(PhiIRNode::Const(PhiIRValue::Void))
-                }
+                LowerResult::None => ctx.emit(PhiIRNode::Const(PhiIRValue::Void)),
             };
             ctx.emit(PhiIRNode::StoreVar {
                 name: name.clone(),
@@ -306,7 +307,7 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
         }
 
         // Consciousness
-        PhiExpression::Witness { expression, body } => {
+        PhiExpression::Witness { mid_circuit, expression, body } => {
             let target = if let Some(e) = expression {
                 let res = lower_expr(ctx, e);
                 Some(unwrap_val(ctx, res))
@@ -314,9 +315,15 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
                 None
             };
 
+            let policy = if *mid_circuit {
+                CollapsePolicy::MidCircuit
+            } else {
+                CollapsePolicy::Final
+            };
+
             let op = ctx.emit(PhiIRNode::Witness {
                 target,
-                collapse_policy: CollapsePolicy::Deferred,
+                collapse_policy: policy,
             });
 
             if let Some(b) = body {
@@ -375,7 +382,10 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             LowerResult::None
         }
 
-        PhiExpression::Resonate { expression } => {
+        PhiExpression::Resonate {
+            expression,
+            direction,
+        } => {
             let val = if let Some(e) = expression {
                 let res = lower_expr(ctx, e);
                 Some(unwrap_val(ctx, res))
@@ -386,6 +396,10 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             ctx.emit(PhiIRNode::Resonate {
                 value: val,
                 frequency_relationship: None,
+                direction: match *direction {
+                    AstResonateDirection::TeamA => IrResonateDirection::TeamA,
+                    AstResonateDirection::TeamB => IrResonateDirection::TeamB,
+                },
             });
             LowerResult::None
         }
@@ -419,7 +433,11 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
         }
 
         // Agent Identity
-        PhiExpression::AgentBlock { name, version, body } => {
+        PhiExpression::AgentBlock {
+            name,
+            version,
+            body,
+        } => {
             ctx.emit(PhiIRNode::AgentDecl {
                 name: name.clone(),
                 version: version.clone(),

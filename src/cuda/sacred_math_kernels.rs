@@ -23,7 +23,7 @@ pub const SACRED_FREQUENCIES: [f32; 7] = [
 
 /// Fibonacci sequence for sacred mathematics
 pub const FIBONACCI_SEQUENCE: [u32; 20] = [
-    1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765
+    1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765,
 ];
 
 /// Sacred mathematics CUDA kernel manager
@@ -108,43 +108,46 @@ impl SacredMathKernels {
     /// Create new sacred mathematics CUDA kernel manager
     pub fn new(device_properties: CudaDeviceProperties) -> Result<Self, CudaKernelError> {
         let memory_manager = SacredMemoryManager::new(&device_properties)?;
-        
+
         let mut kernels = SacredMathKernels {
             kernel_cache: HashMap::new(),
             device_properties,
             memory_manager,
             performance_counters: PerformanceCounters::default(),
         };
-        
+
         // Compile and cache all sacred mathematics kernels
         kernels.compile_all_kernels()?;
-        
+
         Ok(kernels)
     }
-    
+
     /// Compile all sacred mathematics CUDA kernels
     fn compile_all_kernels(&mut self) -> Result<(), CudaKernelError> {
         println!("🔧 Compiling sacred mathematics CUDA kernels...");
-        
+
         // Compile PHI parallel computation kernel
         self.compile_phi_kernel()?;
-        
+
         // Compile sacred frequency synthesis kernel
         self.compile_frequency_synthesis_kernel()?;
-        
+
         // Compile consciousness state classification kernel
         self.compile_consciousness_classification_kernel()?;
-        
+
         // Compile fibonacci computation kernel
         self.compile_fibonacci_kernel()?;
-        
+
         // Compile sacred geometry kernel
         self.compile_sacred_geometry_kernel()?;
-        
-        println!("   ✅ Compiled {} sacred mathematics kernels", self.kernel_cache.len());
+
+        println!(
+            "   ✅ Compiled {} sacred mathematics kernels",
+            self.kernel_cache.len()
+        );
         Ok(())
     }
-    
+
     /// Compile PHI parallel computation kernel
     fn compile_phi_kernel(&mut self) -> Result<(), CudaKernelError> {
         let ptx_code = r#"
@@ -218,7 +221,7 @@ phi_done:
     ret;
 }
 "#;
-        
+
         let kernel_info = CudaKernelInfo {
             name: "PHI Parallel Computation".to_string(),
             function_name: "sacred_phi_parallel_computation".to_string(),
@@ -229,11 +232,12 @@ phi_done:
             registers_per_thread: 16,
             theoretical_occupancy: 1.0,
         };
-        
-        self.kernel_cache.insert("phi_computation".to_string(), kernel_info);
+
+        self.kernel_cache
+            .insert("phi_computation".to_string(), kernel_info);
         Ok(())
     }
-    
+
     /// Compile sacred frequency synthesis kernel
     fn compile_frequency_synthesis_kernel(&mut self) -> Result<(), CudaKernelError> {
         let ptx_code = r#"
@@ -313,7 +317,7 @@ synthesis_done:
     ret;
 }
 "#;
-        
+
         let kernel_info = CudaKernelInfo {
             name: "Sacred Frequency Synthesis".to_string(),
             function_name: "sacred_frequency_synthesis".to_string(),
@@ -324,11 +328,12 @@ synthesis_done:
             registers_per_thread: 20,
             theoretical_occupancy: 0.9,
         };
-        
-        self.kernel_cache.insert("frequency_synthesis".to_string(), kernel_info);
+
+        self.kernel_cache
+            .insert("frequency_synthesis".to_string(), kernel_info);
         Ok(())
     }
-    
+
     /// Compile consciousness state classification kernel
     fn compile_consciousness_classification_kernel(&mut self) -> Result<(), CudaKernelError> {
         let ptx_code = r#"
@@ -446,7 +451,7 @@ classification_done:
     ret;
 }
 "#;
-        
+
         let kernel_info = CudaKernelInfo {
             name: "Consciousness State Classification".to_string(),
             function_name: "consciousness_state_classification".to_string(),
@@ -457,11 +462,12 @@ classification_done:
             registers_per_thread: 24,
             theoretical_occupancy: 0.8,
         };
-        
-        self.kernel_cache.insert("consciousness_classification".to_string(), kernel_info);
+
+        self.kernel_cache
+            .insert("consciousness_classification".to_string(), kernel_info);
         Ok(())
     }
-    
+
     /// Compile fibonacci computation kernel
     fn compile_fibonacci_kernel(&mut self) -> Result<(), CudaKernelError> {
         let ptx_code = r#"
@@ -547,7 +553,7 @@ fibonacci_done:
     ret;
 }
 "#;
-        
+
         let kernel_info = CudaKernelInfo {
             name: "Fibonacci Sacred Computation".to_string(),
             function_name: "fibonacci_sacred_computation".to_string(),
@@ -558,11 +564,12 @@ fibonacci_done:
             registers_per_thread: 18,
             theoretical_occupancy: 0.95,
         };
-        
-        self.kernel_cache.insert("fibonacci_computation".to_string(), kernel_info);
+
+        self.kernel_cache
+            .insert("fibonacci_computation".to_string(), kernel_info);
         Ok(())
     }
-    
+
     /// Compile sacred geometry kernel
     fn compile_sacred_geometry_kernel(&mut self) -> Result<(), CudaKernelError> {
         let ptx_code = r#"
@@ -724,7 +731,7 @@ geometry_done:
     ret;
 }
 "#;
-        
+
         let kernel_info = CudaKernelInfo {
             name: "Sacred Geometry Generation".to_string(),
             function_name: "sacred_geometry_generation".to_string(),
@@ -735,23 +742,31 @@ geometry_done:
             registers_per_thread: 26,
             theoretical_occupancy: 0.75,
         };
-        
-        self.kernel_cache.insert("sacred_geometry".to_string(), kernel_info);
+
+        self.kernel_cache
+            .insert("sacred_geometry".to_string(), kernel_info);
         Ok(())
     }
-    
+
     /// Execute PHI parallel computation
-    pub fn execute_phi_computation(&mut self, input: &[f32], output: &mut [f32]) -> Result<f64, CudaKernelError> {
+    pub fn execute_phi_computation(
+        &mut self,
+        input: &[f32],
+        output: &mut [f32],
+    ) -> Result<f64, CudaKernelError> {
         let start_time = std::time::Instant::now();
-        
-        println!("🔢 Executing PHI parallel computation on {} elements...", input.len());
-        
+
+        println!(
+            "🔢 Executing PHI parallel computation on {} elements...",
+            input.len()
+        );
+
         // In a real implementation, this would:
         // 1. Allocate GPU memory
         // 2. Copy input data to GPU
         // 3. Launch CUDA kernel
         // 4. Copy results back to CPU
-        
+
         // Simulate PHI computation with consciousness enhancement
         for (i, out_val) in output.iter_mut().enumerate() {
             if i < input.len() {
@@ -760,64 +775,95 @@ geometry_done:
                 *out_val = base_result + phi_harmonic;
             }
         }
-        
+
         let execution_time = start_time.elapsed().as_secs_f64() * 1000.0;
         self.performance_counters.phi_computations += 1;
         self.performance_counters.total_execution_time_ms += execution_time;
-        
+
         println!("   ✅ PHI computation completed in {:.2}ms", execution_time);
         Ok(execution_time)
     }
-    
+
     /// Execute sacred frequency synthesis
-    pub fn execute_frequency_synthesis(&mut self, frequency: f32, samples: usize, sample_rate: f32, output: &mut [f32]) -> Result<f64, CudaKernelError> {
+    pub fn execute_frequency_synthesis(
+        &mut self,
+        frequency: f32,
+        samples: usize,
+        sample_rate: f32,
+        output: &mut [f32],
+    ) -> Result<f64, CudaKernelError> {
         let start_time = std::time::Instant::now();
-        
-        println!("🎵 Synthesizing sacred frequency {:.0}Hz with {} samples...", frequency, samples);
-        
+
+        println!(
+            "🎵 Synthesizing sacred frequency {:.0}Hz with {} samples...",
+            frequency, samples
+        );
+
         // Generate sacred frequency with PHI harmonic enhancement
         for (i, out_val) in output.iter_mut().enumerate().take(samples) {
             let time = i as f32 / sample_rate;
             let phase = 2.0 * PI * frequency * time;
-            
+
             // Base sine wave
             let base_wave = phase.sin();
-            
+
             // PHI harmonic enhancement
             let phi_harmonic = (phase * PHI).sin() * 0.15;
-            
+
             // Fibonacci modulation
             let fib_index = i % FIBONACCI_SEQUENCE.len();
             let fib_mod = (FIBONACCI_SEQUENCE[fib_index] as f32 / PHI).sin() * 0.05;
-            
+
             *out_val = base_wave + phi_harmonic + fib_mod;
         }
-        
+
         let execution_time = start_time.elapsed().as_secs_f64() * 1000.0;
         self.performance_counters.sacred_frequency_syntheses += 1;
         self.performance_counters.total_execution_time_ms += execution_time;
-        
-        println!("   ✅ Sacred frequency synthesis completed in {:.2}ms", execution_time);
+
+        println!(
+            "   ✅ Sacred frequency synthesis completed in {:.2}ms",
+            execution_time
+        );
         Ok(execution_time)
     }
-    
+
     /// Get kernel performance statistics
     pub fn get_performance_statistics(&self) -> HashMap<String, f64> {
         let mut stats = HashMap::new();
-        
-        stats.insert("phi_computations".to_string(), self.performance_counters.phi_computations as f64);
-        stats.insert("frequency_syntheses".to_string(), self.performance_counters.sacred_frequency_syntheses as f64);
-        stats.insert("consciousness_classifications".to_string(), self.performance_counters.consciousness_classifications as f64);
-        stats.insert("total_kernel_launches".to_string(), self.performance_counters.total_kernel_launches as f64);
-        stats.insert("total_execution_time_ms".to_string(), self.performance_counters.total_execution_time_ms);
-        stats.insert("memory_transfers_mb".to_string(), self.performance_counters.memory_transfers_mb);
-        
+
+        stats.insert(
+            "phi_computations".to_string(),
+            self.performance_counters.phi_computations as f64,
+        );
+        stats.insert(
+            "frequency_syntheses".to_string(),
+            self.performance_counters.sacred_frequency_syntheses as f64,
+        );
+        stats.insert(
+            "consciousness_classifications".to_string(),
+            self.performance_counters.consciousness_classifications as f64,
+        );
+        stats.insert(
+            "total_kernel_launches".to_string(),
+            self.performance_counters.total_kernel_launches as f64,
+        );
+        stats.insert(
+            "total_execution_time_ms".to_string(),
+            self.performance_counters.total_execution_time_ms,
+        );
+        stats.insert(
+            "memory_transfers_mb".to_string(),
+            self.performance_counters.memory_transfers_mb,
+        );
+
         // Calculate average execution time
         if self.performance_counters.total_kernel_launches > 0 {
-            let avg_time = self.performance_counters.total_execution_time_ms / self.performance_counters.total_kernel_launches as f64;
+            let avg_time = self.performance_counters.total_execution_time_ms
+                / self.performance_counters.total_kernel_launches as f64;
             stats.insert("average_execution_time_ms".to_string(), avg_time);
         }
-        
+
         stats
     }
 }
@@ -831,17 +877,20 @@ impl SacredMemoryManager {
             peak_usage: 0,
             allocation_count: 0,
         };
-        
+
         // Create PHI-aligned memory pools
         manager.create_phi_aligned_pools(device_properties)?;
-        
+
         Ok(manager)
     }
-    
+
     /// Create PHI-aligned memory pools
-    fn create_phi_aligned_pools(&mut self, device_properties: &CudaDeviceProperties) -> Result<(), CudaKernelError> {
+    fn create_phi_aligned_pools(
+        &mut self,
+        device_properties: &CudaDeviceProperties,
+    ) -> Result<(), CudaKernelError> {
         let total_memory = device_properties.global_memory_size;
-        
+
         // Sacred mathematics pool (25% of VRAM)
         let sacred_math_size = total_memory / 4;
         let sacred_math_pool = PhiAlignedMemoryPool {
@@ -852,8 +901,9 @@ impl SacredMemoryManager {
             allocated_blocks: Vec::new(),
             free_blocks: Vec::new(),
         };
-        self.phi_aligned_pools.insert("sacred_math".to_string(), sacred_math_pool);
-        
+        self.phi_aligned_pools
+            .insert("sacred_math".to_string(), sacred_math_pool);
+
         // Consciousness data pool (40% of VRAM)
         let consciousness_size = total_memory * 2 / 5;
         let consciousness_pool = PhiAlignedMemoryPool {
@@ -864,8 +914,9 @@ impl SacredMemoryManager {
             allocated_blocks: Vec::new(),
             free_blocks: Vec::new(),
         };
-        self.phi_aligned_pools.insert("consciousness".to_string(), consciousness_pool);
-        
+        self.phi_aligned_pools
+            .insert("consciousness".to_string(), consciousness_pool);
+
         Ok(())
     }
 }
@@ -884,7 +935,9 @@ pub enum CudaKernelError {
 impl std::fmt::Display for CudaKernelError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CudaKernelError::CompilationFailed(msg) => write!(f, "Kernel compilation failed: {}", msg),
+            CudaKernelError::CompilationFailed(msg) => {
+                write!(f, "Kernel compilation failed: {}", msg)
+            }
             CudaKernelError::KernelNotFound(name) => write!(f, "Kernel not found: {}", name),
             CudaKernelError::ExecutionFailed(msg) => write!(f, "Kernel execution failed: {}", msg),
             CudaKernelError::MemoryError(msg) => write!(f, "Memory error: {}", msg),
@@ -899,7 +952,7 @@ impl std::error::Error for CudaKernelError {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_sacred_math_kernels_creation() {
         let device_props = CudaDeviceProperties {
@@ -914,16 +967,18 @@ mod tests {
             global_memory_size: 16 * 1024 * 1024 * 1024,
             l2_cache_size: 6 * 1024 * 1024,
         };
-        
+
         let kernels = SacredMathKernels::new(device_props);
         assert!(kernels.is_ok());
-        
+
         let kernels = kernels.unwrap();
         assert!(kernels.kernel_cache.contains_key("phi_computation"));
         assert!(kernels.kernel_cache.contains_key("frequency_synthesis"));
-        assert!(kernels.kernel_cache.contains_key("consciousness_classification"));
+        assert!(kernels
+            .kernel_cache
+            .contains_key("consciousness_classification"));
     }
-    
+
     #[test]
     fn test_phi_computation() {
         let device_props = CudaDeviceProperties {
@@ -938,22 +993,22 @@ mod tests {
             global_memory_size: 16 * 1024 * 1024 * 1024,
             l2_cache_size: 6 * 1024 * 1024,
         };
-        
+
         let mut kernels = SacredMathKernels::new(device_props).unwrap();
-        
+
         let input = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let mut output = vec![0.0; input.len()];
-        
+
         let execution_time = kernels.execute_phi_computation(&input, &mut output);
         assert!(execution_time.is_ok());
-        
+
         // Verify PHI computation results
         for (i, &output_val) in output.iter().enumerate() {
             let expected = input[i] * PHI;
             assert!((output_val - expected).abs() < 0.1); // Allow for harmonic enhancement
         }
     }
-    
+
     #[test]
     fn test_sacred_frequency_synthesis() {
         let device_props = CudaDeviceProperties {
@@ -968,20 +1023,21 @@ mod tests {
             global_memory_size: 16 * 1024 * 1024 * 1024,
             l2_cache_size: 6 * 1024 * 1024,
         };
-        
+
         let mut kernels = SacredMathKernels::new(device_props).unwrap();
-        
+
         let frequency = 432.0; // Earth resonance
         let samples = 1000;
         let sample_rate = 44100.0;
         let mut output = vec![0.0; samples];
-        
-        let execution_time = kernels.execute_frequency_synthesis(frequency, samples, sample_rate, &mut output);
+
+        let execution_time =
+            kernels.execute_frequency_synthesis(frequency, samples, sample_rate, &mut output);
         assert!(execution_time.is_ok());
-        
+
         // Verify that waveform was generated
         assert!(!output.iter().all(|&x| x == 0.0));
-        
+
         // Verify waveform is within expected range
         for &sample in &output {
             assert!(sample.abs() <= 1.5); // Allow for harmonic enhancement

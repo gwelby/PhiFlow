@@ -1,0 +1,45 @@
+# phiFlow Test: Quantum State Transition Simulation
+
+// Define initial quantum state
+state HelloQuantum = {
+    name: "HelloQuantum",
+    status: "raw",
+    frequency: 432,    // Ground frequency
+    compression: 1.000 // Level 0 (raw state)
+};
+
+// Define Transitions
+// Transition 1: Move from raw to 'phi' state
+transition T1 {
+    target_state: "phi";
+    new_compression: 1.618034; // Level 1 (phi)
+    new_frequency: 528;        // Creation phase frequency
+    description: "Transition to 'phi' state: Initiating creation phase.";
+}
+
+// Transition 2: Move from 'phi' to 'phi_squared'
+transition T2 {
+    target_state: "phi_squared";
+    new_compression: 2.618034; // Level 2 (phi²)
+    new_frequency: 768;        // Peak creation frequency
+    description: "Transition to 'phi_squared' state: Reaching peak creation.";
+}
+
+// Transition 3: Move from 'phi_squared' to 'phi_phi'
+transition T3 {
+    target_state: "phi_phi";
+    new_compression: 4.236068; // Level 3 (phi^phi)
+    new_frequency: 432;        // Return to ground state
+    description: "Transition to 'phi_phi' state: Returning to ground with infinite compression.";
+}
+
+// Simulation Command
+simulate("HelloQuantum") {
+    apply: [T1, T2, T3];
+    // Expected Output:
+    // Log each transition with details on new state, frequency, and compression level.
+    // For example:
+    // "HelloQuantum transitioned to phi state: 528 Hz, Compression=1.618034"
+    // "HelloQuantum transitioned to phi_squared state: 768 Hz, Compression=2.618034"
+    // "HelloQuantum transitioned to phi_phi state: 432 Hz, Compression=4.236068"
+}

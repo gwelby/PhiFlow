@@ -1,0 +1,319 @@
+warning: D:\Projects\PhiFlow\src\Cargo.toml: unused manifest key: build
+warning: D:\Projects\PhiFlow\src\Cargo.toml: unused manifest key: env
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+  58.730247700s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_core"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("quantum_core", ["lib"], "D:\\Projects\\PhiFlow\\src\\src\\lib.rs", Edition2021) }
+  58.730308900s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_core"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "build_script_build", old_fingerprint: 16125825692329548963, new_name: "build_script_build", new_fingerprint: 12467465288626715254 }
+  58.779007500s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="build-script-build"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/RunCustomBuild/TargetInner { ..: custom_build_target("build-script-build", "D:\\Projects\\PhiFlow\\src\\build.rs", Edition2021) }
+  58.779041900s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="build-script-build"}: cargo::core::compiler::fingerprint:     dirty: PrecalculatedComponentsChanged { old: "13415665493.422223300s (target_quantum/flycheck1/stderr)", new: "13415665589.261974900s (target_quantum/flycheck1/stderr)" }
+  58.786078300s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_core"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("quantum_core", ["lib"], "D:\\Projects\\PhiFlow\\src\\src\\lib.rs", Edition2021) }
+  58.786119600s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_core"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "build_script_build", old_fingerprint: 16125825692329548963, new_name: "build_script_build", new_fingerprint: 12467465288626715254 }
+  58.788003300s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="agent_manager"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { name: "agent_manager", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\bin\\agent_manager.rs", Edition2021) }
+  58.788035600s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="agent_manager"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.789724300s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="agent_manager"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { name: "agent_manager", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\bin\\agent_manager.rs", Edition2021) }
+  58.789755700s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="agent_manager"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.792129500s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="baller"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { name: "baller", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\bin\\baller.rs", Edition2021) }
+  58.792162200s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="baller"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.794057000s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="baller"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { name: "baller", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\bin\\baller.rs", Edition2021) }
+  58.794091900s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="baller"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.795665700s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phi_monitor"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { name: "phi_monitor", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\bin\\phi_monitor.rs", Edition2021) }
+  58.795696700s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phi_monitor"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.797185600s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phi_monitor"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { name: "phi_monitor", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\bin\\phi_monitor.rs", Edition2021) }
+  58.797227700s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phi_monitor"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.799206600s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phiflow"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { name: "phiflow", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\bin\\phiflow.rs", Edition2021) }
+  58.799242900s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phiflow"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.800931800s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phiflow"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { name: "phiflow", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\bin\\phiflow.rs", Edition2021) }
+  58.800963400s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phiflow"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.802525500s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phiflow_stories"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { name: "phiflow_stories", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\bin\\phiflow_stories.rs", Edition2021) }
+  58.802553400s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phiflow_stories"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.804130100s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phiflow_stories"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { name: "phiflow_stories", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\bin\\phiflow_stories.rs", Edition2021) }
+  58.804159200s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phiflow_stories"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.805615500s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum-core"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { name: "quantum-core", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\main.rs", Edition2021) }
+  58.805642900s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum-core"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.807245400s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum-core"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { name: "quantum-core", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\main.rs", Edition2021) }
+  58.807278400s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum-core"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.808976500s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_photo_flow"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { name: "quantum_photo_flow", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\bin\\quantum_photo_flow.rs", Edition2021) }
+  58.809005100s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_photo_flow"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.810558400s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_photo_flow"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { name: "quantum_photo_flow", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\bin\\quantum_photo_flow.rs", Edition2021) }
+  58.810586500s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_photo_flow"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.812124900s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="visualizer"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { name: "visualizer", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\bin\\visualizer.rs", Edition2021) }
+  58.812150900s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="visualizer"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.813489200s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="visualizer"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { name: "visualizer", doc: true, ..: with_path("D:\\Projects\\PhiFlow\\src\\src\\bin\\visualizer.rs", Edition2021) }
+  58.813510400s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="visualizer"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.815010800s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phi_system_verification_test"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { kind: "test", name: "phi_system_verification_test", benched: false, ..: with_path("D:\\Projects\\PhiFlow\\src\\tests\\phi_system_verification_test.rs", Edition2021) }
+  58.815050100s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phi_system_verification_test"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.816979600s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_dance_test"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { kind: "test", name: "quantum_dance_test", benched: false, ..: with_path("D:\\Projects\\PhiFlow\\src\\tests\\quantum_dance_test.rs", Edition2021) }
+  58.817014000s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_dance_test"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.818916400s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_standards_test"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { kind: "test", name: "quantum_standards_test", benched: false, ..: with_path("D:\\Projects\\PhiFlow\\src\\tests\\quantum_standards_test.rs", Edition2021) }
+  58.818948800s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_standards_test"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.820592700s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="test_framework"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { kind: "test", name: "test_framework", benched: false, ..: with_path("D:\\Projects\\PhiFlow\\src\\tests\\test_framework.rs", Edition2021) }
+  58.820625800s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="test_framework"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.823890800s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="test_phiflow"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { kind: "test", name: "test_phiflow", benched: false, ..: with_path("D:\\Projects\\PhiFlow\\src\\tests\\test_phiflow.rs", Edition2021) }
+  58.823943200s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="test_phiflow"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.827601300s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="universal_laws_test"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: true }/TargetInner { kind: "test", name: "universal_laws_test", benched: false, ..: with_path("D:\\Projects\\PhiFlow\\src\\tests\\universal_laws_test.rs", Edition2021) }
+  58.827661600s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="universal_laws_test"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.831121200s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phi_demo"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { kind: "example", name: "phi_demo", tested: false, benched: false, ..: with_path("D:\\Projects\\PhiFlow\\src\\examples\\phi_demo.rs", Edition2021) }
+  58.831179400s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phi_demo"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.834284000s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phi_evolution"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { kind: "example", name: "phi_evolution", tested: false, benched: false, ..: with_path("D:\\Projects\\PhiFlow\\src\\examples\\phi_evolution.rs", Edition2021) }
+  58.834330200s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="phi_evolution"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.837407600s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_calc"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { kind: "example", name: "quantum_calc", tested: false, benched: false, ..: with_path("D:\\Projects\\PhiFlow\\src\\examples\\quantum_calc.rs", Edition2021) }
+  58.837451700s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_calc"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.840323400s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_dance"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { kind: "example", name: "quantum_dance", tested: false, benched: false, ..: with_path("D:\\Projects\\PhiFlow\\src\\examples\\quantum_dance.rs", Edition2021) }
+  58.840368500s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_dance"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.843625300s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_media_demo"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { kind: "example", name: "quantum_media_demo", tested: false, benched: false, ..: with_path("D:\\Projects\\PhiFlow\\src\\examples\\quantum_media_demo.rs", Edition2021) }
+  58.843674400s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="quantum_media_demo"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.846560500s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="sacred_patterns"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { kind: "example", name: "sacred_patterns", tested: false, benched: false, ..: with_path("D:\\Projects\\PhiFlow\\src\\examples\\sacred_patterns.rs", Edition2021) }
+  58.846602700s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="sacred_patterns"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.849044200s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="simple_quantum"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { kind: "example", name: "simple_quantum", tested: false, benched: false, ..: with_path("D:\\Projects\\PhiFlow\\src\\examples\\simple_quantum.rs", Edition2021) }
+  58.849089600s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="simple_quantum"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.851820300s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="universal_transform_demo"}: cargo::core::compiler::fingerprint: fingerprint dirty for quantum-core v0.1.0 (D:\Projects\PhiFlow\src)/Check { test: false }/TargetInner { kind: "example", name: "universal_transform_demo", tested: false, benched: false, ..: with_path("D:\\Projects\\PhiFlow\\src\\examples\\universal_transform_demo.rs", Edition2021) }
+  58.851862000s  INFO prepare_target{force=false package_id=quantum-core v0.1.0 (D:\Projects\PhiFlow\src) target="universal_transform_demo"}: cargo::core::compiler::fingerprint:     dirty: UnitDependencyInfoChanged { old_name: "quantum_core", old_fingerprint: 17069053863291922390, new_name: "quantum_core", new_fingerprint: 12951421834941919207 }
+  58.899943400s  INFO prepare_target{force=false package_id=quantum-cuda v0.1.0 (D:\Projects\PhiFlow\src\quantum-cuda) target="quantum_cuda"}: cargo::core::compiler::fingerprint: fingerprint error for quantum-cuda v0.1.0 (D:\Projects\PhiFlow\src\quantum-cuda)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("quantum_cuda", ["lib"], "D:\\Projects\\PhiFlow\\src\\quantum-cuda\\src\\lib.rs", Edition2021) }
+  58.900007600s  INFO prepare_target{force=false package_id=quantum-cuda v0.1.0 (D:\Projects\PhiFlow\src\quantum-cuda) target="quantum_cuda"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\Projects\PhiFlow\src\target_quantum\debug\.fingerprint\quantum-cuda-48f85194cdbc0222\lib-quantum_cuda`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_path
+   6: git_filter_source_path
+   7: git_filter_source_path
+   8: git_filter_source_path
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_filter_source_repo
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+  58.920642000s  INFO prepare_target{force=false package_id=quantum-cuda v0.1.0 (D:\Projects\PhiFlow\src\quantum-cuda) target="build-script-build"}: cargo::core::compiler::fingerprint: fingerprint error for quantum-cuda v0.1.0 (D:\Projects\PhiFlow\src\quantum-cuda)/RunCustomBuild/TargetInner { ..: custom_build_target("build-script-build", "D:\\Projects\\PhiFlow\\src\\quantum-cuda\\build.rs", Edition2021) }
+  58.920690200s  INFO prepare_target{force=false package_id=quantum-cuda v0.1.0 (D:\Projects\PhiFlow\src\quantum-cuda) target="build-script-build"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\Projects\PhiFlow\src\target_quantum\debug\.fingerprint\quantum-cuda-0e582557b47cdc5e\run-build-script-build-script-build`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_path
+   6: git_filter_source_repo
+   7: git_filter_source_path
+   8: git_filter_source_path
+   9: git_filter_source_path
+  10: git_filter_source_path
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_filter_source_repo
+  14: git_filter_source_repo
+  15: git_filter_source_repo
+  16: <unknown>
+  17: <unknown>
+  18: git_midx_writer_dump
+  19: git_filter_source_repo
+  20: git_midx_writer_dump
+  21: BaseThreadInitThunk
+  22: RtlUserThreadStart
+  58.921618600s  INFO prepare_target{force=false package_id=rustacuda v0.1.3 target="rustacuda"}: cargo::core::compiler::fingerprint: fingerprint error for rustacuda v0.1.3/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("rustacuda", ["lib"], "C:\\Users\\Greg\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\rustacuda-0.1.3\\src\\lib.rs", Edition2018) }
+  58.921650800s  INFO prepare_target{force=false package_id=rustacuda v0.1.3 target="rustacuda"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\Projects\PhiFlow\src\target_quantum\debug\.fingerprint\rustacuda-d0b30bdca66e0641\lib-rustacuda`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_path
+   6: git_filter_source_path
+   7: git_filter_source_path
+   8: git_filter_source_path
+   9: git_filter_source_path
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_filter_source_repo
+  14: git_filter_source_repo
+  15: <unknown>
+  16: <unknown>
+  17: git_midx_writer_dump
+  18: git_filter_source_repo
+  19: git_midx_writer_dump
+  20: BaseThreadInitThunk
+  21: RtlUserThreadStart
+  58.922592300s  INFO prepare_target{force=false package_id=cuda-driver-sys v0.3.0 target="cuda_driver_sys"}: cargo::core::compiler::fingerprint: fingerprint error for cuda-driver-sys v0.3.0/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("cuda_driver_sys", ["lib"], "C:\\Users\\Greg\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\cuda-driver-sys-0.3.0\\src\\lib.rs", Edition2018) }
+  58.922629200s  INFO prepare_target{force=false package_id=cuda-driver-sys v0.3.0 target="cuda_driver_sys"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\Projects\PhiFlow\src\target_quantum\debug\.fingerprint\cuda-driver-sys-10b7b6e4889c8bad\lib-cuda_driver_sys`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_path
+   6: git_filter_source_path
+   7: git_filter_source_path
+   8: git_filter_source_path
+   9: git_filter_source_path
+  10: git_filter_source_path
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_filter_source_repo
+  14: git_filter_source_repo
+  15: git_filter_source_repo
+  16: <unknown>
+  17: <unknown>
+  18: git_midx_writer_dump
+  19: git_filter_source_repo
+  20: git_midx_writer_dump
+  21: BaseThreadInitThunk
+  22: RtlUserThreadStart
+  58.924264900s  INFO prepare_target{force=false package_id=cuda-driver-sys v0.3.0 target="build-script-build"}: cargo::core::compiler::fingerprint: fingerprint error for cuda-driver-sys v0.3.0/RunCustomBuild/TargetInner { ..: custom_build_target("build-script-build", "C:\\Users\\Greg\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\cuda-driver-sys-0.3.0\\build.rs", Edition2018) }
+  58.924305900s  INFO prepare_target{force=false package_id=cuda-driver-sys v0.3.0 target="build-script-build"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\Projects\PhiFlow\src\target_quantum\debug\.fingerprint\cuda-driver-sys-e5efc865292c97b8\run-build-script-build-script-build`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_path
+   6: git_filter_source_repo
+   7: git_filter_source_path
+   8: git_filter_source_path
+   9: git_filter_source_path
+  10: git_filter_source_path
+  11: git_filter_source_path
+  12: git_filter_source_path
+  13: git_filter_source_repo
+  14: git_filter_source_repo
+  15: git_filter_source_repo
+  16: git_filter_source_repo
+  17: git_filter_source_repo
+  18: <unknown>
+  19: <unknown>
+  20: git_midx_writer_dump
+  21: git_filter_source_repo
+  22: git_midx_writer_dump
+  23: BaseThreadInitThunk
+  24: RtlUserThreadStart
+  58.925652800s  INFO prepare_target{force=false package_id=quantum-cuda v0.1.0 (D:\Projects\PhiFlow\src\quantum-cuda) target="quantum_cuda"}: cargo::core::compiler::fingerprint: fingerprint error for quantum-cuda v0.1.0 (D:\Projects\PhiFlow\src\quantum-cuda)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("quantum_cuda", ["lib"], "D:\\Projects\\PhiFlow\\src\\quantum-cuda\\src\\lib.rs", Edition2021) }
+  58.925692800s  INFO prepare_target{force=false package_id=quantum-cuda v0.1.0 (D:\Projects\PhiFlow\src\quantum-cuda) target="quantum_cuda"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\Projects\PhiFlow\src\target_quantum\debug\.fingerprint\quantum-cuda-07917002ebc2e978\test-lib-quantum_cuda`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_path
+   6: git_filter_source_path
+   7: git_filter_source_path
+   8: git_filter_source_path
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_filter_source_repo
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+   Compiling quantum-core v0.1.0 (D:\Projects\PhiFlow\src)
+   Compiling cuda-driver-sys v0.3.0
+   Compiling quantum-cuda v0.1.0 (D:\Projects\PhiFlow\src\quantum-cuda)
+error: failed to run custom build command for `cuda-driver-sys v0.3.0`
+note: To improve backtraces for build dependencies, set the CARGO_PROFILE_DEV_BUILD_OVERRIDE_DEBUG=true environment variable to enable debug information generation.
+
+Caused by:
+  process didn't exit successfully: `D:\Projects\PhiFlow\src\target_quantum\debug\build\cuda-driver-sys-8a3664eaa68a1deb\build-script-build` (exit code: 101)
+  --- stderr
+
+  thread 'main' panicked at C:\Users\Greg\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\cuda-config-0.1.0\src\lib.rs:106:5:
+  CUDA cannot find
+  stack backtrace:
+     0: std::panicking::begin_panic<ref$<str$> >
+               at /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library\std\src\panicking.rs:769
+     1: cuda_config::find_cuda_windows
+     2: __ImageBase
+     3: __ImageBase
+     4: __ImageBase
+     5: std::rt::lang_start_internal::closure$0
+               at /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library\std\src\rt.rs:168
+     6: std::panicking::try::do_call
+               at /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library\std\src\panicking.rs:589
+     7: std::panicking::try
+               at /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library\std\src\panicking.rs:552
+     8: std::panic::catch_unwind
+               at /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library\std\src\panic.rs:359
+     9: std::rt::lang_start_internal
+               at /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library\std\src\rt.rs:164
+    10: main
+    11: invoke_main
+               at D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:78
+    12: __scrt_common_main_seh
+               at D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:288
+    13: BaseThreadInitThunk
+    14: RtlUserThreadStart
+  note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+warning: build failed, waiting for other jobs to finish...
+error: failed to run custom build command for `quantum-cuda v0.1.0 (D:\Projects\PhiFlow\src\quantum-cuda)`
+note: To improve backtraces for build dependencies, set the CARGO_PROFILE_DEV_BUILD_OVERRIDE_DEBUG=true environment variable to enable debug information generation.
+
+Caused by:
+  process didn't exit successfully: `D:\Projects\PhiFlow\src\target_quantum\debug\build\quantum-cuda-81e94b967947d5d7\build-script-build` (exit code: 101)
+  --- stdout
+  cargo:rustc-env=QUANTUM_FREQUENCY=432
+  cargo:rustc-env=CREATE_FREQUENCY=528
+  cargo:rustc-env=UNITY_FREQUENCY=768
+  cargo:rustc-env=PHI=1.618033988749895
+  Found CUDA at: C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8
+  Found Visual Studio at: C:\Program Files\Microsoft Visual Studio\2022\Community
+  cargo:rerun-if-changed=src/cuda/quantum_kernels.cu
+  NVCC path: C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\bin\nvcc.exe
+  Source path: D:\Projects\PhiFlow\src\src\cuda\quantum_kernels.cu
+  Output path: D:\Projects\PhiFlow\src\target_quantum\debug\build\quantum-cuda-0e582557b47cdc5e\out\quantum_kernels.ptx
+  Include paths: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\bin/x64/x64\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\include
+  Library paths: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8\lib\x64
+
+  --- stderr
+
+  thread 'main' panicked at quantum-cuda\build.rs:147:29:
+  Failed to execute nvcc: The system cannot find the path specified. (os error 3)
+  stack backtrace:
+     0: std::panicking::begin_panic_handler
+               at /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library\std\src\panicking.rs:697
+     1: core::panicking::panic_fmt
+               at /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library\core\src\panicking.rs:75
+     2: alloc::raw_vec::RawVecInner<A>::reserve::do_reserve_and_handle
+     3: <&T as core::fmt::Display>::fmt
+  note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+error: could not compile `quantum-core` (lib) due to 29 previous errors; 2 warnings emitted
+error: could not compile `quantum-core` (lib test) due to 29 previous errors; 2 warnings emitted

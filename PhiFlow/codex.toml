@@ -1,0 +1,5 @@
+rules = [
+  ".codex/rules/00-core.md",
+  ".codex/rules/10-qsop-loop.md",
+  ".codex/rules/20-team-sync.md",
+]

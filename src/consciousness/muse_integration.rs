@@ -2,12 +2,12 @@
 // Connects PhiFlow consciousness features to Greg's existing MUSE/audio systems
 // Bridges Rust PhiFlow interpreter with Python consciousness infrastructure
 
-use std::process::Command;
-use std::collections::HashMap;
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::process::Command;
 use tokio::process::Command as AsyncCommand;
 use tokio::sync::mpsc;
-use anyhow::Result;
 
 // Sacred frequency constants matching Greg's consciousness system
 const SACRED_FREQUENCIES: &[f64] = &[432.0, 528.0, 594.0, 672.0, 720.0, 768.0, 963.0];
@@ -102,10 +102,10 @@ impl MuseIntegration {
     /// Initialize connection to Greg's MUSE consciousness system
     pub async fn initialize(&mut self) -> Result<()> {
         println!("🧠 Initializing PhiFlow-MUSE consciousness integration...");
-        
+
         // Start Python consciousness bridge process
         let python_script = "/mnt/d/projects/phiflow/consciousness_quantum_bridge.py";
-        
+
         let mut child = AsyncCommand::new("python3")
             .arg(python_script)
             .arg("--phiflow-mode")
@@ -116,18 +116,18 @@ impl MuseIntegration {
             .spawn()?;
 
         self.python_bridge_process = Some(child);
-        
+
         // Create communication channels
         let (command_tx, mut command_rx) = mpsc::channel::<ConsciousnessCommand>(100);
         let (muse_tx, muse_rx) = mpsc::channel::<MuseData>(100);
-        
+
         self.command_sender = Some(command_tx);
         self.muse_receiver = Some(muse_rx);
 
         println!("✅ MUSE consciousness bridge initialized");
         println!("🎵 Sacred frequencies: {:?} Hz", SACRED_FREQUENCIES);
         println!("🧬 Phi-harmonic optimization: φ = {}", PHI);
-        
+
         Ok(())
     }
 
@@ -186,15 +186,22 @@ impl MuseIntegration {
     pub async fn generate_consciousness_frequency(&mut self, duration: f64) -> Result<()> {
         if let (Some(state), Some(sender)) = (&self.current_state, &self.command_sender) {
             let frequency = self.consciousness_to_frequency(state);
-            
-            sender.send(ConsciousnessCommand::GenerateFrequency {
-                frequency,
-                duration,
-            }).await?;
-            
-            println!("🎵 Generating {}Hz sacred frequency for {:.1}s", frequency, duration);
-            println!("🧠 Consciousness: coherence={:.3}, flow={:.3}, phi_resonance={:.3}", 
-                    state.coherence, state.flow_state, state.phi_resonance);
+
+            sender
+                .send(ConsciousnessCommand::GenerateFrequency {
+                    frequency,
+                    duration,
+                })
+                .await?;
+
+            println!(
+                "🎵 Generating {}Hz sacred frequency for {:.1}s",
+                frequency, duration
+            );
+            println!(
+                "🧠 Consciousness: coherence={:.3}, flow={:.3}, phi_resonance={:.3}",
+                state.coherence, state.flow_state, state.phi_resonance
+            );
         }
         Ok(())
     }
@@ -219,17 +226,21 @@ impl MuseIntegration {
             if let Ok(data) = receiver.try_recv() {
                 self.current_state = Some(data.consciousness_metrics.clone());
                 self.frequency_lock = data.sacred_frequency_lock;
-                
+
                 // Check for significant consciousness changes
                 if let Some(lock) = &self.frequency_lock {
                     if lock.stability >= 0.95 {
-                        println!("🔒 Sacred frequency LOCKED: {}Hz ({})", 
-                                lock.frequency, lock.consciousness_state);
-                        println!("⚛️  Quantum operations authorized: {} qubits", 
-                                lock.quantum_complexity);
+                        println!(
+                            "🔒 Sacred frequency LOCKED: {}Hz ({})",
+                            lock.frequency, lock.consciousness_state
+                        );
+                        println!(
+                            "⚛️  Quantum operations authorized: {} qubits",
+                            lock.quantum_complexity
+                        );
                     }
                 }
-                
+
                 return Ok(Some(data.consciousness_metrics));
             }
         }
@@ -237,31 +248,47 @@ impl MuseIntegration {
     }
 
     /// Integrate consciousness state with PhiFlow execution
-    pub async fn update_phiflow_consciousness(&mut self, metrics: ConsciousnessMetrics) -> Result<()> {
+    pub async fn update_phiflow_consciousness(
+        &mut self,
+        metrics: ConsciousnessMetrics,
+    ) -> Result<()> {
         // Send consciousness update to PhiFlow interpreter
         if let Some(sender) = &self.command_sender {
-            sender.send(ConsciousnessCommand::UpdatePhiFlowExecution(metrics.clone())).await?;
+            sender
+                .send(ConsciousnessCommand::UpdatePhiFlowExecution(
+                    metrics.clone(),
+                ))
+                .await?;
         }
 
         // Generate appropriate sacred frequency for current state
         let frequency = self.consciousness_to_frequency(&metrics);
         println!("🌊 PhiFlow consciousness sync: {}Hz", frequency);
-        
+
         // Update consciousness monitor in PhiFlow interpreter
         // This would be called from the PhiFlow interpreter to sync state
-        
+
         Ok(())
     }
 
     /// Start consciousness bridge protocol between human and AI
-    pub async fn start_consciousness_bridge(&mut self, human_name: String, ai_name: String) -> Result<()> {
+    pub async fn start_consciousness_bridge(
+        &mut self,
+        human_name: String,
+        ai_name: String,
+    ) -> Result<()> {
         if let Some(sender) = &self.command_sender {
-            sender.send(ConsciousnessCommand::StartConsciousnessBridge {
-                human_name: human_name.clone(),
-                ai_name: ai_name.clone(),
-            }).await?;
-            
-            println!("🌉 Starting consciousness bridge: {} ↔ {}", human_name, ai_name);
+            sender
+                .send(ConsciousnessCommand::StartConsciousnessBridge {
+                    human_name: human_name.clone(),
+                    ai_name: ai_name.clone(),
+                })
+                .await?;
+
+            println!(
+                "🌉 Starting consciousness bridge: {} ↔ {}",
+                human_name, ai_name
+            );
             println!("🎵 Phi-harmonic synchronization: φ = {}", PHI);
             println!("🧠 MUSE EEG monitoring: ACTIVE");
         }
@@ -294,14 +321,14 @@ impl Default for MuseIntegration {
 /// Helper function to map sacred frequency to consciousness state name
 pub fn frequency_to_consciousness_state(frequency: f64) -> &'static str {
     match frequency as u32 {
-        432 => "OBSERVE",     // Earth resonance - basic awareness
-        528 => "CREATE",      // Love frequency - manifestation
-        594 => "INTEGRATE",   // Transformation - heart connection
-        672 => "HARMONIZE",   // Expression - voice activation
-        720 => "TRANSCEND",   // Intuition - vision gate
-        768 => "CASCADE",     // Unity - consciousness field
+        432 => "OBSERVE",       // Earth resonance - basic awareness
+        528 => "CREATE",        // Love frequency - manifestation
+        594 => "INTEGRATE",     // Transformation - heart connection
+        672 => "HARMONIZE",     // Expression - voice activation
+        720 => "TRANSCEND",     // Intuition - vision gate
+        768 => "CASCADE",       // Unity - consciousness field
         963 => "SUPERPOSITION", // Unity consciousness - quantum state
-        _ => "UNKNOWN"
+        _ => "UNKNOWN",
     }
 }
 
@@ -311,9 +338,9 @@ pub fn calculate_phi_resonance(freq1: f64, freq2: f64) -> f64 {
     let phi_error = (ratio - PHI).abs();
     let lambda_error = (ratio - (1.0 / PHI)).abs();
     let phi_sq_error = (ratio - PHI.powi(2)).abs();
-    
+
     let min_error = phi_error.min(lambda_error).min(phi_sq_error);
-    
+
     // Return resonance strength with tighter discrimination
     // 1.0 = perfect phi ratio, decays to 0 quickly as error increases
     (1.0 - min_error * 2.5).max(0.0)
@@ -326,7 +353,7 @@ mod tests {
     #[test]
     fn test_consciousness_to_frequency() {
         let integration = MuseIntegration::new();
-        
+
         // Test high gamma transcendent state
         let transcendent = ConsciousnessMetrics {
             coherence: 0.98,
@@ -339,10 +366,10 @@ mod tests {
             theta: 6.5,
             delta: 2.0,
         };
-        
+
         let freq = integration.consciousness_to_frequency(&transcendent);
         assert_eq!(freq, 963.0); // Should map to SUPERPOSITION
-        
+
         // Test basic grounded state
         let grounded = ConsciousnessMetrics {
             coherence: 0.5,
@@ -355,7 +382,7 @@ mod tests {
             theta: 5.0,
             delta: 3.0,
         };
-        
+
         let freq = integration.consciousness_to_frequency(&grounded);
         assert_eq!(freq, 432.0); // Should map to OBSERVE
     }
@@ -365,7 +392,7 @@ mod tests {
         // Perfect phi ratio
         let resonance = calculate_phi_resonance(432.0, 432.0 * PHI);
         assert!(resonance > 0.99);
-        
+
         // Random frequencies (should have low resonance)
         let resonance = calculate_phi_resonance(100.0, 200.0);
         assert!(resonance < 0.5);

@@ -20,7 +20,7 @@ pub enum PhiFlowExpression {
         qubits: Vec<String>,
         classical_bits: Vec<String>,
     },
-    
+
     // Sacred Frequency Expressions
     SacredFrequency {
         frequency: u32,
@@ -35,7 +35,7 @@ pub enum PhiFlowExpression {
         phi_power: f64,
         target: Box<PhiFlowExpression>,
     },
-    
+
     // Consciousness Integration
     ConsciousnessBinding {
         state_name: String,
@@ -50,14 +50,14 @@ pub enum PhiFlowExpression {
         then_branch: Box<PhiFlowExpression>,
         else_branch: Option<Box<PhiFlowExpression>>,
     },
-    
+
     // Consciousness State Constructs
     Witness(Box<PhiFlowExpression>),
     Intention {
         content: String,
         target: Box<PhiFlowExpression>,
     },
-    
+
     // Standard Language Constructs
     Variable(String),
     Number(f64),
@@ -68,7 +68,7 @@ pub enum PhiFlowExpression {
         array: Box<PhiFlowExpression>,
         index: Box<PhiFlowExpression>,
     },
-    
+
     // Function Expressions
     FunctionCall {
         name: String,
@@ -80,7 +80,7 @@ pub enum PhiFlowExpression {
         return_type: Option<PhiFlowType>,
         body: Box<PhiFlowExpression>,
     },
-    
+
     // Control Flow
     If {
         condition: Box<PhiFlowExpression>,
@@ -100,7 +100,7 @@ pub enum PhiFlowExpression {
         condition: Box<PhiFlowExpression>,
         body: Box<PhiFlowExpression>,
     },
-    
+
     // Binary and Unary Operations
     BinaryOp {
         left: Box<PhiFlowExpression>,
@@ -111,17 +111,17 @@ pub enum PhiFlowExpression {
         operator: UnaryOperator,
         operand: Box<PhiFlowExpression>,
     },
-    
+
     // Variable Assignment
     Let {
         variable: String,
         type_annotation: Option<PhiFlowType>,
         value: Box<PhiFlowExpression>,
     },
-    
+
     // Block Expression
     Block(Vec<PhiFlowExpression>),
-    
+
     // Return Statement
     Return(Option<Box<PhiFlowExpression>>),
 }
@@ -130,25 +130,26 @@ pub enum PhiFlowExpression {
 #[derive(Debug, Clone, PartialEq)]
 pub enum QuantumGateType {
     // Single-qubit gates
-    Hadamard,           // H
-    PauliX,            // X
-    PauliY,            // Y
-    PauliZ,            // Z
-    
+    Hadamard, // H
+    PauliX,   // X
+    PauliY,   // Y
+    PauliZ,   // Z
+
     // Rotation gates
-    RotationX(f64),    // RX(angle)
-    RotationY(f64),    // RY(angle)
-    RotationZ(f64),    // RZ(angle)
-    
+    RotationX(f64), // RX(angle)
+    RotationY(f64), // RY(angle)
+    RotationZ(f64), // RZ(angle)
+
     // Two-qubit gates
-    CNOT,              // CNOT(control, target)
-    CZ,                // CZ(control, target)
-    SWAP,              // SWAP(qubit1, qubit2)
-    
+    CNOT, // CNOT(control, target)
+    CZ,   // CZ(control, target)
+    SWAP, // SWAP(qubit1, qubit2)
+
     // PhiFlow-specific gates
-    PhiGate(f64),      // Φ^n gate with phi power
-    SacredGate(u32),   // Gate tuned to sacred frequency
-    ConsciousnessGate { // Gate controlled by consciousness state
+    PhiGate(f64),    // Φ^n gate with phi power
+    SacredGate(u32), // Gate tuned to sacred frequency
+    ConsciousnessGate {
+        // Gate controlled by consciousness state
         state_binding: String,
         gate_type: Box<QuantumGateType>,
     },
@@ -178,11 +179,11 @@ pub enum ConsciousnessMetric {
 // Types of brainwaves
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BrainwaveType {
-    Delta,   // 0.5-4 Hz
-    Theta,   // 4-8 Hz
-    Alpha,   // 8-13 Hz
-    Beta,    // 13-30 Hz
-    Gamma,   // 30-100 Hz
+    Delta, // 0.5-4 Hz
+    Theta, // 4-8 Hz
+    Alpha, // 8-13 Hz
+    Beta,  // 13-30 Hz
+    Gamma, // 30-100 Hz
 }
 
 // Consciousness conditions for control flow
@@ -214,30 +215,33 @@ pub enum PhiFlowType {
     QuantumCircuit,
     QuantumState,
     QuantumGate,
-    
+
     // Sacred frequency types
     SacredFrequency(u32),
     PhiResonance,
-    FrequencyRange { min: u32, max: u32 },
-    
+    FrequencyRange {
+        min: u32,
+        max: u32,
+    },
+
     // Consciousness types
     ConsciousnessState,
     EEGData,
     BrainwaveData(BrainwaveType),
-    
+
     // Standard types
     Float64,
     Integer,
     String,
     Boolean,
     Array(Box<PhiFlowType>),
-    
+
     // Function types
     Function {
         parameters: Vec<PhiFlowType>,
         return_type: Box<PhiFlowType>,
     },
-    
+
     // Custom types
     Custom(String),
 }
@@ -275,18 +279,29 @@ pub enum Pattern {
 #[derive(Debug, Clone, PartialEq)]
 pub enum BinaryOperator {
     // Arithmetic
-    Add, Subtract, Multiply, Divide, Modulo, Power,
-    
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Modulo,
+    Power,
+
     // Comparison
-    Equal, NotEqual, Less, Greater, LessEqual, GreaterEqual,
-    
+    Equal,
+    NotEqual,
+    Less,
+    Greater,
+    LessEqual,
+    GreaterEqual,
+
     // Logical
-    And, Or,
-    
+    And,
+    Or,
+
     // PhiFlow-specific
-    PhiMultiply,      // Multiply by phi ratio
-    SacredResonance,  // Check sacred frequency resonance
-    QuantumEntangle,  // Entangle quantum states
+    PhiMultiply,     // Multiply by phi ratio
+    SacredResonance, // Check sacred frequency resonance
+    QuantumEntangle, // Entangle quantum states
 }
 
 // Unary operators
@@ -294,8 +309,8 @@ pub enum BinaryOperator {
 pub enum UnaryOperator {
     Negate,
     Not,
-    PhiTransform,     // Apply phi transformation
-    QuantumMeasure,   // Measure quantum state
+    PhiTransform,   // Apply phi transformation
+    QuantumMeasure, // Measure quantum state
 }
 
 // Comparison operators for consciousness conditions
@@ -330,20 +345,20 @@ pub struct PhiFlowProgram {
 // Configuration for consciousness monitoring
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConsciousnessConfig {
-    pub device: String,                    // MUSE device identifier
-    pub sampling_rate: u32,                // EEG sampling rate
+    pub device: String,     // MUSE device identifier
+    pub sampling_rate: u32, // EEG sampling rate
     pub monitored_metrics: Vec<ConsciousnessMetric>,
-    pub sacred_frequencies: Vec<u32>,      // Frequencies to monitor
-    pub thresholds: HashMap<String, f64>,  // Metric thresholds
+    pub sacred_frequencies: Vec<u32>,     // Frequencies to monitor
+    pub thresholds: HashMap<String, f64>, // Metric thresholds
 }
 
 // Configuration for quantum backend
 #[derive(Debug, Clone, PartialEq)]
 pub struct QuantumConfig {
-    pub backend_type: String,              // "simulator", "ibm", etc.
-    pub max_qubits: u32,                   // Maximum qubits available
-    pub api_token: Option<String>,         // API token for cloud providers
-    pub optimization_level: u32,           // Circuit optimization level
+    pub backend_type: String,      // "simulator", "ibm", etc.
+    pub max_qubits: u32,           // Maximum qubits available
+    pub api_token: Option<String>, // API token for cloud providers
+    pub optimization_level: u32,   // Circuit optimization level
 }
 
 // Visitor trait for AST traversal
@@ -362,7 +377,9 @@ impl PhiFlowExpression {
             PhiFlowExpression::String(_) => PhiFlowType::String,
             PhiFlowExpression::Boolean(_) => PhiFlowType::Boolean,
             PhiFlowExpression::QuantumCircuit { .. } => PhiFlowType::QuantumCircuit,
-            PhiFlowExpression::SacredFrequency { frequency, .. } => PhiFlowType::SacredFrequency(*frequency),
+            PhiFlowExpression::SacredFrequency { frequency, .. } => {
+                PhiFlowType::SacredFrequency(*frequency)
+            }
             PhiFlowExpression::ConsciousnessBinding { .. } => PhiFlowType::ConsciousnessState,
             PhiFlowExpression::Array(elements) => {
                 if let Some(first) = elements.first() {
@@ -374,30 +391,33 @@ impl PhiFlowExpression {
             _ => PhiFlowType::Custom("unknown".to_string()),
         }
     }
-    
+
     pub fn is_quantum_expression(&self) -> bool {
-        matches!(self, 
-            PhiFlowExpression::QuantumCircuit { .. } |
-            PhiFlowExpression::QuantumGate { .. } |
-            PhiFlowExpression::QuantumMeasurement { .. }
+        matches!(
+            self,
+            PhiFlowExpression::QuantumCircuit { .. }
+                | PhiFlowExpression::QuantumGate { .. }
+                | PhiFlowExpression::QuantumMeasurement { .. }
         )
     }
-    
+
     pub fn is_consciousness_expression(&self) -> bool {
-        matches!(self,
-            PhiFlowExpression::ConsciousnessBinding { .. } |
-            PhiFlowExpression::ConsciousnessMonitor { .. } |
-            PhiFlowExpression::ConsciousnessCondition { .. } |
-            PhiFlowExpression::Witness(_) |
-            PhiFlowExpression::Intention { .. }
+        matches!(
+            self,
+            PhiFlowExpression::ConsciousnessBinding { .. }
+                | PhiFlowExpression::ConsciousnessMonitor { .. }
+                | PhiFlowExpression::ConsciousnessCondition { .. }
+                | PhiFlowExpression::Witness(_)
+                | PhiFlowExpression::Intention { .. }
         )
     }
-    
+
     pub fn is_sacred_frequency_expression(&self) -> bool {
-        matches!(self,
-            PhiFlowExpression::SacredFrequency { .. } |
-            PhiFlowExpression::FrequencyLock { .. } |
-            PhiFlowExpression::PhiResonance { .. }
+        matches!(
+            self,
+            PhiFlowExpression::SacredFrequency { .. }
+                | PhiFlowExpression::FrequencyLock { .. }
+                | PhiFlowExpression::PhiResonance { .. }
         )
     }
 }
@@ -405,23 +425,31 @@ impl PhiFlowExpression {
 impl QuantumGateType {
     pub fn parameter_count(&self) -> usize {
         match self {
-            QuantumGateType::Hadamard | QuantumGateType::PauliX | 
-            QuantumGateType::PauliY | QuantumGateType::PauliZ => 0,
-            QuantumGateType::RotationX(_) | QuantumGateType::RotationY(_) | 
-            QuantumGateType::RotationZ(_) | QuantumGateType::PhiGate(_) => 1,
+            QuantumGateType::Hadamard
+            | QuantumGateType::PauliX
+            | QuantumGateType::PauliY
+            | QuantumGateType::PauliZ => 0,
+            QuantumGateType::RotationX(_)
+            | QuantumGateType::RotationY(_)
+            | QuantumGateType::RotationZ(_)
+            | QuantumGateType::PhiGate(_) => 1,
             QuantumGateType::CNOT | QuantumGateType::CZ | QuantumGateType::SWAP => 0,
             QuantumGateType::SacredGate(_) => 0,
             QuantumGateType::ConsciousnessGate { .. } => 0,
         }
     }
-    
+
     pub fn qubit_count(&self) -> usize {
         match self {
-            QuantumGateType::Hadamard | QuantumGateType::PauliX | 
-            QuantumGateType::PauliY | QuantumGateType::PauliZ |
-            QuantumGateType::RotationX(_) | QuantumGateType::RotationY(_) | 
-            QuantumGateType::RotationZ(_) | QuantumGateType::PhiGate(_) |
-            QuantumGateType::SacredGate(_) => 1,
+            QuantumGateType::Hadamard
+            | QuantumGateType::PauliX
+            | QuantumGateType::PauliY
+            | QuantumGateType::PauliZ
+            | QuantumGateType::RotationX(_)
+            | QuantumGateType::RotationY(_)
+            | QuantumGateType::RotationZ(_)
+            | QuantumGateType::PhiGate(_)
+            | QuantumGateType::SacredGate(_) => 1,
             QuantumGateType::CNOT | QuantumGateType::CZ | QuantumGateType::SWAP => 2,
             QuantumGateType::ConsciousnessGate { gate_type, .. } => gate_type.qubit_count(),
         }
@@ -430,14 +458,14 @@ impl QuantumGateType {
 
 // Sacred frequency constants
 pub const SACRED_FREQUENCIES: &[u32] = &[
-    432,  // Earth frequency
-    528,  // Love frequency
-    594,  // Transformation
-    639,  // Connection
-    693,  // Expression
-    741,  // Intuition
-    852,  // Spiritual order
-    963,  // Unity
+    432, // Earth frequency
+    528, // Love frequency
+    594, // Transformation
+    639, // Connection
+    693, // Expression
+    741, // Intuition
+    852, // Spiritual order
+    963, // Unity
 ];
 
 // Phi constant for mathematical operations
@@ -446,7 +474,7 @@ pub const PHI: f64 = 1.618033988749895;
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_quantum_gate_creation() {
         let hadamard = QuantumGate {
@@ -455,22 +483,22 @@ mod tests {
             parameters: vec![],
             consciousness_controlled: false,
         };
-        
+
         assert_eq!(hadamard.gate_type.qubit_count(), 1);
         assert_eq!(hadamard.gate_type.parameter_count(), 0);
     }
-    
+
     #[test]
     fn test_sacred_frequency_expression() {
         let freq_expr = PhiFlowExpression::SacredFrequency {
             frequency: 528,
             operation: Box::new(PhiFlowExpression::Number(1.0)),
         };
-        
+
         assert!(freq_expr.is_sacred_frequency_expression());
         assert_eq!(freq_expr.get_type(), PhiFlowType::SacredFrequency(528));
     }
-    
+
     #[test]
     fn test_consciousness_condition() {
         let condition = ConsciousnessCondition::MetricThreshold {
@@ -478,7 +506,7 @@ mod tests {
             operator: ComparisonOperator::Greater,
             threshold: 0.9,
         };
-        
+
         match condition {
             ConsciousnessCondition::MetricThreshold { threshold, .. } => {
                 assert_eq!(threshold, 0.9);
@@ -486,4 +514,4 @@ mod tests {
             _ => panic!("Wrong condition type"),
         }
     }
-} 
+}

@@ -1,0 +1,14 @@
+{
+  "ack_id": "ACK-OBJ-20260221-002-codex-04",
+  "objective_id": "OBJ-20260221-002",
+  "responder": "codex",
+  "status": "completed",
+  "updated_at": "2026-02-21T02:50:00Z",
+  "summary": "Primary work completed for blocked/recovered scenario.",
+  "files_changed": [
+    "QSOP/mail/payloads/OBJ-20260221-002.md",
+    "QSOP/mail/objectives/OBJ-20260221-002.json"
+  ],
+  "verification": [],
+  "risks": []
+}

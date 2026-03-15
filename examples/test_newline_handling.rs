@@ -13,7 +13,7 @@ fn main() {
         Err(e) => println!("❌ Failed: {}\n", e),
     }
 
-    // Test 2: Code with leading newline  
+    // Test 2: Code with leading newline
     let test2 = r#"
 let x = 1.0"#;
     println!("Test 2: With leading newline");

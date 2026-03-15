@@ -124,8 +124,7 @@ impl Optimizer {
         }
 
         if self.level == OptimizationLevel::PhiHarmonic {
-            if Self::unroll_loops(program) {
-            }
+            if Self::unroll_loops(program) {}
         }
 
         if self.level == OptimizationLevel::PhiHarmonic {
@@ -279,9 +278,7 @@ impl Optimizer {
                 used.insert(*t);
             }
             PhiIRNode::Witness { target: None, .. } => {}
-            PhiIRNode::Resonate {
-                value: Some(v), ..
-            } => {
+            PhiIRNode::Resonate { value: Some(v), .. } => {
                 used.insert(*v);
             }
             PhiIRNode::Resonate { value: None, .. } => {}
@@ -315,8 +312,7 @@ impl Optimizer {
             | PhiIRNode::ListNew(_)
             | PhiIRNode::ListGet { .. }
             | PhiIRNode::CreatePattern { .. }
-            | PhiIRNode::FuncDef { .. }
-             => true,
+            | PhiIRNode::FuncDef { .. } => true,
 
             PhiIRNode::StoreVar { .. }
             | PhiIRNode::Call { .. }
@@ -341,8 +337,7 @@ impl Optimizer {
             | PhiIRNode::AgentDecl { .. }
             | PhiIRNode::VoidDepth
             | PhiIRNode::Evolve(_)
-            | PhiIRNode::Entangle(_)
-            => false,
+            | PhiIRNode::Entangle(_) => false,
         }
     }
 
@@ -351,21 +346,13 @@ impl Optimizer {
         let mut loops_to_unroll = Vec::new();
 
         for block in &program.blocks {
-            if let PhiIRNode::Branch {
-                then_block,
-                ..
-            } = block.terminator
-            {
+            if let PhiIRNode::Branch { then_block, .. } = block.terminator {
                 let header_id = block.id;
                 let body_id = then_block;
 
-                let body_jumps_back = program
-                    .blocks
-                    .iter()
-                    .find(|b| b.id == body_id)
-                    .is_some_and(
-                        |b| matches!(b.terminator, PhiIRNode::Jump(target) if target == header_id),
-                    );
+                let body_jumps_back = program.blocks.iter().find(|b| b.id == body_id).is_some_and(
+                    |b| matches!(b.terminator, PhiIRNode::Jump(target) if target == header_id),
+                );
 
                 if body_jumps_back {
                     loops_to_unroll.push((header_id, body_id));
@@ -550,9 +537,7 @@ impl Optimizer {
                 map_op(t);
             }
             PhiIRNode::Witness { target: None, .. } => {}
-            PhiIRNode::Resonate {
-                value: Some(v), ..
-            } => {
+            PhiIRNode::Resonate { value: Some(v), .. } => {
                 map_op(v);
             }
             PhiIRNode::Resonate { value: None, .. } => {}

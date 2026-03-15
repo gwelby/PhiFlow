@@ -556,7 +556,13 @@ impl PhiInterpreter {
             }
 
             // === PHIFLOW UNIQUE: Constructs no other language has ===
-            PhiExpression::Witness { expression, body } => {
+            PhiExpression::Witness { expression, mid_circuit, body } => {
+                if *mid_circuit {
+                    eprintln!(
+                        "[WARNING] Legacy interpreter ignores `witness mid_circuit`; \
+lowering it as a standard witness. Use `phic --target openqasm` for faithful semantics."
+                    );
+                }
                 self.witness_count += 1;
 
                 let witnessed_value = if let Some(expr) = expression {
@@ -698,7 +704,16 @@ impl PhiInterpreter {
                 Ok(result)
             }
 
-            PhiExpression::Resonate { expression } => {
+            PhiExpression::Resonate { expression, direction } => {
+                use crate::parser::ResonateDirection;
+                if *direction != ResonateDirection::TeamA {
+                    eprintln!(
+                        "[WARNING] Legacy interpreter ignores `toward {:?}`; \
+resonance polarity is not evaluated in interpreter mode. Use `phic --target openqasm` for faithful semantics.",
+                        direction
+                    );
+                }
+
                 let current_intention = self
                     .intention_stack
                     .last()

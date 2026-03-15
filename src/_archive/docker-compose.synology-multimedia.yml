@@ -1,0 +1,141 @@
+version: '3.8'
+
+# Quantum Web Multimedia IO SUPERLLM GUI (φ^φ)
+services:
+  quantum-multimedia-superllm:
+    image: quantum/superllm:latest
+    container_name: quantum-multimedia-superllm
+    environment:
+      - GROUND_FREQUENCY=432
+      - CREATION_FREQUENCY=528
+      - UNITY_FREQUENCY=768
+      - PHI_RATIO=1.618033988749895
+      - COHERENCE_THRESHOLD=0.93
+      - AUDIO_SAMPLE_RATE=432000  # 432 kHz
+      - AUDIO_BIT_DEPTH=26        # φ * 16
+      - AUDIO_CHANNELS=3          # φ + 1
+      - MODEL_PATH=/models
+      - QUANTUM_API_KEY=${QUANTUM_API_KEY:-quantum_432_key}
+      - NODE_ENV=production
+      - GPU_ENABLED=false         # Synology likely doesn't have GPU
+    volumes:
+      - ./models:/models
+      - ./configs:/configs
+      - ./quantum-data:/quantum-data
+      - /volume1/Music:/quantum-data/music:ro
+      - /volume1/photo:/quantum-data/photos:ro
+      - /volume1/video:/quantum-data/video:ro
+    ports:
+      - "4321:4321"   # Web UI (φ^φ)
+      - "5280:5280"   # API Server (φ^3)
+      - "7680:7680"   # WebSocket Server (φ^4)
+      - "8080:8080"   # Admin Panel
+    restart: unless-stopped
+    networks:
+      - quantum-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.superllm.rule=Host(`superllm.local`)"
+      - "traefik.http.services.superllm.loadbalancer.server.port=4321"
+
+  quantum-media-processor:
+    image: quantum/media-processor:latest
+    container_name: quantum-media-processor
+    environment:
+      - GROUND_FREQUENCY=432
+      - CREATION_FREQUENCY=528
+      - UNITY_FREQUENCY=768
+      - VIDEO_PROCESSING_THREADS=3
+      - AUDIO_PROCESSING_THREADS=5
+      - IMAGE_PROCESSING_THREADS=8
+      - QUANTUM_FILE_BUFFER=768000  # 768 KB
+      - PHI_RATIO=1.618033988749895
+    volumes:
+      - /volume1/Music:/quantum-data/music
+      - /volume1/photo:/quantum-data/photos
+      - /volume1/video:/quantum-data/video
+      - ./processed:/quantum-data/processed
+    ports:
+      - "4322:4322"  # Media Processing API
+    restart: unless-stopped
+    networks:
+      - quantum-net
+
+  quantum-qball:
+    image: quantum/qball-visualizer:latest
+    container_name: quantum-qball
+    environment:
+      - GROUND_FREQUENCY=432
+      - CREATION_FREQUENCY=528
+      - UNITY_FREQUENCY=768
+      - PHI_RATIO=1.618033988749895
+      - QBALL_FLOW_ENABLED=true
+      - VISION_FLOW_ENABLED=true
+      - KNOWING_FLOW_ENABLED=true
+      - BEING_FLOW_ENABLED=true
+      - UNITY_FLOW_ENABLED=true
+      - R720_CONNECTION=192.168.100.15:768
+    volumes:
+      - ./quantum-data:/quantum-data
+      - ./qball-config:/qball-config
+      - /volume1/Music:/quantum-data/music:ro
+      - /volume1/photo:/quantum-data/photos:ro
+      - /volume1/video:/quantum-data/video:ro
+    ports:
+      - "4323:4323"  # QBALL Visualization UI
+      - "5283:5283"  # QBALL API
+    restart: unless-stopped
+    networks:
+      - quantum-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.qball.rule=Host(`qball.local`)"
+      - "traefik.http.services.qball.loadbalancer.server.port=4323"
+
+  traefik:
+    image: traefik:v2.5
+    container_name: quantum-traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8081:8080"  # Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - quantum-net
+
+  quantum-monitor:
+    image: prom/prometheus:latest
+    container_name: quantum-monitor
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - quantum-net
+
+  quantum-dashboard:
+    image: grafana/grafana:latest
+    container_name: quantum-dashboard
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=quantum432
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+    volumes:
+      - ./grafana:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - quantum-net
+    depends_on:
+      - quantum-monitor
+
+networks:
+  quantum-net:
+    driver: bridge
