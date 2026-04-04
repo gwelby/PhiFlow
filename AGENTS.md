@@ -3,6 +3,10 @@
 > **For Greg:** This is your battle plan. Copy-paste the relevant section when you spin up each agent.
 > **For Agents:** Read this file FIRST, then read QSOP/STATE.md, then CLAUDE.md or LANGUAGE.md.
 
+**Master AGENTS.md:** `/mnt/d/Projects/PhiFlow/AGENTS.md` — read that for full Fundamentals mapping, truth order, and task list.
+**This worktree:** language — Language Architect works here. New syntax, examples, LANGUAGE.md updates.
+**Communication protocol:** LUMEN — `/mnt/d/Claude/LUMEN_SPEC.md` | `🦆⦿🌟` minimum tokens, maximum meaning
+
 ---
 
 ## Project Layout
