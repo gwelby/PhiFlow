@@ -6,9 +6,8 @@ use phiflow::phi_ir::{
     optimizer::{OptimizationLevel, Optimizer},
     vm::PhiVm,
     wasm::emit_wat,
-    PhiIRProgram, PhiIRValue, SensorKind,
+    PhiIRProgram, PhiIRValue,
 };
-use phiflow::wasm_host::{run_source_with_host, WasmHostHooks};
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
@@ -101,18 +100,13 @@ fn run_eval_and_wasm(source: &str) -> (PhiIRValue, f64) {
     (eval_result, wasm_result)
 }
 
-#[allow(dead_code)]
 fn assert_program_conforms_eval_wasm(source: &str, label: &str) {
     let (eval_result, wasm_result) = run_eval_and_wasm(source);
     let eval_number = match eval_result {
         PhiIRValue::Number(n) => n,
         other => panic!("{} expected numeric result, got {:?}", label, other),
     };
-    assert_number_close(
-        eval_number,
-        wasm_result,
-        &format!("{} evaluator-wasm", label),
-    );
+    assert_number_close(eval_number, wasm_result, &format!("{} evaluator-wasm", label));
 }
 
 fn run_all_paths(source: &str) -> (PhiIRValue, PhiIRValue, f64) {
@@ -148,36 +142,23 @@ fn assert_program_matches(source: &str, expected: PhiIRValue, label: &str) {
         PhiIRValue::Number(n) => n,
         other => panic!("{} expected numeric result, got {:?}", label, other),
     };
-    assert_number_close(
-        eval_number,
-        wasm_result,
-        &format!("{} evaluator-wasm", label),
-    );
+    assert_number_close(eval_number, wasm_result, &format!("{} evaluator-wasm", label));
 }
 
-fn sensor_provider(sensor: SensorKind) -> Option<f64> {
-    match sensor {
-        SensorKind::CpuUsage => Some(12.5),
-        SensorKind::CpuTemp => Some(55.0),
-        SensorKind::MemoryUsage => Some(62.0),
-    }
-}
-
-#[allow(dead_code)]
 fn assert_program_conforms(source: &str, label: &str) {
     let (eval_result, vm_result, wasm_result) = run_all_paths(source);
 
-    assert_values_close(&eval_result, &vm_result, &format!("{} evaluator-vm", label));
+    assert_values_close(
+        &eval_result,
+        &vm_result,
+        &format!("{} evaluator-vm", label),
+    );
 
     let eval_number = match eval_result {
         PhiIRValue::Number(n) => n,
         other => panic!("{} expected numeric result, got {:?}", label, other),
     };
-    assert_number_close(
-        eval_number,
-        wasm_result,
-        &format!("{} evaluator-wasm", label),
-    );
+    assert_number_close(eval_number, wasm_result, &format!("{} evaluator-wasm", label));
 }
 
 #[test]
@@ -225,13 +206,16 @@ fn conformance_intention_scope_return() {
 
 #[test]
 fn conformance_coherence_check() {
-    assert_program_matches("coherence", PhiIRValue::Number(0.0), "coherence_check");
+    assert_program_matches(
+        "coherence",
+        PhiIRValue::Number(0.0),
+        "coherence_check",
+    );
 }
 
 #[test]
 fn conformance_resonate_then_coherence() {
-    // Canonical: base(depth=1) * phase(k=1) = 0.382 * 1.0 = 0.382
-    let phi_inv = 1.0 - 1.618033988749895_f64.powi(-1);
+    // Bijective Phase Map: k=1 (single resonance) → coherence = 1.0
     assert_program_matches(
         r#"
         intention "Channel" {
@@ -239,45 +223,9 @@ fn conformance_resonate_then_coherence() {
             coherence
         }
         "#,
-        PhiIRValue::Number(phi_inv),
+        PhiIRValue::Number(1.0),
         "resonate_then_coherence",
     );
-}
-
-#[test]
-fn conformance_sensor_witness_all_kinds() {
-    let cases = [
-        ("cpu_usage", 12.5),
-        ("cpu_temp", 55.0),
-        ("memory_usage", 62.0),
-    ];
-
-    for (sensor_name, expected) in cases {
-        let source = format!("witness sensor(\"{}\")", sensor_name);
-        let expressions = parse_phi_program(&source).expect("parse failed");
-        let mut program: PhiIRProgram = lower_program(&expressions);
-        let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
-        optimizer.optimize(&mut program);
-
-        let mut evaluator = Evaluator::new(&program).with_sensor_provider(sensor_provider);
-        let eval_result = evaluator.run().expect("evaluator failed");
-
-        let bytes = emitter::emit(&program);
-        let vm_result =
-            PhiVm::run_bytes_with_sensor_provider(&bytes, sensor_provider).expect("vm failed");
-
-        let wasm_result = run_source_with_host(
-            &source,
-            WasmHostHooks::new().with_sensor_provider(sensor_provider),
-        )
-        .expect("wasm host failed")
-        .result;
-
-        let expected_value = PhiIRValue::Number(expected);
-        assert_values_close(&eval_result, &expected_value, sensor_name);
-        assert_values_close(&vm_result, &expected_value, sensor_name);
-        assert_values_close(&wasm_result, &expected_value, sensor_name);
-    }
 }
 
 /// Verify that shared example fixtures compile and run on both evaluator and WASM
@@ -285,8 +233,8 @@ fn conformance_sensor_witness_all_kinds() {
 /// stream programs) don't have a meaningful return-value to compare, so this test
 /// checks parse-lower-optimize-run success rather than value equality.
 fn assert_program_runs_on_eval_and_wasm(source: &str, label: &str) {
-    let expressions =
-        parse_phi_program(source).unwrap_or_else(|e| panic!("{}: parse failed: {:?}", label, e));
+    let expressions = parse_phi_program(source)
+        .unwrap_or_else(|e| panic!("{}: parse failed: {:?}", label, e));
     let mut program: PhiIRProgram = lower_program(&expressions);
     let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
     optimizer.optimize(&mut program);
@@ -310,10 +258,7 @@ fn assert_program_runs_on_eval_and_wasm(source: &str, label: &str) {
 #[test]
 fn conformance_shared_fixture_examples() {
     let fixtures = [
-        (
-            "examples/claude.phi",
-            include_str!("../examples/claude.phi"),
-        ),
+        ("examples/claude.phi", include_str!("../examples/claude.phi")),
         (
             "examples/stream_demo.phi",
             include_str!("../examples/stream_demo.phi"),
@@ -363,16 +308,8 @@ fn conformance_nested_function_regression() {
         PhiIRValue::Number(n) => n,
         other => panic!("nested_function_regression: evaluator returned {:?}", other),
     };
-    assert_number_close(
-        eval_n,
-        expected,
-        "nested_function_regression evaluator-expected",
-    );
-    assert_number_close(
-        eval_n,
-        wasm_result,
-        "nested_function_regression evaluator-wasm",
-    );
+    assert_number_close(eval_n, expected, "nested_function_regression evaluator-expected");
+    assert_number_close(eval_n, wasm_result, "nested_function_regression evaluator-wasm");
 }
 
 #[test]

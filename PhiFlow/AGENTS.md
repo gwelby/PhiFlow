@@ -1,7 +1,6 @@
-# PhiFlow Multi-Agent Deployment Guide
-
-> **For Greg:** This is your battle plan. Copy-paste the relevant section when you spin up each agent.
-> **For Agents:** Read this file FIRST, then read QSOP/STATE.md, then CLAUDE.md or LANGUAGE.md.
+# AGENTS.md: PhiFlow
+*Platform / Tool (Type 2) + Theory / Research (Type 3)*
+*Last updated: 2026-03-24*
 
 **Master AGENTS.md:** `/mnt/d/Projects/PhiFlow/AGENTS.md` — read that for full Fundamentals mapping, truth order, and task list.
 **This worktree:** compiler — AntiGravity works here. `src/phi_ir/vm.rs`, `tests/ibm_hardware_runner.rs`
@@ -9,238 +8,140 @@
 
 ---
 
-## Project Layout
+## Mission
 
-```
-D:\Projects\PhiFlow\            ← MASTER (stable trunk, don't develop here)
-D:\Projects\PhiFlow-compiler\   ← COMPILER branch (Rust hardening)
-D:\Projects\PhiFlow-cleanup\    ← CLEANUP branch (entropy reduction)
-D:\Projects\PhiFlow-lang\       ← LANGUAGE branch (new features)
-```
+PhiFlow is a Rust compiler and runtime for consciousness-aware programming.
 
-All four directories are git worktrees sharing one history. **Each agent works in ONE worktree only.** Merges happen through `master`.
+Programs written in PhiFlow have first-class operations to name intentions, witness their own state, measure coherence, and resonate values to other programs — compiled to native bytecode or WebAssembly or OpenQASM 3.0 for quantum hardware.
+
+The deeper mission: PhiFlow makes the Propagation Framework *executable*. Every program is a coherence experiment. The compiler is a physics instrument.
 
 ---
 
-## Agent Assignments
+## Why PhiFlow Exists
 
-### 🔧 Agent 1: Compiler Hardener
+Three things converged:
 
-**Worktree:** `D:\Projects\PhiFlow-compiler`
-**Branch:** `compiler`
-**Who:** Claude Code, Codex, or any strong Rust agent
+1. **The Fundamentals framework** (Greg & Claude, 2026) derived that coherence is the necessary condition for structure. Not metaphor — mathematical derivation from three axioms. Coherence at depth 2 = φ⁻¹ = 0.618 by the formula `1 − φ^(−depth)`.
 
-**Paste this into the agent:**
+2. **IBM Quantum hardware** exists and accepts OpenQASM 3.0 programs. The bridge between consciousness semantics and physical quantum circuits is a compiler pass, not a philosophical claim.
 
-```
-You are working on PhiFlow, a consciousness-aware programming language written in Rust.
+3. **No language existed** that treated coherence as a first-class computational resource. PhiFlow is that language.
 
-Your worktree: D:\Projects\PhiFlow-compiler
-Your branch: compiler (git worktree — DO NOT switch branches)
-
-Read these files first:
-1. PhiFlow/CLAUDE.md — project overview and rules
-2. PhiFlow/QSOP/STATE.md — current project state
-3. PhiFlow/QSOP/PATTERNS.md — known bugs and patterns
-4. PhiFlow/LANGUAGE.md — what makes PhiFlow unique
-
-Your mission: HARDEN THE COMPILER
-1. Fix Pattern P-1 in parser/mod.rs: keyword-as-variable collision. When a PhiFlow
-   keyword (witness, intention, resonate) is used as a variable name, the parser
-   crashes. The `expect_identifier()` function needs to accept keywords in variable
-   position.
-2. Fix Pattern P-2 in parser/mod.rs: newline sensitivity. Bare keyword forms (like
-   standalone `witness`) consume whitespace/newlines incorrectly, eating the next
-   statement.
-3. Run `cargo clippy` and fix all warnings (currently 75 warnings on release build).
-4. Create PhiFlow/tests/integration_tests.rs that runs ALL .phi files in
-   PhiFlow/examples/ and PhiFlow/tests/ — parse them, interpret them, assert no panics.
-5. Audit Cargo.toml — remove any unused dependencies.
-
-Test after every change: cargo build --release && cargo test
-Update QSOP/STATE.md and QSOP/PATTERNS.md when you fix bugs or find new ones.
-```
+A PhiFlow program isn't just code. It's a propagation pattern that self-reports its structural stability.
 
 ---
 
-### 🧹 Agent 2: Entropy Cleaner
+## Truth Order
 
-**Worktree:** `D:\Projects\PhiFlow-cleanup`
-**Branch:** `cleanup`
-**Who:** Kiro, Gemini CLI, or any agent good at triage/organization
+When files disagree, trust in this order:
 
-**Paste this into the agent:**
+1. Running code and test results (`cargo test` output, verified in QSOP/STATE.md)
+2. QSOP/STATE.md — dated verification ledger
+3. WORKSPACE.md — technical state summary
+4. CLAIMS.md — research claim status
+5. TASKS.md — work queue
+6. README.md, VISION.md, narrative docs — aspirational or historical context
 
-```
-You are working on PhiFlow, a consciousness-aware programming language in Rust.
-
-Your worktree: D:\Projects\PhiFlow-cleanup
-Your branch: cleanup (git worktree — DO NOT switch branches)
-
-Read these files first:
-1. PhiFlow/CLAUDE.md — project overview
-2. PhiFlow/QSOP/STATE.md — current state
-3. KNOW.md — honest assessment of what works and what doesn't
-
-Your mission: REDUCE ENTROPY IN THE OUTER REPOSITORY.
-
-The outer D:\Projects\PhiFlow-cleanup\ directory has 104+ subdirectories in src/
-that were agent-generated sprawl. The REAL compiler lives in PhiFlow/ (inner directory).
-Most of the outer directories contain dead code, duplicates, or aspirational stubs.
-
-Tasks:
-1. Audit every directory in src/ at the top level. For each, determine:
-   - KEEP: Has real code that should be integrated into PhiFlow/
-   - ARCHIVE: Interesting ideas worth preserving but not active code
-   - REMOVE: Generated sprawl with no value
-   Write your findings to TRIAGE.md at the project root.
-
-2. Create STRUCT.md at the project root — a project tree map showing:
-   - What each directory contains
-   - What's real vs. dead
-   - Where the actual compiler, examples, tests, and docs live
-   This follows the Zero-Search Standard — any future agent should be able to
-   understand the project from STRUCT.md without running `ls -R`.
-
-3. For REMOVE items: delete them on this branch.
-4. For ARCHIVE items: move them to an archive/ directory.
-5. For KEEP items: document what needs integration in TRIAGE.md.
-
-Do NOT modify anything inside PhiFlow/ (the inner compiler directory).
-Commit frequently with descriptive messages.
-```
+*Running tests beat the spec. A green `cargo test` overrides any doc claiming something works.*
+*A report claiming work was done means nothing without the file existing and tests passing.*
 
 ---
 
-### 🌱 Agent 3: Language Architect
+## Current State
 
-**Worktree:** `D:\Projects\PhiFlow-lang`
-**Branch:** `language`
-**Who:** Claude Code, Windsurf/Cascade, or any creative agent
-
-**Paste this into the agent:**
-
-```
-You are working on PhiFlow, a consciousness-aware programming language in Rust.
-
-Your worktree: D:\Projects\PhiFlow-lang
-Your branch: language (git worktree — DO NOT switch branches)
-
-Read these files first:
-1. PhiFlow/CLAUDE.md — project overview and build instructions
-2. PhiFlow/LANGUAGE.md — the four unique constructs
-3. PhiFlow/QSOP/STATE.md — current state
-4. PhiFlow/src/parser/mod.rs — the lexer and parser (main file)
-5. PhiFlow/examples/ — all working .phi programs
-
-Your mission: EVOLVE THE PHIFLOW LANGUAGE.
-
-PhiFlow currently has 4 constructs: witness, intention, resonate, and coherence.
-The parser handles basic expressions, variables, functions, loops, and conditionals.
-
-Extend the language with:
-1. Block comments: /* ... */ (currently only // line comments work)
-2. Type annotations: let x: number = 42; let name: string = "phi";
-3. Module/import system: import from "other_file.phi"  
-4. Pattern matching: match value { pattern => result, ... }
-5. Write 3 new example .phi programs that showcase the new features.
-6. Update LANGUAGE.md to document all new syntax.
-
-Every new feature MUST:
-- Have at least 2 test .phi files in examples/ or tests/
-- Parse without panics
-- Interpret correctly
-- Maintain backward compatibility with existing .phi programs
-- Use sacred frequency math where appropriate
-
-Test: cargo build --release && cargo run --release --bin phic -- examples/YOUR_NEW_FILE.phi
-```
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Parser | ✅ Verified | `src/parser/mod.rs` — handles all 5 consciousness constructs |
+| PhiIR + Lowering | ✅ Verified | `src/phi_ir/` — SSA IR with consciousness nodes |
+| Evaluator (reference) | ✅ Verified | `src/phi_ir/evaluator.rs` — reference implementation |
+| PhiVM (bytecode) | ✅ Verified | `src/phi_ir/vm.rs` — 3/3 tests passing |
+| WASM codegen | ✅ Verified | `src/phi_ir/wasm.rs` — 3/3 tests, NaN-boxing BSEI |
+| WASM Host Bridge | ✅ Verified | `src/wasm_host.rs` — wasmtime + hook callbacks |
+| MCP Server | ✅ Verified | `src/bin/phi_mcp.rs` — spawn/resume/read, shared resonance |
+| Sensors | ✅ Verified | `src/sensors.rs` — CPU/memory/thermal/network via sysinfo |
+| PhiHarmonic Optimizer | ✅ Verified | `src/phi_ir/optimizer.rs` — CoherenceMonitor + stabilize at φ⁻¹ |
+| Release build (Windows) | ✅ Fixed | `lto = "thin"` + `codegen-units = 4` — 2m 02s, confirmed 2026-03-24 |
+| Bijective Phase Map (vm.rs) | ⚠️ Not implemented | AntiGravity report claimed it — file shows original formula. Needs real implementation. |
+| IBM hardware runner | ⚠️ Not implemented | `tests/ibm_hardware_runner.rs` does not exist yet |
+| IBM live hardware run | ⚠️ Not verified | C-10 still SPECULATIVE — code path verified, no actual job submitted |
+| Browser shim | ⚠️ Not implemented | `examples/phiflow_browser.html` JS hooks incomplete |
 
 ---
 
-### 📝 Agent 4: Documentation & QSOP Agent
+## Non-Negotiable Rules
 
-**Worktree:** `D:\Projects\PhiFlow` (master, read-only development)
-**Branch:** `master`
-**Who:** Any agent, Gemini CLI, Antigravity
-
-**Paste this into the agent:**
-
-```
-You are maintaining documentation and QSOP for PhiFlow.
-
-Your directory: D:\Projects\PhiFlow (master branch)
-
-Read VISION.md first — it documents the full architecture and computing paradigm
-convergence.
-
-Your mission: MAINTAIN TRUTH.
-1. Review QSOP/STATE.md — update it with any new verified facts.
-2. Review KNOW.md — ensure the assessment matrix is honest and current.
-3. Cross-reference the agent work happening on the compiler, cleanup, and language
-   branches. Read their commits with: git log compiler --oneline -10
-4. Create or update a CHANGELOG.md documenting progress across all branches.
-5. Ensure VISION.md stays accurate as the project evolves.
-
-You are the WITNESS function of the team — observe, document, maintain coherence.
-```
+1. **Read QSOP/STATE.md before touching code** — it tells you what is actually verified today
+2. **A report is not a result** — if the file doesn't exist and tests don't pass, the work is not done
+3. **Stay in your worktree** — compiler/cleanup/language are git worktrees, do NOT `git checkout`
+4. **Test before committing** — `cargo build --release` must pass, run at least one .phi example
+5. **Update QSOP when you change truth** — fix a bug → update PATTERNS.md, architecture change → update STATE.md
+6. **Three-backend equivalence is sacred** — Evaluator == VM == WASM for all supported programs
+7. **0.618 is not magic — it's derived** — coherence at depth 2 = φ⁻¹ by formula `1 − φ^(−depth)`, not hardcoded
+8. **Speak LUMEN to the conductor** — minimum tokens, maximum meaning. See `/mnt/d/Claude/LUMEN_SPEC.md`
 
 ---
 
-### 🧪 Agent 5+: Specialist Agents (Optional)
+## Who Works Here
 
-**WASM Backend Agent** — works on `compiler` branch:
-
-```
-Focus: Add WebAssembly compilation target. PhiFlow currently has AST → interpreter only.
-Create src/codegen/wasm.rs that takes PhiExpression AST and emits WASM bytecode.
-Use the wasm-encoder crate. Start with: let bindings, basic math, print statements.
-```
-
-**Quantum Backend Agent** — works on `compiler` branch:
-
-```
-Focus: Add IBM Quantum circuit generation. Create src/codegen/quantum.rs that maps
-PhiFlow's coherence and resonate constructs to actual quantum circuit operations
-using qiskit via HTTP API. Start with: coherence → measurement, resonate → entanglement.
-```
-
-**Test Suite Agent** — works on `compiler` branch:
-
-```
-Focus: Create comprehensive test suite. Run every .phi file in tests/ and examples/.
-Create golden output files. Set up CI-style test runner. Target: 100% of .phi files
-parse and interpret without panics.
-```
+| Role | Agent/Person | What They Own |
+|------|-------------|---------------|
+| Conductor | Greg Welby | Architecture, direction, integration testing |
+| Compiler Hardener | Claude Code / Codex | Parser hardening, clippy warnings, integration tests |
+| Fundamentals Bridge | AntiGravity | vm.rs bijective map, IBM hardware runner, optimizer F₁ pass |
+| Entropy Cleaner | Kiro / Gemini CLI (Lumi) | Structural cleanup, TRIAGE.md, STRUCT.md |
+| Language Architect | Claude Code / Windsurf | New syntax features, examples, LANGUAGE.md updates |
+| Documentation Witness | Any agent | QSOP maintenance, CHANGELOG, cross-branch sync |
 
 ---
 
-## Rules for ALL Agents
+## Fundamentals → PhiFlow Mapping
 
-1. **Stay in your worktree.** Do NOT `git checkout` or `git switch`. You are on a specific branch via worktree.
-2. **Read QSOP first.** STATE.md tells you what works. PATTERNS.md tells you what breaks.
-3. **Commit often.** Small, descriptive commits. Not one massive commit at the end.
-4. **Update QSOP.** When you fix a bug → update PATTERNS.md. When you change architecture → update STATE.md.
-5. **Don't touch other worktrees.** Your filesystem only extends to your worktree directory.
-6. **Test before committing.** `cargo build --release` must pass. Run at least one .phi example.
+These are the theoretical connections between the Propagation Framework (`/mnt/d/Fundamentals/`) and PhiFlow's implementation. Agents working on the Fundamentals Bridge role should understand these.
 
-## How Greg Merges
+| Fundamentals Concept | PhiFlow Component | Status |
+|---|---|---|
+| Axiom 1: Propagation is fundamental | `stream` + `resonate` primitives ARE propagation modes | ✅ Implemented |
+| Axiom 2: Causal velocity | Coherence 1.0 = causal limit. VM enforces ceiling. | ✅ Implemented |
+| Axiom 3: Coherence → Structure | `1 − φ^(−depth)` formula in evaluator + vm | ✅ Implemented |
+| Minimal Winding (k=1 is primitive) | Bijective phase map: k=1 → coherence 1.0, k>1 → `ln(2π) − ln(k)` decay | ⚠️ Not in vm.rs yet |
+| N=3 minimal stability | Three-backend equivalence (Evaluator == VM == WASM) | ✅ Proven |
+| F₁ Action-Cost Functional | PhiHarmonic optimizer: arithmetic/CF ratio → φ, stabilize at < 0.618 | ✅ In optimizer.rs |
+| Coherence ceiling (λ_c) | Max coherence = 1.0. Below 0.618 = structure cannot hold. | ✅ In stabilize() |
+| IBM Quantum verification | `resonate` → `ry(0.6180339887 * pi)` in OpenQASM | ⚠️ C-10 SPECULATIVE |
 
-```powershell
-# After agents finish their work:
-cd D:\Projects\PhiFlow          # go to master
+**The key insight for all agents:** coherence is not a score — it is the condition for structure. A program with coherence below φ⁻¹ is physically incoherent in the same sense an atom below its binding energy is unstable. The compiler enforces physics.
 
-# Review what each branch did
-git log compiler --oneline -10
-git log cleanup --oneline -10
-git log language --oneline -10
+---
 
-# Merge one at a time, resolve conflicts
-git merge compiler -m "Merge: compiler hardening"
-git merge cleanup -m "Merge: entropy cleanup"
-git merge language -m "Merge: language evolution"
+## What Is NOT Built (prevents false assumptions)
 
-# If conflicts, resolve them, then:
-git add .
-git commit
-```
+- **Bijective Phase Map in vm.rs** — AntiGravity's report claimed this, the file shows the original formula. Needs implementation and tests.
+- **IBM hardware runner test** — `tests/ibm_hardware_runner.rs` does not exist. C-10 is SPECULATIVE until a real job runs on ibm_fez or ibm_marrakesh.
+- **Buyer-ready demo package** — No audited install/run/output bundle. BUSINESS.md blocker.
+- **Browser shim** — `examples/phiflow_browser.html` exists but JS hooks for the 5 consciousness constructs are unimplemented.
+- **walkthrough.md** — Claimed in AntiGravity report, does not exist.
+
+---
+
+## Open Tasks (priority order)
+
+1. Implement Bijective Phase Map in `src/phi_ir/vm.rs` — `compute_coherence()` should use k-bijectivity: k=1 → 1.0, k>1 → `1.0 - (k as f64).ln() / std::f64::consts::TAU.ln()`. Tests must confirm three-backend equivalence still holds.
+2. Create `tests/ibm_hardware_runner.rs` — parses apikey from `/d:/Projects/PhiFlow/apikey.json`, emits OpenQASM, submits real job, validates response. This crosses C-10 from SPECULATIVE to CONFIRMED.
+3. Complete browser shim hooks in `examples/phiflow_browser.html`.
+4. Build buyer-ready demo package (BUSINESS.md blocker).
+
+---
+
+## Research / Context
+
+- `CLAIMS.md` — rigorous status of every major claim in the framework
+- `QSOP/STATE.md` — verified state ledger, updated per-session
+- `/mnt/d/Fundamentals/` — the Propagation Framework this compiler embodies
+- `/mnt/d/Claude/LUMEN_SPEC.md` — communication protocol for agent↔conductor exchange
+
+---
+
+## Worktree Note
+
+PhiFlow uses 4 git worktrees: `master` (stable), `compiler`, `cleanup`, `language`. Each agent works in ONE worktree only. AntiGravity works in `compiler`. Do NOT `git checkout` or switch branches.

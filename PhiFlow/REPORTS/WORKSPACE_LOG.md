@@ -1,0 +1,11 @@
+---
+## CODEX — 2026-03-15 00:16
+- Audited the root `D:\Projects\PhiFlow` workspace against `BUSINESS_STANDARD.md`, `REPORT_STANDARD.md`, `TASKS_STANDARD.md`, and `WORKSPACE_STANDARD.md`.
+- Updated `WORKSPACE.md`, `BUSINESS.md`, and `TASKS.md` to reflect commands and claims verified in this workspace today.
+- Added a 2026-03-15 truth note to `QSOP/STATE.md` documenting what passed and what failed.
+- Evidence:
+  - `D:\Projects\PhiFlow\WORKSPACE.md`
+  - `D:\Projects\PhiFlow\BUSINESS.md`
+  - `D:\Projects\PhiFlow\TASKS.md`
+  - `D:\Projects\PhiFlow\QSOP\STATE.md`
+  - `D:\Projects\PhiFlow\REPORTS\CODEX_20260315_0016_REPORT.md`

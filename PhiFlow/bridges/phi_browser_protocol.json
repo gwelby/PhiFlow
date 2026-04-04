@@ -1,0 +1,44 @@
+{
+  "name": "Phi Browser Bridge Protocol",
+  "frequency": "768 Hz",
+  "transport": "WebSocket",
+  "port": 8765,
+  "events": {
+    "resonance": {
+      "description": "Broadcasts a resonance event triggered from PhiFlow bytecode.",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "intention": {
+            "type": "string",
+            "description": "The intention declared by the resonance block."
+          },
+          "coherence": {
+            "type": "number",
+            "description": "The coherence value at the time of resonance (0.0 to 1.0)."
+          },
+          "value": {
+            "type": "number",
+            "description": "The numeric value associated with the resonance."
+          },
+          "timestamp_ms": {
+            "type": "integer",
+            "description": "Milliseconds since epoch when the event was recorded."
+          },
+          "id": {
+            "type": "string",
+            "description": "Unique UUID of the resonance message."
+          }
+        },
+        "required": ["intention", "coherence", "value", "timestamp_ms", "id"]
+      }
+    }
+  },
+  "example": {
+    "intention": "gate3_bridge",
+    "coherence": 0.98,
+    "value": 42.0,
+    "timestamp_ms": 1741595100000,
+    "id": "72a396b4-27f5-409e-90e7-b200c953fa0e"
+  }
+}

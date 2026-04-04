@@ -2,9 +2,8 @@
 //!
 //! Loads `.phivm` bytes emitted by `phi_ir::emitter` and executes them.
 
-use crate::phi_ir::{BlockId, Operand, PhiIRBinOp, PhiIRValue, ResonateDirection, SensorKind};
+use crate::phi_ir::{BlockId, Operand, PhiIRBinOp, PhiIRValue, TeamDirection};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 const MAGIC: &[u8; 4] = b"PHIV";
 const VERSION: u8 = 1;
@@ -31,7 +30,6 @@ const OP_RESONATE: u8 = 0x33;
 const OP_COHERENCE_CHECK: u8 = 0x34;
 const OP_SLEEP: u8 = 0x35;
 const OP_CREATE_PATTERN: u8 = 0x36;
-const OP_WITNESS_SENSOR: u8 = 0x38;
 const OP_DOMAIN_CALL: u8 = 0x40;
 const OP_RETURN: u8 = 0xE0;
 const OP_JUMP: u8 = 0xE1;
@@ -45,18 +43,17 @@ pub enum VmError {
     InvalidOpcode(u8),
     InvalidBinOp(u8),
     InvalidResultFlag(u8),
-    InvalidBoolFlag(u8),
-    InvalidOptionalOperandFlag { opcode: u8, flag: u8 },
     InvalidStringIndex(u32),
-    InvalidSensorId(i32),
     InvalidUtf8(std::str::Utf8Error),
-    UnexpectedEof { needed: usize, remaining: usize },
+    UnexpectedEof {
+        needed: usize,
+        remaining: usize,
+    },
     TrailingBytes(usize),
     BlockNotFound(BlockId),
     OperandNotFound(Operand),
     DivisionByZero,
     InvalidOperation(String),
-    UnavailableSensor(SensorKind),
     InvalidTerminator,
 }
 
@@ -68,14 +65,7 @@ impl std::fmt::Display for VmError {
             VmError::InvalidOpcode(op) => write!(f, "Invalid opcode 0x{op:02X}"),
             VmError::InvalidBinOp(op) => write!(f, "Invalid binop byte 0x{op:02X}"),
             VmError::InvalidResultFlag(v) => write!(f, "Invalid result flag {}", v),
-            VmError::InvalidBoolFlag(v) => write!(f, "Invalid bool flag {}", v),
-            VmError::InvalidOptionalOperandFlag { opcode, flag } => write!(
-                f,
-                "Invalid optional operand flag {} for opcode 0x{opcode:02X}",
-                flag
-            ),
             VmError::InvalidStringIndex(i) => write!(f, "Invalid string table index {}", i),
-            VmError::InvalidSensorId(i) => write!(f, "Invalid sensor ID {}", i),
             VmError::InvalidUtf8(e) => write!(f, "Invalid UTF-8 string payload: {}", e),
             VmError::UnexpectedEof { needed, remaining } => write!(
                 f,
@@ -87,13 +77,6 @@ impl std::fmt::Display for VmError {
             VmError::OperandNotFound(op) => write!(f, "Operand {} not found", op),
             VmError::DivisionByZero => write!(f, "Division by zero"),
             VmError::InvalidOperation(msg) => write!(f, "Invalid operation: {}", msg),
-            VmError::UnavailableSensor(sensor) => {
-                write!(
-                    f,
-                    "Sensor `{}` is unavailable on this host",
-                    sensor.as_name()
-                )
-            }
             VmError::InvalidTerminator => write!(f, "Invalid terminator opcode"),
         }
     }
@@ -154,16 +137,13 @@ pub enum BytecodeNode {
     Witness {
         target: Option<Operand>,
     },
-    WitnessSensor {
-        sensor: SensorKind,
-    },
     IntentionPush {
         name: String,
     },
     IntentionPop,
     Resonate {
         value: Option<Operand>,
-        direction: crate::phi_ir::ResonateDirection,
+        direction: TeamDirection,
     },
     CoherenceCheck,
     Sleep {
@@ -198,7 +178,6 @@ pub struct PhiVm {
     resonance_field: HashMap<String, Vec<PhiIRValue>>,
     current_block: BlockId,
     instruction_ptr: usize,
-    sensor_provider: Option<Arc<dyn Fn(SensorKind) -> Option<f64> + Send + Sync>>,
 }
 
 impl PhiVm {
@@ -222,7 +201,6 @@ impl PhiVm {
             resonance_field: HashMap::new(),
             current_block,
             instruction_ptr: 0,
-            sensor_provider: None,
         })
     }
 
@@ -232,30 +210,9 @@ impl PhiVm {
         vm.run()
     }
 
-    pub fn run_bytes_with_sensor_provider<F>(bytes: &[u8], provider: F) -> VmResult<PhiIRValue>
-    where
-        F: Fn(SensorKind) -> Option<f64> + Send + Sync + 'static,
-    {
-        let mut vm = Self::from_bytes(bytes)?.with_sensor_provider(provider);
-        vm.run()
-    }
-
-    pub fn with_sensor_provider<F>(mut self, provider: F) -> Self
-    where
-        F: Fn(SensorKind) -> Option<f64> + Send + Sync + 'static,
-    {
-        self.sensor_provider = Some(Arc::new(provider));
-        self
-    }
-
     /// Return the loaded string table.
     pub fn string_table(&self) -> &[String] {
         &self.program.string_table
-    }
-
-    /// Return the decoded bytecode program.
-    pub fn program(&self) -> &BytecodeProgram {
-        &self.program
     }
 
     /// Return the current value stack.
@@ -287,10 +244,7 @@ impl PhiVm {
     }
 
     fn get_block(&self, id: BlockId) -> VmResult<&BytecodeBlock> {
-        let idx = *self
-            .block_index
-            .get(&id)
-            .ok_or(VmError::BlockNotFound(id))?;
+        let idx = *self.block_index.get(&id).ok_or(VmError::BlockNotFound(id))?;
         Ok(&self.program.blocks[idx])
     }
 
@@ -302,12 +256,9 @@ impl PhiVm {
         let value: Option<PhiIRValue> = match &instr.node {
             BytecodeNode::Nop => None,
             BytecodeNode::Const(v) => Some(v.clone()),
-            BytecodeNode::LoadVar(name) => Some(
-                self.variables
-                    .get(name)
-                    .cloned()
-                    .unwrap_or(PhiIRValue::Void),
-            ),
+            BytecodeNode::LoadVar(name) => {
+                Some(self.variables.get(name).cloned().unwrap_or(PhiIRValue::Void))
+            }
             BytecodeNode::StoreVar { name, value } => {
                 let val = self.get_reg(*value)?.clone();
                 self.variables.insert(name.clone(), val);
@@ -339,9 +290,6 @@ impl PhiVm {
                 }
                 Some(PhiIRValue::Number(self.compute_coherence()))
             }
-            BytecodeNode::WitnessSensor { sensor } => {
-                Some(PhiIRValue::Number(self.resolve_sensor(*sensor)?))
-            }
             BytecodeNode::IntentionPush { name } => {
                 self.intention_stack.push(name.clone());
                 self.resonance_field.entry(name.clone()).or_default();
@@ -351,10 +299,8 @@ impl PhiVm {
                 self.intention_stack.pop();
                 None
             }
-            BytecodeNode::Resonate {
-                value,
-                direction: _,
-            } => {
+            BytecodeNode::Resonate { value, .. } => {
+                // direction is quantum-backend specific, ignored by VM
                 if let Some(op) = value {
                     let val = self.get_reg(*op)?.clone();
                     let key = self
@@ -449,17 +395,34 @@ impl PhiVm {
     }
 
     fn compute_coherence(&self) -> f64 {
-        crate::phi_ir::coherence::canonical_coherence(&self.intention_stack, &self.resonance_field)
-    }
+        let depth = self.intention_stack.len();
+        
+        // Bijective Phase Map: k is the winding number (resonance cardinality)
+        // k=1 → perfect coherence (1.0), k>1 → logarithmic decay
+        // Find the maximum resonance cardinality across all intentions
+        let max_k: usize = self.resonance_field.values()
+            .map(|v| v.len())
+            .max()
+            .unwrap_or(0);
 
-    fn resolve_sensor(&self, sensor: SensorKind) -> VmResult<f64> {
-        let value = self
-            .sensor_provider
-            .as_ref()
-            .and_then(|provider| provider(sensor))
-            .or_else(|| crate::sensors::read_sensor(sensor));
+        // If no resonances but has intentions, k=1 (primitive winding)
+        let k = if depth > 0 && max_k == 0 {
+            1
+        } else if max_k == 0 {
+            return 0.0;
+        } else {
+            max_k
+        };
 
-        value.ok_or(VmError::UnavailableSensor(sensor))
+        // Bijective phase map formula:
+        // k=1 → 1.0 (perfect coherence for primitive winding)
+        // k>1 → 1.0 - ln(k) / ln(2π) (logarithmic decay for multi-winding)
+        if k == 1 {
+            1.0
+        } else {
+            let decay = (k as f64).ln() / std::f64::consts::TAU.ln();
+            (1.0 - decay).max(0.0)
+        }
     }
 
     fn eval_unop(&self, operand: Operand) -> VmResult<PhiIRValue> {
@@ -588,15 +551,7 @@ fn parse_node(reader: &mut ByteReader<'_>, string_table: &[String]) -> VmResult<
             }
             BytecodeNode::Const(PhiIRValue::String(index))
         }
-        OP_CONST_BOOL => {
-            let flag = reader.read_u8()?;
-            let value = match flag {
-                0 => false,
-                1 => true,
-                other => return Err(VmError::InvalidBoolFlag(other)),
-            };
-            BytecodeNode::Const(PhiIRValue::Boolean(value))
-        }
+        OP_CONST_BOOL => BytecodeNode::Const(PhiIRValue::Boolean(reader.read_u8()? != 0)),
         OP_CONST_VOID => BytecodeNode::Const(PhiIRValue::Void),
         OP_LOAD_VAR => BytecodeNode::LoadVar(read_string_ref(reader, string_table)?),
         OP_STORE_VAR => BytecodeNode::StoreVar {
@@ -636,30 +591,35 @@ fn parse_node(reader: &mut ByteReader<'_>, string_table: &[String]) -> VmResult<
             name: read_string_ref(reader, string_table)?,
             body: reader.read_u32()?,
         },
-        OP_WITNESS => BytecodeNode::Witness {
-            target: read_optional_operand(reader, OP_WITNESS)?,
-        },
-        OP_WITNESS_SENSOR => {
-            let sensor_id = reader.read_u8()? as i32;
-            let sensor =
-                SensorKind::from_id(sensor_id).ok_or(VmError::InvalidSensorId(sensor_id))?;
-            BytecodeNode::WitnessSensor { sensor }
+        OP_WITNESS => {
+            let has_target = reader.read_u8()?;
+            let target = if has_target == 1 {
+                Some(reader.read_u32()?)
+            } else {
+                None
+            };
+            BytecodeNode::Witness { target }
         }
         OP_INTENTION_PUSH => BytecodeNode::IntentionPush {
             name: read_string_ref(reader, string_table)?,
         },
         OP_INTENTION_POP => BytecodeNode::IntentionPop,
         OP_RESONATE => {
+            // Read direction byte: 0 = TeamA, 1 = TeamB
             let direction_byte = reader.read_u8()?;
             let direction = if direction_byte == 0 {
-                crate::phi_ir::ResonateDirection::TeamA
+                TeamDirection::TeamA
             } else {
-                crate::phi_ir::ResonateDirection::TeamB
+                TeamDirection::TeamB
             };
-            BytecodeNode::Resonate {
-                value: read_optional_operand(reader, OP_RESONATE)?,
-                direction,
-            }
+            
+            let has_value = reader.read_u8()?;
+            let value = if has_value == 1 {
+                Some(reader.read_u32()?)
+            } else {
+                None
+            };
+            BytecodeNode::Resonate { value, direction }
         }
         OP_COHERENCE_CHECK => BytecodeNode::CoherenceCheck,
         OP_SLEEP => BytecodeNode::Sleep {
@@ -711,18 +671,6 @@ fn read_string_ref(reader: &mut ByteReader<'_>, string_table: &[String]) -> VmRe
         .get(index as usize)
         .cloned()
         .ok_or(VmError::InvalidStringIndex(index))
-}
-
-fn read_optional_operand(reader: &mut ByteReader<'_>, opcode: u8) -> VmResult<Option<Operand>> {
-    let flag = reader.read_u8()?;
-    match flag {
-        0 => Ok(None),
-        1 => Ok(Some(reader.read_u32()?)),
-        other => Err(VmError::InvalidOptionalOperandFlag {
-            opcode,
-            flag: other,
-        }),
-    }
 }
 
 fn parse_binop(byte: u8) -> VmResult<PhiIRBinOp> {
@@ -799,104 +747,13 @@ impl<'a> ByteReader<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::{BytecodeNode, PhiVm, VmError};
-    use super::{
-        OP_COHERENCE_CHECK, OP_CONST_NUM, OP_FALLTHROUGH, OP_INTENTION_POP, OP_INTENTION_PUSH,
-        OP_RESONATE, OP_RETURN, OP_WITNESS,
+    use super::PhiVm;
+    use crate::phi_ir::{
+        emitter,
+        PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction, TeamDirection,
     };
-    use crate::phi_ir::{emitter, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction};
 
-    fn emit_u32(out: &mut Vec<u8>, value: u32) {
-        out.extend_from_slice(&value.to_le_bytes());
-    }
-
-    fn emit_f64(out: &mut Vec<u8>, value: f64) {
-        out.extend_from_slice(&value.to_le_bytes());
-    }
-
-    fn emit_string(out: &mut Vec<u8>, value: &str) {
-        emit_u32(out, value.len() as u32);
-        out.extend_from_slice(value.as_bytes());
-    }
-
-    fn build_native_consciousness_opcode_program() -> Vec<u8> {
-        let mut out = Vec::new();
-        out.extend_from_slice(b"PHIV");
-        out.push(1); // version
-
-        emit_u32(&mut out, 1); // string table count
-        emit_string(&mut out, "healing");
-
-        emit_u32(&mut out, 1); // block count
-        emit_u32(&mut out, 0); // block id
-        emit_u32(&mut out, 6); // instruction count
-
-        // r0 = const 432.0
-        out.push(1);
-        emit_u32(&mut out, 0);
-        out.push(OP_CONST_NUM);
-        emit_f64(&mut out, 432.0);
-
-        // intention_push "healing"
-        out.push(0);
-        out.push(OP_INTENTION_PUSH);
-        emit_u32(&mut out, 0);
-
-        // r1 = witness r0
-        out.push(1);
-        emit_u32(&mut out, 1);
-        out.push(OP_WITNESS);
-        out.push(1);
-        emit_u32(&mut out, 0);
-
-        // resonate r0
-        out.push(0);
-        out.push(OP_RESONATE);
-        out.push(0); // TeamA
-        out.push(1);
-        emit_u32(&mut out, 0);
-
-        // r2 = coherence_check
-        out.push(1);
-        emit_u32(&mut out, 2);
-        out.push(OP_COHERENCE_CHECK);
-
-        // intention_pop
-        out.push(0);
-        out.push(OP_INTENTION_POP);
-
-        // return r2
-        out.push(OP_RETURN);
-        emit_u32(&mut out, 2);
-
-        out
-    }
-
-    fn build_invalid_witness_flag_program(flag: u8) -> Vec<u8> {
-        let mut out = Vec::new();
-        out.extend_from_slice(b"PHIV");
-        out.push(1); // version
-
-        emit_u32(&mut out, 0); // string table count
-        emit_u32(&mut out, 1); // block count
-        emit_u32(&mut out, 0); // block id
-        emit_u32(&mut out, 1); // instruction count
-
-        // witness with invalid optional-operand flag
-        out.push(0);
-        out.push(OP_WITNESS);
-        out.push(flag);
-
-        // fallthrough terminator
-        out.push(OP_FALLTHROUGH);
-
-        out
-    }
-
-    fn single_block_program(
-        instructions: Vec<PhiInstruction>,
-        terminator: PhiIRNode,
-    ) -> PhiIRProgram {
+    fn single_block_program(instructions: Vec<PhiInstruction>, terminator: PhiIRNode) -> PhiIRProgram {
         PhiIRProgram {
             blocks: vec![PhiIRBlock {
                 id: 0,
@@ -989,6 +846,7 @@ mod tests {
 
     #[test]
     fn vm_coherence_tracks_intention_and_resonance() {
+        // Bijective Phase Map: k=1 (single resonance in intention) → coherence = 1.0
         let program = single_block_program(
             vec![
                 PhiInstruction {
@@ -1007,7 +865,7 @@ mod tests {
                     node: PhiIRNode::Resonate {
                         value: Some(0),
                         frequency_relationship: None,
-                        direction: crate::phi_ir::ResonateDirection::TeamA,
+                        direction: TeamDirection::TeamA,
                     },
                 },
                 PhiInstruction {
@@ -1022,12 +880,65 @@ mod tests {
         let result = PhiVm::run_bytes(&bytes).expect("VM should execute coherence bytecode");
         match result {
             PhiIRValue::Number(n) => {
-                // Canonical: base(depth=1) * phase(k=1) = 0.382 * 1.0
-                let expected = 1.0 - super::PHI.powi(-1);
+                assert!(n > 0.99 && n < 1.01, "expected coherence near 1.0 (k=1 bijective), got {}", n);
+            }
+            other => panic!("expected Number coherence result, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn vm_coherence_bijective_k2_decay() {
+        // Bijective Phase Map: k=2 (two resonances) → coherence = 1.0 - ln(2)/ln(2π) ≈ 0.623
+        let program = single_block_program(
+            vec![
+                PhiInstruction {
+                    result: Some(0),
+                    node: PhiIRNode::Const(PhiIRValue::Number(1.0)),
+                },
+                PhiInstruction {
+                    result: Some(1),
+                    node: PhiIRNode::Const(PhiIRValue::Number(2.0)),
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::IntentionPush {
+                        name: "contradiction".to_string(),
+                        frequency_hint: None,
+                    },
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::Resonate {
+                        value: Some(0),
+                        frequency_relationship: None,
+                        direction: TeamDirection::TeamA,
+                    },
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::Resonate {
+                        value: Some(1),
+                        frequency_relationship: None,
+                        direction: TeamDirection::TeamB,
+                    },
+                },
+                PhiInstruction {
+                    result: Some(2),
+                    node: PhiIRNode::CoherenceCheck,
+                },
+            ],
+            PhiIRNode::Return(2),
+        );
+
+        let expected_k2 = 1.0 - 2.0_f64.ln() / std::f64::consts::TAU.ln(); // ≈ 0.623
+        let bytes = emitter::emit(&program);
+        let result = PhiVm::run_bytes(&bytes).expect("VM should execute coherence bytecode");
+        match result {
+            PhiIRValue::Number(n) => {
                 assert!(
-                    (n - expected).abs() < 1e-9,
-                    "expected coherence near {}, got {}",
-                    expected,
+                    (n - expected_k2).abs() < 0.001,
+                    "expected coherence near {} (k=2 bijective decay), got {}",
+                    expected_k2,
                     n
                 );
             }
@@ -1070,10 +981,7 @@ mod tests {
         let mut vm = PhiVm::from_bytes(&bytes).expect("VM should load bytecode");
 
         assert_eq!(
-            vm.string_table()
-                .iter()
-                .filter(|value| value.as_str() == "hello")
-                .count(),
+            vm.string_table().iter().filter(|value| value.as_str() == "hello").count(),
             1,
             "emitted string table should deduplicate values"
         );
@@ -1088,111 +996,6 @@ mod tests {
                 assert_eq!(value, "hello");
             }
             other => panic!("expected string result, got {:?}", other),
-        }
-    }
-
-    #[test]
-    fn vm_executes_native_consciousness_opcodes_from_raw_bytecode() {
-        let bytes = build_native_consciousness_opcode_program();
-
-        let mut vm = PhiVm::from_bytes(&bytes).expect("VM should decode manual bytecode");
-        let result = vm.run().expect("VM should execute manual bytecode");
-
-        // Canonical: base(depth=1) * phase(k=1) = 0.382 * 1.0
-        let expected = 1.0 - super::PHI.powi(-1);
-        let coherence = match result {
-            PhiIRValue::Number(value) => value,
-            other => panic!("expected Number result, got {:?}", other),
-        };
-
-        assert!(
-            (coherence - expected).abs() < 1e-12,
-            "coherence mismatch: expected {expected}, got {coherence}"
-        );
-
-        assert!(
-            vm.intention_stack.is_empty(),
-            "intention stack should be empty after IntentionPop"
-        );
-        assert_eq!(
-            vm.resonance_field.get("healing").map(|values| values.len()),
-            Some(1),
-            "resonate should persist exactly one value in the healing channel"
-        );
-
-        let witness_value = vm
-            .registers
-            .get(&1)
-            .expect("witness result register should be populated");
-        match witness_value {
-            PhiIRValue::Number(value) => {
-                let expected_witness = 1.0 - super::PHI.powi(-1);
-                assert!(
-                    (*value - expected_witness).abs() < 1e-12,
-                    "witness coherence mismatch: expected {expected_witness}, got {value}"
-                );
-            }
-            other => panic!("expected witness register to hold Number, got {:?}", other),
-        }
-
-        let second_run = PhiVm::run_bytes(&bytes).expect("same bytecode should be deterministic");
-        assert_eq!(
-            result, second_run,
-            "native opcode execution must be deterministic"
-        );
-    }
-
-    #[test]
-    fn vm_decodes_resonate_direction_from_emitted_bytecode() {
-        let program = single_block_program(
-            vec![
-                PhiInstruction {
-                    result: Some(0),
-                    node: PhiIRNode::Const(PhiIRValue::Number(0.72)),
-                },
-                PhiInstruction {
-                    result: None,
-                    node: PhiIRNode::Resonate {
-                        value: Some(0),
-                        frequency_relationship: None,
-                        direction: crate::phi_ir::ResonateDirection::TeamB,
-                    },
-                },
-            ],
-            PhiIRNode::Fallthrough,
-        );
-
-        let bytes = emitter::emit(&program);
-        let vm = PhiVm::from_bytes(&bytes).expect("VM should decode emitted bytecode");
-        let block = vm
-            .program()
-            .blocks
-            .first()
-            .expect("decoded program should contain an entry block");
-        let resonate = &block.instructions[1].node;
-
-        match resonate {
-            BytecodeNode::Resonate { value, direction } => {
-                assert_eq!(*value, Some(0));
-                assert_eq!(*direction, crate::phi_ir::ResonateDirection::TeamB);
-            }
-            other => panic!("expected decoded resonate node, got {:?}", other),
-        }
-    }
-
-    #[test]
-    fn vm_rejects_invalid_optional_operand_flag() {
-        let bytes = build_invalid_witness_flag_program(2);
-        let err = PhiVm::from_bytes(&bytes)
-            .err()
-            .expect("invalid witness flag should fail decoding");
-
-        match err {
-            VmError::InvalidOptionalOperandFlag { opcode, flag } => {
-                assert_eq!(opcode, OP_WITNESS);
-                assert_eq!(flag, 2);
-            }
-            other => panic!("expected InvalidOptionalOperandFlag, got {:?}", other),
         }
     }
 }

@@ -1,0 +1,10 @@
+--- a/src/phi_ir/mod.rs
++++ b/src/phi_ir/mod.rs
+@@ -224,6 +224,7 @@ pub enum PhiIRNode {
+     Resonate {
+         value: Option<Operand>,
+         frequency_relationship: Option<f64>, // phi-harmonic ratio, e.g. 528/432
++        direction: ResonateDirection,
+     },
+ 
+     /// Enter a continuous stream loop. Acts like IntentionPush but sets stream context

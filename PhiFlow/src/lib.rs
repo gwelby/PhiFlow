@@ -25,8 +25,6 @@ pub mod visualization;
 
 // Compiler modules
 pub mod compiler;
-pub mod quantum_feedback;
-pub mod resonance_bus;
 pub mod sensors;
 pub mod vm;
 pub mod wasm_host;
@@ -49,6 +47,7 @@ pub mod bio_compute;
 pub use consciousness::{ConsciousnessMonitor, ConsciousnessState, EEGData};
 pub use host::{PhiHostProvider, WitnessAction, WitnessSnapshot};
 pub use phi_diagnostics::PhiDiagnostic;
+pub use phi_ir::TeamDirection;
 pub use quantum::{QuantumCircuit, QuantumGate, QuantumResult};
 pub use sacred::{PhiMemoryAllocator, SacredFrequency, SacredFrequencyGenerator};
 
@@ -71,9 +70,8 @@ pub fn compile_and_run_phi_ir(source: &str) -> Result<phi_ir::PhiIRValue, String
     let expressions = parse_phi_program(source).map_err(|e| format!("Parse error: {}", e))?;
 
     // 2. Lower AST → PhiIR
-    use phi_ir::lowering::lower_program_checked;
-    let mut program =
-        lower_program_checked(&expressions).map_err(|e| format!("Lowering error: {}", e))?;
+    use phi_ir::lowering::lower_program;
+    let mut program = lower_program(&expressions);
 
     // 3. Optimize
     use phi_ir::optimizer::{OptimizationLevel, Optimizer};
@@ -86,23 +84,4 @@ pub fn compile_and_run_phi_ir(source: &str) -> Result<phi_ir::PhiIRValue, String
     evaluator
         .run()
         .map_err(|e| format!("Runtime error: {:?}", e))
-}
-
-/// Compile PhiFlow source to OpenQASM 3.0 using the canonical PhiIR path.
-pub fn compile_to_openqasm(source: &str, optimize_depth: bool) -> Result<String, String> {
-    use parser::parse_phi_program;
-    use phi_ir::lowering::lower_program_checked;
-    use phi_ir::openqasm::OpenQasmEmitter;
-    use phi_ir::optimizer::{OptimizationLevel, Optimizer};
-
-    let expressions = parse_phi_program(source).map_err(|e| format!("Parse error: {}", e))?;
-    let mut program =
-        lower_program_checked(&expressions).map_err(|e| format!("Lowering error: {}", e))?;
-
-    let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
-    optimizer.optimize(&mut program);
-
-    let mut emitter = OpenQasmEmitter::new();
-    emitter.optimize_depth = optimize_depth;
-    emitter.emit(&program).map_err(|e| e.to_string())
 }

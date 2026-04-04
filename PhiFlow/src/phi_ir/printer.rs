@@ -79,18 +79,14 @@ fn format_instr(node: &PhiIRNode) -> String {
                 .unwrap_or("ALL".to_string());
             format!("Witness target={} policy={:?}", t_str, collapse_policy)
         }
-        PhiIRNode::WitnessSensor { sensor } => {
-            format!("WitnessSensor \"{}\"", sensor.as_name())
-        }
         PhiIRNode::IntentionPush { name, .. } => format!("IntentionPush \"{}\"", name),
         PhiIRNode::IntentionPop => "IntentionPop".to_string(),
-        PhiIRNode::Resonate {
-            value, direction, ..
-        } => {
+        PhiIRNode::Resonate { value, .. } => {
+            // direction is quantum-backend specific, not shown in printer
             let v_str = value
                 .map(|v| format!("%{}", v))
                 .unwrap_or("Self".to_string());
-            format!("Resonate value={} direction={:?}", v_str, direction)
+            format!("Resonate value={}", v_str)
         }
         PhiIRNode::CreatePattern {
             kind, frequency, ..

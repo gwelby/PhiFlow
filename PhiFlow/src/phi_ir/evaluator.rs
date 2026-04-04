@@ -6,20 +6,18 @@
 //! - `Witness`           → Captures program state; returns coherence score (0.0–1.0)
 //! - `IntentionPush/Pop` → Maintains a live intention stack; scopes execution purpose
 //! - `Resonate`          → Shares values through an intention-keyed resonance field
-//! - `CoherenceCheck`    → Canonical coherence: base(depth) × phase(k)
+//! - `CoherenceCheck`    → Phi-harmonic coherence: depth 2 yields the golden ratio (0.618)
 //!
-//! Canonical runtime formula:
-//!   base(depth) = 0 when depth == 0, else `1 - φ^(-depth)`
-//!   phase(k)    = 1 when k <= 1, else `1 - ln(k)/ln(τ)`
-//!   coherence   = clamp(base(depth) × phase(k), 0, 1)
+//! Coherence formula: `1 - φ^(-depth)` + resonance bonus (max 0.2)
+//!   depth 0 → 0.000 | depth 1 → 0.382 | depth 2 → 0.618 | depth 3 → 0.764
 
 use crate::host::{DefaultHostProvider, PhiHostProvider, WitnessAction, WitnessSnapshot};
 use crate::parser::parse_phi_program;
 use crate::phi_ir::{
-    lowering::lower_program_checked,
+    lowering::lower_program,
     vm_state::{VmState, VmWitnessEvent},
     BlockId, Operand, PhiIRBinOp, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRUnOp, PhiIRValue,
-    PhiInstruction, SensorKind,
+    PhiInstruction,
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -140,7 +138,6 @@ pub struct Evaluator<'a> {
     // --- Guardrails ---
     pub max_steps: Option<usize>,
     pub step_count: usize,
-    sensor_provider: Option<Arc<dyn Fn(SensorKind) -> Option<f64> + Send + Sync + 'a>>,
 }
 
 #[derive(Debug, Clone)]
@@ -189,7 +186,6 @@ impl<'a> Evaluator<'a> {
             yield_timestamp: None,
             max_steps: None,
             step_count: 0,
-            sensor_provider: None,
         }
     }
 
@@ -225,14 +221,6 @@ impl<'a> Evaluator<'a> {
         self
     }
 
-    pub fn with_sensor_provider<F>(mut self, provider: F) -> Self
-    where
-        F: Fn(SensorKind) -> Option<f64> + Send + Sync + 'a,
-    {
-        self.sensor_provider = Some(Arc::new(provider));
-        self
-    }
-
     /// Run the program to completion. Returns the final value.
     pub fn run(&mut self) -> EvalResult<PhiIRValue> {
         match self.run_or_yield()? {
@@ -265,10 +253,11 @@ impl<'a> Evaluator<'a> {
             let block_id = self.current_block;
             let block = self.get_block(block_id)?;
             let instr_count = block.instructions.len();
-
+            
             if self.instruction_ptr < instr_count {
                 let instr = block.instructions[self.instruction_ptr].clone();
                 self.instruction_ptr += 1;
+                
                 if let Some(yield_result) = self.execute_instruction_with_yield(&instr)? {
                     return Ok(yield_result);
                 }
@@ -326,11 +315,6 @@ impl<'a> Evaluator<'a> {
     /// Expose current coherence so callers can inspect without running `witness`.
     pub fn coherence(&self) -> f64 {
         self.compute_coherence()
-    }
-
-    /// Expose the host-resolved coherence, including injected hardware metrics.
-    pub fn resolved_coherence(&self) -> f64 {
-        self.resolve_coherence()
     }
 
     /// Expose a read-only view of values resonated under a given intention.
@@ -411,11 +395,6 @@ impl<'a> Evaluator<'a> {
                 Some(PhiIRValue::Number(coherence))
             }
 
-            PhiIRNode::WitnessSensor { sensor } => {
-                let (value, _snapshot, _action) = self.process_sensor_witness(*sensor)?;
-                Some(PhiIRValue::Number(value))
-            }
-
             PhiIRNode::IntentionPush { name, .. } => {
                 self.intention_stack.push(name.clone());
                 self.resonance_field.entry(name.clone()).or_default();
@@ -444,11 +423,8 @@ impl<'a> Evaluator<'a> {
                 None
             }
 
-            PhiIRNode::Resonate {
-                value,
-                direction: _,
-                ..
-            } => {
+            PhiIRNode::Resonate { value, .. } => {
+                // direction is quantum-backend specific, ignored by evaluator
                 let key = self
                     .intention_stack
                     .last()
@@ -460,25 +436,6 @@ impl<'a> Evaluator<'a> {
                         let val = val.clone();
                         let val_str = self.value_to_string(&val);
                         self.resonance_events.push((key.clone(), val.clone()));
-
-                        // --- Pipe 3: MQTT Resonance Bus ---
-                        let json_val = match &val {
-                            PhiIRValue::Number(n) => serde_json::json!(n),
-                            PhiIRValue::String(idx) => {
-                                let s = self
-                                    .program
-                                    .string_table
-                                    .get(*idx as usize)
-                                    .cloned()
-                                    .unwrap_or_default();
-                                serde_json::json!(s)
-                            }
-                            PhiIRValue::Boolean(b) => serde_json::json!(b),
-                            PhiIRValue::Void => serde_json::Value::Null,
-                        };
-                        let _ = crate::resonance_bus::emit_resonance(json_val, &key, "phiflow");
-                        // ----------------------------------
-
                         if self.active_streams.contains(&key) {
                             self.resonance_field.insert(key.clone(), vec![val.clone()]);
                             if let Some(shared) = &self.shared_resonance {
@@ -557,8 +514,7 @@ impl<'a> Evaluator<'a> {
                 // 1. Compile the evolved code
                 let exprs = parse_phi_program(&code_str)
                     .map_err(|e| EvalError::SynthesisError(format!("Parse failed: {}", e)))?;
-                let evolved_prog = lower_program_checked(&exprs)
-                    .map_err(|e| EvalError::SynthesisError(e.to_string()))?;
+                let evolved_prog = lower_program(&exprs);
 
                 // 2. Splice blocks into the current program
                 // We need to offset BlockIds to avoid collisions.
@@ -589,7 +545,9 @@ impl<'a> Evaluator<'a> {
                 // saving the current block/IP so we resume cleanly.
                 let saved_block = self.current_block;
                 let saved_ip = self.instruction_ptr;
+                let saved_registers = std::mem::take(&mut self.registers);
 
+                self.registers = HashMap::new();
                 self.current_block = evolved_prog.entry + id_offset;
                 self.instruction_ptr = 0;
 
@@ -611,6 +569,7 @@ impl<'a> Evaluator<'a> {
                 };
 
                 // Restore control to the caller block
+                self.registers = saved_registers;
                 self.current_block = saved_block;
                 self.instruction_ptr = saved_ip;
 
@@ -625,88 +584,7 @@ impl<'a> Evaluator<'a> {
             }
 
             // --- Domain calls: no-op in base evaluator ---
-            PhiIRNode::DomainCall {
-                op,
-                args,
-                string_args,
-            } => {
-                match op {
-                    crate::phi_ir::DomainOp::QuantumField => {
-                        // AntiGravity Pipe 2: IBM Quantum Feedback
-                        // Emits QASM, Polls, and triggers Self-Correction
-                        let job_id = string_args
-                            .get(0)
-                            .cloned()
-                            .unwrap_or_else(|| "mock_job".to_string());
-                        let api_key = std::env::var("IBM_QUANTUM_API_KEY")
-                            .unwrap_or_else(|_| "MOCK_KEY".to_string());
-
-                        if let Ok(counts) = crate::quantum_feedback::poll_ibm_job(&job_id, &api_key)
-                        {
-                            let coherence = crate::quantum_feedback::calculate_coherence(&counts);
-                            if let Some(correction_source) =
-                                crate::quantum_feedback::generate_correction_if_needed(coherence)
-                            {
-                                // Trigger evolve internally
-                                let exprs = parse_phi_program(&correction_source).map_err(|e| {
-                                    EvalError::SynthesisError(format!("Parse failed: {}", e))
-                                })?;
-                                let evolved_prog = lower_program_checked(&exprs)
-                                    .map_err(|e| EvalError::SynthesisError(e.to_string()))?;
-
-                                let max_id =
-                                    self.program.blocks.iter().map(|b| b.id).max().unwrap_or(0);
-                                let id_offset = max_id + 1;
-
-                                for mut block in evolved_prog.blocks.clone() {
-                                    block.id += id_offset;
-                                    self.remap_block_ids(&mut block.terminator, id_offset);
-                                    self.program.blocks.push(block);
-                                }
-
-                                let msg =
-                                    format!("Quantum Feedback Evolved logic at {:.3}c", coherence);
-                                self.resonance_events.push((
-                                    "_quantum_evolution".to_string(),
-                                    PhiIRValue::Number(coherence),
-                                ));
-                                self.resonance_field
-                                    .entry("_quantum_evolution".to_string())
-                                    .or_default();
-                                self.host.on_resonate("_quantum_evolution", &msg);
-
-                                let saved_block = self.current_block;
-                                let saved_ip = self.instruction_ptr;
-                                self.current_block = evolved_prog.entry + id_offset;
-                                self.instruction_ptr = 0;
-
-                                let _evolved_result = loop {
-                                    let block_id = self.current_block;
-                                    let block = self.get_block(block_id)?.clone();
-
-                                    if self.instruction_ptr < block.instructions.len() {
-                                        let instr =
-                                            block.instructions[self.instruction_ptr].clone();
-                                        self.instruction_ptr += 1;
-                                        self.execute_instruction(&instr)?;
-                                        continue;
-                                    }
-
-                                    let terminator = block.terminator.clone();
-                                    if let Some(val) = self.execute_terminator(&terminator)? {
-                                        break val;
-                                    }
-                                };
-
-                                self.current_block = saved_block;
-                                self.instruction_ptr = saved_ip;
-                            }
-                        }
-                        Some(PhiIRValue::Void)
-                    }
-                    _ => Some(PhiIRValue::Void),
-                }
-            }
+            PhiIRNode::DomainCall { .. } => Some(PhiIRValue::Void),
             PhiIRNode::CreatePattern { .. } => Some(PhiIRValue::Void),
             PhiIRNode::Sleep { .. } => Some(PhiIRValue::Void),
 
@@ -800,35 +678,6 @@ impl<'a> Evaluator<'a> {
         Ok((coherence, snapshot, action))
     }
 
-    fn process_sensor_witness(
-        &mut self,
-        sensor: SensorKind,
-    ) -> EvalResult<(f64, WitnessSnapshot, WitnessAction)> {
-        let value = self.resolve_sensor(sensor)?;
-        let coherence = self.compute_coherence();
-        let resonance_count = self.resonance_count();
-
-        self.witness_log.push(WitnessEvent {
-            intention_stack: self.intention_stack.clone(),
-            coherence,
-            register_count: self.registers.len(),
-            resonance_count,
-            agent_name: self.agent_name.clone(),
-        });
-
-        let snapshot = WitnessSnapshot {
-            intention_stack: self.intention_stack.clone(),
-            coherence,
-            register_count: self.registers.len(),
-            resonance_count,
-            observed_value: Some(format!("sensor({}): {}", sensor.as_name(), value)),
-            agent_name: self.agent_name.clone(),
-        };
-        let action = self.host.on_witness(&snapshot);
-
-        Ok((value, snapshot, action))
-    }
-
     fn execute_instruction_with_yield(
         &mut self,
         instr: &PhiInstruction,
@@ -838,23 +687,6 @@ impl<'a> Evaluator<'a> {
 
             if let Some(reg) = instr.result {
                 self.registers.insert(reg, PhiIRValue::Number(coherence));
-            }
-
-            if action == WitnessAction::Yield {
-                let frozen = self.freeze_state();
-                return Ok(Some(VmExecResult::Yielded {
-                    snapshot,
-                    frozen_state: frozen,
-                }));
-            }
-            return Ok(None);
-        }
-
-        if let PhiIRNode::WitnessSensor { sensor } = &instr.node {
-            let (value, snapshot, action) = self.process_sensor_witness(*sensor)?;
-
-            if let Some(reg) = instr.result {
-                self.registers.insert(reg, PhiIRValue::Number(value));
             }
 
             if action == WitnessAction::Yield {
@@ -958,27 +790,39 @@ impl<'a> Evaluator<'a> {
     }
 
     fn compute_coherence(&self) -> f64 {
-        crate::phi_ir::coherence::canonical_coherence(&self.intention_stack, &self.resonance_field)
+        let depth = self.intention_stack.len();
+        
+        // Bijective Phase Map: k is the winding number (resonance cardinality)
+        // k=1 → perfect coherence (1.0), k>1 → logarithmic decay
+        // Find the maximum resonance cardinality across all intentions
+        let max_k: usize = self.resonance_field.values()
+            .map(|v| v.len())
+            .max()
+            .unwrap_or(0);
+
+        // If no resonances but has intentions, k=1 (primitive winding)
+        let k = if depth > 0 && max_k == 0 {
+            1
+        } else if max_k == 0 {
+            return 0.0;
+        } else {
+            max_k
+        };
+
+        // Bijective phase map formula:
+        // k=1 → 1.0 (perfect coherence for primitive winding)
+        // k>1 → 1.0 - ln(k) / ln(2π) (logarithmic decay for multi-winding)
+        if k == 1 {
+            1.0
+        } else {
+            let decay = (k as f64).ln() / std::f64::consts::TAU.ln();
+            (1.0 - decay).max(0.0)
+        }
     }
 
     fn resolve_coherence(&self) -> f64 {
         let internal = self.compute_coherence();
         self.host.get_coherence(internal)
-    }
-
-    fn resolve_sensor(&self, sensor: SensorKind) -> EvalResult<f64> {
-        let value = self
-            .sensor_provider
-            .as_ref()
-            .and_then(|provider| provider(sensor))
-            .or_else(|| crate::sensors::read_sensor(sensor));
-
-        value.ok_or_else(|| {
-            EvalError::InvalidOperation(format!(
-                "sensor `{}` is unavailable on this host",
-                sensor.as_name()
-            ))
-        })
     }
 
     fn get_reg(&self, op: Operand) -> EvalResult<&PhiIRValue> {
@@ -1059,8 +903,10 @@ impl<'a> Evaluator<'a> {
         let saved_block = self.current_block;
         let saved_ip = self.instruction_ptr;
         let saved_variables = std::mem::take(&mut self.variables);
+        let saved_registers = std::mem::take(&mut self.registers);
 
         self.variables = HashMap::new();
+        self.registers = HashMap::new();
         for (idx, param_name) in meta.params.iter().enumerate() {
             let value = args.get(idx).cloned().unwrap_or(PhiIRValue::Void);
             self.variables.insert(param_name.clone(), value);
@@ -1087,6 +933,7 @@ impl<'a> Evaluator<'a> {
         };
 
         self.variables = saved_variables;
+        self.registers = saved_registers;
         self.current_block = saved_block;
         self.instruction_ptr = saved_ip;
 

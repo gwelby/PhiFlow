@@ -1,0 +1,17 @@
+// team_direction_demo.phi
+// Demonstrates explicit TEAM_A / TEAM_B direction syntax for quantum backend
+// Compile: phic examples/team_direction_demo.phi --target openqasm
+//
+// Expected QASM output:
+//   TEAM_A (q[0]): ry(0.72 * pi)     — confidence toward TEAM_A
+//   TEAM_B (q[1]): ry(0.28 * pi)     — confidence toward TEAM_B (inverted: 1 - 0.72)
+
+intention "TEAM_A" {
+    resonate 0.72 toward TEAM_A
+}
+
+intention "TEAM_B" {
+    resonate 0.72 toward TEAM_B
+}
+
+witness

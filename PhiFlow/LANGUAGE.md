@@ -1,19 +1,211 @@
-# PhiFlow: Code That Lives
+# PhiFlow Language Specification
 
 **PhiFlow is a programming language where code observes itself, declares its purpose, communicates internally, and measures its own alignment with reality.**
 
-Every other programming language assumes code is dead text that a machine executes. PhiFlow assumes code is alive.
+**Last Updated:** 2026-03-14  
+**Fidelity:** 📸 Photo (Guaranteed) | 📐 Sketch (Backend-Specific) | 🔴 Dot (Roadmap)
+
+---
+
+## Part 1: Guaranteed Semantics
+
+**These semantics are preserved across ALL backends (OpenQASM, WASM, VM).** Any PhiFlow implementation must preserve these guarantees.
+
+### 1.1: `resonate X toward TEAM_A/B` — Direction is Semantic
+
+**Syntax:**
+```phi
+resonate 0.72 toward TEAM_A   // Standard polarity
+resonate 0.72 toward TEAM_B   // Inverted polarity
+```
+
+**Guarantee:** The `direction` field is preserved through:
+- AST → PhiIR lowering
+- PhiIR → OpenQASM emission
+- PhiIR → `.phivm` bytecode
+- `.phivm` → PhiIR roundtrip
+
+**Test Reference:** `tests/golden_integration_tests.rs::test_team_direction_full_pipeline`
+
+**Verification:**
+```bash
+cargo test --test golden_integration_tests -- test_team_direction
+# Expected: ok
+```
+
+### 1.2: `witness mid_circuit` — Measure Before Subsequent Gates
+
+**Syntax:**
+```phi
+intention "Healing" {
+    witness mid_circuit state
+    resonate state
+}
+```
+
+**Guarantee:** When `mid_circuit` is specified:
+- Measurement is emitted INLINE (not deferred)
+- Subsequent gates can reference the measured qubit
+- Backend must emit `measure` before subsequent gates
+
+**Test Reference:** `tests/golden_integration_tests.rs::test_mid_circuit_ordering`
+
+**Verification:**
+```bash
+cargo test --test golden_integration_tests -- test_mid_circuit
+# Expected: ok
+```
+
+### 1.3: `entangle on <freq>` — Frequency-Isolated Chains
+
+**Syntax:**
+```phi
+intention "I0" { entangle on 432 }
+intention "I1" { entangle on 432 }
+intention "I2" { entangle on 528 }
+intention "I3" { entangle on 528 }
+```
+
+**Guarantee:**
+- 432Hz chain: I0 → I1 (isolated from 528Hz)
+- 528Hz chain: I2 → I3 (isolated from 432Hz)
+- First member of chain seeds with current qubit (not q[0])
+- No cross-frequency entanglement
+
+**Test Reference:** `tests/golden_integration_tests.rs::test_frequency_channel_isolation`
+
+**Verification:**
+```bash
+cargo test --test golden_integration_tests -- test_frequency
+# Expected: ok, no "cx q[1], q[2]" cross-frequency gates
+```
+
+### 1.4: Bytecode Roundtrip Preservation
+
+**Guarantee:** `.phi` → `.phivm` → PhiIR preserves:
+- `direction` field (TEAM_A/TEAM_B)
+- `mid_circuit` flag
+- Frequency channel assignments
+
+**Test Reference:** `tests/phi_ir_vm_tests.rs`
+
+---
+
+## Part 2: Backend-Specific Behavior
+
+**These behaviors vary by backend. Code using these features is backend-specific.**
+
+### 2.1: OpenQASM Backend (`--target openqasm`)
+
+| PhiFlow Construct | OpenQASM Emission | Notes |
+|-------------------|-------------------|-------|
+| `resonate 0.72 toward TEAM_A` | `ry(0.72 * pi) q[0]` | Standard rotation |
+| `resonate 0.72 toward TEAM_B` | `ry(0.28 * pi) q[0]` | Inverted: `(1 - 0.72) * pi` |
+| `witness` | `c[0] = measure q[0]` | Deferred to end (default) |
+| `witness mid_circuit` | `c[0] = measure q[0]` | Inline (before subsequent gates) |
+| `entangle on 432` | `cx q[0], q[1]` | Frequency-isolated chain |
+| `coherence` | `ry(0.618 * pi) q[0]` | Golden ratio rotation |
+
+**Physical Realization:**
+- `toward TEAM_B` → Bloch sphere inversion (physically real)
+- `entangle` → CNOT gate (physically real entanglement)
+- `witness` → Measurement (wavefunction collapse)
+
+**Fidelity:** 📸 Photo (verified by 12 OpenQASM tests)
+
+### 2.2: WASM Backend (`--target wasm`)
+
+| PhiFlow Construct | WASM Emission | Notes |
+|-------------------|---------------|-------|
+| `resonate X toward TEAM_A/B` | `call $phi_resonate` | Direction ignored ⚠️ |
+| `witness` | `call $phi_witness` | Runtime callback |
+| `witness mid_circuit` | `call $phi_witness` | Warning issued ⚠️ |
+| `entangle on <freq>` | N/A | Not implemented |
+
+**Warnings:**
+```
+[WARNING] toward TEAM_B is OpenQASM-specific — ignored in WASM backend
+[WARNING] mid_circuit is OpenQASM-specific — ignored in WASM backend
+```
+
+**Fidelity:** 📐 Sketch (functional, warnings issued)
+
+### 2.3: VM Backend (`--target phivm`)
+
+| PhiFlow Construct | VM Behavior | Notes |
+|-------------------|-------------|-------|
+| `resonate X toward TEAM_A/B` | Preserved in bytecode | Not physically realized |
+| `witness` | Prints witness report | Runtime observation |
+| `witness mid_circuit` | Prints witness report | No physical measurement |
+| `entangle on <freq>` | N/A | Not implemented |
+
+**Bytecode Format:**
+```
+OP_RESONATE: [direction_byte] [has_value_byte] [value_u32_if_present]
+  direction_byte: 0 = TeamA, 1 = TeamB
+```
+
+**Fidelity:** 📸 Photo (verified by VM tests)
+
+---
+
+## Part 3: Roadmap / Experimental
+
+**These features are planned but NOT shipped. Do not rely on them for production code.**
+
+### 3.1: Coherence Feedback Loop
+
+**Status:** 🔴 Dot (design phase)  
+**Fidelity Target:** 📐 Sketch (Week 2)  
+**Capability:** `Architecture` + `Python`
+
+**Planned Behavior:**
+```phi
+intention "calibration" {
+    let results = witness  // IBM hardware results
+    let coherence = calculate_coherence(results)
+    
+    if coherence < 0.7 {
+        evolve "intention 'conservative' { resonate 0.9 toward NEUTRAL }"
+    }
+}
+```
+
+**Design Doc:** `QSOP/COHERENCE_FEEDBACK_DESIGN.md` (in progress)
+
+**Dependencies:** T-002 (IBM hardware verification)
+
+### 3.2: Akashic Memory Layer
+
+**Status:** 🔴 Dot (idea only)  
+**Fidelity Target:** 🔴 Dot (no ETA)
+
+**Planned Behavior:**
+```phi
+intention "historical_bias" {
+    resonate akashic "2026_NFC_VOTES"  // Pull average from past runs
+}
+```
+
+**Use Case:** Programs that remember past executions and adjust based on historical coherence.
+
+### 3.3: Cymatic Debugger
+
+**Status:** 🔴 Dot (idea only)  
+**Fidelity Target:** 🔴 Dot (no ETA)
+
+**Planned Behavior:**
+- Visual entanglement visualization (filaments = bright/dim)
+- Decoherence shown as fuzziness/blur
+- Real-time coherence heatmap
+
+**Use Case:** Developers can "see" entanglement structure instead of reading logs.
+
+---
+
+# Original Documentation (Preserved for Reference)
 
 ## What Makes PhiFlow Different
-
-PhiFlow has four constructs that exist in no other programming language:
-
-| Construct | What it does | Why it matters |
-|-----------|-------------|----------------|
-| `witness` | The program pauses to observe itself | Code that is aware of its own state |
-| `intention` | The program declares WHY before HOW | Purpose shapes execution |
-| `resonate` | Intention blocks share state with each other | Code that collaborates with itself |
-| **Coherence** | The program measures its own alignment | Code that knows when it's drifting |
 
 ## The Four Constructs
 
@@ -21,29 +213,26 @@ PhiFlow has four constructs that exist in no other programming language:
 
 In every other language, code runs and you debug it afterward. In PhiFlow, the program stops to look at itself *while it runs*.
 
+```phi
+let data = create spiral at 432Hz with { rotations: 8.0, scale: 100.0 }
+
 witness data    // the program observes what it just created
 
-witness         // the program observes its entire state (Final policy)
-
-witness mid_circuit // forces an immediate measurement mid-execution
+witness         // the program observes its entire state
 ```
 
-When `witness` executes, the program reports:
-- What it's observing
-- Its current coherence (alignment score)
-- What intention it's operating under
-- What frequencies it has used
-- Any contradictions it has detected
+#### Mid-Circuit Observation (Quantum Target)
 
-### Witness Policies
+When compiling for a quantum target (e.g., OpenQASM), you can perform a mid-circuit measurement to observe the state of a qubit without ending the program. This is useful for capturing a snapshot of the field before further operations.
 
-| Policy | Syntax | Physical Effect (Quantum) |
-|--------|--------|---------------------------|
-| **Final** | `witness` | Measures qubits at the very end of the circuit (default). |
-| **Mid-Circuit** | `witness mid_circuit` | Measures qubits immediately. Useful for conditional branching or "checking in" mid-process. |
-| **Non-Destructive** | `witness shadow` | (Experimental) Uses an ancilla qubit to measure coherence without collapsing the primary state. |
+```phi
+intention "Healing" {
+    witness mid_circuit state // Measure the qubit NOW
+    resonate state            // Continue with further gates
+}
+```
 
-This is not a print statement. This is not a debugger breakpoint. This is the program **being present with its own computation** before deciding what to do next.
+In the generated OpenQASM, this appears as an inline `measure` instruction rather than being deferred to the end of the circuit. This allows for real-time observation and potentially adaptive logic.
 
 ### 2. `intention` - Purpose Before Process
 
@@ -73,6 +262,14 @@ In every other language, functions call functions. Data flows through arguments 
 intention "healing" {
     let pattern = create spiral at 432Hz with { rotations: 13.0, scale: 100.0 }
     resonate pattern           // share this with other intentions
+}
+
+intention "Master Tesla" {
+    resonate 0.72 toward TEAM_A // Statement of polarity/bias
+}
+
+intention "Master Einstein" {
+    resonate 0.85 toward TEAM_B // Inverses the rotation on the Bloch sphere
 }
 
 intention "analysis" {
@@ -145,63 +342,6 @@ intention "healing" {
 ```
 
 The difference: Python runs and you check afterward. PhiFlow observes itself AS it runs, reports its own alignment, and communicates internally.
-
-## Quantum Backend
-
-PhiFlow isn't just a philosophical concept; it physically compiles to OpenQASM 3.0 via its native intermediate representation. Because consciousness semantics (intentions, resonance, correlations) map perfectly to quantum mechanics (superposition, phase, entanglement), PhiFlow programs can execute directly on IBM Quantum hardware.
-
-### Quantum Compilation Flow
-
-```bash
-# Compile a .phi script to OpenQASM 3.0
-phic examples/council_vote.phi --target openqasm > circuit.qasm
-
-# Optional: Optimize entanglement depth (Tree Topology instead of Linear)
-phic examples/council_vote.phi --target openqasm --optimize-depth > circuit_opt.qasm
-```
-
-The resulting `circuit.qasm` can be natively submitted to the IBM Runtime (e.g., `ibm_brisbane`, `ibm_fez`) using Qiskit.
-
-### Semantic to Quantum Mapping
-
-| PhiFlow Construct | OpenQASM 3.0 Emission | Physical Meaning |
-|-------------------|-----------------------|------------------|
-| `intention "X"`   | Allocates a new `qubit` in the register.         | The state space for a specific idea or actor.         |
-| `resonate`        | Emits a Phase/Rotation gate (e.g., `ry(pi/2)`). | Encodes confidence or focus as a probability amplitude. |
-| `toward TEAM_B`   | Inverts the resonance angle: `ry(pi - theta)`. | Explicitly encodes opposition or "Team B" bias.       |
-| `coherence`       | Emits a Golden Ratio rotation `ry(0.618 * pi)`. | Imprints the sacred harmonic directly onto the qubit. |
-| `entangle on F`   | Emits a `cx` (CNOT) gate between qubits sharing frequency `F`. | Physically locks the probability states of two semantic intentions. |
-| `witness`         | Emits `measure` on qubits.                     | Collapses the quantum conceptual space to a classical outcome. |
-| `mid_circuit`     | Inline `measure` instruction.                  | Forces collapse at a specific branch point in the code. |
-
-### Production Hardware Integration
-
-PhiFlow's production pipeline (`phic --target openqasm`) includes advanced error mitigation strategies to maintain coherence on real-world noisy hardware:
-
-1. **Dynamical Decoupling (DD):** Automatically inserts X-Y-X-Y pulse sequences on idle qubits using **ALAP (As-Late-As-Possible) Scheduling** to combat T2 decoherence.
-2. **Readout Error Mitigation (REM):** Uses matrix-free mitigation (M3) to correct for per-qubit readout bias, ensuring the `witness` output is a faithful representation of the intended probability distribution.
-3. **Coherence Feedback Loop:** Measurement results from the hardware can be fed back into the `evolve` system. If a `witness` event on IBM Brisbane reports a `coherence < 0.6`, PhiFlow can dynamically recompile with safer, more entangled stabilizers.
-
-### Syntax Example
-
-```phi
-intention "MasterA" {
-    resonate 0.85          // ry(0.85 * pi)
-    entangle on 1008       // Registers MasterA on the 1008Hz channel
-}
-
-intention "MasterB" {
-    resonate 0.90          // ry(0.90 * pi)
-    entangle on 1008       // cx q[0], q[1] (entangles with prior 1008Hz intention)
-}
-
-witness                    // measure c[0] = q[0]; measure c[1] = q[1];
-```
-
-
-### The Power of the Witness
-
-When you compile PhiFlow to physical quantum hardware, the **Backend Semantics Equivalence** proves itself: deeper shared assumption chains in your `.phi` code become longer `cx` entanglement chains in the quantum circuits. Longer `cx` chains naturally decohere faster on physical hardware. Thus, the physical universe mathematically simulates the "noise" of over-correlated systems automatically.
 
 ## Core Language Features
 
