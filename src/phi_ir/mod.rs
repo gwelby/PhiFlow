@@ -10,16 +10,17 @@
 //! 2. **First-Class Consciousness**: Witness, Intention, Resonate, and Coherence are native nodes.
 //! 3. **Backend Agnostic**: No WASM types, no Qubit registers, no HAL traits here.
 
+pub mod coherence;
 pub mod emitter;
 pub mod evaluator;
 pub mod lowering;
+pub mod openqasm;
 pub mod optimizer;
 pub mod printer;
 pub mod quantum_codegen;
 pub mod vm;
 pub mod vm_state;
 pub mod wasm;
-pub mod openqasm;
 
 use crate::compiler::lexer::Token; // Re-using Token if needed, or defining own types
 
@@ -72,6 +73,50 @@ pub enum CollapsePolicy {
 pub enum ResonateDirection {
     TeamA,
     TeamB,
+}
+
+/// Physical host sensors exposed through `witness sensor("...")`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+pub enum SensorKind {
+    CpuUsage,
+    CpuTemp,
+    MemoryUsage,
+}
+
+impl SensorKind {
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "cpu_usage" => Some(Self::CpuUsage),
+            "cpu_temp" => Some(Self::CpuTemp),
+            "memory_usage" => Some(Self::MemoryUsage),
+            _ => None,
+        }
+    }
+
+    pub fn as_name(self) -> &'static str {
+        match self {
+            Self::CpuUsage => "cpu_usage",
+            Self::CpuTemp => "cpu_temp",
+            Self::MemoryUsage => "memory_usage",
+        }
+    }
+
+    pub fn as_id(self) -> i32 {
+        match self {
+            Self::CpuUsage => 0,
+            Self::CpuTemp => 1,
+            Self::MemoryUsage => 2,
+        }
+    }
+
+    pub fn from_id(id: i32) -> Option<Self> {
+        match id {
+            0 => Some(Self::CpuUsage),
+            1 => Some(Self::CpuTemp),
+            2 => Some(Self::MemoryUsage),
+            _ => None,
+        }
+    }
 }
 
 /// Domain operations (specialized features beyond the four core constructs)
@@ -211,6 +256,9 @@ pub enum PhiIRNode {
         target: Option<Operand>,
         collapse_policy: CollapsePolicy,
     },
+
+    /// Witness a physical or system sensor by name (e.g. "cpu_temp").
+    WitnessSensor { sensor: SensorKind },
 
     /// Enter an intention scope. Pushes intention name onto the stack.
     /// WASM: runtime stack. Quantum: register allocation. Hardware: sensor reconfig.

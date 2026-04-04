@@ -27,7 +27,10 @@ async fn test_evolve_parses_and_splices_block() {
 
     // Verify it succeeded
     let result_obj = spawn_res.result.expect("Spawn result was missing");
-    let content = result_obj["content"][0]["text"].as_str().unwrap().to_string();
+    let content = result_obj["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .to_string();
     assert!(content.contains("Spawned stream"));
     let stream_id = content.replace("Spawned stream ", "");
 
@@ -50,7 +53,10 @@ async fn test_evolve_parses_and_splices_block() {
     .unwrap();
 
     let result_obj = status_res.result.expect("Read result was error");
-    let content = result_obj["content"][0]["text"].as_str().unwrap().to_string();
+    let content = result_obj["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .to_string();
     let status_json: serde_json::Value = serde_json::from_str(&content).unwrap();
 
     // Status should be completed
@@ -64,7 +70,7 @@ async fn test_evolve_parses_and_splices_block() {
     if let Some(global_res) = resonance_field.get("global") {
         let global_resonance = global_res.as_array().unwrap();
         if !global_resonance.is_empty() {
-             assert_eq!(global_resonance[0].as_str().unwrap(), "Number(2.0)");
+            assert_eq!(global_resonance[0].as_str().unwrap(), "Number(2.0)");
         }
     }
 }
@@ -91,7 +97,10 @@ async fn test_entangle_yields_until_partner() {
         panic!("Spawn 1 returned error: {:?}", err);
     }
     let result1_obj = spawn1_res.result.expect("Spawn 1 result was missing");
-    let s1 = result1_obj["content"][0]["text"].as_str().unwrap().replace("Spawned stream ", "");
+    let s1 = result1_obj["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .replace("Spawned stream ", "");
 
     // Wait a moment and check it yielded
     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
@@ -116,7 +125,10 @@ async fn test_entangle_yields_until_partner() {
         panic!("Spawn 2 returned error: {:?}", err);
     }
     let result2_obj = spawn2_res.result.expect("Spawn 2 result was missing");
-    let s2 = result2_obj["content"][0]["text"].as_str().unwrap().replace("Spawned stream ", "");
+    let s2 = result2_obj["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .replace("Spawned stream ", "");
 
     // Wait for the automatic resumption logic to trigger and both to complete
     tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
@@ -143,7 +155,10 @@ async fn test_entangle_yields_until_partner() {
     .unwrap();
 
     let result3_obj = status_res.result.expect("Read 2 result was error");
-    let content = result3_obj["content"][0]["text"].as_str().unwrap().to_string();
+    let content = result3_obj["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .to_string();
     let status_json: serde_json::Value = serde_json::from_str(&content).unwrap();
     let resonance_field = status_json["resonance_field"].as_object().unwrap();
     let global_resonance = resonance_field["global"].as_array().unwrap();

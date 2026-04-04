@@ -9,12 +9,12 @@
 //! - `phi.intention_pop()`
 
 use crate::parser::parse_phi_program;
-use crate::phi_ir::lowering::lower_program;
+use crate::phi_ir::lowering::lower_program_checked;
 use crate::phi_ir::optimizer::{OptimizationLevel, Optimizer};
 use crate::phi_ir::wasm::{
     emit_wat, NAN_BOX_MASK, PAYLOAD_MASK, TAG_BOOLEAN, TAG_STRING, TAG_VOID,
 };
-use crate::phi_ir::PhiIRValue;
+use crate::phi_ir::{PhiIRValue, SensorKind};
 use std::sync::Arc;
 use wasmtime::{Caller, Engine, Linker, Module, Store};
 
@@ -77,6 +77,7 @@ pub enum WasmHostError {
 #[derive(Clone)]
 pub struct WasmHostHooks {
     coherence_provider: Arc<dyn Fn() -> f64 + Send + Sync>,
+    sensor_provider: Arc<dyn Fn(SensorKind) -> Option<f64> + Send + Sync>,
     on_witness: Arc<dyn Fn(WasmWitnessEvent) + Send + Sync>,
     on_resonate: Arc<dyn Fn(f64, Option<String>) + Send + Sync>,
     on_intention_push: Arc<dyn Fn(String, usize) + Send + Sync>,
@@ -87,6 +88,7 @@ impl Default for WasmHostHooks {
     fn default() -> Self {
         Self {
             coherence_provider: Arc::new(|| crate::LAMBDA),
+            sensor_provider: Arc::new(crate::sensors::read_sensor),
             on_witness: Arc::new(|_| {}),
             on_resonate: Arc::new(|_, _| {}),
             on_intention_push: Arc::new(|_, _| {}),
@@ -105,6 +107,14 @@ impl WasmHostHooks {
         F: Fn() -> f64 + Send + Sync + 'static,
     {
         self.coherence_provider = Arc::new(f);
+        self
+    }
+
+    pub fn with_sensor_provider<F>(mut self, f: F) -> Self
+    where
+        F: Fn(SensorKind) -> Option<f64> + Send + Sync + 'static,
+    {
+        self.sensor_provider = Arc::new(f);
         self
     }
 
@@ -173,7 +183,8 @@ impl RuntimeState {
 
 pub fn compile_source_to_wat(source: &str) -> Result<String, WasmHostError> {
     let expressions = parse_phi_program(source).map_err(WasmHostError::Parse)?;
-    let mut program = lower_program(&expressions);
+    let mut program =
+        lower_program_checked(&expressions).map_err(|e| WasmHostError::Parse(e.to_string()))?;
     let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
     optimizer.optimize(&mut program);
     Ok(emit_wat(&program))
@@ -215,6 +226,22 @@ pub fn run_wat_with_host(
             let callback = caller.data().hooks.on_witness.clone();
             callback(event.clone());
             event.coherence
+        },
+    )?;
+
+    linker.func_wrap(
+        "phi",
+        "sensor",
+        |caller: Caller<'_, RuntimeState>, sensor_id: i32| -> Result<f64, wasmtime::Error> {
+            let sensor = SensorKind::from_id(sensor_id)
+                .ok_or_else(|| wasmtime::Error::msg(format!("invalid sensor ID {}", sensor_id)))?;
+            let value = (caller.data().hooks.sensor_provider)(sensor).ok_or_else(|| {
+                wasmtime::Error::msg(format!(
+                    "sensor `{}` is unavailable on this host",
+                    sensor.as_name()
+                ))
+            })?;
+            Ok(value)
         },
     )?;
 

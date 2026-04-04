@@ -1,63 +1,62 @@
-# PhiIR Canonical Semantics
+# Canonical Coherence Semantics
 
-## The Rule
+**Module:** `src/phi_ir/coherence.rs`
+**Status:** CANONICAL — all backends must conform
 
-**The PhiIR Evaluator (`src/phi_ir/evaluator.rs`) is the reference implementation.**
+---
 
-When the evaluator disagrees with the VM or WASM backend, the evaluator is correct.
-
-## Why
-
-The evaluator was written to give the four PhiFlow constructs their first real,
-observable behavior. It owns the definitions:
-
-| Construct        | Canonical behavior (evaluator)                                 |
-|------------------|----------------------------------------------------------------|
-| `witness`        | Captures state; returns coherence score (0.0–1.0)             |
-| `intention`      | Pushes named scope; coherence depth increases by 1            |
-| `resonate value` | Emits value to the intention-keyed resonance field            |
-| `coherence`      | `1 - φ^(-depth)` + resonance bonus (max 0.2)                  |
-
-The phi-harmonic coherence formula at depth 2 yields exactly λ (the golden ratio
-inverse, ~0.618). This is not a constant — it is derived from the formula. Depth 2
-was chosen because it is the first depth where the formula produces a recognizable
-mathematical constant.
-
-## Backend Contract
-
-| Backend                    | Must agree with evaluator? | Notes                                      |
-|----------------------------|-----------------------------|---------------------------------------------|
-| PhiIR Evaluator            | — (reference)               | Canonical.                                  |
-| WASM (`phi_ir/wasm.rs`)    | Yes                         | All conformance tests verify this.          |
-| Legacy PhiVm (`phi_ir/vm`) | Yes, for supported opcodes  | Predates stream blocks; stream = eval+WASM. |
-
-Stream programs are tested against evaluator + WASM only. The legacy PhiVm does not
-support stream opcodes by design — it predates the stream primitive.
-
-## Conformance Tests
-
-All tests in `tests/phi_ir_conformance_tests.rs` enforce this contract:
-
-- `assert_program_matches` — evaluator == VM == WASM, plus expected value
-- `assert_program_conforms` — evaluator == VM == WASM (no expected value)
-- `assert_program_conforms_eval_wasm` — evaluator == WASM (stream programs)
-
-The test `conformance_nested_function_regression` is the Phase 10 Lane C sentinel:
-it will fail immediately if the nested-function return-propagation bug is reintroduced.
-
-## The Phi-Harmonic Formula
+## Formula
 
 ```
-coherence(depth) = 1 - φ^(-depth)
+base(depth) = 0.0                    when depth == 0
+              1.0 − φ^(−depth)       otherwise
 
-depth 0  →  0.000  (no intention context)
-depth 1  →  0.382  (one intention level)
-depth 2  →  0.618  ← lambda (golden ratio inverse)
-depth 3  →  0.764
-depth ∞  →  1.000
+k            = current-scope resonance cardinality
+
+phase(k)     = 1.0                   when k ≤ 1
+               1.0 − ln(k) / ln(τ)  otherwise
+
+coherence    = base(depth) × phase(k), clamped to [0.0, 1.0]
 ```
 
-This formula was discovered independently in three systems before PhiFlow existed:
-Nexus Mundi (set as a constant), PhiFlow evaluator (computed from depth), and the
-Time project (emerged as a strange attractor). Three systems, no coordination, same
-constant. This convergence is why the formula is canonical.
+## Derivation
+
+The formula encodes two distinct physical insights from the Propagation Framework:
+
+1. **Base coherence** follows from Axiom 3: coherence at depth `d` is `1 − φ^(−d)`. This is not hardcoded — it is the closed-form solution for structural stability under recursive self-observation. At depth 2, this yields the golden ratio inverse φ⁻¹ ≈ 0.618.
+
+2. **Phase decay** follows from the Bijective Phase Map: when the number of concurrent resonance relationships `k` exceeds 1, the mutual information `I = ln(τ) − ln(k)` decreases logarithmically. `k = 1` is the primitive winding number (perfectly bijective), and `k > 1` introduces interference. The factor `phase(k) = 1 − ln(k)/ln(τ)` normalizes this decay to [0, 1].
+
+The product `base × phase` is physically motivated: resonance decay *modulates* the structural coherence, it does not add to it. A program with zero depth has no structure to decay, so coherence remains 0 regardless of resonance activity.
+
+## Scope Rule for k
+
+- **Inside an active intention or stream:** `k` is the length of `resonance_field[current_scope_name]`.
+- **Outside any scope:** `k` is the length of `resonance_field["global"]` if that key exists, else 0.
+- **Stream overwrite semantics:** When a stream loop resets its resonance entry (via `StreamPush`), `k` returns to 0 or 1, restoring coherence toward the pure depth formula.
+
+## Reference Values
+
+| depth | k   | coherence        |
+|-------|-----|------------------|
+| 0     | any | 0.000            |
+| 1     | 0   | 0.382            |
+| 1     | 1   | 0.382            |
+| 2     | 0   | 0.618 (φ⁻¹)     |
+| 2     | 1   | 0.618 (φ⁻¹)     |
+| 2     | 2   | ≈ 0.385          |
+| 3     | 1   | 0.764            |
+
+## Backend-Specific Notes
+
+### OpenQASM (`openqasm.rs`)
+
+The OpenQASM backend emits `ry(0.6180339887 * pi)` as a symbolic encoding of the φ⁻¹ threshold. This is a target-specific constant for quantum gate rotation, **not** the canonical runtime formula. The canonical formula is never embedded in circuit assembly — it lives in the classical pre/post-processing.
+
+### WASM (`wasm.rs`)
+
+The WASM codegen imports `phi_coherence() -> f64` from the host. The host JS implementation **must** call the canonical formula (or an equivalent). The `tests/phi_ir_wasm_runner.js` host harness should be kept in sync.
+
+## Three-Backend Equivalence
+
+Evaluator, VM, and WASM host must produce identical coherence values for identical (depth, k) inputs. This is enforced by all three delegating to `coherence::canonical_coherence()` or its equivalent.

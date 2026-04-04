@@ -15,9 +15,11 @@ use crate::parser::{
 use crate::phi_ir::{
     BlockId, CollapsePolicy, DomainOp, Operand, Param, PatternKind, PhiIRBinOp, PhiIRBlock,
     PhiIRNode, PhiIRProgram, PhiIRUnOp, PhiIRValue, PhiInstruction,
-    ResonateDirection as IrResonateDirection, SacredFrequency,
+    ResonateDirection as IrResonateDirection, SacredFrequency, SensorKind,
 };
 use std::collections::HashMap;
+use std::error::Error;
+use std::fmt;
 
 /// Result of lowering an expression: either a Value (Operand) or None (Void/Statement).
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -25,6 +27,30 @@ enum LowerResult {
     Value(Operand),
     None,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LoweringError {
+    InvalidSensorWitnessSyntax,
+    UnknownSensor(String),
+}
+
+impl fmt::Display for LoweringError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LoweringError::InvalidSensorWitnessSyntax => {
+                write!(
+                    f,
+                    "sensor witness must use witness sensor(\"cpu_usage|cpu_temp|memory_usage\")"
+                )
+            }
+            LoweringError::UnknownSensor(name) => {
+                write!(f, "unknown sensor `{name}`")
+            }
+        }
+    }
+}
+
+impl Error for LoweringError {}
 
 struct LoweringContext {
     program: PhiIRProgram,
@@ -99,6 +125,7 @@ impl LoweringContext {
                 | PhiIRNode::CreatePattern { .. }
                 | PhiIRNode::DomainCall { .. }
                 | PhiIRNode::Witness { .. }     // returns coherence score (0.0–1.0)
+                | PhiIRNode::WitnessSensor { .. }
                 | PhiIRNode::CoherenceCheck     // returns coherence score (0.0–1.0)
                 | PhiIRNode::Recall(_)
                 | PhiIRNode::Listen(_)
@@ -153,7 +180,19 @@ impl LoweringContext {
     }
 }
 
+pub fn lower_program_checked(expressions: &[PhiExpression]) -> Result<PhiIRProgram, LoweringError> {
+    for expr in expressions {
+        validate_sensor_witness(expr)?;
+    }
+
+    Ok(lower_program_unchecked(expressions))
+}
+
 pub fn lower_program(expressions: &[PhiExpression]) -> PhiIRProgram {
+    lower_program_checked(expressions).expect("PhiIR lowering failed")
+}
+
+fn lower_program_unchecked(expressions: &[PhiExpression]) -> PhiIRProgram {
     let mut ctx = LoweringContext::new();
 
     let mut last_result = LowerResult::None;
@@ -172,6 +211,134 @@ pub fn lower_program(expressions: &[PhiExpression]) -> PhiIRProgram {
     }
 
     ctx.program
+}
+
+fn validate_sensor_witness(expr: &PhiExpression) -> Result<(), LoweringError> {
+    match expr {
+        PhiExpression::Witness {
+            expression, body, ..
+        } => {
+            if let Some(inner) = expression {
+                if let PhiExpression::FunctionCall { name, arguments } = &**inner {
+                    if name == "sensor" {
+                        if arguments.len() != 1 {
+                            return Err(LoweringError::InvalidSensorWitnessSyntax);
+                        }
+                        let sensor_name = match &arguments[0] {
+                            PhiExpression::String(name) => name,
+                            _ => return Err(LoweringError::InvalidSensorWitnessSyntax),
+                        };
+                        SensorKind::from_name(sensor_name)
+                            .ok_or_else(|| LoweringError::UnknownSensor(sensor_name.clone()))?;
+                    }
+                }
+                validate_sensor_witness(inner)?;
+            }
+            if let Some(body) = body {
+                validate_sensor_witness(body)?;
+            }
+            Ok(())
+        }
+        PhiExpression::FunctionDef { body, .. }
+        | PhiExpression::Evolve(body)
+        | PhiExpression::Return(body)
+        | PhiExpression::PatternTransform { pattern: body, .. }
+        | PhiExpression::HardwareSync {
+            consciousness_mapping: body,
+            ..
+        }
+        | PhiExpression::Remember { value: body, .. }
+        | PhiExpression::Broadcast { value: body, .. }
+        | PhiExpression::IntentionBlock { body, .. }
+        | PhiExpression::StreamBlock { body, .. }
+        | PhiExpression::AgentBlock { body, .. }
+        | PhiExpression::AudioSynthesis { pattern: body, .. } => validate_sensor_witness(body),
+        PhiExpression::ConsciousnessMonitor {
+            expression,
+            callback,
+        } => {
+            validate_sensor_witness(expression)?;
+            validate_sensor_witness(callback)
+        }
+        PhiExpression::FunctionCall { arguments, .. }
+        | PhiExpression::List(arguments)
+        | PhiExpression::Block(arguments)
+        | PhiExpression::PatternCombine {
+            patterns: arguments,
+            ..
+        } => {
+            for argument in arguments {
+                validate_sensor_witness(argument)?;
+            }
+            Ok(())
+        }
+        PhiExpression::LetBinding { value, .. }
+        | PhiExpression::ConsciousnessValidation { pattern: value, .. } => {
+            validate_sensor_witness(value)
+        }
+        PhiExpression::IfElse {
+            condition,
+            then_branch,
+            else_branch,
+        } => {
+            validate_sensor_witness(condition)?;
+            validate_sensor_witness(then_branch)?;
+            if let Some(else_branch) = else_branch {
+                validate_sensor_witness(else_branch)?;
+            }
+            Ok(())
+        }
+        PhiExpression::ForLoop { iterable, body, .. } => {
+            validate_sensor_witness(iterable)?;
+            validate_sensor_witness(body)
+        }
+        PhiExpression::WhileLoop { condition, body } => {
+            validate_sensor_witness(condition)?;
+            validate_sensor_witness(body)
+        }
+        PhiExpression::BinaryOp { left, right, .. } => {
+            validate_sensor_witness(left)?;
+            validate_sensor_witness(right)
+        }
+        PhiExpression::UnaryOp { operand, .. } => validate_sensor_witness(operand),
+        PhiExpression::ListAccess { list, index } => {
+            validate_sensor_witness(list)?;
+            validate_sensor_witness(index)
+        }
+        PhiExpression::ConsciousnessFlow {
+            condition,
+            branches,
+        } => {
+            validate_sensor_witness(condition)?;
+            for (_, branch) in branches {
+                validate_sensor_witness(branch)?;
+            }
+            Ok(())
+        }
+        PhiExpression::EmergencyProtocol {
+            trigger,
+            immediate_action,
+            ..
+        } => {
+            validate_sensor_witness(trigger)?;
+            validate_sensor_witness(immediate_action)
+        }
+        PhiExpression::CreatePattern { .. }
+        | PhiExpression::Variable(_)
+        | PhiExpression::BreakStream
+        | PhiExpression::Resonate { .. }
+        | PhiExpression::Recall(_)
+        | PhiExpression::Listen(_)
+        | PhiExpression::VoidDepth
+        | PhiExpression::ConsciousnessState { .. }
+        | PhiExpression::FrequencyPattern { .. }
+        | PhiExpression::QuantumField { .. }
+        | PhiExpression::BiologicalInterface { .. }
+        | PhiExpression::Number(_)
+        | PhiExpression::String(_)
+        | PhiExpression::Boolean(_)
+        | PhiExpression::Entangle(_) => Ok(()),
+    }
 }
 
 fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
@@ -307,24 +474,47 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
         }
 
         // Consciousness
-        PhiExpression::Witness { mid_circuit, expression, body } => {
-            let target = if let Some(e) = expression {
-                let res = lower_expr(ctx, e);
-                Some(unwrap_val(ctx, res))
-            } else {
-                None
-            };
+        PhiExpression::Witness {
+            mid_circuit,
+            expression,
+            body,
+        } => {
+            let mut target = None;
+            let mut is_sensor = false;
+            let mut sensor_name = String::new();
 
-            let policy = if *mid_circuit {
-                CollapsePolicy::MidCircuit
-            } else {
-                CollapsePolicy::Final
-            };
+            if let Some(e) = expression {
+                if let PhiExpression::FunctionCall { name, arguments } = &**e {
+                    if name == "sensor" && arguments.len() == 1 {
+                        if let PhiExpression::String(s) = &arguments[0] {
+                            is_sensor = true;
+                            sensor_name = s.clone();
+                        }
+                    }
+                }
 
-            let op = ctx.emit(PhiIRNode::Witness {
-                target,
-                collapse_policy: policy,
-            });
+                if !is_sensor {
+                    let res = lower_expr(ctx, e);
+                    target = Some(unwrap_val(ctx, res));
+                }
+            }
+
+            let op = if is_sensor {
+                let sensor = SensorKind::from_name(&sensor_name)
+                    .expect("sensor witness should be validated before lowering");
+                ctx.emit(PhiIRNode::WitnessSensor { sensor })
+            } else {
+                let policy = if *mid_circuit {
+                    CollapsePolicy::MidCircuit
+                } else {
+                    CollapsePolicy::Final
+                };
+
+                ctx.emit(PhiIRNode::Witness {
+                    target,
+                    collapse_policy: policy,
+                })
+            };
 
             if let Some(b) = body {
                 lower_expr(ctx, b);

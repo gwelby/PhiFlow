@@ -6,12 +6,12 @@
 
 use phiflow::host::{CallbackHostProvider, WitnessAction};
 use phiflow::parser::{parse_phi_program, BinaryOperator, PhiExpression};
-use phiflow::phi_ir::ResonateDirection;
 use phiflow::phi_ir::evaluator::{EvalExecResult, Evaluator, FrozenEvalState};
-use phiflow::phi_ir::lowering::lower_program;
+use phiflow::phi_ir::lowering::{lower_program, lower_program_checked, LoweringError};
 use phiflow::phi_ir::optimizer::{OptimizationLevel, Optimizer};
+use phiflow::phi_ir::ResonateDirection;
 use phiflow::phi_ir::{
-    CollapsePolicy, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction,
+    CollapsePolicy, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction, SensorKind,
 };
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -539,7 +539,8 @@ fn test_resonate_without_intention_uses_global() {
 
 #[test]
 fn test_resonance_adds_bonus_to_coherence() {
-    // depth 1 + 1 resonated value → coherence = 0.382 + 0.05 = 0.432
+    // Canonical formula: base(depth=1) * phase(k=1) = 0.382 * 1.0 = 0.382
+    // k=1 is perfectly bijective — no decay.
     let prog = single_block(
         vec![
             instr(
@@ -568,7 +569,8 @@ fn test_resonance_adds_bonus_to_coherence() {
     let result = eval.run().unwrap();
 
     let phi: f64 = 1.618033988749895;
-    let expected = (1.0 - phi.powi(-1)) + 0.05; // 0.382 + 0.05 = 0.432
+    // base(1) = 1.0 - phi^(-1) ≈ 0.382, phase(1) = 1.0, coherence = 0.382
+    let expected = 1.0 - phi.powi(-1);
 
     match result {
         PhiIRValue::Number(n) => assert!((n - expected).abs() < 1e-9, "got {}", n),
@@ -655,6 +657,34 @@ fn test_resolved_coherence_exposes_injected_value() {
 }
 
 #[test]
+fn test_sensor_witness_uses_injected_provider() {
+    let source = r#"witness sensor("memory_usage")"#;
+    let exprs = parse_phi_program(source).expect("parse failed");
+    let program = lower_program_checked(&exprs).expect("lowering failed");
+
+    let mut evaluator = Evaluator::new(&program).with_sensor_provider(|sensor| match sensor {
+        SensorKind::MemoryUsage => Some(73.0),
+        _ => None,
+    });
+    let result = evaluator.run().expect("evaluation failed");
+
+    assert_eq!(result, PhiIRValue::Number(73.0));
+    let event = evaluator
+        .witness_log
+        .last()
+        .expect("sensor witness should append to witness log");
+    assert_eq!(event.resonance_count, 0);
+}
+
+#[test]
+fn test_lowering_rejects_unknown_sensor_name() {
+    let source = r#"witness sensor("fan_speed")"#;
+    let exprs = parse_phi_program(source).expect("parse failed");
+    let error = lower_program_checked(&exprs).expect_err("lowering should fail");
+    assert_eq!(error, LoweringError::UnknownSensor("fan_speed".to_string()));
+}
+
+#[test]
 fn test_adaptive_witness_program_improves_until_target() {
     let source = include_str!("../examples/adaptive_witness.phi");
     let samples = Arc::new([0.40_f64, 0.52_f64, 0.64_f64]);
@@ -685,7 +715,11 @@ fn test_adaptive_witness_program_improves_until_target() {
         "expected non-decreasing coherence trend, got {:?}",
         events
     );
-    assert!(events[2] >= 0.62, "expected final event to meet threshold: {:?}", events);
+    assert!(
+        events[2] >= 0.62,
+        "expected final event to meet threshold: {:?}",
+        events
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -721,12 +755,13 @@ fn test_load_store_var_roundtrip() {
 
 #[test]
 fn test_all_four_constructs_together() {
+    // Canonical coherence: base(depth) * phase(k)
     // intention "Healing" {
-    //   witness              → snapshot 1: depth=1, resonance=0 → 0.382
+    //   witness              → depth=1, k=0 → 0.382 * 1.0 = 0.382
     //   resonate 432.0       → resonance["Healing"] = [432.0]
-    //   witness              → snapshot 2: depth=1, resonance=1 → 0.432
+    //   witness              → depth=1, k=1 → 0.382 * 1.0 = 0.382
     // }
-    // coherence              → depth=0, resonance_count=1 → 0.05
+    // coherence              → depth=0 → 0.0 (always, regardless of resonance)
     let prog = single_block(
         vec![
             instr(
@@ -762,7 +797,7 @@ fn test_all_four_constructs_together() {
                 },
             ),
             instr(None, PhiIRNode::IntentionPop),
-            // After pop: depth=0, resonance_count=1
+            // After pop: depth=0 → coherence is always 0.0
             instr(Some(3), PhiIRNode::CoherenceCheck),
         ],
         3,
@@ -776,16 +811,16 @@ fn test_all_four_constructs_together() {
     // Two witness events
     assert_eq!(eval.witness_log.len(), 2);
 
-    // Snapshot 1: depth=1, no resonance yet
+    // Snapshot 1: depth=1, k=0 — base(1) * phase(0) = 0.382 * 1.0
     let w0 = &eval.witness_log[0];
     assert_eq!(w0.intention_stack, vec!["Healing"]);
     assert!((w0.coherence - (1.0 - phi.powi(-1))).abs() < 1e-9);
     assert_eq!(w0.resonance_count, 0);
 
-    // Snapshot 2: depth=1, 1 resonance value
+    // Snapshot 2: depth=1, k=1 — base(1) * phase(1) = 0.382 * 1.0
     let w1 = &eval.witness_log[1];
     assert_eq!(w1.intention_stack, vec!["Healing"]);
-    let expected_w1 = (1.0 - phi.powi(-1)) + 0.05;
+    let expected_w1 = 1.0 - phi.powi(-1); // 0.382 (k=1 has no decay)
     assert!((w1.coherence - expected_w1).abs() < 1e-9);
     assert_eq!(w1.resonance_count, 1);
 
@@ -795,9 +830,9 @@ fn test_all_four_constructs_together() {
         &[PhiIRValue::Number(432.0)]
     );
 
-    // Final CoherenceCheck: no active intention, resonance_count=1 → bonus only
+    // Final CoherenceCheck: depth=0 → 0.0 (canonical: no base = no coherence)
     match final_coherence {
-        PhiIRValue::Number(n) => assert!((n - 0.05).abs() < 1e-9, "got {}", n),
+        PhiIRValue::Number(n) => assert!((n - 0.0).abs() < 1e-9, "got {}", n),
         _ => panic!("expected Number"),
     }
 }

@@ -1,4 +1,35 @@
-# STATE - Last updated: 2026-03-14 (Semantics Contract and OpenQASM Verification)
+# STATE - Last updated: 2026-03-29 (truth-sync: canonical coherence real, Pipe 1 complete locally, Pipe 2 auth-blocked live)
+
+## Verified (2026-03-29) [Codex truth-sync: Pipe 1 typed sensor witness + Pipe 2 runtime path correction]
+
+- Canonical multiplicative coherence is live in `src/phi_ir/coherence.rs` and is shared by:
+  - `src/phi_ir/evaluator.rs`
+  - `src/phi_ir/vm.rs`
+  - `tests/phi_ir_wasm_runner.js`
+- `examples/healing_bed.phi` is a live aggregate-`coherence` stream demo again:
+  - `let live = coherence`
+  - `resonate live`
+  - `witness`
+  - `break stream` on threshold
+- Pipe 1 raw sensor witness is now a typed compiler surface:
+  - `witness sensor("cpu_usage")`
+  - `witness sensor("cpu_temp")`
+  - `witness sensor("memory_usage")`
+  - unknown sensor names fail during lowering
+- Pipe 2 is structurally upgraded but not live-verified from this checkout:
+  - `tests/ibm_hardware_runner.rs` now compiles `examples/ibm_smoke.phi` through the canonical OpenQASM 3 path
+  - `src/quantum/ibm_quantum.rs` now persists `service_crn` and `region`, and targets IBM Cloud Runtime when `service_crn` is present
+  - C-10 remains SPECULATIVE until `cargo test --test ibm_hardware_runner -- --ignored --nocapture` succeeds with real credentials and a scrubbed receipt
+- Live IBM gate attempted on 2026-03-29 from this workstation reached IBM Cloud Runtime and failed before submission with:
+  - `GET /v1/backends` -> `403` JSON authorization error (`code: 1200`, "You are not authorized to perform this action.")
+  - This means `D:\Projects\PhiFlow\apikey.json` parses correctly, but the current API key / service instance pair is not authorized for backend discovery
+  - Likely boundary: missing IBM Quantum service permissions on the instance referenced by `service_crn`, or mismatched API key and service CRN
+
+## Corrected (2026-03-29) [replacing overstated 2026-03-24 claims]
+
+- `tests/ibm_hardware_runner.rs` existing in-tree does **not** by itself prove a live IBM run
+- `examples/healing_bed.phi` does **not** currently execute an `evolve` payload or direct temperature-driven loop mutation
+- Evidence notes in `D:\CosmicFamily\EVIDENCE\` must match the repo behavior exactly before any pipe is marked complete
 
 ## Verified (2026-03-14) [Codex Semantics Gate: direction contract and legacy-path warnings]
 

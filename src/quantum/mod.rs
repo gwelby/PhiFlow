@@ -51,6 +51,8 @@ pub trait QuantumBackend: Send + Sync {
 pub struct QuantumConfig {
     pub backend_name: String,
     pub api_token: Option<String>,
+    pub service_crn: Option<String>,
+    pub region: Option<String>,
     pub hub: Option<String>,
     pub group: Option<String>,
     pub project: Option<String>,
@@ -62,12 +64,14 @@ pub struct QuantumConfig {
 impl Default for QuantumConfig {
     fn default() -> Self {
         QuantumConfig {
-            backend_name: "simulator".to_string(),
+            backend_name: "ibmq_qasm_simulator".to_string(),
             api_token: None,
+            service_crn: None,
+            region: None,
             hub: None,
             group: None,
             project: None,
-            max_qubits: 32,
+            max_qubits: 5,
             shots: 1024,
             timeout_seconds: 300,
         }

@@ -144,7 +144,7 @@ fn test_post_collapse_warning() {
     "#;
 
     let qasm = compile_to_qasm(source);
-    
+
     assert!(
         qasm.contains("// WARNING: Gating post-collapsed qubit q[0]"),
         "Should contain warning for resonate after mid-circuit measurement\ngot:\n{qasm}"
@@ -154,4 +154,3 @@ fn test_post_collapse_warning() {
         "Should contain warning for coherence after mid-circuit measurement\ngot:\n{qasm}"
     );
 }
-

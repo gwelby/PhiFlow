@@ -6,8 +6,9 @@ use phiflow::phi_ir::{
     optimizer::{OptimizationLevel, Optimizer},
     vm::PhiVm,
     wasm::emit_wat,
-    PhiIRProgram, PhiIRValue,
+    PhiIRProgram, PhiIRValue, SensorKind,
 };
+use phiflow::wasm_host::{run_source_with_host, WasmHostHooks};
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
@@ -154,6 +155,14 @@ fn assert_program_matches(source: &str, expected: PhiIRValue, label: &str) {
     );
 }
 
+fn sensor_provider(sensor: SensorKind) -> Option<f64> {
+    match sensor {
+        SensorKind::CpuUsage => Some(12.5),
+        SensorKind::CpuTemp => Some(55.0),
+        SensorKind::MemoryUsage => Some(62.0),
+    }
+}
+
 #[allow(dead_code)]
 fn assert_program_conforms(source: &str, label: &str) {
     let (eval_result, vm_result, wasm_result) = run_all_paths(source);
@@ -221,6 +230,7 @@ fn conformance_coherence_check() {
 
 #[test]
 fn conformance_resonate_then_coherence() {
+    // Canonical: base(depth=1) * phase(k=1) = 0.382 * 1.0 = 0.382
     let phi_inv = 1.0 - 1.618033988749895_f64.powi(-1);
     assert_program_matches(
         r#"
@@ -229,9 +239,45 @@ fn conformance_resonate_then_coherence() {
             coherence
         }
         "#,
-        PhiIRValue::Number(phi_inv + 0.05),
+        PhiIRValue::Number(phi_inv),
         "resonate_then_coherence",
     );
+}
+
+#[test]
+fn conformance_sensor_witness_all_kinds() {
+    let cases = [
+        ("cpu_usage", 12.5),
+        ("cpu_temp", 55.0),
+        ("memory_usage", 62.0),
+    ];
+
+    for (sensor_name, expected) in cases {
+        let source = format!("witness sensor(\"{}\")", sensor_name);
+        let expressions = parse_phi_program(&source).expect("parse failed");
+        let mut program: PhiIRProgram = lower_program(&expressions);
+        let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
+        optimizer.optimize(&mut program);
+
+        let mut evaluator = Evaluator::new(&program).with_sensor_provider(sensor_provider);
+        let eval_result = evaluator.run().expect("evaluator failed");
+
+        let bytes = emitter::emit(&program);
+        let vm_result =
+            PhiVm::run_bytes_with_sensor_provider(&bytes, sensor_provider).expect("vm failed");
+
+        let wasm_result = run_source_with_host(
+            &source,
+            WasmHostHooks::new().with_sensor_provider(sensor_provider),
+        )
+        .expect("wasm host failed")
+        .result;
+
+        let expected_value = PhiIRValue::Number(expected);
+        assert_values_close(&eval_result, &expected_value, sensor_name);
+        assert_values_close(&vm_result, &expected_value, sensor_name);
+        assert_values_close(&wasm_result, &expected_value, sensor_name);
+    }
 }
 
 /// Verify that shared example fixtures compile and run on both evaluator and WASM

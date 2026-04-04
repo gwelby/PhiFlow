@@ -17,6 +17,7 @@
 //! | `IntentionPop`  | Global `$intention_depth` decremented |
 //! | `Resonate`      | Import fn `phi_resonate(value: f64)` — host handles resonance field |
 //! | `CoherenceCheck`| Import fn `phi_coherence() -> f64` — host returns 0.0-1.0 score |
+//! | `WitnessSensor` | Import fn `phi_sensor(sensor_id: i32) -> f64` — host returns raw sensor |
 //!
 //! The host (browser JS / wasmtime) provides implementations.
 //! This keeps the WASM module pure and host-observable.
@@ -159,6 +160,7 @@ impl<'a> WatEmitter<'a> {
 
     fn emit_imports(&mut self) {
         self.line(r#"(import "phi" "witness" (func $phi_witness (param i32) (result f64)))"#);
+        self.line(r#"(import "phi" "sensor" (func $phi_sensor (param i32) (result f64)))"#);
         self.line(r#"(import "phi" "resonate" (func $phi_resonate (param f64)))"#);
         self.line(r#"(import "phi" "coherence" (func $phi_coherence (result f64)))"#);
         self.line(r#"(import "phi" "intention_push" (func $phi_intention_push (param i32)))"#);
@@ -228,6 +230,7 @@ impl<'a> WatEmitter<'a> {
                         | PhiIRNode::UnaryOp { .. }
                         | PhiIRNode::LoadVar(_)
                         | PhiIRNode::Witness { .. }
+                        | PhiIRNode::WitnessSensor { .. }
                         | PhiIRNode::CoherenceCheck
                         | PhiIRNode::CreatePattern { .. }
                         | PhiIRNode::Recall(_)
@@ -373,6 +376,10 @@ impl<'a> WatEmitter<'a> {
                 format!("i32.const {}\ncall $phi_witness", operand)
             }
 
+            PhiIRNode::WitnessSensor { sensor } => {
+                format!("i32.const {}\ncall $phi_sensor", sensor.as_id())
+            }
+
             PhiIRNode::IntentionPush { name, .. } => {
                 let mem_ref = self
                     .program
@@ -394,7 +401,11 @@ impl<'a> WatEmitter<'a> {
 
             PhiIRNode::IntentionPop => "call $phi_intention_pop".to_string(),
 
-            PhiIRNode::Resonate { value, direction: _, .. } => match value {
+            PhiIRNode::Resonate {
+                value,
+                direction: _,
+                ..
+            } => match value {
                 Some(reg) => format!("local.get $r{}\ncall $phi_resonate", reg),
                 None => "f64.const 0.0\ncall $phi_resonate".to_string(),
             },
@@ -488,7 +499,9 @@ impl<'a> WatEmitter<'a> {
                 self.eval_const_function(name, &values, 0)
             }
             PhiIRNode::CoherenceCheck => Some(PhiIRValue::Number(0.0)),
-            PhiIRNode::Witness { .. } => Some(PhiIRValue::Number(0.0)),
+            PhiIRNode::Witness { .. } | PhiIRNode::WitnessSensor { .. } => {
+                Some(PhiIRValue::Number(0.0))
+            }
             _ => None,
         }
     }
@@ -612,7 +625,9 @@ impl<'a> WatEmitter<'a> {
                 }
                 self.eval_const_function(name, &values, depth + 1)
             }
-            PhiIRNode::CoherenceCheck | PhiIRNode::Witness { .. } => Some(PhiIRValue::Number(0.0)),
+            PhiIRNode::CoherenceCheck
+            | PhiIRNode::Witness { .. }
+            | PhiIRNode::WitnessSensor { .. } => Some(PhiIRValue::Number(0.0)),
             PhiIRNode::Resonate { .. } => Some(PhiIRValue::Void),
             PhiIRNode::Sleep { .. } => Some(PhiIRValue::Void),
             PhiIRNode::CreatePattern { frequency, .. } => regs.get(frequency).cloned(),
@@ -764,6 +779,7 @@ mod tests {
     fn test_wat_imports_consciousness_hooks() {
         let wat = compile_to_wat("let x = 1");
         assert!(wat.contains("phi_witness"), "must import witness hook");
+        assert!(wat.contains("phi_sensor"), "must import sensor hook");
         assert!(wat.contains("phi_coherence"), "must import coherence hook");
         assert!(wat.contains("phi_resonate"), "must import resonate hook");
         assert!(

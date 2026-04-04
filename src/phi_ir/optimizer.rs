@@ -124,13 +124,39 @@ impl Optimizer {
         }
 
         if self.level == OptimizationLevel::PhiHarmonic {
+            if Self::action_cost_pass(program) {
+                changed = true;
+            }
             if Self::unroll_loops(program) {}
-        }
-
-        if self.level == OptimizationLevel::PhiHarmonic {
             self.monitor.analyze(program);
             self.stabilize(program);
         }
+    }
+
+    /// Action-Cost Functional (F1) Pass
+    /// F1(p,q; C2) = (p s + sqrt(p^2 s^2 + 4 q^2)) / 2
+    /// Reduces resonance topologies to the 1:1 primitive resonance by collapsing
+    /// redundant resonances, dynamically lowering the action cost to its ground state.
+    fn action_cost_pass(program: &mut PhiIRProgram) -> bool {
+        let mut changed = false;
+
+        for block in &mut program.blocks {
+            let mut i = 0;
+            while i + 1 < block.instructions.len() {
+                let is_res1 = matches!(block.instructions[i].node, PhiIRNode::Resonate { .. });
+                let is_res2 = matches!(block.instructions[i + 1].node, PhiIRNode::Resonate { .. });
+
+                if is_res1 && is_res2 {
+                    // Combine them by substituting the second with Nop.
+                    // Topological reduction to 1:1 (p=1, q=1).
+                    block.instructions[i + 1].node = PhiIRNode::Nop;
+                    changed = true;
+                }
+                i += 1;
+            }
+        }
+
+        changed
     }
 
     fn constant_folding(program: &mut PhiIRProgram) -> bool {
@@ -318,6 +344,7 @@ impl Optimizer {
             | PhiIRNode::Call { .. }
             | PhiIRNode::DomainCall { .. }
             | PhiIRNode::Witness { .. }
+            | PhiIRNode::WitnessSensor { .. }
             | PhiIRNode::IntentionPush { .. }
             | PhiIRNode::IntentionPop
             | PhiIRNode::Resonate { .. }

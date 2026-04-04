@@ -556,7 +556,11 @@ impl PhiInterpreter {
             }
 
             // === PHIFLOW UNIQUE: Constructs no other language has ===
-            PhiExpression::Witness { expression, mid_circuit, body } => {
+            PhiExpression::Witness {
+                expression,
+                mid_circuit,
+                body,
+            } => {
                 if *mid_circuit {
                     eprintln!(
                         "[WARNING] Legacy interpreter ignores `witness mid_circuit`; \
@@ -704,7 +708,10 @@ lowering it as a standard witness. Use `phic --target openqasm` for faithful sem
                 Ok(result)
             }
 
-            PhiExpression::Resonate { expression, direction } => {
+            PhiExpression::Resonate {
+                expression,
+                direction,
+            } => {
                 use crate::parser::ResonateDirection;
                 if *direction != ResonateDirection::TeamA {
                     eprintln!(

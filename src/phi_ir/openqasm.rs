@@ -1,6 +1,5 @@
 use crate::phi_ir::{
-    CollapsePolicy, Operand, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue,
-    ResonateDirection,
+    CollapsePolicy, Operand, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, ResonateDirection,
 };
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
@@ -96,7 +95,10 @@ impl OpenQasmEmitter {
                             .map_err(OpenQasmEmitError::MissingQubit)?;
                         if self.collapsed_qubits.contains(&target_q) {
                             eprintln!("WARNING: Resonate instruction applied to qubit [{}] AFTER it was witnessed mid-circuit. Qubit state is collapsed.", target_q);
-                            self.source.push_str(&format!("    // WARNING: Gating post-collapsed qubit q[{}]\n", target_q));
+                            self.source.push_str(&format!(
+                                "    // WARNING: Gating post-collapsed qubit q[{}]\n",
+                                target_q
+                            ));
                         }
                         let theta = self.resonate_theta(*value, *direction, &number_constants);
                         self.source
@@ -151,7 +153,10 @@ impl OpenQasmEmitter {
                             .map_err(OpenQasmEmitError::MissingQubit)?;
                         if self.collapsed_qubits.contains(&target_q) {
                             eprintln!("WARNING: CoherenceCheck applied to qubit [{}] AFTER it was witnessed mid-circuit. Qubit state is collapsed.", target_q);
-                            self.source.push_str(&format!("    // WARNING: Coherence post-collapsed qubit q[{}]\n", target_q));
+                            self.source.push_str(&format!(
+                                "    // WARNING: Coherence post-collapsed qubit q[{}]\n",
+                                target_q
+                            ));
                         }
                         self.source.push_str(&format!(
                             "    ry(0.6180339887 * pi) q[{}]; // Coherence\n",
@@ -171,7 +176,10 @@ impl OpenQasmEmitter {
                         if !chain.contains(&q2) {
                             if self.collapsed_qubits.contains(&q2) {
                                 eprintln!("WARNING: Entangle instruction applied to qubit [{}] AFTER it was witnessed mid-circuit. Qubit state is collapsed.", q2);
-                                self.source.push_str(&format!("    // WARNING: Entangle post-collapsed qubit q[{}]\n", q2));
+                                self.source.push_str(&format!(
+                                    "    // WARNING: Entangle post-collapsed qubit q[{}]\n",
+                                    q2
+                                ));
                             }
                             let parent_idx = if self.optimize_depth {
                                 (chain.len() - 1) / 2
@@ -179,7 +187,10 @@ impl OpenQasmEmitter {
                                 chain.len() - 1
                             };
                             let q1 = chain[parent_idx];
-                            self.source.push_str(&format!("    cx q[{}], q[{}]; // Entangle via {}Hz\n", q1, q2, f));
+                            self.source.push_str(&format!(
+                                "    cx q[{}], q[{}]; // Entangle via {}Hz\n",
+                                q1, q2, f
+                            ));
                             chain.push(q2);
                         }
                     }
@@ -192,7 +203,8 @@ impl OpenQasmEmitter {
 
         // Flush deferred (Final/NonDestructive) measurements at end of circuit
         if !self.deferred_measures.is_empty() {
-            self.source.push_str("\n    // --- Final Witness measurements (end-of-circuit) ---\n");
+            self.source
+                .push_str("\n    // --- Final Witness measurements (end-of-circuit) ---\n");
             let deferred = self.deferred_measures.drain(..).collect::<Vec<_>>();
             for line in deferred {
                 self.source.push_str(&format!("{line}\n"));
@@ -260,12 +272,9 @@ impl OpenQasmEmitter {
         }
 
         if self.qubit_mapping.len() == 1 {
-            return self
-                .qubit_mapping
-                .values()
-                .copied()
-                .next()
-                .ok_or_else(|| "exactly one qubit was expected, but none were declared".to_string());
+            return self.qubit_mapping.values().copied().next().ok_or_else(|| {
+                "exactly one qubit was expected, but none were declared".to_string()
+            });
         }
 
         Err(
@@ -568,7 +577,9 @@ mod tests {
         ir.blocks.push(block);
 
         let mut emitter = OpenQasmEmitter::new();
-        let code = emitter.emit(&ir).expect("team direction mapping should emit");
+        let code = emitter
+            .emit(&ir)
+            .expect("team direction mapping should emit");
 
         assert!(code.contains("ry(0.72 * pi) q[0]; // Resonate"));
         assert!(code.contains("ry(pi - (0.72 * pi)) q[1]; // Resonate"));
@@ -601,7 +612,9 @@ mod tests {
 
         let measure_idx = code
             .find("c[0] = measure q[0]; // MidCircuit Witness q0")
-            .unwrap_or_else(|| panic!("witness should measure before later gates\ncode:\n{}", code));
+            .unwrap_or_else(|| {
+                panic!("witness should measure before later gates\ncode:\n{}", code)
+            });
         let coherence_idx = code
             .find("ry(0.6180339887 * pi) q[1]; // Coherence")
             .unwrap_or_else(|| panic!("coherence gate should still be emitted\ncode:\n{}", code));
@@ -623,7 +636,9 @@ mod tests {
         ir.blocks.push(block);
 
         let mut emitter = OpenQasmEmitter::new();
-        let error = emitter.emit(&ir).expect_err("undeclared intention should fail");
+        let error = emitter
+            .emit(&ir)
+            .expect_err("undeclared intention should fail");
 
         assert_eq!(
             error,

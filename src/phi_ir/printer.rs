@@ -79,12 +79,13 @@ fn format_instr(node: &PhiIRNode) -> String {
                 .unwrap_or("ALL".to_string());
             format!("Witness target={} policy={:?}", t_str, collapse_policy)
         }
+        PhiIRNode::WitnessSensor { sensor } => {
+            format!("WitnessSensor \"{}\"", sensor.as_name())
+        }
         PhiIRNode::IntentionPush { name, .. } => format!("IntentionPush \"{}\"", name),
         PhiIRNode::IntentionPop => "IntentionPop".to_string(),
         PhiIRNode::Resonate {
-            value,
-            direction,
-            ..
+            value, direction, ..
         } => {
             let v_str = value
                 .map(|v| format!("%{}", v))

@@ -1,9 +1,9 @@
 use clap::Parser;
 use phiflow::parser::parse_phi_program_with_diagnostics;
 use phiflow::phi_ir::evaluator::Evaluator;
-use phiflow::phi_ir::lowering::lower_program;
-use phiflow::phi_ir::quantum_codegen::compile_ir_to_quantum;
+use phiflow::phi_ir::lowering::lower_program_checked;
 use phiflow::phi_ir::openqasm::OpenQasmEmitter;
+use phiflow::phi_ir::quantum_codegen::compile_ir_to_quantum;
 use phiflow::phi_ir::PhiIRValue;
 use phiflow::sensors;
 use phiflow::PhiDiagnostic;
@@ -36,6 +36,7 @@ enum CliError {
     Parse(PhiDiagnostic),
     Io(String),
     Eval(String),
+    Lower(String),
 }
 
 struct RunReport {
@@ -47,7 +48,12 @@ struct RunReport {
 fn main() {
     let args = Args::parse();
 
-    match run(&args.file, args.json_errors, args.target, args.optimize_depth) {
+    match run(
+        &args.file,
+        args.json_errors,
+        args.target,
+        args.optimize_depth,
+    ) {
         Ok(Some(report)) => {
             if args.json_errors {
                 // Contract: parse success emits pure JSON array and nothing else.
@@ -109,6 +115,13 @@ fn main() {
             eprintln!("Runtime error: {}", msg);
             std::process::exit(1);
         }
+        Err(CliError::Lower(msg)) => {
+            if args.json_errors {
+                println!("[]");
+            }
+            eprintln!("Lowering error: {}", msg);
+            std::process::exit(1);
+        }
     }
 }
 
@@ -135,7 +148,7 @@ fn run(
 
     // 2. Lower AST -> PhiIR
     println!("Compiling to PhiFlow IR...");
-    let ir_program = lower_program(&ast);
+    let ir_program = lower_program_checked(&ast).map_err(|e| CliError::Lower(e.to_string()))?;
 
     // 3. Check compilation target
     if let Some(t) = target {

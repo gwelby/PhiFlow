@@ -1,3 +1,19 @@
+## 2026-03-29 - [Codex] Truth sync + Pipe 1 completion work + Pipe 2 runtime refactor
+
+- CORRECTED: `QSOP/STATE.md` now distinguishes verified canonical coherence from unverified live IBM execution.
+- FIXED: `witness sensor("...")` is now a typed PhiIR surface instead of a stringly half-implementation:
+  - `SensorKind` added in `src/phi_ir/mod.rs`
+  - lowering rejects unknown sensor names explicitly
+  - evaluator, VM, and WASM host now share deterministic sensor-provider hooks
+- UPDATED: `tests/sensor_witness_test.rs` is now deterministic and checks evaluator == VM == WASM for injected sensor values.
+- UPDATED: `tests/phi_ir_conformance_tests.rs` and `tests/phi_ir_evaluator_tests.rs` now cover raw sensor witness semantics.
+- UPDATED: `examples/ibm_smoke.phi` is now valid canonical PhiFlow syntax that compiles through the OpenQASM 3 path.
+- REFACTORED: `src/quantum/ibm_quantum.rs` now persists `service_crn` and `region`, emits IBM Cloud Runtime headers including `IBM-API-Version`, and exposes a compiler-path `execute_openqasm(...)` helper.
+- UPDATED: `tests/ibm_hardware_runner.rs` now compiles `examples/ibm_smoke.phi` to OpenQASM 3 and uses the runtime backend directly.
+- ADDED: `tests/fixtures/ibm_runtime_sampler_result.json` plus an in-module parser test for runtime result-body decoding.
+- NOTE: Pipe 2 remains structurally ready but unverified until the ignored live hardware runner succeeds with real credentials.
+- OBSERVED: a real host-side live gate attempt reached IBM Cloud Runtime and failed on backend discovery with `GET /v1/backends -> 403` / error code `1200` ("not authorized"), so the remaining blocker is account-instance authorization rather than local credential file shape.
+
 ## 2026-03-13 - [Antigravity] V2 Epoch: OpenQASM 3.0 Generation and ibm_fez 156-qubit Execution
 
 - ACHIEVED: End-to-end compilation from `.phi` source to physical IBM Quantum execution.
