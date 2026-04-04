@@ -141,7 +141,7 @@ impl QuantumCudaController {
     /// Create new quantum CUDA controller
     pub fn new(qubit_count: u32) -> Result<Self, CudaError> {
         if qubit_count > 64 {
-            return Err(CudaError::InvalidQuantumConfiguration(
+            return Err(CudaError::invalid_quantum_configuration(
                 "Maximum 64 qubits supported".to_string(),
             ));
         }
@@ -331,7 +331,7 @@ impl QuantumCudaController {
         let quantum_gate = self
             .quantum_gates
             .get(gate_name)
-            .ok_or(CudaError::QuantumGateNotFound(gate_name.to_string()))?
+            .ok_or(CudaError::quantum_gate_not_found(gate_name.to_string()))?
             .clone();
 
         // Apply gate using CUDA kernel
@@ -851,11 +851,11 @@ impl QuantumMemoryManager {
 
 // Additional error type for quantum operations
 impl CudaError {
-    pub fn InvalidQuantumConfiguration(msg: String) -> Self {
+    pub fn invalid_quantum_configuration(msg: String) -> Self {
         CudaError::ConsciousnessIntegrationError // Reuse existing error type
     }
 
-    pub fn QuantumGateNotFound(gate_name: String) -> Self {
+    pub fn quantum_gate_not_found(gate_name: String) -> Self {
         CudaError::KernelNotFound(gate_name)
     }
 }

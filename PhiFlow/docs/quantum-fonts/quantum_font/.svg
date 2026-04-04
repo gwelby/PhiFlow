@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'>
+<path d='M 7.28390269700277,38.4773982019981 L 68.6419513485014,47.2839026970028 L 31.3580486514986,47.2839026970028 Z' stroke='black' fill='none'/>
+<path d='M 46.3580486514986,25 A 25,25 0 1,1 53.6419513485014,75' stroke='purple' fill='none' stroke-width='0.5'/>
+<text x='35' y='60' font-size='10'>DNA</text>
+</svg>

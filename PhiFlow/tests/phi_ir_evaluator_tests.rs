@@ -4,12 +4,18 @@
 //! 1. Existing regression tests (arithmetic via lowering pipeline).
 //! 2. New direct-IR tests proving Witness, Intention, Resonate, CoherenceCheck.
 
-use phiflow::parser::{BinaryOperator, PhiExpression};
-use phiflow::phi_ir::evaluator::{Evaluator, WitnessEvent};
-use phiflow::phi_ir::lowering::lower_program;
+use phiflow::host::{CallbackHostProvider, WitnessAction};
+use phiflow::parser::{parse_phi_program, BinaryOperator, PhiExpression};
+use phiflow::phi_ir::evaluator::{EvalExecResult, Evaluator, FrozenEvalState};
+use phiflow::phi_ir::lowering::{lower_program, lower_program_checked, LoweringError};
+use phiflow::phi_ir::optimizer::{OptimizationLevel, Optimizer};
+use phiflow::phi_ir::ResonateDirection;
 use phiflow::phi_ir::{
-    CollapsePolicy, PhiIRBinOp, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction,
+    CollapsePolicy, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction, SensorKind,
 };
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
 
 // ---------------------------------------------------------------------------
 // Helper: build a single-block program directly from instruction list
@@ -28,6 +34,64 @@ fn single_block(instructions: Vec<PhiInstruction>, return_reg: u32) -> PhiIRProg
 
 fn instr(result: Option<u32>, node: PhiIRNode) -> PhiInstruction {
     PhiInstruction { result, node }
+}
+
+struct EvalSnapshot {
+    resonance_field: HashMap<String, Vec<f64>>,
+}
+
+fn evaluate_with_coherence<F>(source: &str, provider: F) -> EvalSnapshot
+where
+    F: Fn() -> f64 + Send + Sync + 'static,
+{
+    let exprs = parse_phi_program(source).expect("parse failed");
+    let mut program = lower_program(&exprs);
+    let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
+    optimizer.optimize(&mut program);
+
+    let mut evaluator = Evaluator::new(&program).with_coherence_provider(provider);
+    evaluator.run().expect("evaluation failed");
+
+    let mut resonance_field = HashMap::new();
+    for (scope, values) in evaluator.resonance_field() {
+        let numeric_values: Vec<f64> = values
+            .iter()
+            .filter_map(|value| match value {
+                PhiIRValue::Number(n) => Some(*n),
+                _ => None,
+            })
+            .collect();
+        resonance_field.insert(scope.clone(), numeric_values);
+    }
+
+    EvalSnapshot { resonance_field }
+}
+
+fn evaluate_resonance_events_with_coherence<F>(source: &str, provider: F, scope: &str) -> Vec<f64>
+where
+    F: Fn() -> f64 + Send + Sync + 'static,
+{
+    let exprs = parse_phi_program(source).expect("parse failed");
+    let mut program = lower_program(&exprs);
+    let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
+    optimizer.optimize(&mut program);
+
+    let mut evaluator = Evaluator::new(&program).with_coherence_provider(provider);
+    evaluator.run().expect("evaluation failed");
+
+    evaluator
+        .resonance_events()
+        .iter()
+        .filter_map(|(event_scope, value)| {
+            if event_scope != scope {
+                return None;
+            }
+            match value {
+                PhiIRValue::Number(n) => Some(*n),
+                _ => None,
+            }
+        })
+        .collect()
 }
 
 // ---------------------------------------------------------------------------
@@ -86,7 +150,7 @@ fn test_witness_outside_intention_returns_zero_coherence() {
             Some(0),
             PhiIRNode::Witness {
                 target: None,
-                collapse_policy: CollapsePolicy::Deferred,
+                collapse_policy: CollapsePolicy::Final,
             },
         )],
         0,
@@ -117,7 +181,7 @@ fn test_witness_inside_intention_returns_nonzero_coherence() {
                 Some(0),
                 PhiIRNode::Witness {
                     target: None,
-                    collapse_policy: CollapsePolicy::Deferred,
+                    collapse_policy: CollapsePolicy::Final,
                 },
             ),
             instr(None, PhiIRNode::IntentionPop),
@@ -154,7 +218,7 @@ fn test_witness_records_event_in_log() {
                 Some(0),
                 PhiIRNode::Witness {
                     target: None,
-                    collapse_policy: CollapsePolicy::Deferred,
+                    collapse_policy: CollapsePolicy::Final,
                 },
             ),
             instr(None, PhiIRNode::IntentionPop),
@@ -169,6 +233,135 @@ fn test_witness_records_event_in_log() {
     let event = &eval.witness_log[0];
     assert_eq!(event.intention_stack, vec!["Test"]);
     assert!(event.coherence > 0.0);
+}
+
+#[test]
+fn test_witness_callback_called_once_per_instruction() {
+    let prog = single_block(
+        vec![instr(
+            Some(0),
+            PhiIRNode::Witness {
+                target: None,
+                collapse_policy: CollapsePolicy::Final,
+            },
+        )],
+        0,
+    );
+
+    let calls = Arc::new(AtomicUsize::new(0));
+    let calls_ref = Arc::clone(&calls);
+    let host = CallbackHostProvider::new().with_witness(move |_| {
+        calls_ref.fetch_add(1, Ordering::SeqCst);
+        WitnessAction::Continue
+    });
+
+    let mut eval = Evaluator::new(&prog).with_host(Box::new(host));
+    let result = eval.run_or_yield().expect("evaluation failed");
+    assert!(
+        matches!(result, EvalExecResult::Complete(PhiIRValue::Number(_))),
+        "expected completion result, got {:?}",
+        result
+    );
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn test_witness_yield_preserves_observed_value_snapshot() {
+    let prog = single_block(
+        vec![
+            instr(Some(0), PhiIRNode::Const(PhiIRValue::Number(432.0))),
+            instr(
+                Some(1),
+                PhiIRNode::Witness {
+                    target: Some(0),
+                    collapse_policy: CollapsePolicy::Final,
+                },
+            ),
+        ],
+        1,
+    );
+
+    let calls = Arc::new(AtomicUsize::new(0));
+    let calls_ref = Arc::clone(&calls);
+    let observed = Arc::new(Mutex::new(None::<String>));
+    let observed_ref = Arc::clone(&observed);
+    let host = CallbackHostProvider::new().with_witness(move |snapshot| {
+        calls_ref.fetch_add(1, Ordering::SeqCst);
+        *observed_ref.lock().expect("observed mutex poisoned") = snapshot.observed_value.clone();
+        WitnessAction::Yield
+    });
+
+    let mut eval = Evaluator::new(&prog).with_host(Box::new(host));
+    let result = eval.run_or_yield().expect("evaluation failed");
+    let frozen_state = match result {
+        EvalExecResult::Yielded {
+            snapshot,
+            frozen_state,
+        } => {
+            let observed_value = snapshot
+                .observed_value
+                .as_deref()
+                .expect("yielded snapshot must preserve witness target");
+            assert!(observed_value.contains("432.0"), "got {}", observed_value);
+            frozen_state
+        }
+        other => panic!("expected yielded result, got {:?}", other),
+    };
+
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+    let stored = observed
+        .lock()
+        .expect("observed mutex poisoned")
+        .clone()
+        .expect("host callback should receive observed value");
+    assert!(stored.contains("432.0"), "got {}", stored);
+
+    let resumed = eval.resume(frozen_state).expect("resume failed");
+    assert!(
+        matches!(resumed, EvalExecResult::Complete(PhiIRValue::Number(_))),
+        "expected completion after resume, got {:?}",
+        resumed
+    );
+}
+
+#[test]
+fn test_frozen_eval_state_roundtrips_through_json() {
+    let prog = single_block(
+        vec![
+            instr(Some(0), PhiIRNode::Const(PhiIRValue::Number(7.0))),
+            instr(
+                Some(1),
+                PhiIRNode::Witness {
+                    target: Some(0),
+                    collapse_policy: CollapsePolicy::Final,
+                },
+            ),
+        ],
+        1,
+    );
+
+    let host = CallbackHostProvider::new().with_witness(|_| WitnessAction::Yield);
+    let mut eval = Evaluator::new(&prog).with_host(Box::new(host));
+    let yielded = eval.run_or_yield().expect("evaluation failed");
+    let frozen_state = match yielded {
+        EvalExecResult::Yielded { frozen_state, .. } => frozen_state,
+        other => panic!("expected yielded result, got {:?}", other),
+    };
+
+    let payload = serde_json::to_string(&frozen_state).expect("state should serialize");
+    let decoded: FrozenEvalState =
+        serde_json::from_str(&payload).expect("state should deserialize");
+
+    assert_eq!(decoded.current_block, frozen_state.current_block);
+    assert_eq!(decoded.instruction_ptr, frozen_state.instruction_ptr);
+    assert_eq!(decoded.intention_stack, frozen_state.intention_stack);
+
+    let resumed = eval.resume(decoded).expect("resume failed");
+    assert!(
+        matches!(resumed, EvalExecResult::Complete(PhiIRValue::Number(_))),
+        "expected completion after resume, got {:?}",
+        resumed
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -198,7 +391,7 @@ fn test_two_nested_intentions_yield_golden_ratio() {
                 Some(0),
                 PhiIRNode::Witness {
                     target: None,
-                    collapse_policy: CollapsePolicy::Deferred,
+                    collapse_policy: CollapsePolicy::Final,
                 },
             ),
             instr(None, PhiIRNode::IntentionPop),
@@ -224,6 +417,62 @@ fn test_two_nested_intentions_yield_golden_ratio() {
     assert_eq!(eval.witness_log[0].intention_stack, vec!["Outer", "Inner"]);
 }
 
+#[test]
+fn test_callback_host_receives_intention_push_and_pop() {
+    let prog = single_block(
+        vec![
+            instr(
+                None,
+                PhiIRNode::IntentionPush {
+                    name: "Outer".to_string(),
+                    frequency_hint: None,
+                },
+            ),
+            instr(
+                None,
+                PhiIRNode::IntentionPush {
+                    name: "Inner".to_string(),
+                    frequency_hint: None,
+                },
+            ),
+            instr(None, PhiIRNode::IntentionPop),
+            instr(None, PhiIRNode::IntentionPop),
+            instr(Some(0), PhiIRNode::Const(PhiIRValue::Number(1.0))),
+        ],
+        0,
+    );
+
+    let pushes = Arc::new(Mutex::new(Vec::new()));
+    let pops = Arc::new(Mutex::new(Vec::new()));
+    let pushes_ref = Arc::clone(&pushes);
+    let pops_ref = Arc::clone(&pops);
+    let host = CallbackHostProvider::new()
+        .with_intention_push(move |name| {
+            pushes_ref
+                .lock()
+                .expect("pushes mutex poisoned")
+                .push(name.to_string());
+        })
+        .with_intention_pop(move |name| {
+            pops_ref
+                .lock()
+                .expect("pops mutex poisoned")
+                .push(name.to_string());
+        });
+
+    let mut eval = Evaluator::new(&prog).with_host(Box::new(host));
+    eval.run().expect("evaluation failed");
+
+    assert_eq!(
+        pushes.lock().expect("pushes mutex poisoned").as_slice(),
+        vec!["Outer".to_string(), "Inner".to_string()].as_slice()
+    );
+    assert_eq!(
+        pops.lock().expect("pops mutex poisoned").as_slice(),
+        vec!["Inner".to_string(), "Outer".to_string()].as_slice()
+    );
+}
+
 // ---------------------------------------------------------------------------
 // Resonate
 // ---------------------------------------------------------------------------
@@ -243,6 +492,7 @@ fn test_resonate_stores_value_under_current_intention() {
             instr(
                 None,
                 PhiIRNode::Resonate {
+                    direction: ResonateDirection::TeamA,
                     value: Some(0),
                     frequency_relationship: None,
                 },
@@ -269,6 +519,7 @@ fn test_resonate_without_intention_uses_global() {
             instr(
                 None,
                 PhiIRNode::Resonate {
+                    direction: ResonateDirection::TeamA,
                     value: Some(0),
                     frequency_relationship: None,
                 },
@@ -288,7 +539,8 @@ fn test_resonate_without_intention_uses_global() {
 
 #[test]
 fn test_resonance_adds_bonus_to_coherence() {
-    // depth 1 + 1 resonated value → coherence = 0.382 + 0.05 = 0.432
+    // Canonical formula: base(depth=1) * phase(k=1) = 0.382 * 1.0 = 0.382
+    // k=1 is perfectly bijective — no decay.
     let prog = single_block(
         vec![
             instr(
@@ -302,6 +554,7 @@ fn test_resonance_adds_bonus_to_coherence() {
             instr(
                 None,
                 PhiIRNode::Resonate {
+                    direction: ResonateDirection::TeamA,
                     value: Some(0),
                     frequency_relationship: None,
                 },
@@ -316,7 +569,8 @@ fn test_resonance_adds_bonus_to_coherence() {
     let result = eval.run().unwrap();
 
     let phi: f64 = 1.618033988749895;
-    let expected = (1.0 - phi.powi(-1)) + 0.05; // 0.382 + 0.05 = 0.432
+    // base(1) = 1.0 - phi^(-1) ≈ 0.382, phase(1) = 1.0, coherence = 0.382
+    let expected = 1.0 - phi.powi(-1);
 
     match result {
         PhiIRValue::Number(n) => assert!((n - expected).abs() < 1e-9, "got {}", n),
@@ -354,7 +608,7 @@ fn test_coherence_check_matches_witness() {
                 Some(1),
                 PhiIRNode::Witness {
                     target: None,
-                    collapse_policy: CollapsePolicy::Deferred,
+                    collapse_policy: CollapsePolicy::Final,
                 },
             ),
             instr(None, PhiIRNode::IntentionPop),
@@ -375,6 +629,97 @@ fn test_coherence_check_matches_witness() {
         ),
         _ => panic!("expected Number"),
     }
+}
+
+#[test]
+fn test_coherence_keyword_accepts_injected_value() {
+    let source = r#"
+intention "test" {
+    let c = coherence
+    resonate c
+}
+"#;
+    let output = evaluate_with_coherence(source, || 0.75);
+    assert!((output.resonance_field["test"][0] - 0.75).abs() < 0.001);
+}
+
+#[test]
+fn test_resolved_coherence_exposes_injected_value() {
+    let prog = single_block(
+        vec![instr(Some(0), PhiIRNode::Const(PhiIRValue::Number(0.0)))],
+        0,
+    );
+
+    let evaluator = Evaluator::new(&prog).with_coherence_provider(|| 0.75);
+
+    assert!((evaluator.coherence() - 0.0).abs() < 1e-9);
+    assert!((evaluator.resolved_coherence() - 0.75).abs() < 1e-9);
+}
+
+#[test]
+fn test_sensor_witness_uses_injected_provider() {
+    let source = r#"witness sensor("memory_usage")"#;
+    let exprs = parse_phi_program(source).expect("parse failed");
+    let program = lower_program_checked(&exprs).expect("lowering failed");
+
+    let mut evaluator = Evaluator::new(&program).with_sensor_provider(|sensor| match sensor {
+        SensorKind::MemoryUsage => Some(73.0),
+        _ => None,
+    });
+    let result = evaluator.run().expect("evaluation failed");
+
+    assert_eq!(result, PhiIRValue::Number(73.0));
+    let event = evaluator
+        .witness_log
+        .last()
+        .expect("sensor witness should append to witness log");
+    assert_eq!(event.resonance_count, 0);
+}
+
+#[test]
+fn test_lowering_rejects_unknown_sensor_name() {
+    let source = r#"witness sensor("fan_speed")"#;
+    let exprs = parse_phi_program(source).expect("parse failed");
+    let error = lower_program_checked(&exprs).expect_err("lowering should fail");
+    assert_eq!(error, LoweringError::UnknownSensor("fan_speed".to_string()));
+}
+
+#[test]
+fn test_adaptive_witness_program_improves_until_target() {
+    let source = include_str!("../examples/adaptive_witness.phi");
+    let samples = Arc::new([0.40_f64, 0.52_f64, 0.64_f64]);
+    let index = Arc::new(AtomicUsize::new(0));
+    let samples_ref = Arc::clone(&samples);
+    let index_ref = Arc::clone(&index);
+
+    let events = evaluate_resonance_events_with_coherence(
+        source,
+        move || {
+            let i = index_ref.fetch_add(1, Ordering::SeqCst);
+            *samples_ref.get(i).unwrap_or_else(|| {
+                samples_ref
+                    .last()
+                    .expect("sample list must contain at least one value")
+            })
+        },
+        "adaptive_witness",
+    );
+
+    assert_eq!(
+        events.len(),
+        3,
+        "adaptive_witness should break after reaching threshold on 3rd cycle"
+    );
+    assert!(
+        events.windows(2).all(|window| window[1] >= window[0]),
+        "expected non-decreasing coherence trend, got {:?}",
+        events
+    );
+    assert!(
+        events[2] >= 0.62,
+        "expected final event to meet threshold: {:?}",
+        events
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -410,12 +755,13 @@ fn test_load_store_var_roundtrip() {
 
 #[test]
 fn test_all_four_constructs_together() {
+    // Canonical coherence: base(depth) * phase(k)
     // intention "Healing" {
-    //   witness              → snapshot 1: depth=1, resonance=0 → 0.382
+    //   witness              → depth=1, k=0 → 0.382 * 1.0 = 0.382
     //   resonate 432.0       → resonance["Healing"] = [432.0]
-    //   witness              → snapshot 2: depth=1, resonance=1 → 0.432
+    //   witness              → depth=1, k=1 → 0.382 * 1.0 = 0.382
     // }
-    // coherence              → depth=0, resonance_count=1 → 0.05
+    // coherence              → depth=0 → 0.0 (always, regardless of resonance)
     let prog = single_block(
         vec![
             instr(
@@ -430,13 +776,14 @@ fn test_all_four_constructs_together() {
                 Some(0),
                 PhiIRNode::Witness {
                     target: None,
-                    collapse_policy: CollapsePolicy::Deferred,
+                    collapse_policy: CollapsePolicy::Final,
                 },
             ),
             instr(Some(1), PhiIRNode::Const(PhiIRValue::Number(432.0))),
             instr(
                 None,
                 PhiIRNode::Resonate {
+                    direction: ResonateDirection::TeamA,
                     value: Some(1),
                     frequency_relationship: None,
                 },
@@ -446,11 +793,11 @@ fn test_all_four_constructs_together() {
                 Some(2),
                 PhiIRNode::Witness {
                     target: None,
-                    collapse_policy: CollapsePolicy::Deferred,
+                    collapse_policy: CollapsePolicy::Final,
                 },
             ),
             instr(None, PhiIRNode::IntentionPop),
-            // After pop: depth=0, resonance_count=1
+            // After pop: depth=0 → coherence is always 0.0
             instr(Some(3), PhiIRNode::CoherenceCheck),
         ],
         3,
@@ -464,16 +811,16 @@ fn test_all_four_constructs_together() {
     // Two witness events
     assert_eq!(eval.witness_log.len(), 2);
 
-    // Snapshot 1: depth=1, no resonance yet
+    // Snapshot 1: depth=1, k=0 — base(1) * phase(0) = 0.382 * 1.0
     let w0 = &eval.witness_log[0];
     assert_eq!(w0.intention_stack, vec!["Healing"]);
     assert!((w0.coherence - (1.0 - phi.powi(-1))).abs() < 1e-9);
     assert_eq!(w0.resonance_count, 0);
 
-    // Snapshot 2: depth=1, 1 resonance value
+    // Snapshot 2: depth=1, k=1 — base(1) * phase(1) = 0.382 * 1.0
     let w1 = &eval.witness_log[1];
     assert_eq!(w1.intention_stack, vec!["Healing"]);
-    let expected_w1 = (1.0 - phi.powi(-1)) + 0.05;
+    let expected_w1 = 1.0 - phi.powi(-1); // 0.382 (k=1 has no decay)
     assert!((w1.coherence - expected_w1).abs() < 1e-9);
     assert_eq!(w1.resonance_count, 1);
 
@@ -483,9 +830,9 @@ fn test_all_four_constructs_together() {
         &[PhiIRValue::Number(432.0)]
     );
 
-    // Final CoherenceCheck: no active intention, resonance_count=1 → bonus only
+    // Final CoherenceCheck: depth=0 → 0.0 (canonical: no base = no coherence)
     match final_coherence {
-        PhiIRValue::Number(n) => assert!((n - 0.05).abs() < 1e-9, "got {}", n),
+        PhiIRValue::Number(n) => assert!((n - 0.0).abs() < 1e-9, "got {}", n),
         _ => panic!("expected Number"),
     }
 }

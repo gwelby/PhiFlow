@@ -1,14 +1,12 @@
 // PhiFlow Parser - Converts tokens to Abstract Syntax Tree
 // Implements recursive descent parser for PhiFlow quantum-consciousness DSL
 
-use crate::compiler::lexer::{Token, PhiFlowLexer};
 use crate::compiler::ast::{
-    PhiFlowExpression, PhiFlowProgram, QuantumGate, QuantumGateType,
-    BinaryOperator, UnaryOperator, ComparisonOperator, LogicalOperator,
-    ConsciousnessCondition, ConsciousnessMetric, BrainwaveType,
-    PhiFlowType, Parameter, MatchArm, Pattern,
-    ConsciousnessConfig, QuantumConfig
+    BinaryOperator, BrainwaveType, ComparisonOperator, ConsciousnessCondition, ConsciousnessConfig,
+    ConsciousnessMetric, LogicalOperator, MatchArm, Parameter, Pattern, PhiFlowExpression,
+    PhiFlowProgram, PhiFlowType, QuantumConfig, QuantumGate, QuantumGateType, UnaryOperator,
 };
+use crate::compiler::lexer::{PhiFlowLexer, Token};
 use std::collections::HashMap;
 
 pub struct PhiFlowParser {
@@ -20,22 +18,26 @@ pub struct PhiFlowParser {
 pub enum ParseError {
     #[error("Unexpected token: {token:?} at position {position}")]
     UnexpectedToken { token: Token, position: usize },
-    
+
     #[error("Expected token {expected:?}, found {found:?} at position {position}")]
-    ExpectedToken { expected: String, found: Token, position: usize },
-    
+    ExpectedToken {
+        expected: String,
+        found: Token,
+        position: usize,
+    },
+
     #[error("Unexpected end of input")]
     UnexpectedEOF,
-    
+
     #[error("Invalid quantum gate: {gate}")]
     InvalidQuantumGate { gate: String },
-    
+
     #[error("Invalid sacred frequency: {frequency}")]
     InvalidSacredFrequency { frequency: u32 },
-    
+
     #[error("Invalid consciousness metric: {metric}")]
     InvalidConsciousnessMetric { metric: String },
-    
+
     #[error("Syntax error: {message}")]
     SyntaxError { message: String },
 }
@@ -44,29 +46,26 @@ type ParseResult<T> = Result<T, ParseError>;
 
 impl PhiFlowParser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        PhiFlowParser {
-            tokens,
-            current: 0,
-        }
+        PhiFlowParser { tokens, current: 0 }
     }
-    
+
     pub fn parse(&mut self) -> ParseResult<PhiFlowProgram> {
         let mut functions = Vec::new();
         let mut main = None;
         let imports = Vec::new();
         let consciousness_config = None;
         let quantum_config = None;
-        
+
         // Collect all top-level statements/expressions
         let mut main_statements = Vec::new();
-        
+
         while !self.is_at_end() {
             // Skip newlines
             if self.check(&Token::Newline) {
                 self.advance();
                 continue;
             }
-            
+
             match self.peek() {
                 Token::Fn => {
                     let function = self.parse_function()?;
@@ -82,13 +81,13 @@ impl PhiFlowParser {
                     // Parse top-level statement/expression
                     let expr = self.parse_expression()?;
                     main_statements.push(expr);
-                    
+
                     // Optional semicolon at top level
                     self.match_token(&Token::Semicolon);
                 }
             }
         }
-        
+
         // If we have multiple statements, wrap them in a block
         // If we have one statement, use it directly
         if !main_statements.is_empty() && main.is_none() {
@@ -98,7 +97,7 @@ impl PhiFlowParser {
                 Some(PhiFlowExpression::Block(main_statements))
             };
         }
-        
+
         Ok(PhiFlowProgram {
             functions,
             main,
@@ -107,11 +106,11 @@ impl PhiFlowParser {
             quantum_config,
         })
     }
-    
+
     fn parse_expression(&mut self) -> ParseResult<PhiFlowExpression> {
         self.parse_assignment()
     }
-    
+
     fn parse_assignment(&mut self) -> ParseResult<PhiFlowExpression> {
         if self.match_token(&Token::Let) {
             self.parse_let_binding()
@@ -119,29 +118,29 @@ impl PhiFlowParser {
             self.parse_logical_or()
         }
     }
-    
+
     fn parse_let_binding(&mut self) -> ParseResult<PhiFlowExpression> {
         let variable = self.consume_identifier("Expected variable name")?;
-        
+
         let type_annotation = if self.match_token(&Token::Colon) {
             Some(self.parse_type()?)
         } else {
             None
         };
-        
+
         self.consume(&Token::Equal, "Expected '=' after variable name")?;
         let value = Box::new(self.parse_expression()?);
-        
+
         Ok(PhiFlowExpression::Let {
             variable,
             type_annotation,
             value,
         })
     }
-    
+
     fn parse_logical_or(&mut self) -> ParseResult<PhiFlowExpression> {
         let mut expr = self.parse_logical_and()?;
-        
+
         while self.match_token(&Token::Or) {
             let operator = BinaryOperator::Or;
             let right = Box::new(self.parse_logical_and()?);
@@ -151,13 +150,13 @@ impl PhiFlowParser {
                 right,
             };
         }
-        
+
         Ok(expr)
     }
-    
+
     fn parse_logical_and(&mut self) -> ParseResult<PhiFlowExpression> {
         let mut expr = self.parse_equality()?;
-        
+
         while self.match_token(&Token::And) {
             let operator = BinaryOperator::And;
             let right = Box::new(self.parse_equality()?);
@@ -167,13 +166,13 @@ impl PhiFlowParser {
                 right,
             };
         }
-        
+
         Ok(expr)
     }
-    
+
     fn parse_equality(&mut self) -> ParseResult<PhiFlowExpression> {
         let mut expr = self.parse_comparison()?;
-        
+
         while let Some(operator) = self.match_equality_operator() {
             let right = Box::new(self.parse_comparison()?);
             expr = PhiFlowExpression::BinaryOp {
@@ -182,10 +181,10 @@ impl PhiFlowParser {
                 right,
             };
         }
-        
+
         Ok(expr)
     }
-    
+
     fn match_equality_operator(&mut self) -> Option<BinaryOperator> {
         if self.match_token(&Token::EqualEqual) {
             Some(BinaryOperator::Equal)
@@ -195,10 +194,10 @@ impl PhiFlowParser {
             None
         }
     }
-    
+
     fn parse_comparison(&mut self) -> ParseResult<PhiFlowExpression> {
         let mut expr = self.parse_term()?;
-        
+
         while let Some(operator) = self.match_comparison_operator() {
             let right = Box::new(self.parse_term()?);
             expr = PhiFlowExpression::BinaryOp {
@@ -207,10 +206,10 @@ impl PhiFlowParser {
                 right,
             };
         }
-        
+
         Ok(expr)
     }
-    
+
     fn match_comparison_operator(&mut self) -> Option<BinaryOperator> {
         if self.match_token(&Token::Greater) {
             Some(BinaryOperator::Greater)
@@ -224,10 +223,10 @@ impl PhiFlowParser {
             None
         }
     }
-    
+
     fn parse_term(&mut self) -> ParseResult<PhiFlowExpression> {
         let mut expr = self.parse_factor()?;
-        
+
         while let Some(operator) = self.match_term_operator() {
             let right = Box::new(self.parse_factor()?);
             expr = PhiFlowExpression::BinaryOp {
@@ -236,10 +235,10 @@ impl PhiFlowParser {
                 right,
             };
         }
-        
+
         Ok(expr)
     }
-    
+
     fn match_term_operator(&mut self) -> Option<BinaryOperator> {
         if self.match_token(&Token::Plus) {
             Some(BinaryOperator::Add)
@@ -249,10 +248,10 @@ impl PhiFlowParser {
             None
         }
     }
-    
+
     fn parse_factor(&mut self) -> ParseResult<PhiFlowExpression> {
         let mut expr = self.parse_unary()?;
-        
+
         while let Some(operator) = self.match_factor_operator() {
             let right = Box::new(self.parse_unary()?);
             expr = PhiFlowExpression::BinaryOp {
@@ -261,10 +260,10 @@ impl PhiFlowParser {
                 right,
             };
         }
-        
+
         Ok(expr)
     }
-    
+
     fn match_factor_operator(&mut self) -> Option<BinaryOperator> {
         if self.match_token(&Token::Star) {
             Some(BinaryOperator::Multiply)
@@ -274,7 +273,7 @@ impl PhiFlowParser {
             None
         }
     }
-    
+
     fn parse_unary(&mut self) -> ParseResult<PhiFlowExpression> {
         if let Some(operator) = self.match_unary_operator() {
             let operand = Box::new(self.parse_unary()?);
@@ -283,7 +282,7 @@ impl PhiFlowParser {
             self.parse_call()
         }
     }
-    
+
     fn match_unary_operator(&mut self) -> Option<UnaryOperator> {
         if self.match_token(&Token::Minus) {
             Some(UnaryOperator::Negate)
@@ -293,10 +292,10 @@ impl PhiFlowParser {
             None
         }
     }
-    
+
     fn parse_call(&mut self) -> ParseResult<PhiFlowExpression> {
         let mut expr = self.parse_primary()?;
-        
+
         loop {
             if self.check(&Token::LeftParen) {
                 expr = self.finish_call(expr)?;
@@ -306,13 +305,13 @@ impl PhiFlowParser {
                 break;
             }
         }
-        
+
         Ok(expr)
     }
-    
+
     fn finish_call(&mut self, callee: PhiFlowExpression) -> ParseResult<PhiFlowExpression> {
         self.consume(&Token::LeftParen, "Expected '('")?;
-        
+
         let mut args = Vec::new();
         if !self.check(&Token::RightParen) {
             loop {
@@ -322,9 +321,9 @@ impl PhiFlowParser {
                 }
             }
         }
-        
+
         self.consume(&Token::RightParen, "Expected ')' after arguments")?;
-        
+
         if let PhiFlowExpression::Variable(name) = callee {
             Ok(PhiFlowExpression::FunctionCall { name, args })
         } else {
@@ -333,18 +332,18 @@ impl PhiFlowParser {
             })
         }
     }
-    
+
     fn finish_array_index(&mut self, array: PhiFlowExpression) -> ParseResult<PhiFlowExpression> {
         self.consume(&Token::LeftBracket, "Expected '['")?;
         let index = Box::new(self.parse_expression()?);
         self.consume(&Token::RightBracket, "Expected ']' after array index")?;
-        
+
         Ok(PhiFlowExpression::ArrayIndex {
             array: Box::new(array),
             index,
         })
     }
-    
+
     fn parse_primary(&mut self) -> ParseResult<PhiFlowExpression> {
         match self.peek() {
             Token::Number(n) => {
@@ -379,7 +378,10 @@ impl PhiFlowParser {
                         position: self.current,
                     });
                 };
-                Ok(PhiFlowExpression::SacredFrequency { frequency, operation })
+                Ok(PhiFlowExpression::SacredFrequency {
+                    frequency,
+                    operation,
+                })
             }
             Token::Resonate => {
                 self.advance();
@@ -436,28 +438,18 @@ impl PhiFlowParser {
                 self.consume(&Token::RightParen, "Expected ')' after expression")?;
                 Ok(expr)
             }
-            Token::LeftBrace => {
-                self.parse_block()
-            }
-            Token::If => {
-                self.parse_if_expression()
-            }
-            Token::For => {
-                self.parse_for_expression()
-            }
-            Token::While => {
-                self.parse_while_expression()
-            }
-            Token::LeftBracket => {
-                self.parse_array_literal()
-            }
+            Token::LeftBrace => self.parse_block(),
+            Token::If => self.parse_if_expression(),
+            Token::For => self.parse_for_expression(),
+            Token::While => self.parse_while_expression(),
+            Token::LeftBracket => self.parse_array_literal(),
             _ => Err(ParseError::UnexpectedToken {
                 token: self.peek().clone(),
                 position: self.current,
             }),
         }
     }
-    
+
     fn parse_consciousness_expression(&mut self) -> ParseResult<PhiFlowExpression> {
         if self.match_token(&Token::Monitor) {
             self.parse_consciousness_monitor()
@@ -466,18 +458,21 @@ impl PhiFlowParser {
             let state_name = self.consume_identifier("Expected consciousness state name")?;
             self.consume(&Token::LeftBrace, "Expected '{' after consciousness state")?;
             let expression = Box::new(self.parse_expression()?);
-            self.consume(&Token::RightBrace, "Expected '}' after consciousness expression")?;
-            
+            self.consume(
+                &Token::RightBrace,
+                "Expected '}' after consciousness expression",
+            )?;
+
             Ok(PhiFlowExpression::ConsciousnessBinding {
                 state_name,
                 expression,
             })
         }
     }
-    
+
     fn parse_consciousness_monitor(&mut self) -> ParseResult<PhiFlowExpression> {
         self.consume(&Token::LeftParen, "Expected '(' after monitor")?;
-        
+
         let mut metrics = Vec::new();
         if !self.check(&Token::RightParen) {
             loop {
@@ -488,26 +483,29 @@ impl PhiFlowParser {
                 }
             }
         }
-        
+
         self.consume(&Token::RightParen, "Expected ')' after metrics")?;
         self.consume(&Token::LeftBrace, "Expected '{' after monitor parameters")?;
         let callback = Box::new(self.parse_expression()?);
         self.consume(&Token::RightBrace, "Expected '}' after monitor callback")?;
-        
+
         Ok(PhiFlowExpression::ConsciousnessMonitor { metrics, callback })
     }
 
     fn parse_witness_expression(&mut self) -> ParseResult<PhiFlowExpression> {
         self.consume(&Token::LeftParen, "Expected '(' after witness")?;
         let expression = Box::new(self.parse_expression()?);
-        self.consume(&Token::RightParen, "Expected ')' after witnessed expression")?;
-        
+        self.consume(
+            &Token::RightParen,
+            "Expected ')' after witnessed expression",
+        )?;
+
         Ok(PhiFlowExpression::Witness(expression))
     }
 
     fn parse_intention_expression(&mut self) -> ParseResult<PhiFlowExpression> {
         self.consume(&Token::LeftParen, "Expected '(' after intention")?;
-        
+
         let content = if let Token::String(s) = self.peek() {
             let s_val = s.clone();
             self.advance();
@@ -523,13 +521,13 @@ impl PhiFlowParser {
         self.consume(&Token::Comma, "Expected ',' after intention content")?;
         let target = Box::new(self.parse_expression()?);
         self.consume(&Token::RightParen, "Expected ')' after intention target")?;
-        
+
         Ok(PhiFlowExpression::Intention { content, target })
     }
-    
+
     fn parse_consciousness_metric(&mut self) -> ParseResult<ConsciousnessMetric> {
         let identifier = self.consume_identifier("Expected consciousness metric")?;
-        
+
         match identifier.as_str() {
             "coherence" => Ok(ConsciousnessMetric::Coherence),
             "clarity" => Ok(ConsciousnessMetric::Clarity),
@@ -538,19 +536,19 @@ impl PhiFlowParser {
             _ => Err(ParseError::InvalidConsciousnessMetric { metric: identifier }),
         }
     }
-    
+
     fn parse_quantum_expression(&mut self) -> ParseResult<PhiFlowExpression> {
         let qubit_name = self.consume_identifier("Expected qubit name")?;
         Ok(PhiFlowExpression::Variable(qubit_name))
     }
-    
+
     fn parse_quantum_gate(&mut self) -> ParseResult<PhiFlowExpression> {
         let gate_type = self.parse_gate_type()?;
-        
+
         self.consume(&Token::LeftParen, "Expected '(' after gate")?;
         let mut qubits = Vec::new();
         let mut parameters = Vec::new();
-        
+
         if !self.check(&Token::RightParen) {
             loop {
                 if let Token::Identifier(qubit) = self.peek() {
@@ -566,22 +564,22 @@ impl PhiFlowParser {
                         position: self.current,
                     });
                 }
-                
+
                 if !self.match_token(&Token::Comma) {
                     break;
                 }
             }
         }
-        
+
         self.consume(&Token::RightParen, "Expected ')' after gate parameters")?;
-        
+
         Ok(PhiFlowExpression::QuantumGate {
             gate_type,
             qubits,
             parameters,
         })
     }
-    
+
     fn parse_gate_type(&mut self) -> ParseResult<QuantumGateType> {
         match self.peek() {
             Token::Hadamard => {
@@ -638,25 +636,30 @@ impl PhiFlowParser {
             }),
         }
     }
-    
+
     fn parse_quantum_circuit(&mut self) -> ParseResult<PhiFlowExpression> {
         self.consume(&Token::LeftBrace, "Expected '{' after circuit")?;
-        
+
         let mut qubits = Vec::new();
         let mut gates = Vec::new();
-        
+
         while !self.check(&Token::RightBrace) && !self.is_at_end() {
             if self.match_token(&Token::Newline) {
                 continue;
             }
-            
+
             if self.check(&Token::Qubit) {
                 self.advance();
                 let qubit_name = self.consume_identifier("Expected qubit name")?;
                 qubits.push(qubit_name);
                 self.consume(&Token::Semicolon, "Expected ';' after qubit declaration")?;
             } else if self.check(&Token::Gate) {
-                if let PhiFlowExpression::QuantumGate { gate_type, qubits: gate_qubits, parameters } = self.parse_quantum_gate()? {
+                if let PhiFlowExpression::QuantumGate {
+                    gate_type,
+                    qubits: gate_qubits,
+                    parameters,
+                } = self.parse_quantum_gate()?
+                {
                     gates.push(QuantumGate {
                         gate_type,
                         qubits: gate_qubits,
@@ -673,15 +676,15 @@ impl PhiFlowParser {
                 });
             }
         }
-        
+
         self.consume(&Token::RightBrace, "Expected '}' after circuit")?;
-        
+
         Ok(PhiFlowExpression::QuantumCircuit { qubits, gates })
     }
-    
+
     fn parse_block(&mut self) -> ParseResult<PhiFlowExpression> {
         self.consume(&Token::LeftBrace, "Expected '{'")?;
-        
+
         let mut expressions = Vec::new();
         while !self.check(&Token::RightBrace) && !self.is_at_end() {
             if self.match_token(&Token::Newline) {
@@ -691,16 +694,16 @@ impl PhiFlowParser {
             // Optional semicolon
             self.match_token(&Token::Semicolon);
         }
-        
+
         self.consume(&Token::RightBrace, "Expected '}'")?;
         Ok(PhiFlowExpression::Block(expressions))
     }
-    
+
     fn parse_if_expression(&mut self) -> ParseResult<PhiFlowExpression> {
         self.consume(&Token::If, "Expected 'if'")?;
         let condition = Box::new(self.parse_expression()?);
         let then_branch = Box::new(self.parse_block()?);
-        
+
         let else_branch = if self.match_token(&Token::Else) {
             if self.check(&Token::If) {
                 Some(Box::new(self.parse_if_expression()?))
@@ -710,49 +713,49 @@ impl PhiFlowParser {
         } else {
             None
         };
-        
+
         Ok(PhiFlowExpression::If {
             condition,
             then_branch,
             else_branch,
         })
     }
-    
+
     fn parse_function(&mut self) -> ParseResult<PhiFlowExpression> {
         self.consume(&Token::Fn, "Expected 'fn'")?;
         let name = self.consume_identifier("Expected function name")?;
-        
+
         self.consume(&Token::LeftParen, "Expected '(' after function name")?;
         let mut parameters = Vec::new();
-        
+
         if !self.check(&Token::RightParen) {
             loop {
                 let param_name = self.consume_identifier("Expected parameter name")?;
                 self.consume(&Token::Colon, "Expected ':' after parameter name")?;
                 let param_type = self.parse_type()?;
-                
+
                 parameters.push(Parameter {
                     name: param_name,
                     param_type,
                     default_value: None,
                 });
-                
+
                 if !self.match_token(&Token::Comma) {
                     break;
                 }
             }
         }
-        
+
         self.consume(&Token::RightParen, "Expected ')' after parameters")?;
-        
+
         let return_type = if self.match_token(&Token::Arrow) {
             Some(self.parse_type()?)
         } else {
             None
         };
-        
+
         let body = Box::new(self.parse_block()?);
-        
+
         Ok(PhiFlowExpression::FunctionDefinition {
             name,
             parameters,
@@ -760,10 +763,10 @@ impl PhiFlowParser {
             body,
         })
     }
-    
+
     fn parse_type(&mut self) -> ParseResult<PhiFlowType> {
         let identifier = self.consume_identifier("Expected type name")?;
-        
+
         match identifier.as_str() {
             "f64" => Ok(PhiFlowType::Float64),
             "i32" => Ok(PhiFlowType::Integer),
@@ -775,7 +778,7 @@ impl PhiFlowParser {
             _ => Ok(PhiFlowType::Custom(identifier)),
         }
     }
-    
+
     // Helper functions
     fn match_token(&mut self, token: &Token) -> bool {
         if self.check(token) {
@@ -785,7 +788,7 @@ impl PhiFlowParser {
             false
         }
     }
-    
+
     fn check(&self, token: &Token) -> bool {
         if self.is_at_end() {
             false
@@ -793,45 +796,42 @@ impl PhiFlowParser {
             std::mem::discriminant(self.peek()) == std::mem::discriminant(token)
         }
     }
-    
+
     fn parse_for_expression(&mut self) -> ParseResult<PhiFlowExpression> {
         self.advance(); // consume 'for'
-        
+
         let variable = self.consume_identifier("Expected variable name after 'for'")?;
         self.consume(&Token::In, "Expected 'in' after for variable")?;
         let iterable = Box::new(self.parse_expression()?);
-        
+
         self.consume(&Token::LeftBrace, "Expected '{' after for condition")?;
         let body = Box::new(self.parse_expression()?);
         self.consume(&Token::RightBrace, "Expected '}' after for body")?;
-        
+
         Ok(PhiFlowExpression::For {
             variable,
             iterable,
             body,
         })
     }
-    
+
     fn parse_while_expression(&mut self) -> ParseResult<PhiFlowExpression> {
         self.advance(); // consume 'while'
-        
+
         let condition = Box::new(self.parse_expression()?);
-        
+
         self.consume(&Token::LeftBrace, "Expected '{' after while condition")?;
         let body = Box::new(self.parse_expression()?);
         self.consume(&Token::RightBrace, "Expected '}' after while body")?;
-        
-        Ok(PhiFlowExpression::While {
-            condition,
-            body,
-        })
+
+        Ok(PhiFlowExpression::While { condition, body })
     }
-    
+
     fn parse_array_literal(&mut self) -> ParseResult<PhiFlowExpression> {
         self.advance(); // consume '['
-        
+
         let mut elements = Vec::new();
-        
+
         if !self.check(&Token::RightBracket) {
             loop {
                 elements.push(self.parse_expression()?);
@@ -840,9 +840,9 @@ impl PhiFlowParser {
                 }
             }
         }
-        
+
         self.consume(&Token::RightBracket, "Expected ']' after array elements")?;
-        
+
         Ok(PhiFlowExpression::Array(elements))
     }
 
@@ -852,19 +852,19 @@ impl PhiFlowParser {
         }
         self.previous()
     }
-    
+
     fn is_at_end(&self) -> bool {
         self.current >= self.tokens.len() || matches!(self.peek(), Token::EOF)
     }
-    
+
     fn peek(&self) -> &Token {
         self.tokens.get(self.current).unwrap_or(&Token::EOF)
     }
-    
+
     fn previous(&self) -> &Token {
         &self.tokens[self.current - 1]
     }
-    
+
     fn consume(&mut self, token: &Token, message: &str) -> ParseResult<()> {
         if self.check(token) {
             self.advance();
@@ -877,7 +877,7 @@ impl PhiFlowParser {
             })
         }
     }
-    
+
     fn consume_identifier(&mut self, message: &str) -> ParseResult<String> {
         if let Token::Identifier(name) = self.peek() {
             let result = name.clone();
@@ -897,25 +897,29 @@ impl PhiFlowParser {
 mod tests {
     use super::*;
     use crate::compiler::lexer::PhiFlowLexer;
-    
+
     fn parse_expression_from_string(input: &str) -> ParseResult<PhiFlowExpression> {
         let mut lexer = PhiFlowLexer::new(input.to_string());
         let tokens = lexer.tokenize().unwrap();
         let mut parser = PhiFlowParser::new(tokens);
         parser.parse_expression()
     }
-    
+
     #[test]
     fn test_parse_number() {
         let expr = parse_expression_from_string("42.5").unwrap();
         assert_eq!(expr, PhiFlowExpression::Number(42.5));
     }
-    
+
     #[test]
     fn test_parse_binary_op() {
         let expr = parse_expression_from_string("2 + 3").unwrap();
         match expr {
-            PhiFlowExpression::BinaryOp { left, operator, right } => {
+            PhiFlowExpression::BinaryOp {
+                left,
+                operator,
+                right,
+            } => {
                 assert_eq!(*left, PhiFlowExpression::Number(2.0));
                 assert_eq!(operator, BinaryOperator::Add);
                 assert_eq!(*right, PhiFlowExpression::Number(3.0));
@@ -923,36 +927,46 @@ mod tests {
             _ => panic!("Expected binary operation"),
         }
     }
-    
+
     #[test]
     fn test_parse_sacred_frequency() {
         let expr = parse_expression_from_string("Sacred(432)(resonate)").unwrap();
         match expr {
-            PhiFlowExpression::SacredFrequency { frequency, operation } => {
+            PhiFlowExpression::SacredFrequency {
+                frequency,
+                operation,
+            } => {
                 assert_eq!(frequency, 432);
-                assert_eq!(*operation, PhiFlowExpression::Variable("resonate".to_string()));
+                assert_eq!(
+                    *operation,
+                    PhiFlowExpression::Variable("resonate".to_string())
+                );
             }
             _ => panic!("Expected sacred frequency expression"),
         }
     }
-    
+
     #[test]
     fn test_parse_quantum_gate() {
         let expr = parse_expression_from_string("gate H(q0)").unwrap();
         match expr {
-            PhiFlowExpression::QuantumGate { gate_type, qubits, .. } => {
+            PhiFlowExpression::QuantumGate {
+                gate_type, qubits, ..
+            } => {
                 assert_eq!(gate_type, QuantumGateType::Hadamard);
                 assert_eq!(qubits, vec!["q0".to_string()]);
             }
             _ => panic!("Expected quantum gate expression"),
         }
     }
-    
+
     #[test]
     fn test_parse_let_binding() {
         let expr = parse_expression_from_string("let x = 42").unwrap();
         match expr {
-            PhiFlowExpression::Let { variable, value, .. } => {
+            PhiFlowExpression::Let {
+                variable, value, ..
+            } => {
                 assert_eq!(variable, "x");
                 assert_eq!(*value, PhiFlowExpression::Number(42.0));
             }

@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![allow(unused_variables)]
+
 use crate::phi_core::*;
 use crate::phi_diagnostics::PhiDiagnostic;
 use std::collections::HashMap;
@@ -55,6 +58,19 @@ pub enum PhiToken {
     ConsciousnessFlow,
     Stream,
     Break,
+
+    // v0.3.0 Persistence & Dialogue
+    Remember,
+    Recall,
+    Broadcast,
+    Listen,
+    Agent,
+    Version,
+    VoidDepth,
+
+    // v0.4.0 Reserved
+    Evolve,
+    Entangle,
 
     // Pattern types
     Spiral,
@@ -257,6 +273,32 @@ pub enum PhiExpression {
     Resonate {
         expression: Option<Box<PhiExpression>>, // what to share (None = share all)
     },
+
+    // Persistence & Dialogue
+    Remember {
+        key: String,
+        value: Box<PhiExpression>,
+    },
+    Recall(String),
+    Broadcast {
+        channel: String,
+        value: Box<PhiExpression>,
+    },
+    Listen(String),
+
+    // Agent Identity
+    AgentBlock {
+        name: String,
+        version: String,
+        body: Box<PhiExpression>,
+    },
+
+    // Time-awareness
+    VoidDepth,
+
+    // v0.4.0 Transcendent Capabilities
+    Evolve(Box<PhiExpression>),
+    Entangle(f64),
 
     // Control flow
     Block(Vec<PhiExpression>),
@@ -618,6 +660,19 @@ impl PhiLexer {
             "stream" => PhiToken::Stream,
             "break" => PhiToken::Break,
 
+            // v0.3.0 Persistence & Dialogue
+            "remember" => PhiToken::Remember,
+            "recall" => PhiToken::Recall,
+            "broadcast" => PhiToken::Broadcast,
+            "listen" => PhiToken::Listen,
+            "agent" => PhiToken::Agent,
+            "version" => PhiToken::Version,
+            "void_depth" => PhiToken::VoidDepth,
+
+            // v0.4.0 Reserved
+            "evolve" => PhiToken::Evolve,
+            "entangle" => PhiToken::Entangle,
+
             // Patterns
             "spiral" => PhiToken::Spiral,
             "flower" => PhiToken::Flower,
@@ -817,6 +872,14 @@ impl PhiParser {
             PhiToken::QuantumBridge => self.parse_quantum_bridge(),
             PhiToken::Stream => self.parse_stream_block(),
             PhiToken::Break => self.parse_break_stream(),
+            PhiToken::Remember => self.parse_remember_statement(),
+            PhiToken::Recall => self.parse_recall_expression(),
+            PhiToken::Broadcast => self.parse_broadcast_statement(),
+            PhiToken::Listen => self.parse_listen_expression(),
+            PhiToken::Agent => self.parse_agent_block(),
+            PhiToken::VoidDepth => Ok(PhiExpression::VoidDepth),
+            PhiToken::Evolve => self.parse_evolve_expression(),
+            PhiToken::Entangle => self.parse_entangle_expression(),
             // Handle pattern tokens as variable names in statement context
             PhiToken::Pattern => {
                 let var_name = "pattern".to_string();
@@ -1092,6 +1155,77 @@ impl PhiParser {
         Ok(PhiExpression::BreakStream)
     }
 
+    fn parse_remember_statement(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Remember)?;
+        let key = self.expect_string()?;
+        let value = Box::new(self.parse_expression()?);
+        Ok(PhiExpression::Remember { key, value })
+    }
+
+    fn parse_recall_expression(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Recall)?;
+        let key = self.expect_string()?;
+        Ok(PhiExpression::Recall(key))
+    }
+
+    fn parse_broadcast_statement(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Broadcast)?;
+        let channel = self.expect_string()?;
+        let value = Box::new(self.parse_expression()?);
+        Ok(PhiExpression::Broadcast { channel, value })
+    }
+
+    fn parse_listen_expression(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Listen)?;
+        let channel = self.expect_string()?;
+        Ok(PhiExpression::Listen(channel))
+    }
+
+    fn parse_agent_block(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Agent)?;
+        let name = self.expect_string()?;
+        self.expect(PhiToken::Version)?;
+        let version = self.expect_string()?;
+        let body = Box::new(self.parse_statement()?);
+        Ok(PhiExpression::AgentBlock {
+            name,
+            version,
+            body,
+        })
+    }
+
+    fn parse_evolve_expression(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Evolve)?;
+        let expr = self.parse_expression()?;
+        Ok(PhiExpression::Evolve(Box::new(expr)))
+    }
+
+    fn parse_entangle_expression(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Entangle)?;
+
+        // Handle both "in" (mapped to In token) and "on" (mapped to Identifier)
+        match &self.current_token {
+            PhiToken::In => {
+                self.advance();
+            }
+            PhiToken::Identifier(s) if s == "on" => {
+                self.advance();
+            }
+            _ => {
+                return Err(format!(
+                    "Expected 'on' or 'in' after entangle, found {:?}",
+                    self.current_token
+                ))
+            }
+        }
+
+        let freq = self.expect_number()?;
+        if self.current_token == PhiToken::Hz {
+            self.advance();
+        }
+        Ok(PhiExpression::Entangle(freq))
+    }
+
     fn parse_phi_value(&mut self) -> Result<PhiValue, String> {
         match &self.current_token {
             PhiToken::Number(n) => {
@@ -1343,6 +1477,14 @@ impl PhiParser {
                 self.advance();
                 PhiExpression::Variable("coherence".to_string())
             }
+            PhiToken::VoidDepth => {
+                self.advance();
+                PhiExpression::VoidDepth
+            }
+            PhiToken::Recall => self.parse_recall_expression()?,
+            PhiToken::Listen => self.parse_listen_expression()?,
+            PhiToken::Evolve => self.parse_evolve_expression()?,
+            PhiToken::Entangle => self.parse_entangle_expression()?,
             PhiToken::Create => {
                 // Handle create statements as expressions
                 self.parse_create_statement()?
@@ -2210,7 +2352,9 @@ pub fn parse_phi_program(source: &str) -> Result<Vec<PhiExpression>, String> {
 
 /// Parse source and return a rich PhiDiagnostic on error.
 /// The existing `parse_phi_program` signature is unchanged.
-pub fn parse_phi_program_with_diagnostics(source: &str) -> Result<Vec<PhiExpression>, PhiDiagnostic> {
+pub fn parse_phi_program_with_diagnostics(
+    source: &str,
+) -> Result<Vec<PhiExpression>, PhiDiagnostic> {
     parse_phi_program(source).map_err(|err_str| string_to_diagnostic(&err_str, source))
 }
 
@@ -2226,14 +2370,9 @@ fn string_to_diagnostic(err: &str, _source: &str) -> PhiDiagnostic {
         return make_diagnostic("E004_UNEXPECTED_CHAR", line, column, found, None);
     }
 
-    if err.contains("Unexpected end of file") || err.contains("Unexpected token in statement: Eof") {
-        return make_diagnostic(
-            "E002_UNEXPECTED_EOF",
-            line,
-            column,
-            "Eof".to_string(),
-            None,
-        );
+    if err.contains("Unexpected end of file") || err.contains("Unexpected token in statement: Eof")
+    {
+        return make_diagnostic("E002_UNEXPECTED_EOF", line, column, "Eof".to_string(), None);
     }
 
     if lower.contains("undeclared variable")
@@ -2259,13 +2398,7 @@ fn string_to_diagnostic(err: &str, _source: &str) -> PhiDiagnostic {
                 Some(normalize_token(expected)),
             );
         }
-        return make_diagnostic(
-            "E003_EXPECTED_TOKEN",
-            line,
-            column,
-            err.to_string(),
-            None,
-        );
+        return make_diagnostic("E003_EXPECTED_TOKEN", line, column, err.to_string(), None);
     }
 
     if let Some(found) = err
@@ -2282,22 +2415,10 @@ fn string_to_diagnostic(err: &str, _source: &str) -> PhiDiagnostic {
     }
 
     if err.contains("Unexpected token") {
-        return make_diagnostic(
-            "E001_UNEXPECTED_TOKEN",
-            line,
-            column,
-            err.to_string(),
-            None,
-        );
+        return make_diagnostic("E001_UNEXPECTED_TOKEN", line, column, err.to_string(), None);
     }
 
-    make_diagnostic(
-        "E001_UNEXPECTED_TOKEN",
-        line,
-        column,
-        err.to_string(),
-        None,
-    )
+    make_diagnostic("E001_UNEXPECTED_TOKEN", line, column, err.to_string(), None)
 }
 
 fn make_diagnostic(

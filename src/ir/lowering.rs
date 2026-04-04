@@ -1,15 +1,15 @@
-//! AST → IR Lowering Pass
+//! AST – IR Lowering Pass
 //!
 //! Converts PhiExpression AST nodes into a flat sequence of IR opcodes.
 //! This is Phase 1 lowering — covers core language constructs and
-//! consciousness-aware operations. Hardware/quantum/bio nodes are
+//! consciousness-aware operations. Hardware/quantum/bio backends
 //! lowered to Stub opcodes for future backends.
 
 use super::{FunctionDef, IrProgram, Label, Opcode};
 use crate::parser::{BinaryOperator, PhiExpression, PhiValue, UnaryOperator};
 use std::collections::HashMap;
 
-/// The lowering context, tracking state during AST → IR conversion.
+/// The lowering context, tracking state during AST – IR conversion.
 pub struct Lowering {
     program: IrProgram,
     active_stream_end: Option<Label>,
@@ -44,7 +44,7 @@ impl Lowering {
     /// Lower a single expression, appending opcodes to the given buffer.
     fn lower_expression(&mut self, expr: &PhiExpression, buffer: &mut Vec<Opcode>) {
         match expr {
-            // ─── Literals ───────────────────────────────────
+            // ——— Literals ——————————————————————————————————————————    
             PhiExpression::Number(n) => {
                 self.emit(buffer, Opcode::PushNumber(*n));
             }
@@ -57,7 +57,7 @@ impl Lowering {
                 self.emit(buffer, Opcode::PushBool(*b));
             }
 
-            // ─── Variable binding and access ────────────────
+            // ——— Variable binding and access ————————————————
             PhiExpression::LetBinding { name, value, .. } => {
                 // Lower the value expression first (pushes result onto stack)
                 self.lower_expression(value, buffer);
@@ -69,7 +69,7 @@ impl Lowering {
                 self.emit(buffer, Opcode::Load(name.clone()));
             }
 
-            // ─── Binary operations ──────────────────────────
+            // ——— Binary operations ————————————————————————
             PhiExpression::BinaryOp {
                 left,
                 operator,
@@ -97,7 +97,7 @@ impl Lowering {
                 self.emit(buffer, op);
             }
 
-            // ─── Unary operations ───────────────────────────
+            // ——— Unary operations ————————————————————————
             PhiExpression::UnaryOp { operator, operand } => {
                 self.lower_expression(operand, buffer);
                 let op = match operator {
@@ -107,7 +107,7 @@ impl Lowering {
                 self.emit(buffer, op);
             }
 
-            // ─── Block (sequence of expressions) ────────────
+            // ——— Block (sequence of expressions) ————————————
             PhiExpression::Block(exprs) => {
                 for (i, e) in exprs.iter().enumerate() {
                     self.lower_expression(e, buffer);
@@ -121,7 +121,7 @@ impl Lowering {
                 }
             }
 
-            // ─── If/Else ────────────────────────────────────
+            // ——— If/Else ——————————————————————————————————————  
             PhiExpression::IfElse {
                 condition,
                 then_branch,
@@ -152,7 +152,7 @@ impl Lowering {
                 }
             }
 
-            // ─── While loop ─────────────────────────────────
+            // ——— While loop ————————————————————————————        
             PhiExpression::WhileLoop { condition, body } => {
                 let loop_start = self.program.fresh_label();
                 let loop_end = self.program.fresh_label();
@@ -167,7 +167,7 @@ impl Lowering {
                 self.emit(buffer, Opcode::PushVoid); // loops produce void
             }
 
-            // ─── For loop ───────────────────────────────────
+            // ——— For loop ——————————————————————————————    
             PhiExpression::ForLoop {
                 variable,
                 iterable,
@@ -209,13 +209,13 @@ impl Lowering {
                 self.emit(buffer, Opcode::PushVoid);
             }
 
-            // ─── Return ─────────────────────────────────────
+            // ——— Return ——————————————————————————————————————
             PhiExpression::Return(expr) => {
                 self.lower_expression(expr, buffer);
                 self.emit(buffer, Opcode::Return);
             }
 
-            // ─── Lists ──────────────────────────────────────
+            // ——— Lists ————————————————————————————————————————
             PhiExpression::List(items) => {
                 let count = items.len();
                 for item in items {
@@ -230,7 +230,7 @@ impl Lowering {
                 self.emit(buffer, Opcode::ListAccess);
             }
 
-            // ─── Function definition ────────────────────────
+            // ——— Function definition ————————————————————————
             PhiExpression::FunctionDef {
                 name,
                 parameters,
@@ -267,7 +267,7 @@ impl Lowering {
                 );
             }
 
-            // ─── Function call ──────────────────────────────
+            // ——— Function call ———————————————————————————————
             PhiExpression::FunctionCall { name, arguments } => {
                 let arg_count = arguments.len();
 
@@ -294,9 +294,9 @@ impl Lowering {
                 );
             }
 
-            // ═════════════════════════════════════════════════
+            // ╭————————————————————————————————————————————————╮
             // CONSCIOUSNESS CONSTRUCTS — The soul of PhiFlow
-            // ═════════════════════════════════════════════════
+            // ╰————————————————————————————————————————————————╯
             PhiExpression::Witness { expression, body } => {
                 let has_expression = expression.is_some();
                 let has_body = body.is_some();
@@ -335,7 +335,7 @@ impl Lowering {
                 self.emit(buffer, Opcode::Resonate { has_expression });
             }
 
-            // ─── Pattern creation ───────────────────────────
+            // ——— Pattern creation ————————————————————————————
             PhiExpression::CreatePattern {
                 pattern_type,
                 frequency,
@@ -350,7 +350,7 @@ impl Lowering {
                 );
             }
 
-            // ─── Consciousness validation ───────────────────
+            // ——— Consciousness validation ———————————————————————
             PhiExpression::ConsciousnessValidation { pattern, metrics } => {
                 self.lower_expression(pattern, buffer);
                 self.emit(
@@ -361,10 +361,10 @@ impl Lowering {
                 );
             }
 
-            // ═════════════════════════════════════════════════
+            // ╭————————————————————————————————————————————————╮
             // STUBS — Future hardware/quantum/bio backends
             // These are lowered as Stub opcodes to preserve info
-            // ═════════════════════════════════════════════════
+            // ╰————————————————————————————————————————————————╯
             PhiExpression::ConsciousnessState {
                 state,
                 coherence,
@@ -530,13 +530,6 @@ impl Lowering {
                     },
                 );
 
-                // Body of the stream loop
-                // Push the end label onto the break stack conceptually, but handled via AST logic for break statement routing
-                // For simplicity, we assume `break stream` is resolved dynamically via a stack/VM lookup during evaluation,
-                // or we can pass a context label down. In this lowering phase, we'll store the currently active stream context
-                // in the `Lowering` struct if we needed to inject `end_label` into `BreakStream`.
-
-                // We temporarily overwrite an active stream end label in our struct context so breaks can bind.
                 let prev_end = self.active_stream_end;
                 self.active_stream_end = Some(loop_end);
 
@@ -555,7 +548,6 @@ impl Lowering {
                 if let Some(end_label) = self.active_stream_end {
                     self.emit(buffer, Opcode::StreamBreak { end_label });
                 } else {
-                    // Compilation error conceptually, but emit halt or stub for now
                     self.emit(
                         buffer,
                         Opcode::Stub {
@@ -564,6 +556,10 @@ impl Lowering {
                         },
                     );
                 }
+            }
+            _ => {
+                // v0.3.0 features not implemented in legacy IR yet
+                self.emit(buffer, Opcode::Halt);
             }
         }
     }

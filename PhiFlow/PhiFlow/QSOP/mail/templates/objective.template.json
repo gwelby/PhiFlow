@@ -1,0 +1,15 @@
+{
+  "objective_id": "OBJ-YYYYMMDD-001",
+  "origin": "antigravity",
+  "target": "codex",
+  "intent": "short_intent_slug",
+  "status": "pending",
+  "created_at": "2026-02-21T00:00:00Z",
+  "payload_path": "QSOP/mail/payloads/OBJ-YYYYMMDD-001.md",
+  "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "ownership": [
+    "src/phi_ir",
+    "tests/phi_ir_roundtrip_tests.rs"
+  ],
+  "verification_required": true
+}

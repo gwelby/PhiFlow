@@ -1,0 +1,18 @@
+RESONATE: 0.0000 Hz
+{
+  "final_coherence": 0.9355,
+  "sensor_readings": [
+    {
+      "cpu_percent": 0.8,
+      "memory_percent": 12.1,
+      "cpu_temp_celsius": null,
+      "timestamp_utc": "2026-02-24T01:47:31.508504+00:00"
+    }
+  ],
+  "intention_stack_final": [],
+  "resonance_log": [
+    0.0
+  ],
+  "wasm_return_value": 2.0,
+  "execution_time_ms": 368.4663249878213
+}

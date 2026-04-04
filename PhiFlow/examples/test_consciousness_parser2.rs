@@ -44,7 +44,11 @@ let y = 528"#;
             println!("Number of expressions: {}", ast.len());
             for (i, expr) in ast.iter().enumerate() {
                 match expr {
-                    phiflow::parser::PhiExpression::ConsciousnessState { state, coherence, frequency } => {
+                    phiflow::parser::PhiExpression::ConsciousnessState {
+                        state,
+                        coherence,
+                        frequency,
+                    } => {
                         println!("  Expression {}: ConsciousnessState {{ state: {}, coherence: {}, frequency: {} }}", 
                                 i + 1, state, coherence, frequency);
                     }

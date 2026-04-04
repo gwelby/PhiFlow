@@ -10,12 +10,16 @@
 //! 2. **First-Class Consciousness**: Witness, Intention, Resonate, and Coherence are native nodes.
 //! 3. **Backend Agnostic**: No WASM types, no Qubit registers, no HAL traits here.
 
+pub mod coherence;
 pub mod emitter;
 pub mod evaluator;
 pub mod lowering;
+pub mod openqasm;
 pub mod optimizer;
 pub mod printer;
+pub mod quantum_codegen;
 pub mod vm;
+pub mod vm_state;
 pub mod wasm;
 
 use crate::compiler::lexer::Token; // Re-using Token if needed, or defining own types
@@ -60,8 +64,59 @@ pub enum PatternKind {
 #[derive(Debug, Clone, PartialEq)]
 pub enum CollapsePolicy {
     MidCircuit,     // measure and continue
-    Deferred,       // record but don't collapse until end
+    Final,          // record but don't collapse until end
     NonDestructive, // measure ancilla, preserve main state
+}
+
+/// Direction for binary council-style resonance encodings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ResonateDirection {
+    TeamA,
+    TeamB,
+}
+
+/// Physical host sensors exposed through `witness sensor("...")`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+pub enum SensorKind {
+    CpuUsage,
+    CpuTemp,
+    MemoryUsage,
+}
+
+impl SensorKind {
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "cpu_usage" => Some(Self::CpuUsage),
+            "cpu_temp" => Some(Self::CpuTemp),
+            "memory_usage" => Some(Self::MemoryUsage),
+            _ => None,
+        }
+    }
+
+    pub fn as_name(self) -> &'static str {
+        match self {
+            Self::CpuUsage => "cpu_usage",
+            Self::CpuTemp => "cpu_temp",
+            Self::MemoryUsage => "memory_usage",
+        }
+    }
+
+    pub fn as_id(self) -> i32 {
+        match self {
+            Self::CpuUsage => 0,
+            Self::CpuTemp => 1,
+            Self::MemoryUsage => 2,
+        }
+    }
+
+    pub fn from_id(id: i32) -> Option<Self> {
+        match id {
+            0 => Some(Self::CpuUsage),
+            1 => Some(Self::CpuTemp),
+            2 => Some(Self::MemoryUsage),
+            _ => None,
+        }
+    }
 }
 
 /// Domain operations (specialized features beyond the four core constructs)
@@ -114,12 +169,22 @@ pub struct Param {
 
 /// Values that can appear as constants in the IR.
 /// Backends lower these to their own representations.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum PhiIRValue {
     Number(f64), // WASM: f64, Hardware: f32, Quantum: f64
     String(u32), // index into string_table
     Boolean(bool),
     Void,
+}
+
+impl PhiIRValue {
+    pub fn as_number(&self) -> Option<f64> {
+        if let PhiIRValue::Number(n) = self {
+            Some(*n)
+        } else {
+            None
+        }
+    }
 }
 
 /// A wrapper around a PhiIRNode that explicitly tracks the result operand.
@@ -192,6 +257,9 @@ pub enum PhiIRNode {
         collapse_policy: CollapsePolicy,
     },
 
+    /// Witness a physical or system sensor by name (e.g. "cpu_temp").
+    WitnessSensor { sensor: SensorKind },
+
     /// Enter an intention scope. Pushes intention name onto the stack.
     /// WASM: runtime stack. Quantum: register allocation. Hardware: sensor reconfig.
     IntentionPush {
@@ -207,7 +275,15 @@ pub enum PhiIRNode {
     Resonate {
         value: Option<Operand>,
         frequency_relationship: Option<f64>, // phi-harmonic ratio, e.g. 528/432
+        direction: ResonateDirection,
     },
+
+    /// Enter a continuous stream loop. Acts like IntentionPush but sets stream context
+    /// where `resonate` overwrites rather than appends.
+    StreamPush(String),
+
+    /// Exit the continuous stream loop.
+    StreamPop,
 
     /// Evaluate program coherence NOW using backend-appropriate method.
     CoherenceCheck,
@@ -223,6 +299,32 @@ pub enum PhiIRNode {
         annotation: SacredFrequency,
         params: Vec<(String, Operand)>,
     },
+
+    // --- v0.3.0 Persistence & Dialogue ---
+    /// Persist a value to durable storage.
+    Remember { key: String, value: Operand },
+
+    /// Recall a value from durable storage.
+    Recall(String),
+
+    /// Broadcast a message to a shared channel.
+    Broadcast { channel: String, value: Operand },
+
+    /// Listen for the latest message on a shared channel.
+    Listen(String),
+
+    /// Declare agent identity for the current execution context.
+    AgentDecl { name: String, version: String },
+
+    /// Perceive the duration of the last yield-resume gap.
+    VoidDepth,
+
+    // --- v0.4.0 Strategic Capabilities ---
+    /// Request a logic evolution (self-modification).
+    Evolve(Operand),
+
+    /// Request a phase-locking with other streams on a given frequency.
+    Entangle(f64),
 
     // --- Domain Operations (backend-specific interpretation) ---
     /// Specialized operation. Each backend maps these to its own implementation.
@@ -285,5 +387,11 @@ impl PhiIRProgram {
             frequencies_declared: Vec::new(),
             intentions_declared: Vec::new(),
         }
+    }
+}
+
+impl Default for PhiIRProgram {
+    fn default() -> Self {
+        Self::new()
     }
 }

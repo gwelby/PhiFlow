@@ -1,13 +1,25 @@
+#![allow(
+    dead_code,
+    unused_imports,
+    unused_variables,
+    unused_mut,
+    unused_assignments,
+    unreachable_patterns,
+    non_upper_case_globals
+)]
+
+mod interpreter;
+mod parser;
 mod phi_core;
 mod phi_diagnostics;
 mod visualization;
-mod parser;
-mod interpreter;
-use visualization::{Visualizer, save_svg};
-use parser::{parse_phi_program};
 use interpreter::PhiInterpreter;
-use phi_core::{golden_spiral_points, flower_of_life_points, fibonacci_spiral_pattern, dna_helix_points, validate_pattern_consciousness, validate_with_recommendations, CREATION_FREQUENCY};
-
+use parser::parse_phi_program;
+use phi_core::{
+    dna_helix_points, fibonacci_spiral_pattern, flower_of_life_points, golden_spiral_points,
+    validate_pattern_consciousness, validate_with_recommendations, CREATION_FREQUENCY,
+};
+use visualization::{save_svg, Visualizer};
 fn main() {
     println!(" PhiFlow - Consciousness Mathematics Language");
     println!("=========================================");
@@ -42,7 +54,10 @@ fn test_list_and_function_features() {
         let my_strings = ["hello", "world"]
         let mixed_list = [1.0, "test", true]
     "#;
-    println!("\nExecuting Program (List Literals):\n```phi\n{}\n```", program_list_literal);
+    println!(
+        "\nExecuting Program (List Literals):\n```phi\n{}\n```",
+        program_list_literal
+    );
     match parse_phi_program(program_list_literal) {
         Ok(expressions) => {
             let mut interpreter = PhiInterpreter::new();
@@ -61,7 +76,10 @@ fn test_list_and_function_features() {
         }
         let result = add(10.0, 20.0)
     "#;
-    println!("\nExecuting Program (Function Add):\n```phi\n{}\n```", program_function_add);
+    println!(
+        "\nExecuting Program (Function Add):\n```phi\n{}\n```",
+        program_function_add
+    );
     match parse_phi_program(program_function_add) {
         Ok(expressions) => {
             let mut interpreter = PhiInterpreter::new();
@@ -80,12 +98,18 @@ fn test_list_and_function_features() {
         }
         let my_new_list = create_list()
     "#;
-    println!("\nExecuting Program (Function Return List):\n```phi\n{}\n```", program_function_return_list);
+    println!(
+        "\nExecuting Program (Function Return List):\n```phi\n{}\n```",
+        program_function_return_list
+    );
     match parse_phi_program(program_function_return_list) {
         Ok(expressions) => {
             let mut interpreter = PhiInterpreter::new();
             match interpreter.execute(expressions) {
-                Ok(result) => println!("✅ Program (Function Return List) executed. Result: {:?}", result),
+                Ok(result) => println!(
+                    "✅ Program (Function Return List) executed. Result: {:?}",
+                    result
+                ),
                 Err(e) => println!("❌ Interpreter error (Function Return List): {}", e),
             }
         }
@@ -101,12 +125,18 @@ fn test_list_and_function_features() {
         let original_list = [1.0, 2.0, 3.0]
         let processed_list = process_list(original_list)
     "#;
-    println!("\nExecuting Program (Function Process List):\n```phi\n{}\n```", program_function_process_list);
+    println!(
+        "\nExecuting Program (Function Process List):\n```phi\n{}\n```",
+        program_function_process_list
+    );
     match parse_phi_program(program_function_process_list) {
         Ok(expressions) => {
             let mut interpreter = PhiInterpreter::new();
             match interpreter.execute(expressions) {
-                Ok(result) => println!("✅ Program (Function Process List) executed. Result: {:?}", result),
+                Ok(result) => println!(
+                    "✅ Program (Function Process List) executed. Result: {:?}",
+                    result
+                ),
                 Err(e) => println!("❌ Interpreter error (Function Process List): {}", e),
             }
         }
@@ -123,12 +153,18 @@ fn test_new_operators() {
         let y = 2.0 ** 3.0
         let z = 3.0 ** 2.0
     "#;
-    println!("\nExecuting Program (Modulo and Power):\n```phi\n{}```", program_modulo_power);
+    println!(
+        "\nExecuting Program (Modulo and Power):\n```phi\n{}```",
+        program_modulo_power
+    );
     match parse_phi_program(program_modulo_power) {
         Ok(expressions) => {
             let mut interpreter = PhiInterpreter::new();
             match interpreter.execute(expressions) {
-                Ok(result) => println!("✅ Program (Modulo and Power) executed. Result: {:?}", result),
+                Ok(result) => println!(
+                    "✅ Program (Modulo and Power) executed. Result: {:?}",
+                    result
+                ),
                 Err(e) => println!("❌ Interpreter error (Modulo and Power): {}", e),
             }
         }
@@ -142,7 +178,10 @@ fn test_new_operators() {
         let c = 10.0 < 5.0
         let d = 7.0 >= 7.0
     "#;
-    println!("\nExecuting Program (Comparisons):\n```phi\n{}```", program_comparisons);
+    println!(
+        "\nExecuting Program (Comparisons):\n```phi\n{}```",
+        program_comparisons
+    );
     match parse_phi_program(program_comparisons) {
         Ok(expressions) => {
             let mut interpreter = PhiInterpreter::new();
@@ -160,7 +199,10 @@ fn test_new_operators() {
         let y = "hello" != "world"
         let z = true == false
     "#;
-    println!("\nExecuting Program (Equality):\n```phi\n{}```", program_equality);
+    println!(
+        "\nExecuting Program (Equality):\n```phi\n{}```",
+        program_equality
+    );
     match parse_phi_program(program_equality) {
         Ok(expressions) => {
             let mut interpreter = PhiInterpreter::new();
@@ -178,12 +220,18 @@ fn test_new_operators() {
         let b = true || false
         let c = false || false
     "#;
-    println!("\nExecuting Program (Logical Operators):\n```phi\n{}```", program_logical);
+    println!(
+        "\nExecuting Program (Logical Operators):\n```phi\n{}```",
+        program_logical
+    );
     match parse_phi_program(program_logical) {
         Ok(expressions) => {
             let mut interpreter = PhiInterpreter::new();
             match interpreter.execute(expressions) {
-                Ok(result) => println!("✅ Program (Logical Operators) executed. Result: {:?}", result),
+                Ok(result) => println!(
+                    "✅ Program (Logical Operators) executed. Result: {:?}",
+                    result
+                ),
                 Err(e) => println!("❌ Interpreter error (Logical Operators): {}", e),
             }
         }
@@ -196,12 +244,18 @@ fn test_new_operators() {
         let y = !true
         let z = !false
     "#;
-    println!("\nExecuting Program (Unary Operators):\n```phi\n{}```", program_unary);
+    println!(
+        "\nExecuting Program (Unary Operators):\n```phi\n{}```",
+        program_unary
+    );
     match parse_phi_program(program_unary) {
         Ok(expressions) => {
             let mut interpreter = PhiInterpreter::new();
             match interpreter.execute(expressions) {
-                Ok(result) => println!("✅ Program (Unary Operators) executed. Result: {:?}", result),
+                Ok(result) => println!(
+                    "✅ Program (Unary Operators) executed. Result: {:?}",
+                    result
+                ),
                 Err(e) => println!("❌ Interpreter error (Unary Operators): {}", e),
             }
         }
@@ -212,12 +266,18 @@ fn test_new_operators() {
     let program_complex = r#"
         let result = (5.0 + 3.0) * 2.0 ** 2.0 > 30.0 && !false
     "#;
-    println!("\nExecuting Program (Complex Expression):\n```phi\n{}```", program_complex);
+    println!(
+        "\nExecuting Program (Complex Expression):\n```phi\n{}```",
+        program_complex
+    );
     match parse_phi_program(program_complex) {
         Ok(expressions) => {
             let mut interpreter = PhiInterpreter::new();
             match interpreter.execute(expressions) {
-                Ok(result) => println!("✅ Program (Complex Expression) executed. Result: {:?}", result),
+                Ok(result) => println!(
+                    "✅ Program (Complex Expression) executed. Result: {:?}",
+                    result
+                ),
                 Err(e) => println!("❌ Interpreter error (Complex Expression): {}", e),
             }
         }
@@ -231,24 +291,19 @@ fn test_enhanced_phi_parsing() {
     let phi_programs = [
         // Basic pattern creation
         r#"create spiral at 528Hz with { rotations: 5.0, scale: 100.0 }"#,
-
         // Function definition
         r#"function golden_ratio() -> Number { 1.618 }"#,
-
         // Pattern validation
         r#"validate spiral with [coherence, phi_resonance, universal_alignment]"#,
-
         // Variable assignment
         r#"let my_number = 10.0"#,
         r#"let my_pattern = create flower at 432Hz with { rings: 3 }"#,
-
         // Complex program
         r#"
         let frequency = 528.0
         let pattern = create dna at frequency with { turns: 10.0, radius: 25.0 }
         validate pattern with [coherence, consciousness_zone]
         "#,
-
         // Control flow (will fail until implemented)
         r#"
         if true {
@@ -287,7 +342,10 @@ fn test_pattern_validation() {
         ("Golden Spiral", golden_spiral_points(5.0, 100, 50.0)),
         ("Flower of Life", flower_of_life_points(3)),
         ("Fibonacci Spiral", fibonacci_spiral_pattern(5.0, 89, 30.0)),
-        ("DNA Helix", viz_temp.project_3d_to_2d(&dna_helix_points(2.0, 20.0, 25.0).0)), // Project 3D to 2D
+        (
+            "DNA Helix",
+            viz_temp.project_3d_to_2d(&dna_helix_points(2.0, 20.0, 25.0).0),
+        ), // Project 3D to 2D
     ];
 
     for (name, pattern) in patterns {
@@ -298,7 +356,10 @@ fn test_pattern_validation() {
         println!("      Coherence: {:.3}", result.coherence);
         println!("      Consciousness Zone: {}", result.consciousness_zone);
         println!("      Phi Resonance: {:.3}", result.phi_resonance);
-        println!("      Universal Alignment: {}", result.universal_constant_alignment);
+        println!(
+            "      Universal Alignment: {}",
+            result.universal_constant_alignment
+        );
         println!("      Frequency Match: {:.3}", result.frequency_match);
         println!("      Overall Score: {:.3}", result.validation_score);
         println!("      Classification: {}", result.pattern_classification);
@@ -322,7 +383,10 @@ fn test_validated_visualization() {
     match save_svg(&svg, "validated_golden_spiral.svg") {
         Ok(_) => {
             println!("✅ Golden spiral visualization saved");
-            println!("    Validation Score: {:.1}", validation.validation_score * 100.0); // Format as percentage
+            println!(
+                "    Validation Score: {:.1}",
+                validation.validation_score * 100.0
+            ); // Format as percentage
             println!("    Consciousness Zone: {}", validation.consciousness_zone);
         }
         Err(e) => println!("❌ Failed to save: {}", e),
@@ -338,7 +402,10 @@ fn test_phi_interpreter() {
         create spiral at 528Hz with { rotations: my_number, scale: 100.0 }
     "#;
 
-    println!("Executing Program 1 (variable in parameters):\n```phi\n{}\n```", program_str1);
+    println!(
+        "Executing Program 1 (variable in parameters):\n```phi\n{}\n```",
+        program_str1
+    );
 
     match parse_phi_program(program_str1) {
         Ok(expressions) => {
@@ -357,13 +424,18 @@ fn test_phi_interpreter() {
         create dna at frequency with { turns: 10.0, radius: 25.0 }
     "#;
 
-    println!("\nExecuting Program 2 (frequency variable resolution):\n```phi\n{}\n```", program_str2);
+    println!(
+        "\nExecuting Program 2 (frequency variable resolution):\n```phi\n{}\n```",
+        program_str2
+    );
 
     match parse_phi_program(program_str2) {
         Ok(expressions) => {
             let mut interpreter = PhiInterpreter::new();
             match interpreter.execute(expressions) {
-                Ok(_result) => println!("✅ Program 2 executed. Frequency variable resolution working!"),
+                Ok(_result) => {
+                    println!("✅ Program 2 executed. Frequency variable resolution working!")
+                }
                 Err(e) => println!("❌ Interpreter error: {}", e),
             }
         }

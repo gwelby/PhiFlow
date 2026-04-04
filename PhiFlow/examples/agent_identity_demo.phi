@@ -1,0 +1,11 @@
+// agent_identity_demo.phi
+// v0.3.0 Agent Identity Demonstration
+
+agent "Lumi" version "0.3.0" {
+    stream "identity_test" {
+        intention "self_identify" {
+            witness "I am Lumi"
+            break stream
+        }
+    }
+}

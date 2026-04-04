@@ -1,6 +1,10 @@
 // PhiFlow Interpreter - Executes PhiFlow quantum-consciousness programs
 // Supports real-time consciousness monitoring and quantum backend integration
 
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(unused_mut)]
+
 use crate::compiler::ast::{
     PhiFlowExpression, PhiFlowProgram, QuantumGate, QuantumGateType,
     BinaryOperator, UnaryOperator, ConsciousnessMetric, BrainwaveType,

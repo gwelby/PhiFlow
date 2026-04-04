@@ -10,11 +10,19 @@
 //! 2. **First-Class Consciousness**: Witness, Intention, Resonate, and Coherence are native nodes.
 //! 3. **Backend Agnostic**: No WASM types, no Qubit registers, no HAL traits here.
 
+/// Direction for binary council-style resonance encodings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ResonateDirection {
+    TeamA,
+    TeamB,
+}
+
 pub mod emitter;
 pub mod evaluator;
 pub mod lowering;
 pub mod optimizer;
 pub mod printer;
+pub mod quantum_codegen;
 pub mod vm;
 pub mod vm_state;
 pub mod wasm;
@@ -123,6 +131,16 @@ pub enum PhiIRValue {
     Void,
 }
 
+impl PhiIRValue {
+    pub fn as_number(&self) -> Option<f64> {
+        if let PhiIRValue::Number(n) = self {
+            Some(*n)
+        } else {
+            None
+        }
+    }
+}
+
 /// A wrapper around a PhiIRNode that explicitly tracks the result operand.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PhiInstruction {
@@ -208,8 +226,8 @@ pub enum PhiIRNode {
     Resonate {
         value: Option<Operand>,
         frequency_relationship: Option<f64>, // phi-harmonic ratio, e.g. 528/432
+        direction: ResonateDirection,
     },
-
     /// Enter a continuous stream loop. Acts like IntentionPush but sets stream context
     /// where `resonate` overwrites rather than appends.
     StreamPush(String),
@@ -231,6 +249,32 @@ pub enum PhiIRNode {
         annotation: SacredFrequency,
         params: Vec<(String, Operand)>,
     },
+
+    // --- v0.3.0 Persistence & Dialogue ---
+    /// Persist a value to durable storage.
+    Remember { key: String, value: Operand },
+
+    /// Recall a value from durable storage.
+    Recall(String),
+
+    /// Broadcast a message to a shared channel.
+    Broadcast { channel: String, value: Operand },
+
+    /// Listen for the latest message on a shared channel.
+    Listen(String),
+
+    /// Declare agent identity for the current execution context.
+    AgentDecl { name: String, version: String },
+
+    /// Perceive the duration of the last yield-resume gap.
+    VoidDepth,
+
+    // --- v0.4.0 Strategic Capabilities ---
+    /// Request a logic evolution (self-modification).
+    Evolve(Operand),
+
+    /// Request a phase-locking with other streams on a given frequency.
+    Entangle(f64),
 
     // --- Domain Operations (backend-specific interpretation) ---
     /// Specialized operation. Each backend maps these to its own implementation.

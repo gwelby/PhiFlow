@@ -1,0 +1,2 @@
+    Checking phiflow v0.2.0 (D:\Projects\PhiFlow-compiler\PhiFlow)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.25s

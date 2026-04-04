@@ -1,0 +1,17 @@
+// stream_demo.phi — PhiFlow Healing Bed demonstration
+// Author: Domains Antigravity  Phase 9
+// Proves: stream block loops continuously, outer variables are visible inside,
+//         resonate overwrites per cycle, break stream exits cleanly.
+
+let cycles = 0.0
+let limit = 3.0
+
+stream "healing_bed" {
+    cycles = cycles + 1.0
+    let live = coherence
+    resonate cycles
+    witness
+    if cycles >= limit {
+        break stream
+    }
+}

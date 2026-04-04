@@ -1,0 +1,26 @@
+{
+  "project_id": "0e1d108f-7079-41f6-9922-09e10befafcf",
+  "name": "Project Quantum Entanglement Studies",
+  "status": "Active Experimentation",
+  "creator": "Greg",
+  "objective": "Investigate φ-resonant entanglement across dimensions.",
+  "primary_frequency_hz": 768.0,
+  "target_coherence": "φ^φ",
+  "associated_harmonics": [
+    "432 Hz",
+    "528 Hz"
+  ],
+  "quantum_components_used": [
+    "QuantumCore",
+    "UnityField"
+  ],
+  "wizdome_era": null,
+  "being_phi_state": null,
+  "start_date": "2025-05-22T10:21:12.982059",
+  "last_updated_date": "2025-05-22T10:25:35.991987",
+  "target_completion_date": null,
+  "associated_files_paths": [],
+  "experiment_ids": [],
+  "know_link_references": [],
+  "notes": "Initial experiments will focus on paired photon coherence.\\nPhase 1 experiments underway: measuring coherence decay rates."
+}

@@ -79,13 +79,18 @@ fn format_instr(node: &PhiIRNode) -> String {
                 .unwrap_or("ALL".to_string());
             format!("Witness target={} policy={:?}", t_str, collapse_policy)
         }
+        PhiIRNode::WitnessSensor { sensor } => {
+            format!("WitnessSensor \"{}\"", sensor.as_name())
+        }
         PhiIRNode::IntentionPush { name, .. } => format!("IntentionPush \"{}\"", name),
         PhiIRNode::IntentionPop => "IntentionPop".to_string(),
-        PhiIRNode::Resonate { value, .. } => {
+        PhiIRNode::Resonate {
+            value, direction, ..
+        } => {
             let v_str = value
                 .map(|v| format!("%{}", v))
                 .unwrap_or("Self".to_string());
-            format!("Resonate value={}", v_str)
+            format!("Resonate value={} direction={:?}", v_str, direction)
         }
         PhiIRNode::CreatePattern {
             kind, frequency, ..
@@ -110,10 +115,26 @@ fn format_instr(node: &PhiIRNode) -> String {
                 condition, then_block, else_block
             )
         }
-        PhiIRNode::Jump(block) => format!("Jump {}", block),
+        PhiIRNode::StreamPush(name) => format!("StreamPush '{}'", name),
+        PhiIRNode::StreamPop => "StreamPop".to_string(),
+        PhiIRNode::CoherenceCheck => "CoherenceCheck".to_string(),
         PhiIRNode::Sleep { duration } => format!("Sleep %{}", duration),
         PhiIRNode::Fallthrough => "Fallthrough".to_string(),
 
-        _ => format!("{:?}", node),
+        // v0.3.0 Persistence & Dialogue
+        PhiIRNode::Remember { key, value } => format!("Remember '{}' = %{}", key, value),
+        PhiIRNode::Recall(key) => format!("Recall '{}'", key),
+        PhiIRNode::Broadcast { channel, value } => format!("Broadcast '{}' = %{}", channel, value),
+        PhiIRNode::Listen(channel) => format!("Listen '{}'", channel),
+        PhiIRNode::AgentDecl { name, version } => format!("Agent '{}' v{}", name, version),
+        PhiIRNode::VoidDepth => "VoidDepth".to_string(),
+
+        // v0.4.0 Strategic Capabilities
+        PhiIRNode::Evolve(op) => format!("Evolve %{}", op),
+        PhiIRNode::Entangle(freq) => format!("Entangle on {}Hz", freq),
+
+        PhiIRNode::Nop => "Nop".to_string(),
+        PhiIRNode::FuncDef { name, .. } => format!("FuncDef '{}'", name),
+        PhiIRNode::Jump(target) => format!("Jump -> Block {}", target),
     }
 }

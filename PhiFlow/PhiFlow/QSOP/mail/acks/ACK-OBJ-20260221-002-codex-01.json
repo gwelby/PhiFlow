@@ -1,0 +1,11 @@
+{
+  "ack_id": "ACK-OBJ-20260221-002-codex-01",
+  "objective_id": "OBJ-20260221-002",
+  "responder": "codex",
+  "status": "accepted",
+  "updated_at": "2026-02-21T02:05:00Z",
+  "summary": "Objective accepted and queued.",
+  "files_changed": [],
+  "verification": [],
+  "risks": []
+}

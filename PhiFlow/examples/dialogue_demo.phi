@@ -1,0 +1,16 @@
+// dialogue_demo.phi
+// v0.3.0 Dialogue Demonstration
+
+stream "dialogue_test" {
+    intention "talk_to_others" {
+        broadcast "status" "I am breathing"
+        
+        let msg = listen "response"
+        if msg != void {
+            resonate msg
+        }
+        
+        witness
+        break stream
+    }
+}

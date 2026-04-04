@@ -70,13 +70,6 @@ impl CoherenceMonitor {
     }
 
     fn compute_score(&mut self) {
-        // A "Living" code should have structure.
-        // Arbitrary metric: Ratio of Arithmetic / Control Flow should be close to Phi?
-        // Or strictly: We just measure complexity.
-        // Let's use a simple placeholder:
-        // Coherence = 1.0 / (1.0 + |(Arithmetic / Control) - Phi|)
-        // If Control is 0, score is 0.5 (imperfect but safe).
-
         const PHI: f64 = 1.6180339887;
 
         if self.control_flow_count == 0 {
@@ -87,9 +80,13 @@ impl CoherenceMonitor {
         let ratio = self.arithmetic_count as f64 / self.control_flow_count as f64;
         let deviation = (ratio - PHI).abs();
 
-        // Higher deviation = Lower score.
-        // Max score = 1.0 (perfect Phi alignment).
         self.coherence_score = 1.0 / (1.0 + deviation);
+    }
+}
+
+impl Default for CoherenceMonitor {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -114,14 +111,11 @@ impl Optimizer {
 
         while changed && pass < MAX_PASSES {
             changed = false;
-            // println!("Optimization Pass {}", pass + 1);
 
-            // 1. Constant Folding
             if Self::constant_folding(program) {
                 changed = true;
             }
 
-            // 2. Dead Code Elimination
             if Self::dead_code_elimination(program) {
                 changed = true;
             }
@@ -129,35 +123,46 @@ impl Optimizer {
             pass += 1;
         }
 
-        // 3. Phi-Harmonic Loop Unrolling (Fibonacci)
-        // Runs once after standard optimizations converge (or max passes).
         if self.level == OptimizationLevel::PhiHarmonic {
-            // println!("Phi-Harmonic Unrolling...");
-            if Self::unroll_loops(program) {
-                // If unrolled, run clean-up passes (DCE) again?
-                // Ideally yes, but let's stick to the unrolling first.
+            if Self::action_cost_pass(program) {
+                changed = true;
             }
-        }
-
-        // 4. Coherence Check (Phi-Harmonic)
-        if self.level == OptimizationLevel::PhiHarmonic {
+            if Self::unroll_loops(program) {}
             self.monitor.analyze(program);
-            // println!("Phi-Harmonic Coherence Score: {}", self.monitor.coherence_score);
             self.stabilize(program);
         }
     }
 
-    /// Constant Folding Pass
-    /// Returns true if any changes were made.
-    fn constant_folding(program: &mut PhiIRProgram) -> bool {
+    /// Action-Cost Functional (F1) Pass
+    /// F1(p,q; C2) = (p s + sqrt(p^2 s^2 + 4 q^2)) / 2
+    /// Reduces resonance topologies to the 1:1 primitive resonance by collapsing
+    /// redundant resonances, dynamically lowering the action cost to its ground state.
+    fn action_cost_pass(program: &mut PhiIRProgram) -> bool {
         let mut changed = false;
 
-        // Build a map of definitions for quick lookup
-        // We only care about Const definitions for folding
-        // Map: Operand -> PhiIRValue
+        for block in &mut program.blocks {
+            let mut i = 0;
+            while i + 1 < block.instructions.len() {
+                let is_res1 = matches!(block.instructions[i].node, PhiIRNode::Resonate { .. });
+                let is_res2 = matches!(block.instructions[i + 1].node, PhiIRNode::Resonate { .. });
+
+                if is_res1 && is_res2 {
+                    // Combine them by substituting the second with Nop.
+                    // Topological reduction to 1:1 (p=1, q=1).
+                    block.instructions[i + 1].node = PhiIRNode::Nop;
+                    changed = true;
+                }
+                i += 1;
+            }
+        }
+
+        changed
+    }
+
+    fn constant_folding(program: &mut PhiIRProgram) -> bool {
+        let mut changed = false;
         let mut const_values: HashMap<Operand, PhiIRValue> = HashMap::new();
 
-        // Populate initial constants
         for block in &program.blocks {
             for instr in &block.instructions {
                 if let Some(res) = instr.result {
@@ -168,21 +173,14 @@ impl Optimizer {
             }
         }
 
-        // Iterate and fold
-        // We must iterate all blocks.
-        // We iterate instructions strictly.
         for block in &mut program.blocks {
             for instr in &mut block.instructions {
-                // If this instruction is already a Const, skip
                 if matches!(instr.node, PhiIRNode::Const(_)) {
                     continue;
                 }
 
-                // Try to fold
                 if let Some(folded) = Self::try_fold(&instr.node, &const_values) {
-                    // Update instruction to be Const
                     instr.node = PhiIRNode::Const(folded.clone());
-                    // Update map for subsequent instructions in this pass (if logical)
                     if let Some(res) = instr.result {
                         const_values.insert(res, folded);
                     }
@@ -244,44 +242,27 @@ impl Optimizer {
         }
     }
 
-    /// Dead Code Elimination Pass
-    /// Returns true if any changes were made.
     fn dead_code_elimination(program: &mut PhiIRProgram) -> bool {
         let mut changed = false;
-
-        // 1. Identify all used operands
-        // Used in:
-        // - Instruction inputs (BinOp, Call, etc.)
-        // - Terminators (Branch condition, Return val)
-        // - Side-effect instructions inputs (implicitly, e.g. StoreVar value)
         let mut used_operands: HashSet<Operand> = HashSet::new();
 
         for block in &program.blocks {
-            // Check instructions
             for instr in &block.instructions {
                 Self::collect_used_operands(&instr.node, &mut used_operands);
             }
-            // Check terminator
             Self::collect_used_operands(&block.terminator, &mut used_operands);
         }
 
-        // 2. Eliminate unused pure instructions
         for block in &mut program.blocks {
             for instr in &mut block.instructions {
-                // If it produces a result that is unused...
                 if let Some(res) = instr.result {
                     if !used_operands.contains(&res) {
-                        // Check if instruction is pure (no side effects)
-                        if Self::is_pure(&instr.node) {
-                            if !matches!(instr.node, PhiIRNode::Nop) {
-                                instr.node = PhiIRNode::Nop;
-                                changed = true;
-                            }
+                        if Self::is_pure(&instr.node) && !matches!(instr.node, PhiIRNode::Nop) {
+                            instr.node = PhiIRNode::Nop;
+                            changed = true;
                         }
                     }
                 }
-                // If it produces NO result (None), it's likely side-effect only and kept.
-                // Or if it DOES produce a result but it's used, we keep it.
             }
         }
 
@@ -317,16 +298,16 @@ impl Optimizer {
             PhiIRNode::Branch { condition, .. } => {
                 used.insert(*condition);
             }
-            PhiIRNode::Witness { target, .. } => {
-                if let Some(t) = target {
-                    used.insert(*t);
-                }
+            PhiIRNode::Witness {
+                target: Some(t), ..
+            } => {
+                used.insert(*t);
             }
-            PhiIRNode::Resonate { value, .. } => {
-                if let Some(v) = value {
-                    used.insert(*v);
-                }
+            PhiIRNode::Witness { target: None, .. } => {}
+            PhiIRNode::Resonate { value: Some(v), .. } => {
+                used.insert(*v);
             }
+            PhiIRNode::Resonate { value: None, .. } => {}
             PhiIRNode::CreatePattern {
                 frequency, params, ..
             } => {
@@ -338,65 +319,65 @@ impl Optimizer {
             PhiIRNode::Sleep { duration } => {
                 used.insert(*duration);
             }
-            // Others don't use operands or are Nop/Const/LoadVar
+            PhiIRNode::Remember { value, .. } => {
+                used.insert(*value);
+            }
+            PhiIRNode::Broadcast { value, .. } => {
+                used.insert(*value);
+            }
             _ => {}
         }
     }
 
     fn is_pure(node: &PhiIRNode) -> bool {
         match node {
-            // Pure computations
             PhiIRNode::Const(_)
-            | PhiIRNode::LoadVar(_) // Reading variable is pure in local scope (no mutation of var itself, just read)
+            | PhiIRNode::LoadVar(_)
             | PhiIRNode::BinOp { .. }
             | PhiIRNode::UnaryOp { .. }
             | PhiIRNode::ListNew(_)
             | PhiIRNode::ListGet { .. }
-            | PhiIRNode::CreatePattern { .. } // Creating a pattern object is pure, unless it renders immediately? Assume pure obj creation.
-            | PhiIRNode::FuncDef { .. } // Functional definition is pure
-             => true,
+            | PhiIRNode::CreatePattern { .. }
+            | PhiIRNode::FuncDef { .. } => true,
 
-            // Side effects or control flow
-            PhiIRNode::StoreVar { .. } // Mutates state
-            | PhiIRNode::Call { .. } // Unknown side effects
-            | PhiIRNode::DomainCall { .. } // Unknown
-            | PhiIRNode::Witness { .. } // Side effect: observing
+            PhiIRNode::StoreVar { .. }
+            | PhiIRNode::Call { .. }
+            | PhiIRNode::DomainCall { .. }
+            | PhiIRNode::Witness { .. }
+            | PhiIRNode::WitnessSensor { .. }
             | PhiIRNode::IntentionPush { .. }
             | PhiIRNode::IntentionPop
             | PhiIRNode::Resonate { .. }
             | PhiIRNode::CoherenceCheck
             | PhiIRNode::Sleep { .. }
+            | PhiIRNode::StreamPush(_)
+            | PhiIRNode::StreamPop
             | PhiIRNode::Return(_)
             | PhiIRNode::Branch { .. }
             | PhiIRNode::Jump(_)
             | PhiIRNode::Fallthrough
             | PhiIRNode::Nop
-            => false,
+            | PhiIRNode::Remember { .. }
+            | PhiIRNode::Recall(_)
+            | PhiIRNode::Broadcast { .. }
+            | PhiIRNode::Listen(_)
+            | PhiIRNode::AgentDecl { .. }
+            | PhiIRNode::VoidDepth
+            | PhiIRNode::Evolve(_)
+            | PhiIRNode::Entangle(_) => false,
         }
     }
 
-    /// Loop Unrolling Pass (Phi-Harmonic)
-    /// Unrolls loops by a Fibonacci factor (3 for now).
     fn unroll_loops(program: &mut PhiIRProgram) -> bool {
         let mut changed = false;
         let mut loops_to_unroll = Vec::new();
 
-        // 1. Identify Loops (Simple header-body pattern from lowering)
-        // Look for: Header -> Branch(cond, Body, Exit)
-        //           Body   -> Jump(Header)
         for block in &program.blocks {
-            if let PhiIRNode::Branch {
-                condition: _,
-                then_block,
-                else_block: _,
-            } = block.terminator
-            {
+            if let PhiIRNode::Branch { then_block, .. } = block.terminator {
                 let header_id = block.id;
                 let body_id = then_block;
 
-                // Check if body jumps back to header
-                let body_jumps_back = program.blocks.iter().find(|b| b.id == body_id).map_or(
-                    false,
+                let body_jumps_back = program.blocks.iter().find(|b| b.id == body_id).is_some_and(
                     |b| matches!(b.terminator, PhiIRNode::Jump(target) if target == header_id),
                 );
 
@@ -406,17 +387,10 @@ impl Optimizer {
             }
         }
 
-        // 2. Unroll
-        // Factor 3 (Fibonacci): Header -> Body1 -> Check1 -> Body2 -> Check2 -> Body3 -> Header
-        // Original: Header -> Body -> Header
-
         let mut next_block_id = program.blocks.iter().map(|b| b.id).max().unwrap_or(0) + 1;
         let mut next_operand = Self::find_max_operand(program) + 1;
 
         for (header_id, body_id) in loops_to_unroll {
-            // Factor 3 means we need 2 clones of (Check+Body) inserted.
-
-            // Clone 1
             let (check1_id, mut check1_block) = Self::clone_block(
                 program,
                 header_id,
@@ -434,7 +408,6 @@ impl Optimizer {
             );
             next_block_id += 1;
 
-            // Clone 2
             let (check2_id, mut check2_block) = Self::clone_block(
                 program,
                 header_id,
@@ -452,29 +425,20 @@ impl Optimizer {
             );
             next_block_id += 1;
 
-            // Wiring
-
-            // Update Original Body -> Jump(Check1)
             if let Some(body_block) = program.blocks.iter_mut().find(|b| b.id == body_id) {
                 body_block.terminator = PhiIRNode::Jump(check1_id);
             }
 
-            // Update Check1 -> Branch(cond, Body1, Exit)
             if let PhiIRNode::Branch { then_block, .. } = &mut check1_block.terminator {
                 *then_block = body1_id;
             }
 
-            // Update Body1 -> Jump(Check2)
             body1_block.terminator = PhiIRNode::Jump(check2_id);
 
-            // Update Check2 -> Branch(cond, Body2, Exit)
             if let PhiIRNode::Branch { then_block, .. } = &mut check2_block.terminator {
                 *then_block = body2_id;
             }
 
-            // Update Body2 -> Jump(Header) - Preserved from clone
-
-            // Add new blocks to program
             program.blocks.push(check1_block);
             program.blocks.push(body1_block);
             program.blocks.push(check2_block);
@@ -486,20 +450,12 @@ impl Optimizer {
         changed
     }
 
-    /// Stabilize the flow if coherence is too low.
-    /// Injects 'Sleep' instructions to slow down chaotic loops.
     fn stabilize(&self, program: &mut PhiIRProgram) {
-        // Threshold: 1/Phi approx 0.618
         if self.monitor.coherence_score < 0.618 {
-            // println!("[Stabilize] Coherence low ({:.3}). Stabilizing...", self.monitor.coherence_score);
-
-            // We need a fresh operand for the Sleep duration constant.
             let mut next_operand = Self::find_max_operand(program) + 1;
 
-            // We'll inject Sleep(16ms) into blocks that end with a Jump (likely loop back-edges).
             for block in &mut program.blocks {
                 if matches!(block.terminator, PhiIRNode::Jump(_)) {
-                    // 1. Create constant 16.0
                     let duration_op = next_operand;
                     next_operand += 1;
 
@@ -508,7 +464,6 @@ impl Optimizer {
                         node: PhiIRNode::Const(PhiIRValue::Number(16.0)),
                     };
 
-                    // 2. Create Sleep instruction
                     let sleep_instr = PhiInstruction {
                         result: None,
                         node: PhiIRNode::Sleep {
@@ -516,7 +471,6 @@ impl Optimizer {
                         },
                     };
 
-                    // 3. Insert before terminator
                     block.instructions.push(const_instr);
                     block.instructions.push(sleep_instr);
                 }
@@ -552,7 +506,6 @@ impl Optimizer {
 
         let mut operand_map = HashMap::new();
 
-        // Remap definitions
         for instr in &mut new_block.instructions {
             if let Some(old_op) = instr.result {
                 let new_op = *next_operand;
@@ -562,11 +515,9 @@ impl Optimizer {
             }
         }
 
-        // Remap usages (inputs) using the map
         for instr in &mut new_block.instructions {
             Self::remap_operands(&mut instr.node, &operand_map);
         }
-        // Remap terminator usages
         Self::remap_operands(&mut new_block.terminator, &operand_map);
 
         (new_id, new_block)
@@ -607,16 +558,16 @@ impl Optimizer {
             PhiIRNode::Branch { condition, .. } => {
                 map_op(condition);
             }
-            PhiIRNode::Witness { target, .. } => {
-                if let Some(t) = target {
-                    map_op(t);
-                }
+            PhiIRNode::Witness {
+                target: Some(t), ..
+            } => {
+                map_op(t);
             }
-            PhiIRNode::Resonate { value, .. } => {
-                if let Some(v) = value {
-                    map_op(v);
-                }
+            PhiIRNode::Witness { target: None, .. } => {}
+            PhiIRNode::Resonate { value: Some(v), .. } => {
+                map_op(v);
             }
+            PhiIRNode::Resonate { value: None, .. } => {}
             PhiIRNode::CreatePattern {
                 frequency, params, ..
             } => {
@@ -627,6 +578,12 @@ impl Optimizer {
             }
             PhiIRNode::Sleep { duration } => {
                 map_op(duration);
+            }
+            PhiIRNode::Remember { value, .. } => {
+                map_op(value);
+            }
+            PhiIRNode::Broadcast { value, .. } => {
+                map_op(value);
             }
             _ => {}
         }

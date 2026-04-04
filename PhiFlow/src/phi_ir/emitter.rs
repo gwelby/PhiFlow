@@ -20,7 +20,7 @@
 //!   [TERMINATOR: emit_node]
 //! ```
 
-use crate::phi_ir::{PhiIRBinOp, PhiIRNode, PhiIRProgram, PhiIRValue};
+use crate::phi_ir::{PhiIRBinOp, PhiIRNode, PhiIRProgram, PhiIRValue, ResonateDirection};
 use std::collections::HashMap;
 
 // --- Opcodes ---
@@ -44,12 +44,15 @@ const OP_RESONATE: u8 = 0x33;
 const OP_COHERENCE_CHECK: u8 = 0x34;
 const OP_SLEEP: u8 = 0x35;
 const OP_CREATE_PATTERN: u8 = 0x36;
+const OP_STREAM: u8 = 0x37;
+const OP_WITNESS_SENSOR: u8 = 0x38;
 const OP_DOMAIN_CALL: u8 = 0x40;
 // Terminators
 const OP_RETURN: u8 = 0xE0;
 const OP_JUMP: u8 = 0xE1;
 const OP_BRANCH: u8 = 0xE2;
 const OP_FALLTHROUGH: u8 = 0xE3;
+const OP_BREAK_STREAM: u8 = 0xE4;
 
 const MAGIC: &[u8; 4] = b"PHIV";
 const VERSION: u8 = 1;
@@ -119,14 +122,14 @@ pub fn emit(program: &PhiIRProgram) -> Vec<u8> {
     emit_u32(&mut out, program.blocks.len() as u32);
 
     for block in &program.blocks {
-        emit_u32(&mut out, block.id as u32);
+        emit_u32(&mut out, block.id);
         emit_u32(&mut out, block.instructions.len() as u32);
 
         for instr in &block.instructions {
             match instr.result {
                 Some(reg) => {
                     out.push(1u8);
-                    emit_u32(&mut out, reg as u32);
+                    emit_u32(&mut out, reg);
                 }
                 None => out.push(0u8),
             }
@@ -215,7 +218,13 @@ fn collect_node_strings(node: &PhiIRNode, interner: &mut StringInterner) {
         PhiIRNode::LoadVar(name)
         | PhiIRNode::Call { name, .. }
         | PhiIRNode::FuncDef { name, .. }
-        | PhiIRNode::IntentionPush { name, .. } => {
+        | PhiIRNode::StreamPush(name)
+        | PhiIRNode::IntentionPush { name, .. }
+        | PhiIRNode::Remember { key: name, .. }
+        | PhiIRNode::Recall(name)
+        | PhiIRNode::Broadcast { channel: name, .. }
+        | PhiIRNode::Listen(name)
+        | PhiIRNode::AgentDecl { name, .. } => {
             interner.intern(name);
         }
 
@@ -273,7 +282,11 @@ fn emit_value(out: &mut Vec<u8>, val: &PhiIRValue, ctx: &EmitContext<'_>) {
         }
         PhiIRValue::String(idx) => {
             out.push(OP_CONST_STR);
-            let remapped = ctx.literal_remap.get(*idx as usize).copied().unwrap_or(*idx);
+            let remapped = ctx
+                .literal_remap
+                .get(*idx as usize)
+                .copied()
+                .unwrap_or(*idx);
             emit_u32(out, remapped);
         }
         PhiIRValue::Boolean(b) => {
@@ -372,6 +385,11 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
             }
         }
 
+        PhiIRNode::WitnessSensor { sensor } => {
+            out.push(OP_WITNESS_SENSOR);
+            out.push(sensor.as_id() as u8);
+        }
+
         PhiIRNode::IntentionPush { name, .. } => {
             out.push(OP_INTENTION_PUSH);
             emit_string_ref(out, name, ctx);
@@ -379,8 +397,21 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
 
         PhiIRNode::IntentionPop => out.push(OP_INTENTION_POP),
 
-        PhiIRNode::Resonate { value, .. } => {
+        PhiIRNode::StreamPush(name) => {
+            out.push(OP_STREAM);
+            emit_string_ref(out, name, ctx);
+        }
+
+        PhiIRNode::StreamPop => out.push(OP_BREAK_STREAM),
+
+        PhiIRNode::Resonate {
+            value, direction, ..
+        } => {
             out.push(OP_RESONATE);
+            match direction {
+                crate::phi_ir::ResonateDirection::TeamA => out.push(0),
+                crate::phi_ir::ResonateDirection::TeamB => out.push(1),
+            }
             match value {
                 Some(op) => {
                     out.push(1);
@@ -445,5 +476,6 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
         }
 
         PhiIRNode::Fallthrough => out.push(OP_FALLTHROUGH),
+        _ => {} // v0.3.0 features not yet in bytecode
     }
 }

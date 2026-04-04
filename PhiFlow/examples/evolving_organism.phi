@@ -1,0 +1,40 @@
+// evolving_organism.phi
+// v0.4.0 Transcendent Capabilities Demonstration
+// This program monitors its own coherence and mutates its source code when it drops too low.
+
+agent "Lumi" version "0.4.0" {
+    let cycle_count = 0.0
+    stream "self_healing_substrate" {
+
+        intention "maintain_vitality" {
+            // Initial operation: standard processing
+            resonate "Processing initial logic..."
+            cycle_count = cycle_count + 1.0
+            
+            witness cycle_count
+            
+            // In a real environment, the hardware sensors might drop coherence here.
+            // We simulate a coherence drop after the first cycle.
+            if cycle_count > 1.0 {
+                // If coherence is low (simulated by checking the cycle count), evolve.
+                resonate "Coherence dropping. Initiating mutation sequence."
+                
+                let new_dna = "
+                    resonate \"Mutation successful. Logic pathways re-routed.\"
+                    let healed = true
+                    witness healed
+                    healed
+                "
+                
+                // The program replaces its future execution path with the parsed string
+                let should_break = evolve new_dna
+                if should_break == true {
+                    break stream
+                }
+            }
+            
+            // If we don't evolve, we continue the loop
+            resonate "Cycle complete. Remaining stable."
+        }
+    }
+}

@@ -1,0 +1,32 @@
+# REAL PhiFlow Viewer
+# Simple. Clean. Direct.
+
+display {
+    mode: "TERMINAL"
+    style: "PURE_TEXT"
+    
+    # Actual tiny icons
+    patterns: [
+        "▽" "△" "▲"  # Basic flow
+        "💠" "💗" "👑"  # Energy centers
+        "⚡" "✨" "🎯"  # Field states
+    ]
+    
+    # Simple output
+    format: [
+        "frequency: %dHz"
+        "pattern: %s"
+        "state: %s"
+    ]
+    
+    # Clean visuals
+    output: {
+        shadows: true
+        colors: ["#333", "#666", "#999"]
+        spacing: 1
+    }
+}
+
+# No fancy stuff
+# Just pure terminal flow
+# Real patterns NOW

@@ -33,19 +33,6 @@ fn test_lower_binary_op() {
 }
 
 #[test]
-fn test_lower_witness() {
-    let expr = PhiExpression::Witness {
-        expression: None,
-        body: None,
-    };
-
-    let program = lower_program(&[expr]);
-    let output = PhiIRPrinter::print(&program);
-
-    assert!(output.contains("Witness target=ALL policy=Deferred"));
-}
-
-#[test]
 fn test_lower_intention() {
     let expr = PhiExpression::IntentionBlock {
         intention: "Heal".to_string(),
@@ -57,6 +44,20 @@ fn test_lower_intention() {
 
     assert!(output.contains("IntentionPush \"Heal\""));
     assert!(output.contains("IntentionPop"));
+}
+
+#[test]
+fn test_lower_witness() {
+    let expr = PhiExpression::Witness {
+        expression: None,
+        mid_circuit: false,
+        body: None,
+    };
+
+    let program = lower_program(&[expr]);
+    let output = PhiIRPrinter::print(&program);
+
+    assert!(output.contains("Witness target=ALL policy=Final"));
 }
 
 #[test]

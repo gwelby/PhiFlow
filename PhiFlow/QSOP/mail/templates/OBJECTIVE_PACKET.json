@@ -1,0 +1,11 @@
+{
+  "objective_id": "OBJ-YYYYMMDD-001",
+  "ts_utc": "2026-02-21T00:00:00Z",
+  "from": "antigravity",
+  "to": "codex",
+  "intent": "short_action_name",
+  "payload_ref": "D:\\Projects\\PhiFlow-compiler\\PhiFlow\\QSOP\\mail\\payloads\\OBJ-YYYYMMDD-001.md",
+  "requires_ack": true,
+  "ttl_s": 1800,
+  "checksum": "sha256:<payload-hash>"
+}

@@ -13,19 +13,36 @@ async function main() {
   module.destroy();
 
   const PHI = 1.618033988749895;
+  const TAU = 2.0 * Math.PI;
   let intentionDepth = 0;
   let resonanceCount = 0;
+  const sensorValues = new Map([
+    [0, 12.5],
+    [1, 55.0],
+    [2, 62.0],
+  ]);
 
   function coherence() {
-    if (intentionDepth === 0 && resonanceCount === 0) return 0.0;
-    const intention = intentionDepth > 0 ? (1.0 - Math.pow(PHI, -intentionDepth)) : 0.0;
-    const bonus = Math.min(resonanceCount * 0.05, 0.2);
-    return Math.min(intention + bonus, 1.0);
+    // Canonical formula: base(depth) * phase(k), clamped to [0, 1]
+    const base = intentionDepth === 0 ? 0.0 : 1.0 - Math.pow(PHI, -intentionDepth);
+    let phase;
+    if (resonanceCount <= 1) {
+      phase = 1.0;
+    } else {
+      phase = Math.max(0.0, 1.0 - Math.log(resonanceCount) / Math.log(TAU));
+    }
+    return Math.min(Math.max(base * phase, 0.0), 1.0);
   }
 
   const imports = {
     phi: {
       witness: () => coherence(),
+      sensor: (sensorId) => {
+        if (!sensorValues.has(sensorId)) {
+          throw new Error(`invalid sensor id ${sensorId}`);
+        }
+        return sensorValues.get(sensorId);
+      },
       resonate: (_value) => {
         resonanceCount += 1;
       },

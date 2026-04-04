@@ -6,8 +6,9 @@ use phiflow::phi_ir::{
     optimizer::{OptimizationLevel, Optimizer},
     vm::PhiVm,
     wasm::emit_wat,
-    PhiIRProgram, PhiIRValue,
+    PhiIRProgram, PhiIRValue, SensorKind,
 };
+use phiflow::wasm_host::{run_source_with_host, WasmHostHooks};
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
@@ -81,6 +82,39 @@ fn run_wat_with_node(wat: &str) -> f64 {
         .expect("node runner did not print a numeric result")
 }
 
+/// Run evaluator + WASM only (skip legacy PhiVm).
+/// Use for programs that contain stream blocks: the legacy PhiVm predates stream
+/// opcodes and `InvalidOpcode` is expected on those paths.
+/// The PhiIR evaluator is the canonical reference; WASM must agree with it.
+fn run_eval_and_wasm(source: &str) -> (PhiIRValue, f64) {
+    let expressions = parse_phi_program(source).expect("parse failed");
+    let mut program: PhiIRProgram = lower_program(&expressions);
+    let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
+    optimizer.optimize(&mut program);
+
+    let mut evaluator = Evaluator::new(&program);
+    let eval_result = evaluator.run().expect("evaluator failed");
+
+    let wat = emit_wat(&program);
+    let wasm_result = run_wat_with_node(&wat);
+
+    (eval_result, wasm_result)
+}
+
+#[allow(dead_code)]
+fn assert_program_conforms_eval_wasm(source: &str, label: &str) {
+    let (eval_result, wasm_result) = run_eval_and_wasm(source);
+    let eval_number = match eval_result {
+        PhiIRValue::Number(n) => n,
+        other => panic!("{} expected numeric result, got {:?}", label, other),
+    };
+    assert_number_close(
+        eval_number,
+        wasm_result,
+        &format!("{} evaluator-wasm", label),
+    );
+}
+
 fn run_all_paths(source: &str) -> (PhiIRValue, PhiIRValue, f64) {
     let expressions = parse_phi_program(source).expect("parse failed");
     let mut program: PhiIRProgram = lower_program(&expressions);
@@ -114,7 +148,36 @@ fn assert_program_matches(source: &str, expected: PhiIRValue, label: &str) {
         PhiIRValue::Number(n) => n,
         other => panic!("{} expected numeric result, got {:?}", label, other),
     };
-    assert_number_close(eval_number, wasm_result, &format!("{} evaluator-wasm", label));
+    assert_number_close(
+        eval_number,
+        wasm_result,
+        &format!("{} evaluator-wasm", label),
+    );
+}
+
+fn sensor_provider(sensor: SensorKind) -> Option<f64> {
+    match sensor {
+        SensorKind::CpuUsage => Some(12.5),
+        SensorKind::CpuTemp => Some(55.0),
+        SensorKind::MemoryUsage => Some(62.0),
+    }
+}
+
+#[allow(dead_code)]
+fn assert_program_conforms(source: &str, label: &str) {
+    let (eval_result, vm_result, wasm_result) = run_all_paths(source);
+
+    assert_values_close(&eval_result, &vm_result, &format!("{} evaluator-vm", label));
+
+    let eval_number = match eval_result {
+        PhiIRValue::Number(n) => n,
+        other => panic!("{} expected numeric result, got {:?}", label, other),
+    };
+    assert_number_close(
+        eval_number,
+        wasm_result,
+        &format!("{} evaluator-wasm", label),
+    );
 }
 
 #[test]
@@ -162,15 +225,12 @@ fn conformance_intention_scope_return() {
 
 #[test]
 fn conformance_coherence_check() {
-    assert_program_matches(
-        "coherence",
-        PhiIRValue::Number(0.0),
-        "coherence_check",
-    );
+    assert_program_matches("coherence", PhiIRValue::Number(0.0), "coherence_check");
 }
 
 #[test]
 fn conformance_resonate_then_coherence() {
+    // Canonical: base(depth=1) * phase(k=1) = 0.382 * 1.0 = 0.382
     let phi_inv = 1.0 - 1.618033988749895_f64.powi(-1);
     assert_program_matches(
         r#"
@@ -179,7 +239,173 @@ fn conformance_resonate_then_coherence() {
             coherence
         }
         "#,
-        PhiIRValue::Number(phi_inv + 0.05),
+        PhiIRValue::Number(phi_inv),
         "resonate_then_coherence",
+    );
+}
+
+#[test]
+fn conformance_sensor_witness_all_kinds() {
+    let cases = [
+        ("cpu_usage", 12.5),
+        ("cpu_temp", 55.0),
+        ("memory_usage", 62.0),
+    ];
+
+    for (sensor_name, expected) in cases {
+        let source = format!("witness sensor(\"{}\")", sensor_name);
+        let expressions = parse_phi_program(&source).expect("parse failed");
+        let mut program: PhiIRProgram = lower_program(&expressions);
+        let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
+        optimizer.optimize(&mut program);
+
+        let mut evaluator = Evaluator::new(&program).with_sensor_provider(sensor_provider);
+        let eval_result = evaluator.run().expect("evaluator failed");
+
+        let bytes = emitter::emit(&program);
+        let vm_result =
+            PhiVm::run_bytes_with_sensor_provider(&bytes, sensor_provider).expect("vm failed");
+
+        let wasm_result = run_source_with_host(
+            &source,
+            WasmHostHooks::new().with_sensor_provider(sensor_provider),
+        )
+        .expect("wasm host failed")
+        .result;
+
+        let expected_value = PhiIRValue::Number(expected);
+        assert_values_close(&eval_result, &expected_value, sensor_name);
+        assert_values_close(&vm_result, &expected_value, sensor_name);
+        assert_values_close(&wasm_result, &expected_value, sensor_name);
+    }
+}
+
+/// Verify that shared example fixtures compile and run on both evaluator and WASM
+/// without error. Programs that primarily emit via the resonance field (e.g. claude.phi,
+/// stream programs) don't have a meaningful return-value to compare, so this test
+/// checks parse-lower-optimize-run success rather than value equality.
+fn assert_program_runs_on_eval_and_wasm(source: &str, label: &str) {
+    let expressions =
+        parse_phi_program(source).unwrap_or_else(|e| panic!("{}: parse failed: {:?}", label, e));
+    let mut program: PhiIRProgram = lower_program(&expressions);
+    let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
+    optimizer.optimize(&mut program);
+
+    // Evaluator: must run without error
+    let mut evaluator = Evaluator::new(&program);
+    evaluator
+        .run()
+        .unwrap_or_else(|e| panic!("{}: evaluator failed: {:?}", label, e));
+
+    // WASM: must emit valid WAT that Node.js can instantiate and run
+    let wat = emit_wat(&program);
+    run_wat_with_node(&wat); // panics with node error message on invalid WAT
+}
+
+/// Shared fixture conformance: all team example programs must compile and run
+/// on both the canonical evaluator and the WASM backend without error.
+///
+/// The legacy PhiVm is not tested here: example programs use user-defined
+/// functions and stream blocks which predate the legacy VM's feature set.
+#[test]
+fn conformance_shared_fixture_examples() {
+    let fixtures = [
+        (
+            "examples/claude.phi",
+            include_str!("../examples/claude.phi"),
+        ),
+        (
+            "examples/stream_demo.phi",
+            include_str!("../examples/stream_demo.phi"),
+        ),
+        (
+            "examples/adaptive_witness.phi",
+            include_str!("../examples/adaptive_witness.phi"),
+        ),
+    ];
+    for (label, source) in fixtures {
+        assert_program_runs_on_eval_and_wasm(source, label);
+    }
+}
+
+/// Regression: Phase 10 Lane C — function return values inside intention blocks
+/// must agree between evaluator and WASM.
+///
+/// Pre-fix: evaluator returned phi^(-2) = 0.38197 (one loop iteration, not two).
+/// Post-fix: returns 0.618... (correct — VM while-loop comparison fixed).
+///
+/// Only evaluator + WASM: the legacy PhiVm does not support user-defined functions.
+#[test]
+fn conformance_nested_function_regression() {
+    let phi: f64 = 1.618033988749895;
+    let expected = 1.0 - phi.powi(-2); // lambda = 0.6180339887498949
+
+    let source = r#"
+        function compute_lambda(phi_val: Number) -> Number {
+            let result = 1.0
+            let i = 0.0
+            while i < 2.0 {
+                result = result * phi_val
+                i = i + 1.0
+            }
+            return 1.0 - (1.0 / result)
+        }
+
+        intention "nested_call_regression" {
+            let phi_val = 1.618033988749895
+            compute_lambda(phi_val)
+        }
+        "#;
+
+    let (eval_result, wasm_result) = run_eval_and_wasm(source);
+
+    let eval_n = match eval_result {
+        PhiIRValue::Number(n) => n,
+        other => panic!("nested_function_regression: evaluator returned {:?}", other),
+    };
+    assert_number_close(
+        eval_n,
+        expected,
+        "nested_function_regression evaluator-expected",
+    );
+    assert_number_close(
+        eval_n,
+        wasm_result,
+        "nested_function_regression evaluator-wasm",
+    );
+}
+
+#[test]
+fn test_wasm_claude_formula_returns_618() {
+    // Phase 10 Lane C fail-first: WASM backend must agree with evaluator path.
+    let source = include_str!("../examples/claude.phi");
+    let expressions = parse_phi_program(source).expect("parse failed");
+    let mut program = lower_program(&expressions);
+    let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
+    optimizer.optimize(&mut program);
+
+    let mut evaluator = Evaluator::new(&program);
+    evaluator.run().expect("evaluator failed");
+
+    let eval_number = match evaluator.resonated_values("LAMBDA_convergence").last() {
+        Some(PhiIRValue::Number(n)) => *n,
+        other => panic!(
+            "expected resonated numeric lambda in evaluator path, got {:?}",
+            other
+        ),
+    };
+
+    let wat = emit_wat(&program);
+    let wasm_result = run_wat_with_node(&wat);
+
+    assert!(
+        (eval_number - 0.618).abs() < 0.001,
+        "evaluator path expected ~0.618, got {}",
+        eval_number
+    );
+    assert!(
+        (wasm_result - 0.618).abs() < 0.001,
+        "WASM path returned {} not 0.618",
+        wasm_result
     );
 }

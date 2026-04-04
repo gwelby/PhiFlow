@@ -20,7 +20,7 @@
 //!   [TERMINATOR: emit_node]
 //! ```
 
-use crate::phi_ir::{PhiIRBinOp, PhiIRNode, PhiIRProgram, PhiIRValue};
+use crate::phi_ir::{PhiIRBinOp, PhiIRNode, PhiIRProgram, PhiIRValue, ResonateDirection};
 use std::collections::HashMap;
 
 // --- Opcodes ---
@@ -218,7 +218,12 @@ fn collect_node_strings(node: &PhiIRNode, interner: &mut StringInterner) {
         | PhiIRNode::Call { name, .. }
         | PhiIRNode::FuncDef { name, .. }
         | PhiIRNode::StreamPush(name)
-        | PhiIRNode::IntentionPush { name, .. } => {
+        | PhiIRNode::IntentionPush { name, .. }
+        | PhiIRNode::Remember { key: name, .. }
+        | PhiIRNode::Recall(name)
+        | PhiIRNode::Broadcast { channel: name, .. }
+        | PhiIRNode::Listen(name)
+        | PhiIRNode::AgentDecl { name, .. } => {
             interner.intern(name);
         }
 
@@ -393,8 +398,13 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
 
         PhiIRNode::StreamPop => out.push(OP_BREAK_STREAM),
 
-        PhiIRNode::Resonate { value, .. } => {
+        PhiIRNode::Resonate { value, direction, .. } => {
             out.push(OP_RESONATE);
+            // Serialize direction: 0 = TeamA, 1 = TeamB
+            match direction {
+                ResonateDirection::TeamA => out.push(0),
+                ResonateDirection::TeamB => out.push(1),
+            }
             match value {
                 Some(op) => {
                     out.push(1);
@@ -459,5 +469,6 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
         }
 
         PhiIRNode::Fallthrough => out.push(OP_FALLTHROUGH),
+        _ => {} // v0.3.0 features not yet in bytecode
     }
 }

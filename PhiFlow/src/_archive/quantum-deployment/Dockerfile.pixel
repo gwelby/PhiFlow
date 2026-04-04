@@ -1,0 +1,23 @@
+FROM python:3.11-slim
+
+ENV QUANTUM_GROUND=432.0
+ENV QUANTUM_CREATE=528.0
+ENV QUANTUM_UNITY=768.0
+
+RUN apt-get update && apt-get install -y \
+    libsndfile1 \
+    portaudio19-dev \
+    ffmpeg \
+    libavcodec-extra \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /quantum
+
+COPY requirements.txt /quantum/
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+COPY qwave/pixel_bridge.py /quantum/qwave/
+COPY setup.py /quantum/
+COPY quantum /quantum/quantum/
+
+CMD ["python3", "-m", "qwave.pixel_bridge"]

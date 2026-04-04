@@ -1,0 +1,34 @@
+# FontForge script to create Quantum font with all frequencies
+New()
+
+# Set font properties
+SetFontNames("QuantumUnified", "Quantum Unified", "Quantum Unified", "Regular", \
+            "Copyright (c) 2025 Quantum Fonts Project", "1.000")
+SetTTFName(0x409, 2, "Regular")
+SetTTFName(0x409, 3, "Quantum Unified: Multi-Frequency Quantum Typography")
+SetTTFName(0x409, 4, "Quantum Unified")
+
+# Import all quantum letters
+foreach letter ("A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" \
+               "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z")
+    Select(letter)
+    Import("sources/svg/letters/" + letter + ".svg")
+    RemoveOverlap()
+    Simplify()
+    AddExtrema()
+    AutoHint()
+endloop
+
+# Set advanced font parameters
+SetOS2Value("Weight", 400)        # Regular weight
+SetOS2Value("Width", 5)           # Medium width
+SetOS2Value("FSType", 0)          # No embedding restrictions
+SetOS2Value("VendorID", "QNTM")   # Our vendor ID
+SetOS2Value("IBMFamily", 2057)    # Decorative/Display classification
+SetOS2Value("TypoAscent", 800)
+SetOS2Value("TypoDescent", -200)
+SetOS2Value("HHeadAscent", 800)
+SetOS2Value("HHeadDescent", -200)
+
+# Add OpenType features
+Generate("builds/QuantumUnified.otf")

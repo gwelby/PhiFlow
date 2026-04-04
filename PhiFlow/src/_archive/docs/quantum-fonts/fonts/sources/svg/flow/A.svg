@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000">
+    <!-- Base Letter Shape -->
+    <path d="M 500,100 L 900,900 L 100,900 Z" 
+          fill="none" stroke="black" stroke-width="2"/>
+    
+    <!-- Flow Energy Lines -->
+    <path d="M 300,700 Q 500,300 700,700" 
+          fill="none" stroke="black" stroke-width="2"/>
+    
+    <!-- Additional Flow Details -->
+    <path d="M 400,600 Q 500,400 600,600" 
+          fill="none" stroke="black" stroke-width="1.5"/>
+    
+    <path d="M 450,500 Q 500,350 550,500" 
+          fill="none" stroke="black" stroke-width="1"/>
+</svg>

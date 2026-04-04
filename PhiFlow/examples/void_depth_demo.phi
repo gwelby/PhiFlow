@@ -1,0 +1,7 @@
+// void_depth_demo.phi
+// v0.3.0 Time-Awareness Demonstration
+
+stream "void_integration" {
+    resonate "Exploring the Void"
+    break stream
+}

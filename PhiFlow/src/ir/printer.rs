@@ -172,6 +172,24 @@ pub fn format_opcode(op: &Opcode) -> String {
             )
         }
 
+        // Streams
+        Opcode::StreamInit { name, end_label } => {
+            format!("STREAM_INIT {} → L{}", name, end_label)
+        }
+        Opcode::StreamNext {
+            name,
+            body_label,
+            end_label,
+        } => {
+            format!(
+                "STREAM_NEXT {} body=L{} end=L{}",
+                name, body_label, end_label
+            )
+        }
+        Opcode::StreamBreak { end_label } => {
+            format!("STREAM_BRK  → L{}", end_label)
+        }
+
         // Stubs
         Opcode::Stub {
             node_type,

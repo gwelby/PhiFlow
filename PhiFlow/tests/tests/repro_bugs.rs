@@ -45,7 +45,9 @@ mod tests {
         );
 
         match &expressions[0] {
-            PhiExpression::Witness { expression, body } => {
+            PhiExpression::Witness {
+                expression, body, ..
+            } => {
                 assert!(expression.is_none(), "Witness should be bare");
                 assert!(body.is_none(), "Witness should have no body");
             }

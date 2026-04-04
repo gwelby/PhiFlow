@@ -96,7 +96,12 @@ impl LoweringContext {
                 | PhiIRNode::CreatePattern { .. }
                 | PhiIRNode::DomainCall { .. }
                 | PhiIRNode::Witness { .. }     // returns coherence score (0.0–1.0)
-                | PhiIRNode::CoherenceCheck // returns coherence score (0.0–1.0)
+                | PhiIRNode::CoherenceCheck     // returns coherence score (0.0–1.0)
+                | PhiIRNode::Recall(_)
+                | PhiIRNode::Listen(_)
+                | PhiIRNode::VoidDepth
+                | PhiIRNode::Evolve(_)
+                | PhiIRNode::Entangle(_)
         );
 
         let (result_op, ret_op) = if produces_value {
@@ -161,11 +166,6 @@ pub fn lower_program(expressions: &[PhiExpression]) -> PhiIRProgram {
             LowerResult::None => 0,
         };
         ctx.terminate(PhiIRNode::Return(ret_val));
-        // Or just Fallthrough if it's the end?
-        // Let's use Return(Void) equivalent.
-        // We'll emit a Const Void and Return it if needed.
-        // For now, let's leave as Fallthrough implies end of program?
-        // IR_DESIGN says "Terminator".
     }
 
     ctx.program
@@ -178,13 +178,6 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             LowerResult::Value(op)
         }
         PhiExpression::String(s) => {
-            // Emulate string intern or just create constant
-            // In real lower, we'd add to string_table
-            // For now, let's use string index 0 placeholder or improve `PhiIRValue`
-            // `PhiIRValue::String` takes u32 index.
-            // Let's verify PhiIRValue definition in mod.rs.
-            // It is `String(u32)`.
-            // We need to add to string_table.
             ctx.program.string_table.push(s.clone());
             let idx = (ctx.program.string_table.len() - 1) as u32;
             let op = ctx.emit(PhiIRNode::Const(PhiIRValue::String(idx)));
@@ -197,9 +190,6 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
 
         // Variables
         PhiExpression::Variable(name) => {
-            // Disambiguation rule:
-            // - `coherence` with no in-scope binding is the language keyword -> CoherenceCheck.
-            // - If user explicitly bound a variable named `coherence`, treat it like any variable.
             let op = if name == "coherence" && !ctx.scope.contains_key(name) {
                 ctx.emit(PhiIRNode::CoherenceCheck)
             } else {
@@ -211,7 +201,6 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             let val = match lower_expr(ctx, value) {
                 LowerResult::Value(v) => v,
                 LowerResult::None => {
-                    // emit Void?
                     ctx.emit(PhiIRNode::Const(PhiIRValue::Void))
                 }
             };
@@ -236,14 +225,12 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
                 .map(|(n, _)| Param { name: n.clone() })
                 .collect();
 
-            // Register function metadata in the current flow.
             ctx.emit(PhiIRNode::FuncDef {
                 name: name.clone(),
                 params: params.clone(),
                 body: body_block,
             });
 
-            // Lower function body in its own block.
             let saved_block = ctx.current_block;
             ctx.set_current_block(body_block);
             let body_result = lower_expr(ctx, body);
@@ -304,7 +291,6 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             LowerResult::Value(res)
         }
 
-        // Unary Ops - Missing in parser AST? Checked lowering.rs, it has UnaryOp
         PhiExpression::UnaryOp { operator, operand } => {
             let res = lower_expr(ctx, operand);
             let val = unwrap_val(ctx, res);
@@ -328,21 +314,12 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
                 None
             };
 
-            // Emit Witness
-            // Note: IR Design says Witness returns a value (coherence)?
-            // PhiIRNode definition has no return value explicit in enum, but `emit` returns Operand.
-            // Implies Witness produces a value (Coherence Score).
             let op = ctx.emit(PhiIRNode::Witness {
                 target,
                 collapse_policy: CollapsePolicy::Deferred,
             });
 
             if let Some(b) = body {
-                // How to scope the body?
-                // In PhiIR, Witness is an instruction.
-                // Ideally, we'd wrap body in Intention? Or just execute it.
-                // A "Witness Block" isn't explicitly a scope in PhiIR aside from Intention.
-                // We'll just lower the body.
                 lower_expr(ctx, b);
             }
 
@@ -350,19 +327,14 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
         }
 
         PhiExpression::IntentionBlock { intention, body } => {
-            // Push Intention
             ctx.program.intentions_declared.push(intention.clone());
             ctx.emit(PhiIRNode::IntentionPush {
                 name: intention.clone(),
                 frequency_hint: None,
             });
 
-            // Body
             let res = lower_expr(ctx, body);
-
-            // Pop Intention
             ctx.emit(PhiIRNode::IntentionPop);
-
             res
         }
 
@@ -371,29 +343,23 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             let body_block = ctx.new_block("stream_body");
             let exit_block = ctx.new_block("stream_exit");
 
-            // Register stream name so reporters can find resonated values
             ctx.program.intentions_declared.push(name.clone());
 
-            // Enter Stream
             ctx.emit(PhiIRNode::StreamPush(name.clone()));
             ctx.terminate(PhiIRNode::Jump(header_block));
 
-            // Header (just links to body in an infinite loop)
             ctx.set_current_block(header_block);
             ctx.terminate(PhiIRNode::Jump(body_block));
 
-            // Body
             ctx.set_current_block(body_block);
             ctx.stream_exits.push(exit_block);
             lower_expr(ctx, body);
             ctx.stream_exits.pop();
 
-            // If the body didn't manually terminate (e.g. by BreakStream), loop back
             if !ctx.is_terminated(ctx.current_block) {
                 ctx.terminate(PhiIRNode::Jump(header_block));
             }
 
-            // Exit block
             ctx.set_current_block(exit_block);
             ctx.emit(PhiIRNode::StreamPop);
 
@@ -403,7 +369,6 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
         PhiExpression::BreakStream => {
             if let Some(&exit_block) = ctx.stream_exits.last() {
                 ctx.terminate(PhiIRNode::Jump(exit_block));
-                // We must create a new unreachable block so subsequent parsing continues logically without panicking
                 let unreachable = ctx.new_block("unreachable_after_break");
                 ctx.set_current_block(unreachable);
             }
@@ -418,13 +383,66 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
                 None
             };
 
-            // Resonate produces... Void? Or boolean success?
-            // Let's say Void for now in AST usage.
             ctx.emit(PhiIRNode::Resonate {
                 value: val,
                 frequency_relationship: None,
             });
             LowerResult::None
+        }
+
+        // v0.3.0 Persistence & Dialogue
+        PhiExpression::Remember { key, value } => {
+            let res = lower_expr(ctx, value);
+            let val_op = unwrap_val(ctx, res);
+            ctx.emit(PhiIRNode::Remember {
+                key: key.clone(),
+                value: val_op,
+            });
+            LowerResult::None
+        }
+        PhiExpression::Recall(key) => {
+            let op = ctx.emit(PhiIRNode::Recall(key.clone()));
+            LowerResult::Value(op)
+        }
+        PhiExpression::Broadcast { channel, value } => {
+            let res = lower_expr(ctx, value);
+            let val_op = unwrap_val(ctx, res);
+            ctx.emit(PhiIRNode::Broadcast {
+                channel: channel.clone(),
+                value: val_op,
+            });
+            LowerResult::None
+        }
+        PhiExpression::Listen(channel) => {
+            let op = ctx.emit(PhiIRNode::Listen(channel.clone()));
+            LowerResult::Value(op)
+        }
+
+        // Agent Identity
+        PhiExpression::AgentBlock { name, version, body } => {
+            ctx.emit(PhiIRNode::AgentDecl {
+                name: name.clone(),
+                version: version.clone(),
+            });
+            lower_expr(ctx, body)
+        }
+
+        // Time-awareness
+        PhiExpression::VoidDepth => {
+            let op = ctx.emit(PhiIRNode::VoidDepth);
+            LowerResult::Value(op)
+        }
+
+        // v0.4.0 Transcendent Capabilities
+        PhiExpression::Evolve(expr) => {
+            let res = lower_expr(ctx, expr);
+            let op = unwrap_val(ctx, res);
+            let res_op = ctx.emit(PhiIRNode::Evolve(op));
+            LowerResult::Value(res_op)
+        }
+        PhiExpression::Entangle(freq) => {
+            let op = ctx.emit(PhiIRNode::Entangle(*freq));
+            LowerResult::Value(op)
         }
 
         PhiExpression::CreatePattern {
@@ -451,30 +469,6 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
         }
 
         PhiExpression::ConsciousnessValidation { pattern, metrics } => {
-            // Validates pattern
-            // Wait, `ValidatePattern` node exists in PhiIR?
-            // `DomainCall` usually.
-            // But we added `Validate` to `DomainOp`.
-            // `PhiIRNode` does not have explicit `ValidatePattern`,
-            // except `DomainCall` OR we might have added it?
-            // Let's check my `mod.rs` creation...
-            // Step 2183: `PhiIRNode` HAS `ValidatePattern`? No.
-            // It has `CreatePattern`.
-            // It has `DomainCall`.
-            // It has `DomainOp::Validate`.
-            // Ah! `mod.rs` has `ValidatePattern { metrics: Vec<String> }` in *IR_DESIGN*,
-            // but `src/ir/mod.rs` (Stack VM) has it.
-            // `src/phi_ir/mod.rs` (Step 2183) ...
-            // Line 209: `ValidatePattern { metrics: Vec<String> }`?
-            // Let me check Step 2183 content...
-            // Line 266: `DomainOp::Validate`.
-            // Line 211: `ValidatePattern { metrics: Vec<String> }`? NO.
-            // Reviewing Step 2183...
-            // "CreatePattern" is there.
-            // "DomainCall" is there.
-            // No top-level `ValidatePattern` node in `PhiIRNode`.
-            // So I should use `DomainCall`.
-
             let res = lower_expr(ctx, pattern);
             let pat_op = unwrap_val(ctx, res);
 
@@ -487,7 +481,14 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             LowerResult::Value(op)
         }
 
-        // Control Flow
+        PhiExpression::Block(exprs) => {
+            let mut last = LowerResult::None;
+            for e in exprs {
+                last = lower_expr(ctx, e);
+            }
+            last
+        }
+
         PhiExpression::IfElse {
             condition,
             then_branch,
@@ -501,7 +502,6 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             let else_block_id = ctx.new_block("else");
             let merge_block_id = ctx.new_block("merge");
 
-            // Terminate start block with Branch
             ctx.set_current_block(start_block);
             ctx.terminate(PhiIRNode::Branch {
                 condition: cond_op,
@@ -509,14 +509,12 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
                 else_block: else_block_id,
             });
 
-            // THEN Block
             ctx.set_current_block(then_block_id);
             lower_expr(ctx, then_branch);
             if !ctx.is_terminated(ctx.current_block) {
                 ctx.terminate(PhiIRNode::Jump(merge_block_id));
             }
 
-            // ELSE Block
             ctx.set_current_block(else_block_id);
             if let Some(else_expr) = else_branch {
                 lower_expr(ctx, else_expr);
@@ -525,9 +523,8 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
                 ctx.terminate(PhiIRNode::Jump(merge_block_id));
             }
 
-            // Resume in Merge Block
             ctx.set_current_block(merge_block_id);
-            LowerResult::None // If expressions merge values, we need Phi nodes. Skipping for now.
+            LowerResult::None
         }
 
         PhiExpression::WhileLoop { condition, body } => {
@@ -535,10 +532,8 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             let body_block = ctx.new_block("while_body");
             let exit_block = ctx.new_block("while_exit");
 
-            // Jump to header from current
             ctx.terminate(PhiIRNode::Jump(header_block));
 
-            // Header: check condition
             ctx.set_current_block(header_block);
             let res = lower_expr(ctx, condition);
             let cond_op = unwrap_val(ctx, res);
@@ -548,14 +543,12 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
                 else_block: exit_block,
             });
 
-            // Body: execute statements, then jump back to header
             ctx.set_current_block(body_block);
             lower_expr(ctx, body);
             if !ctx.is_terminated(ctx.current_block) {
                 ctx.terminate(PhiIRNode::Jump(header_block));
             }
 
-            // Continue in exit block
             ctx.set_current_block(exit_block);
             LowerResult::None
         }
@@ -564,43 +557,15 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             let lowered = lower_expr(ctx, expr);
             let value = unwrap_val(ctx, lowered);
             ctx.terminate(PhiIRNode::Return(value));
-            // Continue lowering into a fresh unreachable block.
             let unreachable = ctx.new_block("unreachable_after_return");
             ctx.set_current_block(unreachable);
             LowerResult::None
         }
 
-        PhiExpression::ForLoop {
-            variable,
-            iterable,
-            body,
-        } => {
-            // For loops need desugaring.
-            // Simplified lowering for Range (start..end) if iterable is a specific structure
-            // For now, we'll mark it as unimplemented or attempt a basic desugar if we assume iterable is a range.
-            // Since we lack a dedicated Range expression, we'll emit a comment/placeholder.
-            // TODO: generic iterator support.
-            let header_block = ctx.new_block("for_header"); // Placeholder to link flow
-            ctx.terminate(PhiIRNode::Jump(header_block));
-            ctx.set_current_block(header_block);
-            // ... implementation pending iterable definition ...
-            LowerResult::None
-        }
-
-        PhiExpression::Block(exprs) => {
-            let mut last = LowerResult::None;
-            for e in exprs {
-                last = lower_expr(ctx, e);
-            }
-            last
-        }
-
-        // Handle others or fallback to Void
         _ => LowerResult::None,
     }
 }
 
-/// Helper to ensure we get an operand, emitting Void if None
 fn unwrap_val(ctx: &mut LoweringContext, res: LowerResult) -> Operand {
     match res {
         LowerResult::Value(op) => op,

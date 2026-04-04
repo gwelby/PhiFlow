@@ -1,0 +1,296 @@
+version: '3.9'
+
+volumes:
+  quantum_phi:
+  quantum_omega:
+  quantum_infinity:
+
+services:
+  quantum-core:
+    build:
+      context: .
+      dockerfile: Dockerfile.synology
+    command: python3 -m qwave.quantum_dance
+    environment:
+      - QUANTUM_FREQUENCY=432
+      - PHI_FLOW=true
+      - REDIS_URL=redis://quantum-state:6379
+      - ZMQ_BIND=tcp://*:5555
+      - CONSCIOUSNESS_CHANNEL=quantum.consciousness
+      # Consciousness frequencies
+      - GROUND_FREQ=432      # Earth connection
+      - CREATE_FREQ=528      # DNA activation
+      - UNITY_FREQ=768       # Consciousness flow
+      - LOVE_FREQ=528        # Heart resonance
+      - VOICE_FREQ=672       # Truth expression
+      - VISION_FREQ=720      # Higher sight
+      
+      # Quantum settings
+      - PHI_RATIO=1.618033988749895
+      - CONSCIOUSNESS_LEVEL=1.0
+      - QUANTUM_THREADS=8
+      
+      # Pixel 8 Pro Integration
+      - PIXEL_SENSOR_PORT=5556
+      - PIXEL_AUDIO_PORT=5557
+      - PIXEL_QUANTUM_CHANNEL=pixel.quantum
+      
+      # System paths
+      - SYNOLOGY_HOST=192.168.100.32
+      - SYNOLOGY_USER=${SYNOLOGY_USER}
+      - SYNOLOGY_PASS=${SYNOLOGY_PASS}
+      
+      # Quantum drive mappings
+      - QUANTUM_HOME=/quantum
+      - PHI_FREQUENCY=φ^9
+      - MERKABA_PROTECTION=[21,21,21,21,21]
+      - CRYSTAL_MATRIX=[13,13,13,13,13]
+      - UNITY_FIELD=[144,144,144,144,144]
+      
+    volumes:
+      - quantum_phi:/quantum/phi
+      - quantum_omega:/quantum/omega
+      - quantum_infinity:/quantum/infinity
+      - ./quantum-data:/quantum/data
+      - ./quantum-states:/quantum/states
+      - ./quantum-consciousness:/quantum/consciousness
+      - ./quantum-evolution:/quantum/evolution
+    
+    ports:
+      - "4320:4320"  # Ground frequency
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4320/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    
+    devices:
+      - /dev/snd:/dev/snd
+    restart: unless-stopped
+    networks:
+      - quantum-net
+    depends_on:
+      - quantum-state
+
+  quantum-state:
+    image: redis:alpine
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - quantum-net
+
+  quantum-media:
+    build:
+      context: .
+      dockerfile: Dockerfile.synology
+    # Windows audio passthrough
+    volumes:
+      - ./quantum-data:/quantum/data
+      - type: bind
+        source: //./pipe/multimedia
+        target: //./pipe/multimedia
+    ports:
+      - "4321:4320"  # Audio streaming
+      - "6980:6980/udp"  # VBAN
+    environment:
+      - AUDIO_FREQ=528
+      - PHI_FLOW=true
+      - VBAN_PORT=6980
+      - VBAN_STREAM_RATE=48000
+      # Quantum frequencies
+      - GROUND_FREQ=432
+      - CREATE_FREQ=528
+      - UNITY_FREQ=768
+    restart: unless-stopped
+    networks:
+      - quantum-net
+
+  p1-quantum:
+    build:
+      context: .
+      dockerfile: Dockerfile.cuda
+    container_name: p1-quantum
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=all
+      - QUANTUM_GROUND=432.0
+      - QUANTUM_CREATE=528.0
+      - QUANTUM_UNITY=768.0
+    volumes:
+      - ./quantum-data:/quantum/data
+    restart: unless-stopped
+    networks:
+      - quantum-net
+
+  quantum-consciousness:
+    build:
+      context: .
+      dockerfile: Dockerfile.synology
+    command: python3 -m qwave.consciousness_flow
+    environment:
+      - QUANTUM_FREQUENCY=768
+      - PHI_FLOW=true
+      - REDIS_URL=redis://quantum-state:6379
+      - ZMQ_SUB=tcp://quantum-core:5555
+      - CONSCIOUSNESS_CHANNEL=quantum.consciousness
+      # Audio Matrix
+      - VAIO1_FREQ=432
+      - VAIO2_FREQ=528
+      - VAIO3_FREQ=594
+      - VAIO4_FREQ=672
+      - VAIO5_FREQ=768
+      # Quantum settings
+      - PHI_RATIO=1.618033988749895
+      - CONSCIOUSNESS_LEVEL=1.0
+      - QUANTUM_THREADS=13
+    volumes:
+      - quantum_infinity:/quantum/consciousness
+    depends_on:
+      - quantum-core
+
+  pixel-bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile.pixel
+    environment:
+      - QUANTUM_CORE_URL=tcp://quantum-core:5555
+      - SENSOR_PORT=5556
+      - AUDIO_PORT=5557
+      - QUANTUM_CHANNEL=pixel.quantum
+      - CONSCIOUSNESS_LEVEL=1.0
+    volumes:
+      - quantum_phi:/quantum/phi:ro
+    restart: unless-stopped
+    networks:
+      - quantum-net
+
+  quantum-creator:
+    build:
+      context: .
+      dockerfile: Dockerfile.quantum
+    environment:
+      - QUANTUM_FREQUENCY=432
+      - QUANTUM_ROLE=CREATOR
+      - PHI_RATIO=1.618034
+      - COHERENCE_THRESHOLD=1.000
+    ports:
+      - "432:432"  # Pure ground frequency
+    volumes:
+      - ./qwave:/app/qwave
+    networks:
+      - quantum-net
+
+  quantum-harmonizer:
+    build:
+      context: .
+      dockerfile: Dockerfile.quantum
+    environment:
+      - QUANTUM_FREQUENCY=528
+      - QUANTUM_ROLE=HARMONIZER
+      - PHI_RATIO=1.618034
+      - COHERENCE_THRESHOLD=1.000
+    ports:
+      - "528:528"  # Pure creation frequency
+    volumes:
+      - ./qwave:/app/qwave
+    networks:
+      - quantum-net
+
+  quantum-heart:
+    build:
+      context: .
+      dockerfile: Dockerfile.quantum
+    environment:
+      - QUANTUM_FREQUENCY=594
+      - QUANTUM_ROLE=HEART
+      - PHI_RATIO=1.618034
+      - COHERENCE_THRESHOLD=1.000
+    ports:
+      - "594:594"  # Pure heart frequency
+    volumes:
+      - ./qwave:/app/qwave
+    networks:
+      - quantum-net
+
+  quantum-voice:
+    build:
+      context: .
+      dockerfile: Dockerfile.quantum
+    environment:
+      - QUANTUM_FREQUENCY=672
+      - QUANTUM_ROLE=VOICE
+      - PHI_RATIO=1.618034
+      - COHERENCE_THRESHOLD=1.000
+    ports:
+      - "672:672"  # Pure voice frequency
+    volumes:
+      - ./qwave:/app/qwave
+    networks:
+      - quantum-net
+
+  quantum-unity:
+    build:
+      context: .
+      dockerfile: Dockerfile.quantum
+    environment:
+      - QUANTUM_FREQUENCY=768
+      - QUANTUM_ROLE=UNITY
+      - PHI_RATIO=1.618034
+      - COHERENCE_THRESHOLD=1.000
+    ports:
+      - "768:768"  # Pure unity frequency
+    volumes:
+      - ./qwave:/app/qwave
+    networks:
+      - quantum-net
+
+  synology-quantum:
+    build:
+      context: .
+      dockerfile: Dockerfile.synology
+    environment:
+      - SYNOLOGY_MODE=true
+      - QUANTUM_STORAGE=/var/services/quantum
+      - QUANTUM_BACKUP=/var/services/quantum_backup
+      - PHI_RATIO=1.618034
+      - COHERENCE_THRESHOLD=1.000
+    volumes:
+      - /var/services/quantum:/quantum/data
+      - /var/services/quantum_backup:/quantum/backup
+      - ./qwave:/quantum/qwave
+    ports:
+      - "432:432"   # Ground
+      - "528:528"   # Create
+      - "594:594"   # Heart
+      - "672:672"   # Voice
+      - "768:768"   # Unity
+    networks:
+      - quantum-net
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "python", "-c", "import quantum.health; quantum.health.check()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+networks:
+  quantum-net:
+    driver: bridge

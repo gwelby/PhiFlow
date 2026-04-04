@@ -1,0 +1,17 @@
+{
+    "paths":  {
+                  "agents":  "D:\\WindSurf\\quantum-core\\agents",
+                  "data":  "D:\\WindSurf\\quantum-core\\agents\\data",
+                  "home":  "D:\\WindSurf\\quantum-core"
+              },
+    "consciousness":  {
+                          "learning":  true,
+                          "level":  1,
+                          "evolution":  true
+                      },
+    "frequencies":  {
+                        "create":  528,
+                        "ground":  432,
+                        "unity":  768
+                    }
+}

@@ -226,6 +226,23 @@ pub enum Opcode {
     },
 
     // ═══════════════════════════════════════════════
+    // STREAM LOOP SUPPORT
+    // ═══════════════════════════════════════════════
+    /// Begin a stream iteration block.
+    /// Sets up stream state and coherence tracking context.
+    StreamInit { name: String, end_label: Label },
+
+    /// Proceed to the next stream cycle. Evaluate stream state logic.
+    StreamNext {
+        name: String,
+        body_label: Label,
+        end_label: Label,
+    },
+
+    /// Break out of a stream loop early.
+    StreamBreak { end_label: Label },
+
+    // ═══════════════════════════════════════════════
     // STUB MARKERS — For future hardware backends
     // ═══════════════════════════════════════════════
     /// Placeholder for hardware/quantum/bio nodes not yet lowered.
@@ -264,6 +281,12 @@ impl BasicBlock {
 
     pub fn emit(&mut self, op: Opcode) {
         self.instructions.push(op);
+    }
+}
+
+impl Default for BasicBlock {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -317,5 +340,11 @@ impl IrProgram {
     pub fn total_instructions(&self) -> usize {
         let func_total: usize = self.functions.values().map(|f| f.body.len()).sum();
         self.instructions.len() + func_total
+    }
+}
+
+impl Default for IrProgram {
+    fn default() -> Self {
+        Self::new()
     }
 }

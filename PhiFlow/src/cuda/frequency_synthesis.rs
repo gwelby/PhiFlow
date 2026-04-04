@@ -225,7 +225,7 @@ impl FrequencyGpuSynthesizer {
         // Apply PHI modulation
         for (i, sample) in modulated.iter_mut().enumerate() {
             let phi_phase = (i as f32 / waveform.len() as f32) * PHI * 2.0 * std::f32::consts::PI;
-            let phi_modulation = (phi_phase.sin() * 0.1 + 1.0); // 10% modulation depth
+            let phi_modulation = phi_phase.sin() * 0.1 + 1.0; // 10% modulation depth
             *sample *= phi_modulation;
         }
 

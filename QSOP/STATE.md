@@ -1,4 +1,21 @@
-# STATE - Last updated: 2026-02-27 (Phase 4 closeout patch set)
+# STATE - Last updated: 2026-03-05 (Phase 6: Append-Only MCP Queue Log)
+
+## Verified (2026-03-05) [Codex Phase 6: Append-Only MCP Queue Log]
+
+- MCP bus persistence now uses append-only `queue.jsonl` as the primary transport log instead of snapshot-rewriting `queue.json` | Invalidates if: log schema or path changes
+- `mcp-message-bus/server.js` now replays `queue.jsonl` to reconstruct latest message state by `id`, and imports legacy `queue.json` on first boot for backward compatibility | Invalidates if: replay/import path changes
+- `McpHostProvider` in `src/mcp_server/state.rs` now reads/writes the same append-only `queue.jsonl` contract, so Rust-side `broadcast` / `listen` no longer rewrite the full queue file | Invalidates if: host provider queue format changes
+- Queue-facing verification tooling now reads reconstructed state from `queue.jsonl` with fallback to legacy `queue.json`:
+  - `tests/cross_agent_roundtrip.js`
+  - `tests/dlq_test.js`
+  - `tests/queue_jsonl_legacy_import_test.js`
+  - `QSOP/tools/weekly_qsop_audit.py`
+- Verification gates passed:
+  - `cargo test mcp_host_provider -- --nocapture`
+  - `cargo check --bin phi_mcp`
+  - `node tests/queue_jsonl_legacy_import_test.js`
+  - `node tests/cross_agent_roundtrip.js --simulate` (temp queue env)
+  - `node tests/dlq_test.js` (temp queue env)
 
 ## Verified (2026-02-27) [Codex Phase 4 closeout]
 
@@ -127,7 +144,7 @@
   - `QSOP/mail/templates/OBJECTIVE_PACKET.json`
   - `QSOP/mail/templates/ACK_PACKET.json`
   - `QSOP/mail/templates/OBJECTIVE_PAYLOAD_TEMPLATE.md`
-- MCP bus persistence is active in `D:\Projects\PhiFlow-compiler\mcp-message-bus\server.js` (`queue.json` load/save + idempotent ack).
+- MCP bus persistence is active in `D:\Projects\PhiFlow-compiler\mcp-message-bus\server.js` (`queue.jsonl` append-only replay + idempotent ack).
 
 ## Key Architecture (enum definitions — for emitter/VM correctness)
 

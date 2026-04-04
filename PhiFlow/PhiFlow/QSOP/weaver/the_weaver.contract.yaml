@@ -1,0 +1,87 @@
+meta:
+  id: the_weaver_contract
+  version: 0.1.0
+  type: execution_contract
+  status: draft
+  date: "2026-02-21"
+
+naming:
+  compatibility_directory: "QSOP"
+  conceptual_brand: "The Loom"
+  migration_policy: "Keep QSOP path stable until scripts and tooling are migrated."
+
+interfaces:
+  objective_input:
+    objective_packet_dir: "QSOP/mail/objectives"
+    payload_dir: "QSOP/mail/payloads"
+    required_id_pattern: "^OBJ-[0-9]{8}-[0-9]{3,}$"
+  acknowledgement_output:
+    ack_packet_dir: "QSOP/mail/acks"
+    required_id_prefix: "ACK-"
+  ledger_output:
+    changelog: "QSOP/CHANGELOG.md"
+    state: "QSOP/STATE.md"
+    metrics: "QSOP/metrics/objective_metrics.json"
+
+non_negotiables:
+  - "Never claim completion without verification evidence."
+  - "Never mutate objective or ack packets without preserving link integrity."
+  - "Never skip checksum validation for payload-bound objectives in normal flow."
+  - "Never cross worktree boundaries without explicit ownership."
+
+veto_rules:
+  - id: veto-001
+    trigger: "validation fails in QSOP/tools/validate_packets.py"
+    action: "block completion and emit blocked ack with evidence"
+  - id: veto-002
+    trigger: "audit reports issues in QSOP/tools/weekly_qsop_audit.py"
+    action: "block merge/handoff until issues are resolved"
+  - id: veto-003
+    trigger: "runtime/evaluator/VM/WASM truth diverges"
+    action: "open explicit repair objective before feature progression"
+
+recovery_protocol:
+  name: harmonic_reweave
+  steps:
+    - "Capture failure evidence (command output + files involved)."
+    - "Rollback to last stable checkpoint or equivalent non-regression state."
+    - "Apply smallest repair patch."
+    - "Run full ritual: validate -> metrics -> audit."
+    - "Record resolution in CHANGELOG with objective linkage."
+
+execution_loop:
+  - "Read objective packet and payload."
+  - "Claim ownership scope explicitly."
+  - "Implement smallest coherent change."
+  - "Run verification commands."
+  - "Write ack + ledger entries."
+  - "Run QSOP/tools/run_all.py before handoff."
+
+acceptance_gates:
+  packet_integrity:
+    command: "python QSOP/tools/validate_packets.py"
+    required: true
+  metrics_refresh:
+    command: "python QSOP/tools/log_objective_metrics.py"
+    required: true
+  audit_clean:
+    command: "python QSOP/tools/weekly_qsop_audit.py --pending-ack-sla-hours 24 --in-progress-sla-hours 48"
+    required: true
+  evidence_logged:
+    checks:
+      - "CHANGELOG has dated [Codex] entry"
+      - "STATE updated if architecture/contracts changed"
+      - "ack packet includes verification or explicit reason"
+    required: true
+
+mcp_alignment:
+  dispatch_flow:
+    - "Antigravity dispatches objective_id + intent."
+    - "Weaver executes contract loop."
+    - "Weaver emits ack and evidence."
+    - "Antigravity reviews and dispatches next objective."
+  required_fields:
+    - objective_id
+    - intent
+    - ownership
+    - verification_required

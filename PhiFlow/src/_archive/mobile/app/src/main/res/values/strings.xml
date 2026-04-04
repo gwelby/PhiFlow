@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Quantum Meditation</string>
+    <string name="ground_freq">Ground (432 Hz)</string>
+    <string name="create_freq">Create (528 Hz)</string>
+    <string name="unity_freq">Unity (768 Hz)</string>
+    <string name="coherence">Quantum Coherence</string>
+</resources>

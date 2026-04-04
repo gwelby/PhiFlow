@@ -1,0 +1,27 @@
+{
+  "ack_id": "ACK-OBJ-20260223-008-codex",
+  "objective_id": "OBJ-20260223-008",
+  "status": "completed",
+  "summary": "Lane A complete: CoherenceProvider callback added to PhiIR Evaluator with default mathematical fallback preserved, CoherenceCheck now resolves through provider injection, and src/sensors.rs now uses real sysinfo CPU/memory telemetry (mock removed) with main_cli wiring and examples/healing_bed.phi verified.",
+  "verification": {
+    "fail_first": "cargo test --test phi_ir_evaluator_tests test_coherence_keyword_accepts_injected_value => error[E0425]: cannot find function evaluate_with_coherence in this scope",
+    "targeted_after_fix": "cargo test --test phi_ir_evaluator_tests test_coherence_keyword_accepts_injected_value => test result: ok. 1 passed; 0 failed",
+    "full_cargo_suite": "cargo test aggregate summaries => PASSED=213, FAILED=0",
+    "healing_bed_runtime": "Run1: Resonating Field 0.9801Hz; Run2: Resonating Field 0.9800Hz (same binary, separate executions). Values are live sensor-derived and not fixed at 0.6180.",
+    "ritual": "python3 QSOP/tools/run_all.py --pending-ack-sla-hours 24 --in-progress-sla-hours 24 (re-run after this ACK schema fix)"
+  },
+  "files_changed": [
+    "Cargo.toml",
+    "src/sensors.rs",
+    "src/lib.rs",
+    "src/main_cli.rs",
+    "src/phi_ir/evaluator.rs",
+    "tests/phi_ir_evaluator_tests.rs",
+    "examples/healing_bed.phi",
+    "QSOP/mail/acks/ACK-OBJ-20260223-008-codex.json"
+  ],
+  "notes": [
+    "CoherenceProvider is optional and defaults to prior compute_coherence() semantics, preserving existing evaluator tests.",
+    "sysinfo crate integrated at version 0.30.x; CPU usage read via global_cpu_info().cpu_usage()."
+  ]
+}

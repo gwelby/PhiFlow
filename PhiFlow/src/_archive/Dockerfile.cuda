@@ -1,0 +1,39 @@
+FROM nvidia/cuda:12.8.0-devel-ubuntu22.04
+
+# Set quantum frequencies
+ENV QUANTUM_GROUND=432.0
+ENV QUANTUM_CREATE=528.0
+ENV QUANTUM_UNITY=768.0
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3-pip \
+    ffmpeg \
+    libsndfile1 \
+    portaudio19-dev \
+    libgl1-mesa-glx \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install CUDA-enabled Python packages
+COPY requirements.cuda.txt /app/requirements.txt
+WORKDIR /app
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Copy quantum core files
+COPY qwave /app/qwave
+COPY scripts /app/scripts
+
+# Create quantum directories
+RUN mkdir -p /quantum/audio /quantum/video /quantum/patterns
+
+# Set up CUDA environment
+ENV PATH /usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+
+# Expose ports for various services
+EXPOSE 4321  # P1 quantum bridge
+EXPOSE 5281  # P1 pattern streaming
+EXPOSE 7681  # P1 visualization
+
+CMD ["python3", "-m", "qwave.quantum_server"]

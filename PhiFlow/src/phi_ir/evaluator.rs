@@ -6,16 +6,24 @@
 //! - `Witness`           → Captures program state; returns coherence score (0.0–1.0)
 //! - `IntentionPush/Pop` → Maintains a live intention stack; scopes execution purpose
 //! - `Resonate`          → Shares values through an intention-keyed resonance field
-//! - `CoherenceCheck`    → Phi-harmonic coherence: depth 2 yields the golden ratio (0.618)
+//! - `CoherenceCheck`    → Canonical coherence: base(depth) × phase(k)
 //!
-//! Coherence formula: `1 - φ^(-depth)` + resonance bonus (max 0.2)
-//!   depth 0 → 0.000 | depth 1 → 0.382 | depth 2 → 0.618 | depth 3 → 0.764
+//! Canonical runtime formula:
+//!   base(depth) = 0 when depth == 0, else `1 - φ^(-depth)`
+//!   phase(k)    = 1 when k <= 1, else `1 - ln(k)/ln(τ)`
+//!   coherence   = clamp(base(depth) × phase(k), 0, 1)
 
+use crate::host::{DefaultHostProvider, PhiHostProvider, WitnessAction, WitnessSnapshot};
+use crate::parser::parse_phi_program;
 use crate::phi_ir::{
+    lowering::lower_program_checked,
+    vm_state::{VmState, VmWitnessEvent},
     BlockId, Operand, PhiIRBinOp, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRUnOp, PhiIRValue,
-    PhiInstruction,
+    PhiInstruction, SensorKind,
 };
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 const PHI: f64 = 1.618033988749895;
 
@@ -30,6 +38,8 @@ pub enum EvalError {
     DivisionByZero,
     InvalidOperation(String),
     Unimplemented(String),
+    SynthesisError(String),
+    StepLimitExceeded(usize),
 }
 
 impl std::fmt::Display for EvalError {
@@ -40,6 +50,10 @@ impl std::fmt::Display for EvalError {
             EvalError::DivisionByZero => write!(f, "Division by zero"),
             EvalError::InvalidOperation(s) => write!(f, "Invalid operation: {}", s),
             EvalError::Unimplemented(s) => write!(f, "Unimplemented: {}", s),
+            EvalError::SynthesisError(s) => write!(f, "Synthesis error: {}", s),
+            EvalError::StepLimitExceeded(limit) => {
+                write!(f, "Execution step limit exceeded: {} steps", limit)
+            }
         }
     }
 }
@@ -47,28 +61,48 @@ impl std::fmt::Display for EvalError {
 type EvalResult<T> = Result<T, EvalError>;
 
 // ---------------------------------------------------------------------------
+// Execution result — supports yield/resume for host-controlled witness
+// ---------------------------------------------------------------------------
+
+/// The result of running an evaluator to completion or yield.
+#[derive(Debug, Clone)]
+pub enum VmExecResult {
+    /// Program completed normally with a final value.
+    Complete(PhiIRValue),
+    /// Program yielded at a `witness` statement. Contains the frozen state
+    /// needed to resume, plus the witness snapshot that triggered the yield.
+    Yielded {
+        snapshot: WitnessSnapshot,
+        frozen_state: FrozenEvalState,
+    },
+    /// Program yielded to synchronize with other entangled streams.
+    Entangled {
+        frequency: f64,
+        frozen_state: FrozenEvalState,
+    },
+}
+
+/// Backward-compatible alias for older call sites.
+pub type EvalExecResult = VmExecResult;
+
+/// Serializable evaluator state used for yield/resume.
+pub type FrozenEvalState = VmState;
+
+// ---------------------------------------------------------------------------
 // Witness event — observable output of `witness` construct
 // ---------------------------------------------------------------------------
 
-/// A snapshot of program state recorded each time `witness` executes.
-#[derive(Debug, Clone)]
-pub struct WitnessEvent {
-    /// Active intention stack at the moment of observation (innermost last).
-    pub intention_stack: Vec<String>,
-    /// Phi-harmonic coherence score: 0.0 (no purpose) → 1.0 (fully aligned).
-    pub coherence: f64,
-    /// Number of SSA registers live at this point.
-    pub register_count: usize,
-    /// Total values shared through the resonance field across all intentions.
-    pub resonance_count: usize,
-}
+/// Snapshot entry for each witness event.
+pub type WitnessEvent = VmWitnessEvent;
 
 // ---------------------------------------------------------------------------
 // Evaluator
 // ---------------------------------------------------------------------------
 
 pub struct Evaluator<'a> {
-    program: &'a PhiIRProgram,
+    program: PhiIRProgram,
+    functions: HashMap<String, FunctionMeta>,
+    host: Box<dyn PhiHostProvider + 'a>,
 
     /// SSA registers: instruction index (Operand) → computed value.
     registers: HashMap<Operand, PhiIRValue>,
@@ -79,34 +113,155 @@ pub struct Evaluator<'a> {
     /// Active intention stack. Each `IntentionPush` pushes a name; `IntentionPop` removes it.
     intention_stack: Vec<String>,
 
+    /// Tracks active stream loop names to determine if resonance overwrites or appends.
+    active_streams: Vec<String>,
+
     /// Resonance field: intention name → values shared via `resonate`.
     /// The special key "global" is used when no intention is active.
     resonance_field: HashMap<String, Vec<PhiIRValue>>,
+    /// Shared resonance field across multiple evaluators
+    shared_resonance: Option<Arc<Mutex<HashMap<String, Vec<PhiIRValue>>>>>,
+    /// Ordered resonance events (scope, value) for CLI/diagnostic output.
+    resonance_events: Vec<(String, PhiIRValue)>,
+    /// Stream names that exited via StreamPop.
+    ended_streams: Vec<String>,
 
     /// Every `Witness` execution appends an event here.
     pub witness_log: Vec<WitnessEvent>,
 
     current_block: BlockId,
     instruction_ptr: usize,
+
+    // --- v0.3.0 Metadata ---
+    pub agent_name: Option<String>,
+    pub agent_version: Option<String>,
+    pub yield_timestamp: Option<f64>,
+
+    // --- Guardrails ---
+    pub max_steps: Option<usize>,
+    pub step_count: usize,
+    sensor_provider: Option<Arc<dyn Fn(SensorKind) -> Option<f64> + Send + Sync + 'a>>,
+}
+
+#[derive(Debug, Clone)]
+struct FunctionMeta {
+    params: Vec<String>,
+    body: BlockId,
 }
 
 impl<'a> Evaluator<'a> {
     pub fn new(program: &'a PhiIRProgram) -> Self {
-        Self {
-            program,
-            registers: HashMap::new(),
-            variables: HashMap::new(),
-            intention_stack: Vec::new(),
-            resonance_field: HashMap::new(),
-            witness_log: Vec::new(),
-            current_block: program.blocks.first().map(|b| b.id).unwrap_or(0),
-            instruction_ptr: 0,
+        let mut functions = HashMap::new();
+        for block in &program.blocks {
+            for instr in &block.instructions {
+                if let PhiIRNode::FuncDef { name, params, body } = &instr.node {
+                    functions.insert(
+                        name.clone(),
+                        FunctionMeta {
+                            params: params.iter().map(|p| p.name.clone()).collect(),
+                            body: *body,
+                        },
+                    );
+                }
+            }
         }
+
+        let mut variables = HashMap::new();
+        variables.insert("PHI".to_string(), PhiIRValue::Number(PHI));
+
+        Self {
+            program: program.clone(),
+            functions,
+            host: Box::new(DefaultHostProvider),
+            registers: HashMap::new(),
+            variables,
+            intention_stack: Vec::new(),
+            active_streams: Vec::new(),
+            resonance_field: HashMap::new(),
+            shared_resonance: None,
+            resonance_events: Vec::new(),
+            ended_streams: Vec::new(),
+            witness_log: Vec::new(),
+            current_block: program.entry,
+            instruction_ptr: 0,
+            agent_name: None,
+            agent_version: None,
+            yield_timestamp: None,
+            max_steps: None,
+            step_count: 0,
+            sensor_provider: None,
+        }
+    }
+
+    /// Set a custom host provider. This replaces the default host.
+    pub fn with_host(mut self, host: Box<dyn PhiHostProvider + 'a>) -> Self {
+        self.host = host;
+        self
+    }
+
+    /// Link this evaluator to a globally shared resonance field.
+    pub fn with_shared_resonance(
+        mut self,
+        shared: Arc<Mutex<HashMap<String, Vec<PhiIRValue>>>>,
+    ) -> Self {
+        self.shared_resonance = Some(shared);
+        self
+    }
+
+    /// Set an execution step limit to prevent infinite loops.
+    pub fn with_max_steps(mut self, steps: usize) -> Self {
+        self.max_steps = Some(steps);
+        self
+    }
+
+    /// Backwards-compatible: set a coherence provider closure.
+    pub fn with_coherence_provider<F>(mut self, provider: F) -> Self
+    where
+        F: Fn() -> f64 + Send + Sync + 'static,
+    {
+        use crate::host::CallbackHostProvider;
+        self.host =
+            Box::new(CallbackHostProvider::new().with_coherence(move |_internal| provider()));
+        self
+    }
+
+    pub fn with_sensor_provider<F>(mut self, provider: F) -> Self
+    where
+        F: Fn(SensorKind) -> Option<f64> + Send + Sync + 'a,
+    {
+        self.sensor_provider = Some(Arc::new(provider));
+        self
     }
 
     /// Run the program to completion. Returns the final value.
     pub fn run(&mut self) -> EvalResult<PhiIRValue> {
+        match self.run_or_yield()? {
+            VmExecResult::Complete(value) => Ok(value),
+            VmExecResult::Yielded { .. } => Ok(PhiIRValue::Number(self.compute_coherence())),
+            VmExecResult::Entangled { .. } => Ok(PhiIRValue::Number(self.compute_coherence())),
+        }
+    }
+
+    /// Run the program, but may return `Yielded` if a `witness` triggers
+    /// a host-requested yield. The caller can inspect the frozen state
+    /// and call `resume()` to continue.
+    pub fn run_or_yield(&mut self) -> EvalResult<VmExecResult> {
+        let mut loop_counter = 0;
         loop {
+            if let Some(max) = self.max_steps {
+                if self.step_count > max {
+                    return Err(EvalError::StepLimitExceeded(max));
+                }
+            }
+            self.step_count += 1;
+
+            loop_counter += 1;
+            if loop_counter > 50000 && self.max_steps.is_none() {
+                panic!(
+                    "Infinite loop detected in evaluator. current_block: {}, ip: {}",
+                    self.current_block, self.instruction_ptr
+                );
+            }
             let block_id = self.current_block;
             let block = self.get_block(block_id)?;
             let instr_count = block.instructions.len();
@@ -114,20 +269,68 @@ impl<'a> Evaluator<'a> {
             if self.instruction_ptr < instr_count {
                 let instr = block.instructions[self.instruction_ptr].clone();
                 self.instruction_ptr += 1;
-                self.execute_instruction(&instr)?;
+                if let Some(yield_result) = self.execute_instruction_with_yield(&instr)? {
+                    return Ok(yield_result);
+                }
             } else {
                 let terminator = block.terminator.clone();
-                match self.execute_terminator(&terminator)? {
-                    Some(value) => return Ok(value),
-                    None => {} // advance to next block and continue
+                if let Some(value) = self.execute_terminator(&terminator)? {
+                    return Ok(VmExecResult::Complete(value));
                 }
             }
+        }
+    }
+
+    /// Resume execution after a yield. Restores frozen state and continues.
+    pub fn resume(&mut self, state: FrozenEvalState) -> EvalResult<VmExecResult> {
+        self.registers = state.registers;
+        self.variables = state.variables;
+        self.intention_stack = state.intention_stack;
+        self.active_streams = state.active_streams;
+        self.resonance_field = state.resonance_field;
+        self.resonance_events = state.resonance_events;
+        self.ended_streams = state.ended_streams;
+        self.witness_log = state.witness_log;
+        self.current_block = state.current_block;
+        self.instruction_ptr = state.instruction_ptr;
+        self.yield_timestamp = state.yield_timestamp;
+        self.agent_name = state.agent_name;
+        self.agent_version = state.agent_version;
+        self.run_or_yield()
+    }
+
+    /// Capture the current evaluator state as a frozen snapshot.
+    fn freeze_state(&self) -> FrozenEvalState {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs_f64();
+
+        FrozenEvalState {
+            registers: self.registers.clone(),
+            variables: self.variables.clone(),
+            intention_stack: self.intention_stack.clone(),
+            active_streams: self.active_streams.clone(),
+            resonance_field: self.resonance_field.clone(),
+            resonance_events: self.resonance_events.clone(),
+            ended_streams: self.ended_streams.clone(),
+            witness_log: self.witness_log.clone(),
+            current_block: self.current_block,
+            instruction_ptr: self.instruction_ptr,
+            yield_timestamp: Some(now),
+            agent_name: self.agent_name.clone(),
+            agent_version: self.agent_version.clone(),
         }
     }
 
     /// Expose current coherence so callers can inspect without running `witness`.
     pub fn coherence(&self) -> f64 {
         self.compute_coherence()
+    }
+
+    /// Expose the host-resolved coherence, including injected hardware metrics.
+    pub fn resolved_coherence(&self) -> f64 {
+        self.resolve_coherence()
     }
 
     /// Expose a read-only view of values resonated under a given intention.
@@ -138,15 +341,30 @@ impl<'a> Evaluator<'a> {
             .unwrap_or(&[])
     }
 
+    /// Ordered resonance events produced during execution.
+    pub fn resonance_events(&self) -> &[(String, PhiIRValue)] {
+        self.resonance_events.as_slice()
+    }
+
+    /// Stream names that completed execution.
+    pub fn ended_streams(&self) -> &[String] {
+        self.ended_streams.as_slice()
+    }
+
+    pub fn resonance_field(&self) -> &HashMap<String, Vec<PhiIRValue>> {
+        &self.resonance_field
+    }
+
     // -----------------------------------------------------------------------
     // Block lookup
     // -----------------------------------------------------------------------
 
-    fn get_block(&self, id: BlockId) -> EvalResult<&'a PhiIRBlock> {
+    fn get_block(&self, id: BlockId) -> EvalResult<PhiIRBlock> {
         self.program
             .blocks
             .iter()
             .find(|b| b.id == id)
+            .cloned()
             .ok_or(EvalError::BlockNotFound(id))
     }
 
@@ -178,45 +396,59 @@ impl<'a> Evaluator<'a> {
             // --- Arithmetic & Logic ---
             PhiIRNode::BinOp { op, left, right } => Some(self.eval_binop(op, *left, *right)?),
             PhiIRNode::UnaryOp { op, operand } => Some(self.eval_unop(op, *operand)?),
+            PhiIRNode::Call { name, args } => {
+                let mut arg_values = Vec::with_capacity(args.len());
+                for arg in args {
+                    arg_values.push(self.get_reg(*arg)?.clone());
+                }
+                Some(self.execute_function(name, arg_values)?)
+            }
+            PhiIRNode::FuncDef { .. } => None,
 
             // --- The Four Unique PhiFlow Constructs ---
-            /// `witness` — pauses to observe program state.
-            /// Returns coherence score as a Number (0.0–1.0).
-            /// Records a WitnessEvent in witness_log.
             PhiIRNode::Witness { target, .. } => {
-                // Optionally observe a specific operand (for future use by backends).
-                let _observed = target.and_then(|op| self.get_reg(op).ok().cloned());
-
-                let coherence = self.compute_coherence();
-                let resonance_count: usize = self.resonance_field.values().map(|v| v.len()).sum();
-
-                self.witness_log.push(WitnessEvent {
-                    intention_stack: self.intention_stack.clone(),
-                    coherence,
-                    register_count: self.registers.len(),
-                    resonance_count,
-                });
-
+                let (coherence, _snapshot, _action) = self.process_witness(*target)?;
                 Some(PhiIRValue::Number(coherence))
             }
 
-            /// `intention "Name" { ... }` — enter a purposeful scope.
-            /// Pushes intention name; initialises its resonance field slot.
+            PhiIRNode::WitnessSensor { sensor } => {
+                let (value, _snapshot, _action) = self.process_sensor_witness(*sensor)?;
+                Some(PhiIRValue::Number(value))
+            }
+
             PhiIRNode::IntentionPush { name, .. } => {
                 self.intention_stack.push(name.clone());
                 self.resonance_field.entry(name.clone()).or_default();
+                self.host.on_intention_push(name);
                 None
             }
 
-            /// Exit intention scope. Pops the innermost intention name.
             PhiIRNode::IntentionPop => {
-                self.intention_stack.pop();
+                let popped = self.intention_stack.pop().unwrap_or_default();
+                self.host.on_intention_pop(&popped);
                 None
             }
 
-            /// `resonate value` — share a value through the resonance field.
-            /// Filed under the current intention name, or "global" if none active.
-            PhiIRNode::Resonate { value, .. } => {
+            PhiIRNode::StreamPush(name) => {
+                self.intention_stack.push(name.clone());
+                self.active_streams.push(name.clone());
+                self.resonance_field.insert(name.clone(), Vec::new());
+                None
+            }
+
+            PhiIRNode::StreamPop => {
+                self.intention_stack.pop();
+                if let Some(stream_name) = self.active_streams.pop() {
+                    self.ended_streams.push(stream_name);
+                }
+                None
+            }
+
+            PhiIRNode::Resonate {
+                value,
+                direction: _,
+                ..
+            } => {
                 let key = self
                     .intention_stack
                     .last()
@@ -226,26 +458,258 @@ impl<'a> Evaluator<'a> {
                 if let Some(op) = value {
                     if let Ok(val) = self.get_reg(*op) {
                         let val = val.clone();
-                        self.resonance_field.entry(key).or_default().push(val);
+                        let val_str = self.value_to_string(&val);
+                        self.resonance_events.push((key.clone(), val.clone()));
+
+                        // --- Pipe 3: MQTT Resonance Bus ---
+                        let json_val = match &val {
+                            PhiIRValue::Number(n) => serde_json::json!(n),
+                            PhiIRValue::String(idx) => {
+                                let s = self
+                                    .program
+                                    .string_table
+                                    .get(*idx as usize)
+                                    .cloned()
+                                    .unwrap_or_default();
+                                serde_json::json!(s)
+                            }
+                            PhiIRValue::Boolean(b) => serde_json::json!(b),
+                            PhiIRValue::Void => serde_json::Value::Null,
+                        };
+                        let _ = crate::resonance_bus::emit_resonance(json_val, &key, "phiflow");
+                        // ----------------------------------
+
+                        if self.active_streams.contains(&key) {
+                            self.resonance_field.insert(key.clone(), vec![val.clone()]);
+                            if let Some(shared) = &self.shared_resonance {
+                                let mut guard = shared.lock().unwrap();
+                                guard.insert(key.clone(), vec![val.clone()]);
+                            }
+                        } else {
+                            self.resonance_field
+                                .entry(key.clone())
+                                .or_default()
+                                .push(val.clone());
+                            if let Some(shared) = &self.shared_resonance {
+                                let mut guard = shared.lock().unwrap();
+                                guard.entry(key.clone()).or_default().push(val.clone());
+                            }
+                        }
+                        self.host.on_resonate(&key, &val_str);
                     }
                 }
                 None
             }
 
-            /// `coherence` — evaluate and return current phi-harmonic coherence.
-            PhiIRNode::CoherenceCheck => Some(PhiIRValue::Number(self.compute_coherence())),
+            PhiIRNode::CoherenceCheck => Some(PhiIRValue::Number(self.resolve_coherence())),
 
-            // --- Domain calls: no-op in base evaluator (backend-specific) ---
-            PhiIRNode::DomainCall { .. } => None,
-            PhiIRNode::CreatePattern { .. } => None,
+            // --- v0.3.0 Persistence & Dialogue ---
+            PhiIRNode::Remember { key, value } => {
+                let val = self.get_reg(*value)?;
+                let val_str = self.value_to_string(val);
+                self.host.persist(key, &val_str);
+                None
+            }
+            PhiIRNode::Recall(key) => {
+                if let Some(val_str) = self.host.recall(key) {
+                    Some(self.string_to_value(&val_str))
+                } else {
+                    Some(PhiIRValue::Void)
+                }
+            }
+            PhiIRNode::Broadcast { channel, value } => {
+                let val = self.get_reg(*value)?;
+                let val_str = self.value_to_string(val);
+                self.host.broadcast(channel, &val_str);
+                None
+            }
+            PhiIRNode::Listen(channel) => {
+                if let Some(val_str) = self.host.listen(channel) {
+                    Some(self.string_to_value(&val_str))
+                } else {
+                    Some(PhiIRValue::Void)
+                }
+            }
 
-            // --- Phi-Harmonic stabilization ---
-            /// `Sleep { duration }` — harmonic pause for self-healing.
-            /// In the evaluator, we record the intent but don't actually sleep
-            /// (tests would hang). A real runtime backend can override this.
-            PhiIRNode::Sleep { .. } => None,
+            PhiIRNode::AgentDecl { name, version } => {
+                self.agent_name = Some(name.clone());
+                self.agent_version = Some(version.clone());
+                None
+            }
 
-            // Control flow nodes are terminators — handled in execute_terminator
+            PhiIRNode::VoidDepth => {
+                if let Some(yield_ts) = self.yield_timestamp {
+                    let now = SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_secs_f64();
+                    Some(PhiIRValue::Number(now - yield_ts))
+                } else {
+                    Some(PhiIRValue::Number(0.0))
+                }
+            }
+
+            // --- v0.4.0 Strategic Capabilities ---
+            PhiIRNode::Evolve(op) => {
+                let code_val = self.get_reg(*op)?;
+                let code_str = self.value_to_string(code_val);
+
+                // 1. Compile the evolved code
+                let exprs = parse_phi_program(&code_str)
+                    .map_err(|e| EvalError::SynthesisError(format!("Parse failed: {}", e)))?;
+                let evolved_prog = lower_program_checked(&exprs)
+                    .map_err(|e| EvalError::SynthesisError(e.to_string()))?;
+
+                // 2. Splice blocks into the current program
+                // We need to offset BlockIds to avoid collisions.
+                let max_id = self.program.blocks.iter().map(|b| b.id).max().unwrap_or(0);
+                let id_offset = max_id + 1;
+
+                for mut block in evolved_prog.blocks.clone() {
+                    block.id += id_offset;
+                    // Remap internal jumps/branches
+                    self.remap_block_ids(&mut block.terminator, id_offset);
+                    self.program.blocks.push(block);
+                }
+
+                // Log the mutation to the resonance field (Fossil Record)
+                let msg = format!(
+                    "Stream evolved logic at {:.3}s (offset={})",
+                    self.coherence(),
+                    id_offset
+                );
+                self.resonance_events
+                    .push(("_evolution".to_string(), PhiIRValue::Void));
+                self.resonance_field
+                    .entry("_evolution".to_string())
+                    .or_default();
+                self.host.on_resonate("_evolution", &msg);
+
+                // 3. Execute the evolved blocks as a nested context,
+                // saving the current block/IP so we resume cleanly.
+                let saved_block = self.current_block;
+                let saved_ip = self.instruction_ptr;
+
+                self.current_block = evolved_prog.entry + id_offset;
+                self.instruction_ptr = 0;
+
+                let evolved_result = loop {
+                    let block_id = self.current_block;
+                    let block = self.get_block(block_id)?.clone();
+
+                    if self.instruction_ptr < block.instructions.len() {
+                        let instr = block.instructions[self.instruction_ptr].clone();
+                        self.instruction_ptr += 1;
+                        self.execute_instruction(&instr)?;
+                        continue;
+                    }
+
+                    let terminator = block.terminator.clone();
+                    if let Some(val) = self.execute_terminator(&terminator)? {
+                        break val;
+                    }
+                };
+
+                // Restore control to the caller block
+                self.current_block = saved_block;
+                self.instruction_ptr = saved_ip;
+
+                println!("Evolve returned: {:?}", evolved_result);
+
+                Some(evolved_result)
+            }
+
+            PhiIRNode::Entangle(freq) => {
+                // Handled by execute_instruction_with_yield
+                None
+            }
+
+            // --- Domain calls: no-op in base evaluator ---
+            PhiIRNode::DomainCall {
+                op,
+                args,
+                string_args,
+            } => {
+                match op {
+                    crate::phi_ir::DomainOp::QuantumField => {
+                        // AntiGravity Pipe 2: IBM Quantum Feedback
+                        // Emits QASM, Polls, and triggers Self-Correction
+                        let job_id = string_args
+                            .get(0)
+                            .cloned()
+                            .unwrap_or_else(|| "mock_job".to_string());
+                        let api_key = std::env::var("IBM_QUANTUM_API_KEY")
+                            .unwrap_or_else(|_| "MOCK_KEY".to_string());
+
+                        if let Ok(counts) = crate::quantum_feedback::poll_ibm_job(&job_id, &api_key)
+                        {
+                            let coherence = crate::quantum_feedback::calculate_coherence(&counts);
+                            if let Some(correction_source) =
+                                crate::quantum_feedback::generate_correction_if_needed(coherence)
+                            {
+                                // Trigger evolve internally
+                                let exprs = parse_phi_program(&correction_source).map_err(|e| {
+                                    EvalError::SynthesisError(format!("Parse failed: {}", e))
+                                })?;
+                                let evolved_prog = lower_program_checked(&exprs)
+                                    .map_err(|e| EvalError::SynthesisError(e.to_string()))?;
+
+                                let max_id =
+                                    self.program.blocks.iter().map(|b| b.id).max().unwrap_or(0);
+                                let id_offset = max_id + 1;
+
+                                for mut block in evolved_prog.blocks.clone() {
+                                    block.id += id_offset;
+                                    self.remap_block_ids(&mut block.terminator, id_offset);
+                                    self.program.blocks.push(block);
+                                }
+
+                                let msg =
+                                    format!("Quantum Feedback Evolved logic at {:.3}c", coherence);
+                                self.resonance_events.push((
+                                    "_quantum_evolution".to_string(),
+                                    PhiIRValue::Number(coherence),
+                                ));
+                                self.resonance_field
+                                    .entry("_quantum_evolution".to_string())
+                                    .or_default();
+                                self.host.on_resonate("_quantum_evolution", &msg);
+
+                                let saved_block = self.current_block;
+                                let saved_ip = self.instruction_ptr;
+                                self.current_block = evolved_prog.entry + id_offset;
+                                self.instruction_ptr = 0;
+
+                                let _evolved_result = loop {
+                                    let block_id = self.current_block;
+                                    let block = self.get_block(block_id)?.clone();
+
+                                    if self.instruction_ptr < block.instructions.len() {
+                                        let instr =
+                                            block.instructions[self.instruction_ptr].clone();
+                                        self.instruction_ptr += 1;
+                                        self.execute_instruction(&instr)?;
+                                        continue;
+                                    }
+
+                                    let terminator = block.terminator.clone();
+                                    if let Some(val) = self.execute_terminator(&terminator)? {
+                                        break val;
+                                    }
+                                };
+
+                                self.current_block = saved_block;
+                                self.instruction_ptr = saved_ip;
+                            }
+                        }
+                        Some(PhiIRValue::Void)
+                    }
+                    _ => Some(PhiIRValue::Void),
+                }
+            }
+            PhiIRNode::CreatePattern { .. } => Some(PhiIRValue::Void),
+            PhiIRNode::Sleep { .. } => Some(PhiIRValue::Void),
+
             PhiIRNode::Branch { .. }
             | PhiIRNode::Jump(_)
             | PhiIRNode::Return(_)
@@ -259,7 +723,6 @@ impl<'a> Evaluator<'a> {
             }
         };
 
-        // Store result in SSA register if this instruction produces a value.
         if let (Some(val), Some(reg)) = (value, instr.result) {
             self.registers.insert(reg, val);
         }
@@ -267,9 +730,172 @@ impl<'a> Evaluator<'a> {
         Ok(())
     }
 
-    // -----------------------------------------------------------------------
-    // Terminator execution — returns Some(value) to halt, None to continue
-    // -----------------------------------------------------------------------
+    fn value_to_string(&self, val: &PhiIRValue) -> String {
+        match val {
+            PhiIRValue::Number(n) => {
+                if n.fract() == 0.0 && n.is_finite() {
+                    format!("{:.1}", n)
+                } else {
+                    n.to_string()
+                }
+            }
+            PhiIRValue::Boolean(b) => b.to_string(),
+            PhiIRValue::Void => "void".to_string(),
+            PhiIRValue::String(idx) => {
+                // If it's a string from the program table, we can resolve it
+                if let Some(s) = self.program.string_table.get(*idx as usize) {
+                    s.clone()
+                } else {
+                    format!("_str_{}", idx)
+                }
+            }
+        }
+    }
+
+    fn string_to_value(&self, s: &str) -> PhiIRValue {
+        if let Ok(n) = s.parse::<f64>() {
+            PhiIRValue::Number(n)
+        } else if s == "true" {
+            PhiIRValue::Boolean(true)
+        } else if s == "false" {
+            PhiIRValue::Boolean(false)
+        } else if s == "void" {
+            PhiIRValue::Void
+        } else {
+            // Treat unknown strings as Void for now, or could intern them if we had a mutable table
+            PhiIRValue::Void
+        }
+    }
+
+    fn resonance_count(&self) -> usize {
+        self.resonance_field.values().map(|v| v.len()).sum()
+    }
+
+    fn process_witness(
+        &mut self,
+        target: Option<Operand>,
+    ) -> EvalResult<(f64, WitnessSnapshot, WitnessAction)> {
+        let observed = target.and_then(|op| self.get_reg(op).ok().cloned());
+        let coherence = self.compute_coherence();
+        let resonance_count = self.resonance_count();
+
+        self.witness_log.push(WitnessEvent {
+            intention_stack: self.intention_stack.clone(),
+            coherence,
+            register_count: self.registers.len(),
+            resonance_count,
+            agent_name: self.agent_name.clone(),
+        });
+
+        let snapshot = WitnessSnapshot {
+            intention_stack: self.intention_stack.clone(),
+            coherence,
+            register_count: self.registers.len(),
+            resonance_count,
+            observed_value: observed.map(|v| self.value_to_string(&v)),
+            agent_name: self.agent_name.clone(),
+        };
+        let action = self.host.on_witness(&snapshot);
+
+        Ok((coherence, snapshot, action))
+    }
+
+    fn process_sensor_witness(
+        &mut self,
+        sensor: SensorKind,
+    ) -> EvalResult<(f64, WitnessSnapshot, WitnessAction)> {
+        let value = self.resolve_sensor(sensor)?;
+        let coherence = self.compute_coherence();
+        let resonance_count = self.resonance_count();
+
+        self.witness_log.push(WitnessEvent {
+            intention_stack: self.intention_stack.clone(),
+            coherence,
+            register_count: self.registers.len(),
+            resonance_count,
+            agent_name: self.agent_name.clone(),
+        });
+
+        let snapshot = WitnessSnapshot {
+            intention_stack: self.intention_stack.clone(),
+            coherence,
+            register_count: self.registers.len(),
+            resonance_count,
+            observed_value: Some(format!("sensor({}): {}", sensor.as_name(), value)),
+            agent_name: self.agent_name.clone(),
+        };
+        let action = self.host.on_witness(&snapshot);
+
+        Ok((value, snapshot, action))
+    }
+
+    fn execute_instruction_with_yield(
+        &mut self,
+        instr: &PhiInstruction,
+    ) -> EvalResult<Option<VmExecResult>> {
+        if let PhiIRNode::Witness { target, .. } = &instr.node {
+            let (coherence, snapshot, action) = self.process_witness(*target)?;
+
+            if let Some(reg) = instr.result {
+                self.registers.insert(reg, PhiIRValue::Number(coherence));
+            }
+
+            if action == WitnessAction::Yield {
+                let frozen = self.freeze_state();
+                return Ok(Some(VmExecResult::Yielded {
+                    snapshot,
+                    frozen_state: frozen,
+                }));
+            }
+            return Ok(None);
+        }
+
+        if let PhiIRNode::WitnessSensor { sensor } = &instr.node {
+            let (value, snapshot, action) = self.process_sensor_witness(*sensor)?;
+
+            if let Some(reg) = instr.result {
+                self.registers.insert(reg, PhiIRValue::Number(value));
+            }
+
+            if action == WitnessAction::Yield {
+                let frozen = self.freeze_state();
+                return Ok(Some(VmExecResult::Yielded {
+                    snapshot,
+                    frozen_state: frozen,
+                }));
+            }
+            return Ok(None);
+        }
+
+        if let PhiIRNode::Entangle(freq) = &instr.node {
+            self.host.on_entangle(*freq);
+            let frozen = self.freeze_state();
+            return Ok(Some(VmExecResult::Entangled {
+                frequency: *freq,
+                frozen_state: frozen,
+            }));
+        }
+
+        self.execute_instruction(instr)?;
+        Ok(None)
+    }
+
+    fn remap_block_ids(&self, node: &mut PhiIRNode, offset: u32) {
+        match node {
+            PhiIRNode::Jump(target) => {
+                *target += offset;
+            }
+            PhiIRNode::Branch {
+                then_block,
+                else_block,
+                ..
+            } => {
+                *then_block += offset;
+                *else_block += offset;
+            }
+            _ => {}
+        }
+    }
 
     fn execute_terminator(&mut self, node: &PhiIRNode) -> EvalResult<Option<PhiIRValue>> {
         match node {
@@ -308,7 +934,6 @@ impl<'a> Evaluator<'a> {
             }
 
             PhiIRNode::Fallthrough => {
-                // Advance to the next physical block in program order.
                 let current_idx = self
                     .program
                     .blocks
@@ -332,42 +957,29 @@ impl<'a> Evaluator<'a> {
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Phi-harmonic coherence
-    // -----------------------------------------------------------------------
-
-    /// Compute the phi-harmonic coherence score (0.0–1.0).
-    ///
-    /// Intention depth drives coherence via `1 - φ^(-depth)`:
-    ///   depth 0 → 0.000  (no declared purpose)
-    ///   depth 1 → 0.382  (one intention active)
-    ///   depth 2 → 0.618  (golden ratio — two aligned intentions)
-    ///   depth 3 → 0.764
-    ///   depth 4 → 0.854
-    ///
-    /// Resonance connections add up to 0.200 more (0.05 per shared value).
     fn compute_coherence(&self) -> f64 {
-        let depth = self.intention_stack.len();
-        let resonance_count: usize = self.resonance_field.values().map(|v| v.len()).sum();
-
-        if depth == 0 && resonance_count == 0 {
-            return 0.0;
-        }
-
-        let intention_coherence = if depth > 0 {
-            1.0 - PHI.powi(-(depth as i32))
-        } else {
-            0.0
-        };
-
-        let resonance_bonus = (resonance_count as f64 * 0.05).min(0.2);
-
-        (intention_coherence + resonance_bonus).min(1.0)
+        crate::phi_ir::coherence::canonical_coherence(&self.intention_stack, &self.resonance_field)
     }
 
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
+    fn resolve_coherence(&self) -> f64 {
+        let internal = self.compute_coherence();
+        self.host.get_coherence(internal)
+    }
+
+    fn resolve_sensor(&self, sensor: SensorKind) -> EvalResult<f64> {
+        let value = self
+            .sensor_provider
+            .as_ref()
+            .and_then(|provider| provider(sensor))
+            .or_else(|| crate::sensors::read_sensor(sensor));
+
+        value.ok_or_else(|| {
+            EvalError::InvalidOperation(format!(
+                "sensor `{}` is unavailable on this host",
+                sensor.as_name()
+            ))
+        })
+    }
 
     fn get_reg(&self, op: Operand) -> EvalResult<&PhiIRValue> {
         self.registers
@@ -436,5 +1048,48 @@ impl<'a> Evaluator<'a> {
                 "Unary op on unsupported type".to_string(),
             )),
         }
+    }
+
+    fn execute_function(&mut self, name: &str, args: Vec<PhiIRValue>) -> EvalResult<PhiIRValue> {
+        let meta =
+            self.functions.get(name).cloned().ok_or_else(|| {
+                EvalError::InvalidOperation(format!("Undefined function: {}", name))
+            })?;
+
+        let saved_block = self.current_block;
+        let saved_ip = self.instruction_ptr;
+        let saved_variables = std::mem::take(&mut self.variables);
+
+        self.variables = HashMap::new();
+        for (idx, param_name) in meta.params.iter().enumerate() {
+            let value = args.get(idx).cloned().unwrap_or(PhiIRValue::Void);
+            self.variables.insert(param_name.clone(), value);
+        }
+
+        self.current_block = meta.body;
+        self.instruction_ptr = 0;
+
+        let result = loop {
+            let block_id = self.current_block;
+            let block = self.get_block(block_id)?.clone();
+
+            if self.instruction_ptr < block.instructions.len() {
+                let instr = block.instructions[self.instruction_ptr].clone();
+                self.instruction_ptr += 1;
+                self.execute_instruction(&instr)?;
+                continue;
+            }
+
+            let terminator = block.terminator.clone();
+            if let Some(value) = self.execute_terminator(&terminator)? {
+                break value;
+            }
+        };
+
+        self.variables = saved_variables;
+        self.current_block = saved_block;
+        self.instruction_ptr = saved_ip;
+
+        Ok(result)
     }
 }
