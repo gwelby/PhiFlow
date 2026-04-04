@@ -2,6 +2,7 @@ use clap::Parser;
 use phiflow::parser::parse_phi_program_with_diagnostics;
 use phiflow::phi_ir::evaluator::Evaluator;
 use phiflow::phi_ir::lowering::lower_program;
+use phiflow::phi_ir::openqasm::OpenQasmEmitter;
 use phiflow::phi_ir::quantum_codegen::compile_ir_to_quantum;
 use phiflow::phi_ir::PhiIRValue;
 use phiflow::sensors;
@@ -21,9 +22,13 @@ struct Args {
     #[arg(long, default_value_t = false)]
     json_errors: bool,
 
-    /// The target backend to compile to (e.g., 'quantum'). If not specified, runs in the interpreter.
+    /// The target backend to compile to (e.g., 'quantum', 'openqasm'). If not specified, runs in the interpreter.
     #[arg(long)]
     target: Option<String>,
+
+    /// Optimize the depth of quantum circuits (uses tree topology for entanglement).
+    #[arg(long, default_value_t = false)]
+    optimize_depth: bool,
 }
 
 #[derive(Debug)]
@@ -42,7 +47,7 @@ struct RunReport {
 fn main() {
     let args = Args::parse();
 
-    match run(&args.file, args.json_errors, args.target) {
+    match run(&args.file, args.json_errors, args.target, args.optimize_depth) {
         Ok(Some(report)) => {
             if args.json_errors {
                 // Contract: parse success emits pure JSON array and nothing else.
@@ -111,6 +116,7 @@ fn run(
     file_path: &PathBuf,
     json_errors: bool,
     target: Option<String>,
+    optimize_depth: bool,
 ) -> Result<Option<RunReport>, CliError> {
     let source = fs::read_to_string(file_path)
         .map_err(|e| CliError::Io(format!("Failed to read file: {}", e)))?;
@@ -128,7 +134,9 @@ fn run(
     }
 
     // 2. Lower AST -> PhiIR
-    println!("Compiling to PhiFlow IR...");
+    if target.is_some() {
+        eprintln!("Compiling to PhiFlow IR...");
+    }
     let ir_program = lower_program(&ast);
 
     // 3. Check compilation target
@@ -139,6 +147,20 @@ fn run(
                 let circuit = compile_ir_to_quantum(&ir_program);
                 println!("Generates Quantum Circuit:");
                 println!("{:#?}", circuit);
+                return Ok(None);
+            }
+            "openqasm" => {
+                let mut emitter = OpenQasmEmitter::new();
+                emitter.optimize_depth = optimize_depth;
+                
+                // Body Stress Bridge: Environment affects physical realization
+                let stability = sensors::compute_coherence_from_sensors();
+                emitter.hardware_stress = 1.0 - stability;
+                
+                let qasm = emitter
+                    .emit(&ir_program)
+                    .map_err(|e| CliError::Eval(e.to_string()))?;
+                println!("{}", qasm);
                 return Ok(None);
             }
             _ => {

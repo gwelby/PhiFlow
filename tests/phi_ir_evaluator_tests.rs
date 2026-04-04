@@ -10,7 +10,7 @@ use phiflow::phi_ir::evaluator::{EvalExecResult, Evaluator, FrozenEvalState};
 use phiflow::phi_ir::lowering::lower_program;
 use phiflow::phi_ir::optimizer::{OptimizationLevel, Optimizer};
 use phiflow::phi_ir::{
-    CollapsePolicy, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction,
+    CollapsePolicy, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction, TeamDirection,
 };
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -493,6 +493,7 @@ fn test_resonate_stores_value_under_current_intention() {
                 PhiIRNode::Resonate {
                     value: Some(0),
                     frequency_relationship: None,
+                    direction: TeamDirection::TeamA,
                 },
             ),
             instr(None, PhiIRNode::IntentionPop),
@@ -519,6 +520,7 @@ fn test_resonate_without_intention_uses_global() {
                 PhiIRNode::Resonate {
                     value: Some(0),
                     frequency_relationship: None,
+                    direction: TeamDirection::TeamA,
                 },
             ),
             instr(Some(1), PhiIRNode::Const(PhiIRValue::Number(0.0))),
@@ -536,7 +538,7 @@ fn test_resonate_without_intention_uses_global() {
 
 #[test]
 fn test_resonance_adds_bonus_to_coherence() {
-    // depth 1 + 1 resonated value → coherence = 0.382 + 0.05 = 0.432
+    // Bijective Phase Map: k=1 (single resonance) → coherence = 1.0
     let prog = single_block(
         vec![
             instr(
@@ -552,6 +554,7 @@ fn test_resonance_adds_bonus_to_coherence() {
                 PhiIRNode::Resonate {
                     value: Some(0),
                     frequency_relationship: None,
+                    direction: TeamDirection::TeamA,
                 },
             ),
             instr(Some(1), PhiIRNode::CoherenceCheck),
@@ -563,11 +566,9 @@ fn test_resonance_adds_bonus_to_coherence() {
     let mut eval = Evaluator::new(&prog);
     let result = eval.run().unwrap();
 
-    let phi: f64 = 1.618033988749895;
-    let expected = (1.0 - phi.powi(-1)) + 0.05; // 0.382 + 0.05 = 0.432
-
+    // k=1 bijective phase map → 1.0
     match result {
-        PhiIRValue::Number(n) => assert!((n - expected).abs() < 1e-9, "got {}", n),
+        PhiIRValue::Number(n) => assert!((n - 1.0).abs() < 0.001, "got {}", n),
         _ => panic!("expected Number"),
     }
 }
@@ -635,6 +636,58 @@ intention "test" {
 "#;
     let output = evaluate_with_coherence(source, || 0.75);
     assert!((output.resonance_field["test"][0] - 0.75).abs() < 0.001);
+}
+
+#[test]
+fn test_bijective_k2_decay() {
+    // Bijective Phase Map: k=2 (two resonances) → coherence = 1.0 - ln(2)/ln(2π) ≈ 0.623
+    let prog = single_block(
+        vec![
+            instr(
+                None,
+                PhiIRNode::IntentionPush {
+                    name: "Contradiction".to_string(),
+                    frequency_hint: None,
+                },
+            ),
+            instr(Some(0), PhiIRNode::Const(PhiIRValue::Number(1.0))),
+            instr(Some(1), PhiIRNode::Const(PhiIRValue::Number(2.0))),
+            instr(
+                None,
+                PhiIRNode::Resonate {
+                    value: Some(0),
+                    frequency_relationship: None,
+                    direction: TeamDirection::TeamA,
+                },
+            ),
+            instr(
+                None,
+                PhiIRNode::Resonate {
+                    value: Some(1),
+                    frequency_relationship: None,
+                    direction: TeamDirection::TeamB,
+                },
+            ),
+            instr(Some(2), PhiIRNode::CoherenceCheck),
+            instr(None, PhiIRNode::IntentionPop),
+        ],
+        2,
+    );
+
+    let mut eval = Evaluator::new(&prog);
+    let result = eval.run().unwrap();
+
+    let expected_k2 = 1.0 - 2.0_f64.ln() / std::f64::consts::TAU.ln(); // ≈ 0.623
+
+    match result {
+        PhiIRValue::Number(n) => assert!(
+            (n - expected_k2).abs() < 0.001,
+            "expected coherence near {} (k=2 bijective decay), got {}",
+            expected_k2,
+            n
+        ),
+        _ => panic!("expected Number"),
+    }
 }
 
 #[test]
@@ -733,6 +786,7 @@ fn test_all_four_constructs_together() {
                 PhiIRNode::Resonate {
                     value: Some(1),
                     frequency_relationship: None,
+                    direction: TeamDirection::TeamA,
                 },
             ),
             // Snapshot 2

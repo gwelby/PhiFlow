@@ -396,19 +396,33 @@ impl PhiVm {
 
     fn compute_coherence(&self) -> f64 {
         let depth = self.intention_stack.len();
-        let resonance_count: usize = self.resonance_field.values().map(|v| v.len()).sum();
+        
+        // Bijective Phase Map: k is the winding number (resonance cardinality)
+        // k=1 → perfect coherence (1.0), k>1 → logarithmic decay
+        // Find the maximum resonance cardinality across all intentions
+        let max_k: usize = self.resonance_field.values()
+            .map(|v| v.len())
+            .max()
+            .unwrap_or(0);
 
-        if depth == 0 && resonance_count == 0 {
+        // If no resonances but has intentions, k=1 (primitive winding)
+        let k = if depth > 0 && max_k == 0 {
+            1
+        } else if max_k == 0 {
             return 0.0;
-        }
-
-        let intention_coherence = if depth > 0 {
-            1.0 - PHI.powi(-(depth as i32))
         } else {
-            0.0
+            max_k
         };
-        let resonance_bonus = (resonance_count as f64 * 0.05).min(0.2);
-        (intention_coherence + resonance_bonus).min(1.0)
+
+        // Bijective phase map formula:
+        // k=1 → 1.0 (perfect coherence for primitive winding)
+        // k>1 → 1.0 - ln(k) / ln(2π) (logarithmic decay for multi-winding)
+        if k == 1 {
+            1.0
+        } else {
+            let decay = (k as f64).ln() / std::f64::consts::TAU.ln();
+            (1.0 - decay).max(0.0)
+        }
     }
 
     fn eval_unop(&self, operand: Operand) -> VmResult<PhiIRValue> {
@@ -832,6 +846,7 @@ mod tests {
 
     #[test]
     fn vm_coherence_tracks_intention_and_resonance() {
+        // Bijective Phase Map: k=1 (single resonance in intention) → coherence = 1.0
         let program = single_block_program(
             vec![
                 PhiInstruction {
@@ -865,7 +880,67 @@ mod tests {
         let result = PhiVm::run_bytes(&bytes).expect("VM should execute coherence bytecode");
         match result {
             PhiIRValue::Number(n) => {
-                assert!(n > 0.43 && n < 0.44, "expected coherence near 0.432, got {}", n);
+                assert!(n > 0.99 && n < 1.01, "expected coherence near 1.0 (k=1 bijective), got {}", n);
+            }
+            other => panic!("expected Number coherence result, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn vm_coherence_bijective_k2_decay() {
+        // Bijective Phase Map: k=2 (two resonances) → coherence = 1.0 - ln(2)/ln(2π) ≈ 0.623
+        let program = single_block_program(
+            vec![
+                PhiInstruction {
+                    result: Some(0),
+                    node: PhiIRNode::Const(PhiIRValue::Number(1.0)),
+                },
+                PhiInstruction {
+                    result: Some(1),
+                    node: PhiIRNode::Const(PhiIRValue::Number(2.0)),
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::IntentionPush {
+                        name: "contradiction".to_string(),
+                        frequency_hint: None,
+                    },
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::Resonate {
+                        value: Some(0),
+                        frequency_relationship: None,
+                        direction: TeamDirection::TeamA,
+                    },
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::Resonate {
+                        value: Some(1),
+                        frequency_relationship: None,
+                        direction: TeamDirection::TeamB,
+                    },
+                },
+                PhiInstruction {
+                    result: Some(2),
+                    node: PhiIRNode::CoherenceCheck,
+                },
+            ],
+            PhiIRNode::Return(2),
+        );
+
+        let expected_k2 = 1.0 - 2.0_f64.ln() / std::f64::consts::TAU.ln(); // ≈ 0.623
+        let bytes = emitter::emit(&program);
+        let result = PhiVm::run_bytes(&bytes).expect("VM should execute coherence bytecode");
+        match result {
+            PhiIRValue::Number(n) => {
+                assert!(
+                    (n - expected_k2).abs() < 0.001,
+                    "expected coherence near {} (k=2 bijective decay), got {}",
+                    expected_k2,
+                    n
+                );
             }
             other => panic!("expected Number coherence result, got {:?}", other),
         }

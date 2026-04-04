@@ -47,6 +47,7 @@ pub mod bio_compute;
 pub use consciousness::{ConsciousnessMonitor, ConsciousnessState, EEGData};
 pub use host::{PhiHostProvider, WitnessAction, WitnessSnapshot};
 pub use phi_diagnostics::PhiDiagnostic;
+pub use phi_ir::TeamDirection;
 pub use quantum::{QuantumCircuit, QuantumGate, QuantumResult};
 pub use sacred::{PhiMemoryAllocator, SacredFrequency, SacredFrequencyGenerator};
 

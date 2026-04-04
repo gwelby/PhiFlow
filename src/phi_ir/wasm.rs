@@ -378,6 +378,7 @@ impl<'a> WatEmitter<'a> {
             PhiIRNode::IntentionPop => "call $phi_intention_pop".to_string(),
 
             PhiIRNode::Resonate { value, .. } => match value {
+                // direction is quantum-backend specific, ignored by WASM
                 Some(reg) => format!("local.get $r{}\ncall $phi_resonate", reg),
                 None => "f64.const 0.0\ncall $phi_resonate".to_string(),
             },

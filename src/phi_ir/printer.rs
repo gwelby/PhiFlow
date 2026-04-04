@@ -82,6 +82,7 @@ fn format_instr(node: &PhiIRNode) -> String {
         PhiIRNode::IntentionPush { name, .. } => format!("IntentionPush \"{}\"", name),
         PhiIRNode::IntentionPop => "IntentionPop".to_string(),
         PhiIRNode::Resonate { value, .. } => {
+            // direction is quantum-backend specific, not shown in printer
             let v_str = value
                 .map(|v| format!("%{}", v))
                 .unwrap_or("Self".to_string());

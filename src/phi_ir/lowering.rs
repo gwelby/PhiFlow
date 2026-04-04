@@ -375,7 +375,7 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             LowerResult::None
         }
 
-        PhiExpression::Resonate { expression } => {
+        PhiExpression::Resonate { expression, direction } => {
             let val = if let Some(e) = expression {
                 let res = lower_expr(ctx, e);
                 Some(unwrap_val(ctx, res))
@@ -386,6 +386,7 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             ctx.emit(PhiIRNode::Resonate {
                 value: val,
                 frequency_relationship: None,
+                direction: *direction,
             });
             LowerResult::None
         }

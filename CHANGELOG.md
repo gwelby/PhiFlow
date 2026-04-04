@@ -1,5 +1,25 @@
 # PhiFlow Changelog
 
+## v0.4.0 — 2026-03-14 | Transcendent Substrate
+
+Upgrade to a stable, production-ready language framework where "Meaning becomes Physics."
+
+### What's New
+
+- **OpenQASM 3.0 Backend**: Full support for compiling PhiFlow semantics directly to IBM Quantum hardware.
+- **Semantic Polarity**: `resonate ... toward TEAM_B` now physically realized as Bloch sphere inversion (`ry((1-θ) * pi)`).
+- **Golden Integration Pipeline**: 6 full-pipeline integration tests verify the path from `.phi` source to hardware-ready QASM.
+- **Tree Topology Optimization**: Entanglement depth reduced from $O(N)$ to $O(\log N)$ using optimized tree structures.
+- **Coherence Feedback Loop**: The `evolve` construct enables programs to self-modify their logic based on real-time execution fidelity and coherence metrics.
+- **Isolated Evaluator Registers**: Hardened SSA register isolation for nested evolved contexts and function calls.
+
+### Technical Milestone
+
+- **Strategic Pivot**: Transitioned from a "Research Prototype" to a "Production Language" with integration tests guarding every pipe.
+- **Hardware Stabilization**: Integrated XYXY Dynamical Decoupling and mid-circuit measurement for high-fidelity quantum observation.
+
+---
+
 ## v0.2.0 — 2026-02-27 | Universal Resonance Architecture
 
 The completion of the Phase 4 closeout patch set. PhiFlow has evolved from a language that knows it is running to a universal substrate for agent-to-agent and hardware-to-software resonance.

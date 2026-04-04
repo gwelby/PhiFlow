@@ -18,8 +18,10 @@ We've built the **WORLD'S FIRST QUANTUM-CONSCIOUSNESS COMPUTING PLATFORM**. Now 
 # Get IBM Quantum access
 1. Sign up for IBM Quantum Network (free access)
 2. Get API token and connect PhiFlow to real quantum computers
-3. Run first phi-harmonic quantum circuit on actual IBM hardware
-4. Demonstrate quantum advantage with sacred geometry optimization
+3. Implement OpenQASM 3.0 Emitter backend in Rust (phiIR -> .qasm)
+4. Map entangle/witness/coherence/resonate to QASM gates
+5. Run first phi-harmonic quantum circuit on actual IBM hardware
+6. Demonstrate quantum advantage with sacred geometry optimization
 ```
 
 #### **Biofeedback Hardware Setup**

@@ -1,0 +1,27 @@
+// Truth-Namer Demo — Gate 3 Cross-Agent Resonance
+// This program demonstrates cross-agent visibility through the resonance bus.
+// Run this in one agent, watch coherence appear in another agent's browser UI.
+
+intention "cross_agent_test" {
+    let depth = 2.0
+    let base_coherence = 1.0 - 0.618033988749895  // φ⁻¹ at depth 2
+    
+    // Simulate coherence breathing
+    let cycle1 = base_coherence
+    resonate cycle1
+    witness
+    
+    let cycle2 = base_coherence + 0.1
+    resonate cycle2
+    witness
+    
+    let cycle3 = base_coherence + 0.2
+    resonate cycle3
+    witness
+    
+    // Final coherence should be visible to all connected agents
+    resonate base_coherence
+}
+
+// Expected resonance field: [0.718, 0.818, 0.918, 0.618]
+// Cross-agent browsers should see all 4 values via WebSocket

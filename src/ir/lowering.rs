@@ -7,6 +7,7 @@
 
 use super::{FunctionDef, IrProgram, Label, Opcode};
 use crate::parser::{BinaryOperator, PhiExpression, PhiValue, UnaryOperator};
+use crate::TeamDirection;
 use std::collections::HashMap;
 
 /// The lowering context, tracking state during AST – IR conversion.
@@ -327,7 +328,8 @@ impl Lowering {
                 self.emit(buffer, Opcode::IntentionPop);
             }
 
-            PhiExpression::Resonate { expression } => {
+            PhiExpression::Resonate { expression, .. } => {
+                // direction is quantum-backend specific, ignored by legacy IR
                 let has_expression = expression.is_some();
                 if let Some(expr) = expression {
                     self.lower_expression(expr, buffer);
@@ -656,6 +658,7 @@ mod tests {
     fn test_lower_resonate() {
         let ast = vec![PhiExpression::Resonate {
             expression: Some(Box::new(PhiExpression::Number(528.0))),
+            direction: TeamDirection::TeamA,
         }];
         let ir = lower(&ast);
         assert_eq!(ir.instructions[0], Opcode::PushNumber(528.0));

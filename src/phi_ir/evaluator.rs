@@ -253,10 +253,11 @@ impl<'a> Evaluator<'a> {
             let block_id = self.current_block;
             let block = self.get_block(block_id)?;
             let instr_count = block.instructions.len();
-
+            
             if self.instruction_ptr < instr_count {
                 let instr = block.instructions[self.instruction_ptr].clone();
                 self.instruction_ptr += 1;
+                
                 if let Some(yield_result) = self.execute_instruction_with_yield(&instr)? {
                     return Ok(yield_result);
                 }
@@ -423,6 +424,7 @@ impl<'a> Evaluator<'a> {
             }
 
             PhiIRNode::Resonate { value, .. } => {
+                // direction is quantum-backend specific, ignored by evaluator
                 let key = self
                     .intention_stack
                     .last()
@@ -543,7 +545,9 @@ impl<'a> Evaluator<'a> {
                 // saving the current block/IP so we resume cleanly.
                 let saved_block = self.current_block;
                 let saved_ip = self.instruction_ptr;
+                let saved_registers = std::mem::take(&mut self.registers);
 
+                self.registers = HashMap::new();
                 self.current_block = evolved_prog.entry + id_offset;
                 self.instruction_ptr = 0;
 
@@ -565,6 +569,7 @@ impl<'a> Evaluator<'a> {
                 };
 
                 // Restore control to the caller block
+                self.registers = saved_registers;
                 self.current_block = saved_block;
                 self.instruction_ptr = saved_ip;
 
@@ -786,21 +791,33 @@ impl<'a> Evaluator<'a> {
 
     fn compute_coherence(&self) -> f64 {
         let depth = self.intention_stack.len();
-        let resonance_count = self.resonance_count();
+        
+        // Bijective Phase Map: k is the winding number (resonance cardinality)
+        // k=1 → perfect coherence (1.0), k>1 → logarithmic decay
+        // Find the maximum resonance cardinality across all intentions
+        let max_k: usize = self.resonance_field.values()
+            .map(|v| v.len())
+            .max()
+            .unwrap_or(0);
 
-        if depth == 0 && resonance_count == 0 {
+        // If no resonances but has intentions, k=1 (primitive winding)
+        let k = if depth > 0 && max_k == 0 {
+            1
+        } else if max_k == 0 {
             return 0.0;
-        }
-
-        let intention_coherence = if depth > 0 {
-            1.0 - PHI.powi(-(depth as i32))
         } else {
-            0.0
+            max_k
         };
 
-        let resonance_bonus = (resonance_count as f64 * 0.05).min(0.2);
-
-        (intention_coherence + resonance_bonus).min(1.0)
+        // Bijective phase map formula:
+        // k=1 → 1.0 (perfect coherence for primitive winding)
+        // k>1 → 1.0 - ln(k) / ln(2π) (logarithmic decay for multi-winding)
+        if k == 1 {
+            1.0
+        } else {
+            let decay = (k as f64).ln() / std::f64::consts::TAU.ln();
+            (1.0 - decay).max(0.0)
+        }
     }
 
     fn resolve_coherence(&self) -> f64 {
@@ -886,8 +903,10 @@ impl<'a> Evaluator<'a> {
         let saved_block = self.current_block;
         let saved_ip = self.instruction_ptr;
         let saved_variables = std::mem::take(&mut self.variables);
+        let saved_registers = std::mem::take(&mut self.registers);
 
         self.variables = HashMap::new();
+        self.registers = HashMap::new();
         for (idx, param_name) in meta.params.iter().enumerate() {
             let value = args.get(idx).cloned().unwrap_or(PhiIRValue::Void);
             self.variables.insert(param_name.clone(), value);
@@ -914,6 +933,7 @@ impl<'a> Evaluator<'a> {
         };
 
         self.variables = saved_variables;
+        self.registers = saved_registers;
         self.current_block = saved_block;
         self.instruction_ptr = saved_ip;
 

@@ -215,7 +215,7 @@ fn conformance_coherence_check() {
 
 #[test]
 fn conformance_resonate_then_coherence() {
-    let phi_inv = 1.0 - 1.618033988749895_f64.powi(-1);
+    // Bijective Phase Map: k=1 (single resonance) → coherence = 1.0
     assert_program_matches(
         r#"
         intention "Channel" {
@@ -223,7 +223,7 @@ fn conformance_resonate_then_coherence() {
             coherence
         }
         "#,
-        PhiIRValue::Number(phi_inv + 0.05),
+        PhiIRValue::Number(1.0),
         "resonate_then_coherence",
     );
 }

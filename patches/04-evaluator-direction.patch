@@ -1,0 +1,11 @@
+--- a/src/phi_ir/evaluator.rs
++++ b/src/phi_ir/evaluator.rs
+@@ -422,7 +422,7 @@ impl Evaluator<'_> {
+                 None
+             }
+ 
+-            PhiIRNode::Resonate { value, .. } => {
++            PhiIRNode::Resonate { value, direction: _, .. } => {
+                 let key = self
+                     .intention_stack
+                     .last()

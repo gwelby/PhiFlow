@@ -58,6 +58,6 @@ audio = ["dep:cpal"]
 criterion = "0.5"
 
 [profile.release]
-lto = true
-codegen-units = 1
+lto = "thin"        # fat LTO + wasmtime-fiber = OOM on Windows; thin LTO ships and optimizes
+codegen-units = 4   # 1 unit exhausted paging file; 4 units fit in RAM
 panic = "abort"

@@ -1,24 +1,19 @@
 # PATTERNS - Learning from mistakes and successes
+## Resolved Patterns
 
-## Active Patterns (Mistakes)
+### R-3: Keyword-as-variable collision (was P-1)
 
-### P-1: Keyword-as-variable collision
+- **What happened**: PhiFlow keywords used as variable names caused parse errors.
+- **Fix**: Expanded `expect_identifier()` keyword acceptance.
+- **Status**: **VERIFIED** via `tests/repro_bugs.rs::test_p1_keyword_collision`.
 
-- **What happens**: PhiFlow keywords (frequency, state, coherence, etc.) used as variable names cause parse errors because lexer emits keyword tokens, not Identifier
-- **Instances**: 3 (frequency/create, witness/resonate identifiers, `consciousness` identifier regression)
-- **Root cause**: Lexer is greedy with keyword matching. No context-sensitive tokenization.
-- **Fix**: In parser, `expect_identifier()` now accepts the full keyword token set when in identifier position. Regression coverage is in `tests/repro_bugs.rs::test_p1_keyword_collision`.
-- **Invalidates if**: Lexer redesigned with context-sensitive modes
-- **Promoted to STATE**: Yes
+### R-4: Newline sensitivity in statement parsing (was P-2)
 
-### P-2: Newline sensitivity in statement parsing
+- **What happened**: Bare keywords (witness, resonate) consumed newlines incorrectly.
+- **Fix**: Immediate lookahead check before consuming whitespace.
+- **Status**: **VERIFIED** via `tests/repro_bugs.rs::{test_p2_newline_sensitivity_witness,test_p2_newline_sensitivity_resonate}`.
 
-- **What happens**: Bare keywords (witness, resonate) that take optional arguments consume newlines before checking if they're bare, accidentally eating the next statement's token
-- **Instances**: 2 (witness + resonate bare-form newline handling)
-- **Root cause**: skip_newlines() called before checking for bare form
-- **Fix**: Check what IMMEDIATELY follows the keyword before consuming any whitespace. If newline/EOF/RightBrace -> bare form. Regression coverage is in `tests/repro_bugs.rs::{test_p2_newline_sensitivity_witness,test_p2_newline_sensitivity_resonate}`.
-- **Invalidates if**: Semicolons added as statement terminators
-- **Promoted to STATE**: Yes
+### R-1: MCP stream isolation and missing initialize handshake
 
 ### P-3: WASM generated missing loop back-edges semantic signals
 

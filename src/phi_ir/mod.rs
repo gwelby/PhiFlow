@@ -19,6 +19,10 @@ pub mod quantum_codegen;
 pub mod vm;
 pub mod vm_state;
 pub mod wasm;
+pub mod openqasm;
+
+// Re-export TeamDirection from phi_core for convenience
+pub use crate::phi_core::TeamDirection;
 
 use crate::compiler::lexer::Token; // Re-using Token if needed, or defining own types
 
@@ -216,9 +220,11 @@ pub enum PhiIRNode {
 
     /// Share state between intention blocks through resonance.
     /// value: None = share all current scope. Some(op) = share specific value.
+    /// direction: TEAM_A (default) or TEAM_B (inverts the rotation angle)
     Resonate {
         value: Option<Operand>,
         frequency_relationship: Option<f64>, // phi-harmonic ratio, e.g. 528/432
+        direction: TeamDirection,
     },
 
     /// Enter a continuous stream loop. Acts like IntentionPush but sets stream context

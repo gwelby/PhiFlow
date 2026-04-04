@@ -6,7 +6,7 @@ use crate::parser::{BinaryOperator, PhiExpression, PhiType, PhiValue, UnaryOpera
 use crate::phi_core::AudioSynthesizer;
 use crate::phi_core::{
     dna_helix_points, flower_of_life_points, golden_spiral_points, validate_pattern_consciousness,
-    PatternAnalyzer,
+    PatternAnalyzer, TeamDirection,
 };
 use crate::visualization::Visualizer;
 use std::collections::HashMap;
@@ -698,7 +698,10 @@ impl PhiInterpreter {
                 Ok(result)
             }
 
-            PhiExpression::Resonate { expression } => {
+            PhiExpression::Resonate { expression, direction } => {
+                if *direction != TeamDirection::TeamA {
+                    eprintln!("[WARNING] TEAM_B direction is quantum-backend specific — ignored in legacy interpreter mode");
+                }
                 let current_intention = self
                     .intention_stack
                     .last()
