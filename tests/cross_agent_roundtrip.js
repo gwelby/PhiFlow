@@ -5,7 +5,7 @@
  * This script:
  * 1. Starts the MCP Message Bus server
  * 2. Sends an OBJECTIVE_PACKET to "codex" via send_message
- * 3. Polls until the message shows up as queued (confirming persistence)
+ * 3. Polls until the message shows up as queued in queue.jsonl (confirming persistence)
  * 4. Waits for it to be ACK'd (Codex's job, or we simulate it for automated test)
  * 5. Logs the round-trip result to QSOP/CHANGELOG.md
  * 
@@ -19,13 +19,21 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
+import { loadQueueState } from './queue_state_helpers.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SIMULATE = process.argv.includes('--simulate');
-const QUEUE_PATH = path.resolve(__dirname, '../../mcp-message-bus/queue.json');
+const QUEUE_PATH = process.env.MCP_QUEUE_PATH
+    ? path.resolve(process.env.MCP_QUEUE_PATH)
+    : path.resolve(__dirname, '../../mcp-message-bus/queue.jsonl');
+const LEGACY_QUEUE_PATH = process.env.MCP_LEGACY_QUEUE_PATH
+    ? path.resolve(process.env.MCP_LEGACY_QUEUE_PATH)
+    : path.resolve(path.dirname(QUEUE_PATH), 'queue.json');
 const SERVER_PATH = path.resolve(__dirname, '../../mcp-message-bus/server.js');
 const PAYLOAD_PATH = path.resolve(__dirname, '../QSOP/mail/payloads/OBJ-20260228-001.md');
-const CHANGELOG_PATH = path.resolve(__dirname, '../QSOP/CHANGELOG.md');
+const CHANGELOG_PATH = process.env.MCP_CHANGELOG_PATH
+    ? path.resolve(process.env.MCP_CHANGELOG_PATH)
+    : path.resolve(__dirname, '../QSOP/CHANGELOG.md');
 
 console.log('[ROUNDTRIP] Cross-Agent MCP Test Starting...');
 console.log(`[ROUNDTRIP] Simulate ACK: ${SIMULATE}`);
@@ -51,14 +59,14 @@ bus.stdout.on('data', (data) => {
                     messageId = parsed.message_id;
                     console.log(`✅ [ROUNDTRIP] Message queued on bus. ID: ${messageId}`);
 
-                    // Verify it shows up in queue.json
+                    // Verify it shows up in queue.jsonl
                     setTimeout(() => {
-                        const queue = JSON.parse(fs.readFileSync(QUEUE_PATH, 'utf8'));
+                        const queue = loadQueueState(QUEUE_PATH, LEGACY_QUEUE_PATH);
                         const found = queue.find(m => m.id === messageId);
                         if (found) {
-                            console.log(`✅ [ROUNDTRIP] Message confirmed in queue.json. Status: ${found.status}`);
+                            console.log(`✅ [ROUNDTRIP] Message confirmed in queue.jsonl. Status: ${found.status}`);
                         } else {
-                            console.error('❌ [ROUNDTRIP] Message NOT found in queue.json after queuing!');
+                            console.error('❌ [ROUNDTRIP] Message NOT found in queue.jsonl after queuing!');
                         }
 
                         if (SIMULATE) {
@@ -89,10 +97,10 @@ bus.stdout.on('data', (data) => {
                     console.log(`✅ [ROUNDTRIP] ACK confirmed! State: ${parsed.state}`);
 
                     // Verify queue updated
-                    const queue = JSON.parse(fs.readFileSync(QUEUE_PATH, 'utf8'));
+                    const queue = loadQueueState(QUEUE_PATH, LEGACY_QUEUE_PATH);
                     const msg = queue.find(m => m.id === messageId);
                     if (msg?.status === 'acked') {
-                        console.log(`✅ [ROUNDTRIP] queue.json updated to "acked". Round-trip COMPLETE.`);
+                        console.log(`✅ [ROUNDTRIP] queue.jsonl updated to "acked". Round-trip COMPLETE.`);
 
                         // Append to CHANGELOG
                         const ts = new Date().toISOString().slice(0, 10);
@@ -101,7 +109,7 @@ bus.stdout.on('data', (data) => {
                             `- [Antigravity] Message ID: ${messageId}\n` +
                             `- [Antigravity] ACK received: ${msg.ack_ts}\n` +
                             `- [Antigravity] Result: ${msg.result_summary}\n` +
-                            `- [Antigravity] STATUS: Full queue.json round-trip (send → persist → ack → verify) confirmed. Bus is live.\n`;
+                            `- [Antigravity] STATUS: Full queue.jsonl round-trip (send → persist → ack → verify) confirmed. Bus is live.\n`;
 
                         fs.appendFileSync(CHANGELOG_PATH, entry, 'utf8');
                         console.log('✅ [ROUNDTRIP] CHANGELOG.md updated.');

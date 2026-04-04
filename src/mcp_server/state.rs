@@ -2,7 +2,11 @@ use crate::host::{PhiHostProvider, WitnessAction, WitnessSnapshot};
 use crate::phi_ir::evaluator::FrozenEvalState;
 use crate::phi_ir::PhiIRValue;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::fs::{self, File, OpenOptions};
+use std::io::{BufRead, BufReader, Write};
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 pub type StreamId = String;
@@ -37,6 +41,14 @@ pub struct BusMessage {
     pub payload_ref: String,
     pub requires_ack: bool,
     pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ttl_s: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ack_ts: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub result_summary: Option<String>,
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone)]
@@ -51,7 +63,7 @@ impl Default for McpConfig {
         Self {
             max_execution_steps: 10_000,
             timeout_ms: 5_000,
-            mcp_queue_path: "queue.json".to_string(), // Can be overridden
+            mcp_queue_path: "../mcp-message-bus/queue.jsonl".to_string(), // Can be overridden
         }
     }
 }
@@ -108,6 +120,110 @@ impl McpState {
     }
 }
 
+fn queue_legacy_path(queue_path: &Path) -> PathBuf {
+    if let Ok(path) = std::env::var("MCP_LEGACY_QUEUE_PATH") {
+        return PathBuf::from(path);
+    }
+
+    if queue_path.file_name().and_then(|name| name.to_str()) == Some("queue.jsonl") {
+        return queue_path.with_file_name("queue.json");
+    }
+
+    queue_path.with_extension("json")
+}
+
+fn compare_bus_messages(left: &BusMessage, right: &BusMessage) -> Ordering {
+    let left_ts = chrono::DateTime::parse_from_rfc3339(&left.ts).ok();
+    let right_ts = chrono::DateTime::parse_from_rfc3339(&right.ts).ok();
+
+    match (left_ts, right_ts) {
+        (Some(left_ts), Some(right_ts)) => left_ts.cmp(&right_ts),
+        _ => left.ts.cmp(&right.ts),
+    }
+}
+
+fn ensure_queue_log(queue_path: &Path) {
+    if queue_path.exists() {
+        return;
+    }
+
+    if let Some(parent) = queue_path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+
+    let legacy_path = queue_legacy_path(queue_path);
+    if legacy_path.exists() {
+        let legacy_queue: Vec<BusMessage> = fs::read_to_string(&legacy_path)
+            .ok()
+            .and_then(|raw| serde_json::from_str(&raw).ok())
+            .unwrap_or_default();
+
+        let mut log_output = String::new();
+        for msg in legacy_queue {
+            if let Ok(line) = serde_json::to_string(&msg) {
+                log_output.push_str(&line);
+                log_output.push('\n');
+            }
+        }
+        let _ = fs::write(queue_path, log_output);
+        return;
+    }
+
+    let _ = fs::write(queue_path, "");
+}
+
+fn load_queue_messages(queue_path: &Path) -> Vec<BusMessage> {
+    ensure_queue_log(queue_path);
+
+    let file = match File::open(queue_path) {
+        Ok(file) => file,
+        Err(_) => return Vec::new(),
+    };
+
+    let mut latest_by_id = HashMap::new();
+    for line_result in BufReader::new(file).lines() {
+        let line = match line_result {
+            Ok(line) => line,
+            Err(_) => continue,
+        };
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        match serde_json::from_str::<BusMessage>(trimmed) {
+            Ok(message) => {
+                latest_by_id.insert(message.id.clone(), message);
+            }
+            Err(err) => {
+                eprintln!(
+                    "[MCP] Ignoring malformed queue log entry in {}: {}",
+                    queue_path.display(),
+                    err
+                );
+            }
+        }
+    }
+
+    let mut messages = latest_by_id.into_values().collect::<Vec<_>>();
+    messages.sort_by(compare_bus_messages);
+    messages
+}
+
+fn append_queue_message(queue_path: &Path, message: &BusMessage) {
+    ensure_queue_log(queue_path);
+
+    if let Ok(serialized) = serde_json::to_string(message) {
+        if let Ok(mut file) = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(queue_path)
+        {
+            let _ = writeln!(file, "{}", serialized);
+        }
+    }
+}
+
 /// A host provider that talks to the MCP state. It automatically yields on every witness.
 pub struct McpHostProvider {
     pub config: Arc<McpConfig>,
@@ -142,47 +258,139 @@ impl PhiHostProvider for McpHostProvider {
             payload_ref: message.to_string(),
             requires_ack: false,
             status: "pending".to_string(),
+            ttl_s: None,
+            ack_ts: None,
+            result_summary: None,
+            extra: HashMap::new(),
         };
 
-        let queue_path = &self.config.mcp_queue_path;
-        let mut queue: Vec<BusMessage> = std::fs::read_to_string(queue_path)
-            .ok()
-            .and_then(|s| serde_json::from_str(&s).ok())
-            .unwrap_or_else(Vec::new);
-
-        queue.push(msg);
-
-        let tmp_path = format!("{}.tmp", queue_path);
-        if let Ok(json) = serde_json::to_string_pretty(&queue) {
-            let _ = std::fs::write(&tmp_path, json);
-            let _ = std::fs::rename(&tmp_path, queue_path);
-        }
+        append_queue_message(Path::new(&self.config.mcp_queue_path), &msg);
     }
 
     fn listen(&self, channel: &str) -> Option<String> {
-        let queue_path = &self.config.mcp_queue_path;
-        let mut queue: Vec<BusMessage> = std::fs::read_to_string(queue_path)
-            .ok()
-            .and_then(|s| serde_json::from_str(&s).ok())
-            .unwrap_or_else(Vec::new);
+        let queue_path = Path::new(&self.config.mcp_queue_path);
+        let mut queue = load_queue_messages(queue_path);
 
         let mut found = None;
         for msg in queue.iter_mut() {
             if msg.to == channel && msg.status == "pending" {
                 msg.status = "acked".to_string();
-                found = Some(msg.payload_ref.clone());
+                msg.ack_ts = Some(chrono::Utc::now().to_rfc3339());
+                found = Some((msg.payload_ref.clone(), msg.clone()));
                 break;
             }
         }
 
-        if found.is_some() {
-            let tmp_path = format!("{}.tmp", queue_path);
-            if let Ok(json) = serde_json::to_string_pretty(&queue) {
-                let _ = std::fs::write(&tmp_path, json);
-                let _ = std::fs::rename(&tmp_path, queue_path);
-            }
+        if let Some((payload_ref, updated_message)) = found {
+            append_queue_message(queue_path, &updated_message);
+            return Some(payload_ref);
         }
 
-        found
+        None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{load_queue_messages, BusMessage, McpConfig, McpHostProvider};
+    use crate::host::PhiHostProvider;
+    use std::collections::HashMap;
+    use std::fs;
+    use std::path::{Path, PathBuf};
+    use std::sync::Arc;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn unique_temp_dir(label: &str) -> PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!("phiflow_{label}_{unique}"));
+        fs::create_dir_all(&dir).expect("temp dir should be created");
+        dir
+    }
+
+    fn read_non_empty_lines(path: &Path) -> Vec<String> {
+        fs::read_to_string(path)
+            .unwrap_or_default()
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty())
+            .map(ToOwned::to_owned)
+            .collect()
+    }
+
+    #[test]
+    fn mcp_host_provider_broadcast_and_listen_use_queue_jsonl() {
+        let temp_dir = unique_temp_dir("queue_jsonl");
+        let queue_path = temp_dir.join("queue.jsonl");
+        let host = McpHostProvider {
+            config: Arc::new(McpConfig {
+                max_execution_steps: 10_000,
+                timeout_ms: 5_000,
+                mcp_queue_path: queue_path.to_string_lossy().into_owned(),
+            }),
+        };
+
+        host.broadcast("aria", "hello");
+        let heard = host.listen("aria");
+
+        assert_eq!(heard.as_deref(), Some("hello"));
+
+        let messages = load_queue_messages(&queue_path);
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0].status, "acked");
+        assert!(messages[0].ack_ts.is_some());
+        assert_eq!(read_non_empty_lines(&queue_path).len(), 2);
+
+        let _ = fs::remove_dir_all(temp_dir);
+    }
+
+    #[test]
+    fn mcp_host_provider_imports_legacy_queue_snapshot() {
+        let temp_dir = unique_temp_dir("legacy_queue");
+        let queue_path = temp_dir.join("queue.jsonl");
+        let legacy_path = temp_dir.join("queue.json");
+        let legacy_message = BusMessage {
+            id: "legacy-1".to_string(),
+            ts: "2026-03-05T00:00:00Z".to_string(),
+            from: "antigravity".to_string(),
+            to: "aria".to_string(),
+            intent: "broadcast".to_string(),
+            payload_ref: "legacy-payload".to_string(),
+            requires_ack: false,
+            status: "pending".to_string(),
+            ttl_s: None,
+            ack_ts: None,
+            result_summary: None,
+            extra: HashMap::new(),
+        };
+
+        fs::write(
+            &legacy_path,
+            serde_json::to_string(&vec![legacy_message.clone()])
+                .expect("legacy queue should serialize"),
+        )
+        .expect("legacy queue should be written");
+
+        let host = McpHostProvider {
+            config: Arc::new(McpConfig {
+                max_execution_steps: 10_000,
+                timeout_ms: 5_000,
+                mcp_queue_path: queue_path.to_string_lossy().into_owned(),
+            }),
+        };
+
+        let heard = host.listen("aria");
+        assert_eq!(heard.as_deref(), Some("legacy-payload"));
+
+        let messages = load_queue_messages(&queue_path);
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0].id, "legacy-1");
+        assert_eq!(messages[0].status, "acked");
+        assert!(messages[0].ack_ts.is_some());
+        assert_eq!(read_non_empty_lines(&queue_path).len(), 2);
+
+        let _ = fs::remove_dir_all(temp_dir);
     }
 }

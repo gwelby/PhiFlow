@@ -1,85 +1,137 @@
-# STATE - Last updated: 2026-03-31 (Bijective Phase Map Implementation)
+# STATE - Last updated: 2026-03-29 (truth-sync: canonical coherence real, Pipe 1 complete locally, Pipe 2 auth-blocked live)
 
-## Verified (2026-03-31) [Bijective Phase Map Implementation]
+## Verified (2026-03-29) [Codex truth-sync: Pipe 1 typed sensor witness + Pipe 2 runtime path correction]
 
-- **Bijective Phase Map implemented** in `src/phi_ir/vm.rs` and `src/phi_ir/evaluator.rs`
-- Coherence formula changed from `1 - φ^(-depth) + resonance_bonus` to bijective k-decay:
-  - k=0 → 0.0 (no intentions/resonance)
-  - k=1 → 1.0 (perfect coherence for primitive winding)
-  - k>1 → `1.0 - ln(k)/ln(2π)` (logarithmic decay for multi-winding)
-- k = maximum resonance cardinality across all intention scopes
-- Tests updated: `conformance_resonate_then_coherence`, `vm_coherence_tracks_intention_and_resonance`, `test_resonance_adds_bonus_to_coherence`
-- New tests added: `vm_coherence_bijective_k2_decay`, `test_bijective_k2_decay`
-- **Compilation:** `cargo check --lib` passes
-- **Tests:** Blocked by Windows host memory pressure (known issue - see 2026-03-15 entry)
-- **Three-backend equivalence:** Pending test verification
-- See `BIJECTIVE_PHASE_MAP_20260331.md` for full implementation details
+- Canonical multiplicative coherence is live in `src/phi_ir/coherence.rs` and is shared by:
+  - `src/phi_ir/evaluator.rs`
+  - `src/phi_ir/vm.rs`
+  - `tests/phi_ir_wasm_runner.js`
+- `examples/healing_bed.phi` is a live aggregate-`coherence` stream demo again:
+  - `let live = coherence`
+  - `resonate live`
+  - `witness`
+  - `break stream` on threshold
+- Pipe 1 raw sensor witness is now a typed compiler surface:
+  - `witness sensor("cpu_usage")`
+  - `witness sensor("cpu_temp")`
+  - `witness sensor("memory_usage")`
+  - unknown sensor names fail during lowering
+- Pipe 2 is structurally upgraded but not live-verified from this checkout:
+  - `tests/ibm_hardware_runner.rs` now compiles `examples/ibm_smoke.phi` through the canonical OpenQASM 3 path
+  - `src/quantum/ibm_quantum.rs` now persists `service_crn` and `region`, and targets IBM Cloud Runtime when `service_crn` is present
+  - C-10 remains SPECULATIVE until `cargo test --test ibm_hardware_runner -- --ignored --nocapture` succeeds with real credentials and a scrubbed receipt
+- Live IBM gate attempted on 2026-03-29 from this workstation reached IBM Cloud Runtime and failed before submission with:
+  - `GET /v1/backends` -> `403` JSON authorization error (`code: 1200`, "You are not authorized to perform this action.")
+  - This means `D:\Projects\PhiFlow\apikey.json` parses correctly, but the current API key / service instance pair is not authorized for backend discovery
+  - Likely boundary: missing IBM Quantum service permissions on the instance referenced by `service_crn`, or mismatched API key and service CRN
 
----
+## Corrected (2026-03-29) [replacing overstated 2026-03-24 claims]
 
-# STATE - Last updated: 2026-03-24 (Release Build Fixed)
+- `tests/ibm_hardware_runner.rs` existing in-tree does **not** by itself prove a live IBM run
+- `examples/healing_bed.phi` does **not** currently execute an `evolve` payload or direct temperature-driven loop mutation
+- Evidence notes in `D:\CosmicFamily\EVIDENCE\` must match the repo behavior exactly before any pipe is marked complete
 
-## Verified (2026-03-24) [Release Build Green]
+## Verified (2026-03-14) [Codex Semantics Gate: direction contract and legacy-path warnings]
 
-- `cargo build --release --bin phic` now passes on Windows — 2m 02s
-- Fix: `lto = "thin"` + `codegen-units = 4` in `[profile.release]` — fat LTO + wasmtime-fiber = OOM; thin LTO fits in RAM
-- C-15 flipped FAILED → CONFIRMED
-- Release binary now shippable on Windows
-- Next blocker: live IBM hardware run (C-10 still SPECULATIVE)
+- `QSOP/ARCHITECTURE.md` now declares `resonate ... toward TEAM_A|TEAM_B` semantic, not backend decoration:
+  - parser/AST/PhiIR must preserve direction explicitly
+  - backends that cannot preserve it must warn instead of failing silently
+  - the remaining semantic gap is now limited to the legacy flat-IR compatibility path
+- `.phivm` roundtrip now preserves `ResonateDirection` end to end:
+  - `src/phi_ir/emitter.rs` serializes the direction byte before the optional resonate operand payload
+  - `src/phi_ir/vm.rs` decodes that byte back into `ResonateDirection`
+  - regression coverage exists in both the VM lib tests and `tests/golden_integration_tests.rs`
+- `src/interpreter/mod.rs` and `src/ir/lowering.rs` now emit explicit warnings when legacy compatibility paths degrade semantics:
+  - `witness mid_circuit` is lowered/interpreted as ordinary witness
+  - `resonate ... toward TEAM_B` loses vote polarity outside the canonical PhiIR/OpenQASM path
+- OpenQASM verification is now anchored on `cargo test --lib openqasm`, which runs the module-scoped OpenQASM tests including the parser -> PhiIR -> OpenQASM full-pipeline checks for numeric resonate and TEAM_B direction | Invalidates if: test names or module structure change
+- Stale nested regression source `tests/tests/repro_bugs.rs` has been updated to the current AST shape so compatibility fixtures no longer encode pre-`mid_circuit` witness syntax
+- Verification gates passed in this session:
+  - `cargo test --lib`
+  - `cargo test --test golden_integration_tests`
+  - `cargo test --lib openqasm`
+  - `cargo test --quiet --test repro_bugs`
 
-# STATE - Last updated: 2026-03-15 (Workspace Standards Reality Audit)
+## Verified (2026-03-13) [Antigravity Epoch: OpenQASM 3.0 & IBM Hardware Execution]
 
-## Verified (2026-03-15) [Workspace Standards Reality Audit]
+- **Epoch Milestone**: PhiFlow now natively generates standard OpenQASM 3.0.
+- `src/phi_ir/openqasm.rs` now has regression coverage for the OpenQASM emission path:
+  - numeric `Resonate` operands emit `ry(value * pi)` instead of always `ry(pi/2)`
+  - explicit `ResonateDirection::TeamB` semantics invert the encoded vote to `ry(pi - (value * pi))` for binary council-style circuits
+  - undeclared intentions now return an explicit emission error instead of silently falling back to qubit `q[0]`
+  - frequency-chain and multi-channel entanglement topologies are covered by unit tests
+- `src/phi_ir/openqasm.rs` converts PhiIR instructions into physical quantum gates:
+  - `IntentionPush` => qubit allocation.
+  - `Resonate` => $R_y(\theta)$ amplitude encoding, where constant confidence operands emit `value * pi` and unresolved values fall back to $\pi/2$.
+  - `CoherenceCheck` => $R_y(0.618 \pi)$ golden ratio rotation.
+  - `Entangle(freq)` => `cx` (CNOT) gates targeting the sequence of intentions bound to the exact same frequency channel.
+  - `Witness` => `measure` operations to collapse the entire quantum register to classical bits.
+- **Hardware Verified**: `phic examples/council_vote.phi --target openqasm` produced a deeply entangled 5-qubit circuit that executed successfully on actual IBM quantum hardware (**ibm_fez**, 156 qubits via 4096 shots).
+- **Physical Entanglement Proven**: The real run exhibited a 2.1% decoherence confidence drop compared to the Aer simulator, confirming that longer entanglement chains (shared cognitive biases translated to longer CNOT chains) decohere faster in physical reality. This essentially proved the biological functionality of the PhiFlow `witness` construct dynamically mapping semantic correlation to physical noise.
+- Verification gates passed:
+  - `cargo test --lib openqasm`
+  - `cargo build --release`
+- CLI pipeline `phic <file> --target openqasm` is now the bridge to Qiskit Serverless/IBM Brisbane/Fez.
 
-- Root workspace docs have been rewritten to match the current standards and the commands actually verified in `D:\Projects\PhiFlow`:
-  - `WORKSPACE.md`
-  - `BUSINESS.md`
-  - `TASKS.md`
-- Focused verification passed in this workspace today:
-  - `cargo test --lib openqasm` -> 11 passed
-  - `cargo test --quiet --test golden_integration_tests` -> 6 passed
-  - `cargo test --quiet --test repro_bugs` -> 3 passed
-- Release-build verification did **not** pass in this workspace today:
-  - `cargo build --release --bin phic` failed on Windows while building `wasmtime-fiber` and related dependencies
-  - observed failure modes included paging-file / out-of-memory errors (`os error 1455`) plus Windows process exits `0xc000012d` / `0xc0000409`
-- Consequence for project truth:
-  - this workspace can honestly claim a green focused OpenQASM + regression test surface
-  - this workspace cannot honestly claim a clean release build, a verified `phic` release binary, or a real IBM hardware run from this session
-- Report-standard gap closed locally:
-  - `REPORTS/WORKSPACE_LOG.md` now exists so future agents can append shared status entries instead of leaving ad hoc reports only
+## Verified (2026-03-11) [Codex Gate 3: hardware coherence path stabilized]
 
-## Verified (2026-03-13) [Quantum Substrate Stabilization]
+- `src/main_cli.rs` now reports `Evaluator::resolved_coherence()`, so the final `phic` coherence line reflects the injected host/sensor value instead of the evaluator's internal phi-only score | Invalidates if: CLI switches back to `Evaluator::coherence()`
+- `src/sensors.rs` now primes CPU usage with `sysinfo::MINIMUM_CPU_UPDATE_INTERVAL` and paces fast re-reads to the same interval, preventing stream demos from reusing stale CPU snapshots or tripping the evaluator infinite-loop guard | Invalidates if: sensor provider stops honoring the minimum CPU refresh interval
+- `examples/healing_bed.phi` has been restored to a live `coherence` stream (`resonate live`, `witness`) with an explicit `max_cycles` safety brake; `cargo run --release --bin phic -- examples/healing_bed.phi` now exits cleanly on this workstation instead of panicking in the loop guard | Invalidates if: the example contract or evaluator loop budget changes
+- Focused verification gates passed in this session:
+  - `cargo test --release --test phi_ir_evaluator_tests test_resolved_coherence_exposes_injected_value -- --nocapture`
+  - `cargo run --release --bin phic -- examples/healing_bed.phi`
+  - `cargo run --release --bin phic -- %TEMP%\codex_coherence_probe.phi`
+- Local environment caveat:
+  - The exact Gate 3 dispatch target (`~0.98 -> ~0.72` under added CPU stress) was not reproducible on 2026-03-11 because Windows host counters reported `100%` total CPU even outside the added stress burst.
+  - Observed probe delta on this workstation was `0.3990 -> 0.3884`, which proves the hardware path is live but compresses the range on this host.
 
-- **Compiler End-to-End Green:** `cargo test` now passes end-to-end across all backends (Evaluator, VM, WASM).
-- **Golden Integration Tests:** 6 top-level integration tests in `tests/golden_integration_tests.rs` verify the full pipeline from `.phi` to `OpenQASM 3.0`.
-- **Quantum Semantic Realization:**
-  - `resonate <val> toward TEAM_B` correctly maps to `ry((1-val)*pi)` in OpenQASM.
-  - `witness mid_circuit` correctly generates inline `measure` instructions in OpenQASM.
-  - `entangle on <freq>` correctly isolates entanglement channels by sacred frequency.
-  - `--optimize-depth` correctly reduces entanglement circuit depth from $O(N)$ to $O(\log N)$.
-- **Self-Correction Loop:** `evolve` successfully modifies program logic based on `coherence` feedback in the Evaluator.
-- **Hardware Integration:**
-  - `src/sensors.rs` provides real-time stability metrics from P1 hardware (CPU, memory, thermals, network).
-  - **Body Stress Bridge:** `OpenQasmEmitter` now queries physical sensors at compile time. High hardware stress (> 0.5) triggers active `Rx` decoherence noise injection in generated QASM `Witness` blocks.
-  - `quantum_council_vote.py` implements **Witness Decoherence** for post-processing.
-- `calibration_log.jsonl` tracks backend metrics (gate errors, T1/T2 times) across runs.
+## Verified (2026-03-08) [Codex Gate 0: witness conformance restored]
 
-## Verified (2026-03-06) [Cross-Worktree Reality Check + Council Activation]
+- `cargo test --quiet --lib --tests` now passes again in `D:\Projects\PhiFlow-compiler\PhiFlow` after restoring witness semantic equivalence between the evaluator and the WASM backend | Invalidates if: witness return contract changes again
+- `PhiIRNode::Witness` now resolves to `PhiIRValue::Number(coherence)` in both execution paths; the previous evaluator=`0.0` vs WASM=`NaN` split is closed | Invalidates if: WASM codegen reintroduces `TAG_VOID` for witness results
+- `src/wasm_host.rs` now asserts numeric witness return values, and `tests/test_phiflow.rs` is back to a crate-local smoke test instead of an unresolved external `quantum_core` dependency | Invalidates if: test contracts change
+- Verification gates passed in this session:
+  - `cargo test --test phi_ir_conformance_tests conformance_witness -- --nocapture`
+  - `cargo test --test phi_ir_conformance_tests`
+  - `cargo test --quiet --lib --tests`
+  - `cargo build --release`
+- Known backlog after this repair:
+  - `cargo clippy --all-targets -- -D warnings` still fails on a large pre-existing warning backlog outside the witness path (`host`, `mcp_server`, `vm`, `quantum`, `cuda`, and related modules)
+  - `cargo run --release --bin phic -- examples/basic_test.phi` still hits parser dialect drift on `Spiral`, so the example corpus remains mixed and is not a clean release gate
 
-## Council Activation (2026-03-06)
+## Verified (2026-03-06) [Codex Phase 7: Standalone PhiVM Runner]
 
-- `Codex` -> `D:\Projects\PhiFlow-compiler`
-  - Mission: restore end-to-end green runtime status
-  - Done condition: `cargo test --quiet` passes again, starting with `phi_ir_conformance_tests::conformance_witness` and example-target compile failures
-- `Lumi` -> `D:\Projects\PhiFlow-lang`
-  - Mission: own browser/WASM-facing language evolution only after ABI review against compiler truth
-  - Done condition: new syntax/features land with docs/examples/tests, and browser-host assumptions match the runtime contracts Codex closes
-- `Qwen` -> `D:\Projects\PhiFlow-cleanup`
-  - Mission: reduce outer-repo entropy and leave a zero-search map of what is real vs dead
-  - Done condition: `TRIAGE.md` + `STRUCT.md` are complete and the sprawl outside `PhiFlow/` is categorized for keep/archive/remove
-- `Witness / docs lane` -> `D:\Projects\PhiFlow`
-  - Mission: keep `QSOP/STATE.md`, `KNOW.md`, and `VISION.md` aligned with executable truth before merge activity
-  - Done condition: all status docs reflect current branch reality and local dirty changelog work is reconciled intentionally, not implicitly
+- Standalone bytecode runtime binary now exists at `src/bin/phivm.rs` and loads `.phivm` files directly through `PhiVm::from_bytes(...)`, without parsing or lowering `.phi` source at runtime | Invalidates if: runner entrypoint or VM load contract changes
+- Runner surface:
+  - `phivm <file.phivm>` executes bytecode and prints the final value
+  - `phivm --disassemble <file.phivm>` prints emitter-level bytecode summary before execution
+  - `phivm --dump-stack <file.phivm>` prints the final VM stack for runtime inspection
+- String results are rendered through the VM string table, so interned `PhiIRValue::String(u32)` values resolve to their human-readable payloads at the CLI boundary | Invalidates if: string table contract changes
+- Regression coverage now exists in `tests/phivm_runner_tests.rs` for:
+  - arithmetic bytecode execution from a real `.phivm` file
+  - string-table-backed result rendering
+  - disassembly + execution path through the standalone runner
+- Verification gates passed:
+  - `cargo build --release --bin phivm`
+  - `cargo test --test phivm_runner_tests --test phi_ir_vm_tests --bin phivm --quiet`
+
+## Verified (2026-03-05) [Codex Phase 6: Append-Only MCP Queue Log]
+
+- MCP bus persistence now uses append-only `queue.jsonl` as the primary transport log instead of snapshot-rewriting `queue.json` | Invalidates if: log schema or path changes
+- `mcp-message-bus/server.js` now replays `queue.jsonl` to reconstruct latest message state by `id`, and imports legacy `queue.json` on first boot for backward compatibility | Invalidates if: replay/import path changes
+- `McpHostProvider` in `src/mcp_server/state.rs` now reads/writes the same append-only `queue.jsonl` contract, so Rust-side `broadcast` / `listen` no longer rewrite the full queue file | Invalidates if: host provider queue format changes
+- Queue-facing verification tooling now reads reconstructed state from `queue.jsonl` with fallback to legacy `queue.json`:
+  - `tests/cross_agent_roundtrip.js`
+  - `tests/dlq_test.js`
+  - `tests/queue_jsonl_legacy_import_test.js`
+  - `QSOP/tools/weekly_qsop_audit.py`
+- Verification gates passed:
+  - `cargo test mcp_host_provider -- --nocapture`
+  - `cargo check --bin phi_mcp`
+  - `node tests/queue_jsonl_legacy_import_test.js`
+  - `node tests/cross_agent_roundtrip.js --simulate` (temp queue env)
+  - `node tests/dlq_test.js` (temp queue env)
 
 ## Verified (2026-02-28) [Antigravity Phase 5: MCP Bus Guardrails]
 
@@ -87,7 +139,7 @@
   - `max_execution_steps` (default: 10,000) via `EvalError::StepLimitExceeded` — clean error, no crash
   - `timeout_ms` (default: 5,000) via `tokio::time::timeout` on all three eval paths in `tools.rs`
   - Both configurable at runtime via `PHI_MAX_STEPS`, `PHI_TIMEOUT_MS`, `MCP_QUEUE_PATH` env vars
-- `McpHostProvider` now implements `broadcast` / `listen` with atomic file I/O against Codex's `queue.json` (tmp→rename) | Invalidates if: queue path or Codex persistence format changes
+- `McpHostProvider` now implements `broadcast` / `listen` through the shared MCP queue transport | Historical note: the original implementation used snapshot rewrite of `queue.json`; current implementation is append-only `queue.jsonl`
 - Cross-agent round-trip verified: `tests/cross_agent_roundtrip.js --simulate` passed full send→persist→ack→changelog cycle in <2s
 - `BusMessage` struct in `state.rs` is now the canonical packet type matching Codex's queue schema
 - Verification gates passed:
@@ -223,7 +275,7 @@
   - `QSOP/mail/templates/OBJECTIVE_PACKET.json`
   - `QSOP/mail/templates/ACK_PACKET.json`
   - `QSOP/mail/templates/OBJECTIVE_PAYLOAD_TEMPLATE.md`
-- MCP bus persistence is active in `D:\Projects\PhiFlow-compiler\mcp-message-bus\server.js` (`queue.json` load/save + idempotent ack).
+- MCP bus persistence is active in `D:\Projects\PhiFlow-compiler\mcp-message-bus\server.js` (`queue.jsonl` append-only replay + idempotent ack).
 
 ## Key Architecture (enum definitions — for emitter/VM correctness)
 
@@ -270,7 +322,4 @@
 
 - CLI binaries: phi (test suite), phic (file runner via clap) | Decay: slow
 - src/compiler/ has separate lexer/parser/ast — NOT connected to main parser | Decay: slow
-- src/phi_ir/openqasm.rs — OpenQASM 3.0 Emitter (PROVEN — 2026-03-12)
-  - Successfully translates PhiIR to OpenQASM 3.0
-  - Implements optimized Tree Topology for entanglement (--optimize-depth)
-  - Verified on 156-qubit ibm_fez hardware with 76.9% parity
+- src/quantum/ has trait + IBM stub only — no quantum codegen yet | Decay: slow

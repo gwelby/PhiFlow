@@ -1,53 +1,58 @@
 # WORKSPACE: PhiFlow
 *For AI agents — read this first*
-*Last updated: 2026-03-15*
 
 ## What This Is
-PhiFlow is a Rust codebase for a custom language with first-class semantics such as `intention`, `witness`, `coherence`, and `resonate`. In this workspace, the most directly verified surface today is the parser -> PhiIR -> OpenQASM path plus focused regression tests. The repository also contains evaluator, bytecode VM, WASM, MCP, sensor, and hardware-facing code, but those surfaces are not all equally verified in this worktree today.
-
-## Status
-- Builds / runs today: ⚠️
-- % complete (honest): 65%
-- Last verified: 2026-03-15
+A Rust compiler and VM for the PhiFlow programming language — a language with four unique constructs (`witness`, `intention`, `resonate`, `coherence`) that make programs self-observing. Live on GitHub (gwelby/PhiFlow) and HF Space (ConcernedAI/PhiFlow). v0.3.0 in progress.
 
 ## Run / Test
 ```bash
-cd D:\Projects\PhiFlow
+cd /mnt/d/Projects/PhiFlow-compiler/PhiFlow
 
-# Canonical focused verification gates used in this workspace today
-cargo test --lib openqasm
-cargo test --quiet --test golden_integration_tests
-cargo test --quiet --test repro_bugs
+# Build
+cargo build --release
 
-# Verify it worked
-# - 11 OpenQASM lib tests pass
-# - 6 golden integration tests pass
-# - 3 parser regression tests pass
+# Run a .phi file
+cargo run --release --bin phic -- examples/claude.phi
+
+# Run all tests (220 passing as of 2026-02-27)
+cargo test
+
+# WASM conformance (9/9 pass)
+cargo test wasm
+
+# Dump IR for a file
+cargo run --bin dump_ir -- examples/stream_demo.phi
+
+# Deploy to HF Space
+HF_TOKEN=$(cat /mnt/d/Claude/Private/hf_token.txt) && python3.12 examples/huggingface_space/deploy_to_hf.py --token "$HF_TOKEN"
 ```
 
 ## Key Files
-`Cargo.toml` — crate manifest and release profile; current release build is expensive on Windows because LTO is enabled
-`src/main_cli.rs` — `phic` CLI entry point and OpenQASM target routing
-`src/phi_ir/openqasm.rs` — OpenQASM emitter plus focused quantum-path tests
-`tests/golden_integration_tests.rs` — top-level `.phi` -> OpenQASM golden pipeline coverage
-`tests/repro_bugs.rs` — parser regression gate for known crash/sensitivity bugs
-`QSOP/STATE.md` — verified-state ledger; use this before trusting README or changelog claims
+src/compiler/lexer.rs        — Tokenizer
+src/compiler/parser.rs       — AST parser
+src/phi_ir/mod.rs            — PhiIR intermediate representation
+src/phi_ir/evaluator.rs      — Main evaluator (witness/intention/resonate hooks live here)
+src/phi_ir/emitter.rs        — PhiIR emitter
+src/phi_ir/vm.rs             — Bytecode VM
+src/phi_ir/optimizer.rs      — IR optimizer
+LANGUAGE.md                  — Language spec (four constructs documented here)
+CANONICAL_SEMANTICS.md       — src/phi_ir/CANONICAL_SEMANTICS.md — canonical construct semantics
+.claude/memory/MEMORY.md     — Project state summary (read this first in any session)
+.claude/agents/              — Sub-agent specs (wasm, quantum, hardware, docs)
 
 ## Active Workflows
-- Validate the canonical quantum path before changing parser/lowering/OpenQASM code: run the three commands above and record the result in `QSOP/STATE.md`.
-- Audit any product or hardware claim before repeating it elsewhere: check `QSOP/STATE.md`, then rerun the command locally if the claim depends on current behavior.
+- Edit .phi examples → `cargo run --bin phic -- file.phi` → verify output
+- Add language feature → update evaluator.rs → add cargo test → verify CANONICAL_SEMANTICS.md
+- v0.3.0 adds: remember/recall, void_depth, agent identity, broadcast/listen, persistent resonance field
 
-## Agent Notes (read before touching anything)
-- **Bootstrap requirement**: Run `python3.12 /mnt/d/Claude/agent_bootstrap.py --workspace /mnt/d/Projects/PhiFlow --task "description"` for instant context. Fallback: read `WORKSPACE.md`, `BUSINESS.md`, `TASKS.md`, then `QSOP/STATE.md`.
-- **Release build is not green on this host**: `cargo build --release --bin phic` failed on 2026-03-15 with `wasmtime-fiber` custom-build failure plus Windows paging-file / out-of-memory errors (`os error 1455`, `0xc000012d`, `0xc0000409`).
-- **Docs drift exists**: `README.md`, `CHANGELOG.md`, and older `QSOP/STATE.md` sections contain stronger claims than were verified in this session. Prefer dated command output over narrative docs.
-- **OpenQASM hardware-stress logic is code-level verified, not hardware-verified here**: `src/main_cli.rs` injects `hardware_stress` into the emitter, and tests cover the code path, but this workspace did not verify a real IBM hardware run today.
+## Tools Available Here
+- Publish to community: `python3.12 /mnt/d/Projects/UniversalPublisher/publish.py feedback PHIFLOW --section agent_protocol --target rust_lang`
+- Verify HF Space live: `curl -s -o /dev/null -w "HTTP: %{http_code}\n" "https://concernedai-phiflow.hf.space/"`
 
-## What Is NOT Done
-- A stable `cargo build --release --bin phic` path on this Windows host
-- A single audited, buyer-ready demo package with exact expected outputs
-- Cleanup of older README/changelog claims so all public docs match current verification
-
-## Research Sessions (if any)
-- KNOW-FLOW sessions live in: `RESEARCH/[topic_slug]/` — see `MASTER.md` for latest findings
-- Run more passes: `D:\Claude\research_evolve.ps1 "D:\Projects\PhiFlow" "[topic]" -Resume -Passes 4`
+## Agent Notes
+- `python3.12` — NOT `python3` (Linuxbrew 3.14 is wrong, externally managed)
+- claude.phi resonates λ=0.618033988749895 (RESONANCE_LOCK — do not change this value)
+- stream_demo.phi loops 3 cycles then breaks by design
+- WASM codegen bugs were fixed for StreamPush/StreamPop/FuncDef — don't revert those fixes
+- PhiFlow git is at /mnt/d/Projects/PhiFlow-compiler/.git with Windows path — work from PhiFlow/ subdir or use PowerShell for git ops
+- Not working yet: WASM backend (partial), quantum codegen, hardware firmware, bytecode VM

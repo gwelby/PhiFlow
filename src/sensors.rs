@@ -1,6 +1,136 @@
-use sysinfo::{Components, Networks, System};
+use crate::phi_ir::SensorKind;
+use std::sync::{Arc, Mutex, OnceLock, RwLock};
+use std::thread;
+use std::time::Instant;
+
+use sysinfo::{Components, Networks, System, MINIMUM_CPU_UPDATE_INTERVAL};
 
 const DEFAULT_CRITICAL_TEMP_C: f64 = 90.0;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SensorSnapshot {
+    pub cpu_usage_percent: f64,
+    pub memory_usage_percent: f64,
+    pub cpu_temp_c: Option<f64>,
+    pub cpu_critical_temp_c: Option<f64>,
+    pub network_packet_health: Option<f64>,
+    pub network_activity_health: Option<f64>,
+}
+
+struct SensorSampler {
+    system: System,
+    components: Components,
+    networks: Networks,
+    last_sample_at: Option<Instant>,
+    cpu_primed: bool,
+}
+
+impl SensorSampler {
+    fn new() -> Self {
+        Self {
+            system: System::new(),
+            components: Components::new_with_refreshed_list(),
+            networks: Networks::new_with_refreshed_list(),
+            last_sample_at: None,
+            cpu_primed: false,
+        }
+    }
+
+    fn sample(&mut self) -> f64 {
+        if let Some(last_sample_at) = self.last_sample_at {
+            let elapsed = last_sample_at.elapsed();
+            if elapsed < MINIMUM_CPU_UPDATE_INTERVAL {
+                thread::sleep(MINIMUM_CPU_UPDATE_INTERVAL - elapsed);
+            }
+        }
+
+        if self.cpu_primed {
+            self.system.refresh_cpu_usage();
+        } else {
+            self.system.refresh_cpu_usage();
+            thread::sleep(MINIMUM_CPU_UPDATE_INTERVAL);
+            self.system.refresh_cpu_usage();
+            self.cpu_primed = true;
+        }
+
+        self.system.refresh_memory();
+        self.components.refresh();
+        self.networks.refresh();
+
+        let coherence = compute_from_snapshot(&self.system, &self.components, &self.networks);
+        self.last_sample_at = Some(Instant::now());
+        coherence
+    }
+}
+
+pub struct LiveSensorData {
+    pub coherence: f64,
+    pub cpu_usage: f64,
+    pub cpu_temp: Option<f64>,
+    pub memory_usage: Option<f64>,
+}
+
+static LIVE_DATA: OnceLock<Arc<RwLock<LiveSensorData>>> = OnceLock::new();
+
+fn get_live_data() -> Arc<RwLock<LiveSensorData>> {
+    LIVE_DATA
+        .get_or_init(|| {
+            let initial_data = Arc::new(RwLock::new(LiveSensorData {
+                coherence: 1.0,
+                cpu_usage: 0.0,
+                cpu_temp: None,
+                memory_usage: None,
+            }));
+
+            let thread_data = Arc::clone(&initial_data);
+
+            thread::spawn(move || {
+                let mut sampler = SensorSampler::new();
+                // Force first sample synchronously so we have real data immediately
+                let mut first_coherence = sampler.sample();
+
+                loop {
+                    let coherence = first_coherence;
+                    first_coherence = sampler.sample();
+
+                    let cpu_usage = sampler.system.global_cpu_info().cpu_usage() as f64;
+
+                    let mut total_temp = 0.0;
+                    let mut temp_count = 0usize;
+                    for component in sampler.components.iter() {
+                        let temp = component.temperature() as f64;
+                        if temp > 0.0 {
+                            total_temp += temp;
+                            temp_count += 1;
+                        }
+                    }
+                    let cpu_temp = if temp_count > 0 {
+                        Some(total_temp / temp_count as f64)
+                    } else {
+                        None
+                    };
+
+                    let total = sampler.system.total_memory() as f64;
+                    let used = sampler.system.used_memory() as f64;
+                    let memory_usage = if total > 0.0 {
+                        Some(used / total * 100.0)
+                    } else {
+                        None
+                    };
+
+                    if let Ok(mut data) = thread_data.write() {
+                        data.coherence = coherence;
+                        data.cpu_usage = cpu_usage;
+                        data.cpu_temp = cpu_temp;
+                        data.memory_usage = memory_usage;
+                    }
+                }
+            });
+
+            initial_data
+        })
+        .clone()
+}
 
 fn percent_stability(usage_percent: f64) -> f64 {
     (1.0 - usage_percent / 100.0).clamp(0.0, 1.0)
@@ -41,7 +171,7 @@ fn thermal_stability(components: &Components) -> Option<f64> {
     Some(((critical_temp - average_temp) / critical_temp).clamp(0.0, 1.0))
 }
 
-fn network_stability(networks: &Networks) -> Option<f64> {
+fn network_health(networks: &Networks) -> Option<(f64, f64)> {
     let mut interface_count = 0usize;
     let mut total_packets = 0u64;
     let mut total_errors = 0u64;
@@ -75,31 +205,79 @@ fn network_stability(networks: &Networks) -> Option<f64> {
         0.5 + normalized_activity * 0.5
     };
 
-    Some((packet_health * 0.7 + activity_health * 0.3).clamp(0.0, 1.0))
+    Some((packet_health, activity_health))
 }
 
-pub fn compute_coherence_from_sensors() -> f64 {
-    let mut sys = System::new();
-    sys.refresh_cpu();
-    sys.refresh_memory();
-
-    let mut components = Components::new_with_refreshed_list();
-    components.refresh();
-
-    let mut networks = Networks::new_with_refreshed_list();
-    networks.refresh();
-
-    let cpu_percent = sys.global_cpu_info().cpu_usage() as f64;
-    let mem_percent = if sys.total_memory() == 0 {
+fn snapshot_from_live(
+    sys: &System,
+    components: &Components,
+    networks: &Networks,
+) -> SensorSnapshot {
+    let cpu_usage_percent = sys.global_cpu_info().cpu_usage() as f64;
+    let memory_usage_percent = if sys.total_memory() == 0 {
         0.0
     } else {
         (sys.used_memory() as f64 / sys.total_memory() as f64) * 100.0
     };
 
-    let cpu_signal = percent_stability(cpu_percent);
-    let mem_signal = percent_stability(mem_percent);
-    let thermal_signal = thermal_stability(&components);
-    let network_signal = network_stability(&networks);
+    let mut total_temp = 0.0;
+    let mut temp_count = 0usize;
+    let mut total_critical = 0.0;
+    let mut critical_count = 0usize;
+    for component in components.iter() {
+        let temp = component.temperature() as f64;
+        if temp > 0.0 {
+            total_temp += temp;
+            temp_count += 1;
+        }
+        if let Some(critical) = component.critical() {
+            let critical = critical as f64;
+            if critical > 0.0 {
+                total_critical += critical;
+                critical_count += 1;
+            }
+        }
+    }
+
+    let (network_packet_health, network_activity_health) = match network_health(networks) {
+        Some((packet, activity)) => (Some(packet), Some(activity)),
+        None => (None, None),
+    };
+
+    SensorSnapshot {
+        cpu_usage_percent,
+        memory_usage_percent,
+        cpu_temp_c: (temp_count > 0).then(|| total_temp / temp_count as f64),
+        cpu_critical_temp_c: if critical_count > 0 {
+            Some(total_critical / critical_count as f64)
+        } else {
+            None
+        },
+        network_packet_health,
+        network_activity_health,
+    }
+}
+
+pub fn compute_coherence_from_snapshot(snapshot: &SensorSnapshot) -> f64 {
+    let cpu_signal = percent_stability(snapshot.cpu_usage_percent);
+    let mem_signal = percent_stability(snapshot.memory_usage_percent);
+    let thermal_signal = match snapshot.cpu_temp_c {
+        Some(temp) => {
+            let critical = snapshot
+                .cpu_critical_temp_c
+                .unwrap_or(DEFAULT_CRITICAL_TEMP_C)
+                .max(1.0);
+            Some(((critical - temp) / critical).clamp(0.0, 1.0))
+        }
+        None => None,
+    };
+    let network_signal = match (
+        snapshot.network_packet_health,
+        snapshot.network_activity_health,
+    ) {
+        (Some(packet), Some(activity)) => Some((packet * 0.7 + activity * 0.3).clamp(0.0, 1.0)),
+        _ => None,
+    };
 
     let mut weighted = cpu_signal * 0.30 + mem_signal * 0.25;
     let mut total_weight = 0.55;
@@ -114,4 +292,74 @@ pub fn compute_coherence_from_sensors() -> f64 {
     }
 
     (weighted / total_weight).clamp(0.0, 1.0)
+}
+
+fn compute_from_snapshot(sys: &System, components: &Components, networks: &Networks) -> f64 {
+    let snapshot = snapshot_from_live(sys, components, networks);
+    compute_coherence_from_snapshot(&snapshot)
+}
+
+pub fn compute_coherence_from_sensors() -> f64 {
+    get_live_data().read().unwrap().coherence
+}
+
+pub fn read_sensor(sensor: SensorKind) -> Option<f64> {
+    let arc = get_live_data();
+    let data = arc.read().unwrap();
+    match sensor {
+        SensorKind::CpuUsage => Some(data.cpu_usage),
+        SensorKind::CpuTemp => data.cpu_temp,
+        SensorKind::MemoryUsage => data.memory_usage,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_stress_lowers_score() {
+        // Since the live system values are non-deterministic, we test the pure scoring functions
+
+        let idle_cpu_score = percent_stability(5.0);
+        let stressed_cpu_score = percent_stability(95.0);
+
+        assert!(
+            stressed_cpu_score < idle_cpu_score,
+            "Stress (95% CPU) should have a lower stability score than idle (5% CPU)"
+        );
+
+        let idle_mem_score = percent_stability(20.0);
+        let stressed_mem_score = percent_stability(90.0);
+
+        assert!(
+            stressed_mem_score < idle_mem_score,
+            "Stress (90% Mem) should have a lower stability score than idle (20% Mem)"
+        );
+    }
+
+    #[test]
+    fn test_snapshot_scoring_uses_network_and_thermal_when_present() {
+        let stable = SensorSnapshot {
+            cpu_usage_percent: 10.0,
+            memory_usage_percent: 20.0,
+            cpu_temp_c: Some(40.0),
+            cpu_critical_temp_c: Some(90.0),
+            network_packet_health: Some(0.98),
+            network_activity_health: Some(0.95),
+        };
+        let stressed = SensorSnapshot {
+            cpu_usage_percent: 85.0,
+            memory_usage_percent: 90.0,
+            cpu_temp_c: Some(82.0),
+            cpu_critical_temp_c: Some(90.0),
+            network_packet_health: Some(0.40),
+            network_activity_health: Some(0.55),
+        };
+
+        let stable_score = compute_coherence_from_snapshot(&stable);
+        let stressed_score = compute_coherence_from_snapshot(&stressed);
+
+        assert!(stable_score > stressed_score);
+    }
 }

@@ -29,15 +29,15 @@ impl GeneExpression {
             consciousness_field: ConsciousnessField::new(frequency, 1.0),
         }
     }
-    
+
     pub fn modulate_expression(&mut self, target_state: ExpressionState) -> ExpressionResult {
         let field_strength = self.consciousness_field.coherence;
         let success = field_strength > 0.75;
-        
+
         if success {
             self.current_state = target_state.clone();
         }
-        
+
         ExpressionResult {
             success,
             gene: self.gene_name.clone(),
@@ -47,18 +47,18 @@ impl GeneExpression {
             frequency_applied: self.consciousness_field.frequency,
         }
     }
-    
+
     pub fn apply_epigenetic_modification(&mut self, modification_type: &str) -> ExpressionResult {
         let phi_frequency = self.consciousness_field.frequency * PHI;
         self.consciousness_field.frequency = phi_frequency;
-        
+
         let new_state = match modification_type {
             "methylation" => ExpressionState::Suppressed,
             "acetylation" => ExpressionState::Activated,
             "optimization" => ExpressionState::Optimized,
             _ => ExpressionState::Baseline,
         };
-        
+
         self.modulate_expression(new_state)
     }
 }

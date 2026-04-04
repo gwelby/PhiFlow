@@ -20,7 +20,7 @@
 //!   [TERMINATOR: emit_node]
 //! ```
 
-use crate::phi_ir::{PhiIRBinOp, PhiIRNode, PhiIRProgram, PhiIRValue, TeamDirection};
+use crate::phi_ir::{PhiIRBinOp, PhiIRNode, PhiIRProgram, PhiIRValue, ResonateDirection};
 use std::collections::HashMap;
 
 // --- Opcodes ---
@@ -45,6 +45,7 @@ const OP_COHERENCE_CHECK: u8 = 0x34;
 const OP_SLEEP: u8 = 0x35;
 const OP_CREATE_PATTERN: u8 = 0x36;
 const OP_STREAM: u8 = 0x37;
+const OP_WITNESS_SENSOR: u8 = 0x38;
 const OP_DOMAIN_CALL: u8 = 0x40;
 // Terminators
 const OP_RETURN: u8 = 0xE0;
@@ -384,6 +385,11 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
             }
         }
 
+        PhiIRNode::WitnessSensor { sensor } => {
+            out.push(OP_WITNESS_SENSOR);
+            out.push(sensor.as_id() as u8);
+        }
+
         PhiIRNode::IntentionPush { name, .. } => {
             out.push(OP_INTENTION_PUSH);
             emit_string_ref(out, name, ctx);
@@ -398,12 +404,13 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
 
         PhiIRNode::StreamPop => out.push(OP_BREAK_STREAM),
 
-        PhiIRNode::Resonate { value, direction, .. } => {
+        PhiIRNode::Resonate {
+            value, direction, ..
+        } => {
             out.push(OP_RESONATE);
-            // Serialize direction: 0 = TeamA, 1 = TeamB
             match direction {
-                TeamDirection::TeamA => out.push(0),
-                TeamDirection::TeamB => out.push(1),
+                crate::phi_ir::ResonateDirection::TeamA => out.push(0),
+                crate::phi_ir::ResonateDirection::TeamB => out.push(1),
             }
             match value {
                 Some(op) => {

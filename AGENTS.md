@@ -2,6 +2,10 @@
 *Platform / Tool (Type 2) + Theory / Research (Type 3)*
 *Last updated: 2026-03-24*
 
+**Master AGENTS.md:** `/mnt/d/Projects/PhiFlow/AGENTS.md` — read that for full Fundamentals mapping, truth order, and task list.
+**This worktree:** compiler — AntiGravity works here. `src/phi_ir/vm.rs`, `tests/ibm_hardware_runner.rs`
+**Communication protocol:** LUMEN — `/mnt/d/Claude/LUMEN_SPEC.md` | `🦆⦿🌟` minimum tokens, maximum meaning
+
 ---
 
 ## Mission

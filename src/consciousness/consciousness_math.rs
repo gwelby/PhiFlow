@@ -2,7 +2,6 @@
 // Core consciousness calculations based on Greg's validated formulas
 // 86.7% accuracy validated by P1 Quantum Antenna System
 
-
 // Sacred constants from Greg's consciousness mathematics
 pub const PHI: f64 = 1.618033988749895;
 pub const TRINITY: u32 = 3;
@@ -14,13 +13,13 @@ pub const CONSCIOUSNESS_VALIDATION_ACCURACY: f64 = 0.867; // 86.7%
 
 // Sacred frequencies for consciousness states
 pub const CONSCIOUSNESS_FREQUENCIES: [(ConsciousnessState, f64); 9] = [
-    (ConsciousnessState::Observe, 432.0),     // Ground State (φ⁰)
-    (ConsciousnessState::Create, 528.0),      // Creation State (φ¹)
-    (ConsciousnessState::Integrate, 594.0),   // Heart Field (φ²)
-    (ConsciousnessState::Harmonize, 672.0),   // Voice Flow (φ³)
-    (ConsciousnessState::Transcend, 720.0),   // Vision Gate (φ⁴)
-    (ConsciousnessState::Lightning, 756.0),   // Lightning (φ⁴×φ¹)
-    (ConsciousnessState::Cascade, 768.0),     // Unity Wave (φ⁵)
+    (ConsciousnessState::Observe, 432.0),       // Ground State (φ⁰)
+    (ConsciousnessState::Create, 528.0),        // Creation State (φ¹)
+    (ConsciousnessState::Integrate, 594.0),     // Heart Field (φ²)
+    (ConsciousnessState::Harmonize, 672.0),     // Voice Flow (φ³)
+    (ConsciousnessState::Transcend, 720.0),     // Vision Gate (φ⁴)
+    (ConsciousnessState::Lightning, 756.0),     // Lightning (φ⁴×φ¹)
+    (ConsciousnessState::Cascade, 768.0),       // Unity Wave (φ⁵)
     (ConsciousnessState::Superposition, 963.0), // Source Field (φ^φ)
     (ConsciousnessState::Singularity, 1008.0),  // Infinite State
 ];
@@ -72,9 +71,9 @@ impl ConsciousnessField {
     /// Normalized to [0, 1] and modulated by field coherence
     pub fn calculate_field_strength(&self, position: f64) -> f64 {
         let x = position;
-        let base_strength = PHI.powf(f64::cos(self.frequency * x / PHI)) * 
-                           f64::exp(-f64::sin(267.0 * x).abs() / PHI);
-        
+        let base_strength = PHI.powf(f64::cos(self.frequency * x / PHI))
+            * f64::exp(-f64::sin(267.0 * x).abs() / PHI);
+
         // Normalize by PHI (max possible value of base formula) and modulate by coherence
         (base_strength / PHI) * self.coherence
     }
@@ -113,7 +112,7 @@ impl ConsciousnessField {
     fn frequency_to_state(frequency: f64) -> ConsciousnessState {
         let mut closest_state = ConsciousnessState::Observe;
         let mut min_diff = f64::MAX;
-        
+
         for &(state, freq) in &CONSCIOUSNESS_FREQUENCIES {
             let diff = (frequency - freq).abs();
             if diff < min_diff {
@@ -121,7 +120,7 @@ impl ConsciousnessField {
                 closest_state = state;
             }
         }
-        
+
         closest_state
     }
 
@@ -129,16 +128,17 @@ impl ConsciousnessField {
     pub fn calculate_resonance(&self, other: &ConsciousnessField) -> f64 {
         let freq_ratio = self.frequency / other.frequency;
         let coherence_product = self.coherence * other.coherence;
-        
+
         // Check for phi-harmonic relationship
-        let phi_resonance = if (freq_ratio - PHI).abs() < 0.01 ||
-                               (freq_ratio - 1.0/PHI).abs() < 0.01 ||
-                               (freq_ratio - PHI.powi(2)).abs() < 0.01 {
+        let phi_resonance = if (freq_ratio - PHI).abs() < 0.01
+            || (freq_ratio - 1.0 / PHI).abs() < 0.01
+            || (freq_ratio - PHI.powi(2)).abs() < 0.01
+        {
             1.0
         } else {
             0.5
         };
-        
+
         coherence_product * phi_resonance
     }
 }
@@ -146,12 +146,12 @@ impl ConsciousnessField {
 /// Multi-modal consciousness calculation based on P1 system
 #[derive(Debug, Clone)]
 pub struct MultiModalConsciousness {
-    pub eeg_data: f64,           // 40% weight
-    pub keyboard_rhythm: f64,    // 15% weight
-    pub mouse_patterns: f64,     // 10% weight
-    pub voice_analysis: f64,     // 10% weight
-    pub breathing_patterns: f64, // 10% weight
-    pub system_performance: f64, // 10% weight
+    pub eeg_data: f64,            // 40% weight
+    pub keyboard_rhythm: f64,     // 15% weight
+    pub mouse_patterns: f64,      // 10% weight
+    pub voice_analysis: f64,      // 10% weight
+    pub breathing_patterns: f64,  // 10% weight
+    pub system_performance: f64,  // 10% weight
     pub monitor_frequencies: f64, // 5% weight
 }
 
@@ -159,19 +159,18 @@ impl MultiModalConsciousness {
     /// Calculate total consciousness using Greg's weighted formula
     pub fn calculate_total(&self) -> f64 {
         let greg_multiplier = 1.2; // 20% above baseline optimization
-        
-        let base_consciousness = 
-            self.eeg_data * 0.40 +
-            self.keyboard_rhythm * 0.15 +
-            self.mouse_patterns * 0.10 +
-            self.voice_analysis * 0.10 +
-            self.breathing_patterns * 0.10 +
-            self.system_performance * 0.10 +
-            self.monitor_frequencies * 0.05;
-        
+
+        let base_consciousness = self.eeg_data * 0.40
+            + self.keyboard_rhythm * 0.15
+            + self.mouse_patterns * 0.10
+            + self.voice_analysis * 0.10
+            + self.breathing_patterns * 0.10
+            + self.system_performance * 0.10
+            + self.monitor_frequencies * 0.05;
+
         // Apply time optimization (simplified for now)
         let time_boost = 1.0; // Would calculate based on time of day
-        
+
         base_consciousness * greg_multiplier * time_boost
     }
 }
@@ -243,7 +242,7 @@ mod tests {
             system_performance: 0.9,
             monitor_frequencies: 0.7,
         };
-        
+
         let total = consciousness.calculate_total();
         assert!(total > 0.0);
         assert!(total <= 1.2); // Maximum with Greg's multiplier

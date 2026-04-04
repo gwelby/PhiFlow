@@ -1,0 +1,8 @@
+// examples/disjoint_k2_penalty.phi
+// Tests: k=2 disjoint → logarithmic decay penalty
+
+intention "Contradiction" {
+    resonate 1.0 toward TEAM_A
+    resonate 1.0 toward TEAM_B  // Opposite polarity → k=2
+    witness
+}

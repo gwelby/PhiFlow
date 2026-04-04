@@ -1,10 +1,6 @@
 use phiflow::parser::parse_phi_program;
 use phiflow::phi_ir::{
-    emitter,
-    evaluator::Evaluator,
-    lowering::lower_program,
-    vm::PhiVm,
-    PhiIRProgram, PhiIRValue,
+    emitter, evaluator::Evaluator, lowering::lower_program, vm::PhiVm, PhiIRProgram, PhiIRValue,
 };
 
 fn assert_values_close(lhs: &PhiIRValue, rhs: &PhiIRValue, context: &str) {
@@ -47,7 +43,11 @@ fn roundtrip_arithmetic_42() {
 
     let (eval_result, vm_result) = run_roundtrip_source(source);
     assert_values_close(&eval_result, &vm_result, "arithmetic_42");
-    assert_values_close(&eval_result, &PhiIRValue::Number(42.0), "arithmetic_42 expected");
+    assert_values_close(
+        &eval_result,
+        &PhiIRValue::Number(42.0),
+        "arithmetic_42 expected",
+    );
 }
 
 #[test]
@@ -60,7 +60,11 @@ fn roundtrip_chained_84() {
 
     let (eval_result, vm_result) = run_roundtrip_source(source);
     assert_values_close(&eval_result, &vm_result, "chained_84");
-    assert_values_close(&eval_result, &PhiIRValue::Number(84.0), "chained_84 expected");
+    assert_values_close(
+        &eval_result,
+        &PhiIRValue::Number(84.0),
+        "chained_84 expected",
+    );
 }
 
 #[test]
@@ -73,7 +77,11 @@ fn roundtrip_boolean_branch() {
 
     let (eval_result, vm_result) = run_roundtrip_source(source);
     assert_values_close(&eval_result, &vm_result, "boolean_branch");
-    assert_values_close(&eval_result, &PhiIRValue::Number(1.0), "boolean_branch expected");
+    assert_values_close(
+        &eval_result,
+        &PhiIRValue::Number(1.0),
+        "boolean_branch expected",
+    );
 }
 
 #[test]
@@ -109,5 +117,9 @@ fn roundtrip_coherence_check_node() {
     let source = "coherence";
     let (eval_result, vm_result) = run_roundtrip_source(source);
     assert_values_close(&eval_result, &vm_result, "coherence_check_node");
-    assert_values_close(&eval_result, &PhiIRValue::Number(0.0), "coherence_check_node expected");
+    assert_values_close(
+        &eval_result,
+        &PhiIRValue::Number(0.0),
+        "coherence_check_node expected",
+    );
 }

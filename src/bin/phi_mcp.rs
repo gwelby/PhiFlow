@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Ok(queue_path) = std::env::var("MCP_QUEUE_PATH") {
         config.mcp_queue_path = queue_path;
     }
-    
+
     let state = McpState::with_config(config);
     let stdin = io::stdin();
     let stdout = io::stdout();
@@ -60,7 +60,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "ping" => JsonRpcResponse::ok(id, json!({})),
                     "tools/list" => handle_tools_list(id),
                     "tools/call" => {
-                        if let Some(resp) = handle_tool_call(req.method, req.params, id.clone(), &state).await {
+                        if let Some(resp) =
+                            handle_tool_call(req.method, req.params, id.clone(), &state).await
+                        {
                             resp
                         } else {
                             JsonRpcResponse::error(id, -32601, "Method not found")

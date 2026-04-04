@@ -201,7 +201,10 @@ impl CallbackHostProvider {
         self
     }
 
-    pub fn with_recall<F: Fn(&str) -> Option<String> + Send + Sync + 'static>(mut self, f: F) -> Self {
+    pub fn with_recall<F: Fn(&str) -> Option<String> + Send + Sync + 'static>(
+        mut self,
+        f: F,
+    ) -> Self {
         self.recall_fn = Box::new(f);
         self
     }
@@ -211,7 +214,10 @@ impl CallbackHostProvider {
         self
     }
 
-    pub fn with_listen<F: Fn(&str) -> Option<String> + Send + Sync + 'static>(mut self, f: F) -> Self {
+    pub fn with_listen<F: Fn(&str) -> Option<String> + Send + Sync + 'static>(
+        mut self,
+        f: F,
+    ) -> Self {
         self.listen_fn = Box::new(f);
         self
     }

@@ -1,0 +1,4 @@
+intention "ibm_smoke" {
+    resonate 0.6180339887
+    witness
+}

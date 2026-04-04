@@ -19,7 +19,6 @@ pub fn compile_ir_to_quantum(ir: &PhiIRProgram) -> QuantumCircuit {
         for instruction in &block.instructions {
             match &instruction.node {
                 PhiIRNode::Resonate {
-                    value: _,
                     frequency_relationship,
                     ..
                 } => {

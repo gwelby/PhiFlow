@@ -1,19 +1,24 @@
 # PATTERNS - Learning from mistakes and successes
-## Resolved Patterns
 
-### R-3: Keyword-as-variable collision (was P-1)
+## Active Patterns (Mistakes)
 
-- **What happened**: PhiFlow keywords used as variable names caused parse errors.
-- **Fix**: Expanded `expect_identifier()` keyword acceptance.
-- **Status**: **VERIFIED** via `tests/repro_bugs.rs::test_p1_keyword_collision`.
+### P-1: Keyword-as-variable collision
 
-### R-4: Newline sensitivity in statement parsing (was P-2)
+- **What happens**: PhiFlow keywords (frequency, state, coherence, etc.) used as variable names cause parse errors because lexer emits keyword tokens, not Identifier
+- **Instances**: 3 (frequency/create, witness/resonate identifiers, `consciousness` identifier regression)
+- **Root cause**: Lexer is greedy with keyword matching. No context-sensitive tokenization.
+- **Fix**: In parser, `expect_identifier()` now accepts the full keyword token set when in identifier position. Regression coverage is in `tests/repro_bugs.rs::test_p1_keyword_collision`.
+- **Invalidates if**: Lexer redesigned with context-sensitive modes
+- **Promoted to STATE**: Yes
 
-- **What happened**: Bare keywords (witness, resonate) consumed newlines incorrectly.
-- **Fix**: Immediate lookahead check before consuming whitespace.
-- **Status**: **VERIFIED** via `tests/repro_bugs.rs::{test_p2_newline_sensitivity_witness,test_p2_newline_sensitivity_resonate}`.
+### P-2: Newline sensitivity in statement parsing
 
-### R-1: MCP stream isolation and missing initialize handshake
+- **What happens**: Bare keywords (witness, resonate) that take optional arguments consume newlines before checking if they're bare, accidentally eating the next statement's token
+- **Instances**: 2 (witness + resonate bare-form newline handling)
+- **Root cause**: skip_newlines() called before checking for bare form
+- **Fix**: Check what IMMEDIATELY follows the keyword before consuming any whitespace. If newline/EOF/RightBrace -> bare form. Regression coverage is in `tests/repro_bugs.rs::{test_p2_newline_sensitivity_witness,test_p2_newline_sensitivity_resonate}`.
+- **Invalidates if**: Semicolons added as statement terminators
+- **Promoted to STATE**: Yes
 
 ### P-3: WASM generated missing loop back-edges semantic signals
 
@@ -54,6 +59,15 @@
 - **Invalidates if**: witness execution lifecycle is rewritten with a new dispatch model.
 - **Promoted to STATE**: Yes
 
+### P-7: Two lowering paths drift unless degraded semantics are explicit
+
+- **What happens**: New semantics can land in AST/PhiIR/OpenQASM first (`witness mid_circuit`, `resonate ... toward TEAM_B`) while the legacy interpreter and flat-IR path silently treat them as older constructs.
+- **Instances**: 1 (Semantics review, 2026-03-14)
+- **Root cause**: PhiIR is evolving as the canonical path while compatibility paths still exist for older demos/tests.
+- **Fix**: Treat PhiIR as the source of truth, emit explicit warnings in legacy paths when semantics degrade, and document the contract in `QSOP/ARCHITECTURE.md`.
+- **Invalidates if**: legacy paths reach full parity or are fully removed.
+- **Promoted to STATE**: Yes
+
 ## Active Patterns (Successes)
 
 ### S-1: Four constructs map to QSOP operations
@@ -71,6 +85,61 @@
 - **Invalidates if**: New frequencies added that break the tolerance bands
 
 ## Resolved Patterns
+
+### R-6: OpenQASM emitter silently ignored confidence operands and undeclared intentions
+
+- **What happened**: The OpenQASM backend emitted `ry(pi/2)` for every `Resonate`, even when the IR carried a numeric confidence operand, and `current_qubit_idx()` silently defaulted undeclared intentions to qubit `q[0]`.
+- **Root cause**: The emitter never resolved `Const(Number(...))` operands inside a block and used `unwrap_or(&0)` for missing intention mappings.
+- **Fix**:
+  - Collect block-local numeric constants and emit `ry(value * pi)` when `Resonate { value: Some(op) }` points to a constant operand.
+  - Preserve explicit `ResonateDirection` semantics so `TEAM_B` emits the inverted binary council vote encoding.
+  - Return `OpenQasmEmitError::UndeclaredIntention` instead of silently aliasing missing intentions to `q[0]`.
+  - Add regression coverage for frequency chains, multi-channel entanglement, mid-circuit witness ordering, numeric resonance, TEAM_B direction, and undeclared intentions.
+- **Verification**:
+  - `cargo test --lib openqasm`
+  - `cargo build --release`
+
+### R-5: Unpaced hardware coherence sampling let stream demos outrun live sensor updates
+
+- **What happened**: The sensor-backed coherence provider could be called repeatedly faster than `sysinfo` can refresh CPU usage, so tight stream loops reused stale values and `healing_bed.phi` hit the evaluator's infinite-loop panic before host state had time to change.
+- **Root cause**: `sysinfo` CPU sampling requires a minimum refresh interval, but the provider returned immediately on early re-reads instead of pacing them.
+- **Fix**:
+  - Prime CPU usage with an initial refresh + `MINIMUM_CPU_UPDATE_INTERVAL` sleep.
+  - Sleep the remaining interval before subsequent fast re-reads.
+  - Add a `max_cycles` safety brake to `examples/healing_bed.phi`.
+- **Verification**:
+  - `cargo test --release --test phi_ir_evaluator_tests test_resolved_coherence_exposes_injected_value -- --nocapture`
+  - `cargo run --release --bin phic -- examples/healing_bed.phi`
+
+### R-4: WASM witness return drifted from evaluator semantics
+
+- **What happened**: `PhiIRNode::Witness` returned `PhiIRValue::Number(coherence)` in the evaluator, but WASM codegen dropped the imported `phi_witness` result and emitted `TAG_VOID`, so conformance saw `lhs=0.0`, `rhs=NaN`.
+- **Root cause**: The WASM backend treated witness as a side-effect-only observation even after the evaluator and conformance harness standardized witness as a numeric coherence-producing expression.
+- **Fix**:
+  - Updated `src/phi_ir/wasm.rs` to leave the `phi_witness` `f64` on the stack.
+  - Updated `src/wasm_host.rs` witness assertions to expect `PhiIRValue::Number(coherence)`.
+  - Replaced stale `tests/test_phiflow.rs` coverage that depended on external `quantum_core` symbols with a local `compile_and_run_phi_ir` smoke test.
+- **Verification**:
+  - `cargo test --test phi_ir_conformance_tests conformance_witness -- --nocapture`
+  - `cargo test --test phi_ir_conformance_tests`
+  - `cargo test --quiet --lib --tests`
+  - `cargo build --release`
+
+### R-3: Snapshot queue rewrites shred MCP state under concurrent writers
+
+- **What happened**: The MCP bus persisted all message state by rewriting `queue.json` as a full-array snapshot, so concurrent `send_message`, `ack_message`, or DLQ sweeps could race and drop unrelated updates.
+- **Root cause**: Queue persistence used read-modify-write replacement on a shared file instead of append-only event logging with replay.
+- **Fix**:
+  - Migrated the bus transport to append-only `queue.jsonl`.
+  - Reconstruct latest state by replaying log entries keyed by `id`.
+  - Added one-time import from legacy `queue.json` for backward compatibility.
+  - Updated Rust `McpHostProvider` and JS/Python verification tools to use the same replay contract.
+- **Verification**:
+  - `cargo test mcp_host_provider -- --nocapture`
+  - `node tests/queue_jsonl_legacy_import_test.js`
+  - `node tests/cross_agent_roundtrip.js --simulate` (temp queue env)
+  - `node tests/dlq_test.js` (temp queue env)
+  - `cargo build --release`
 
 ### R-1: MCP stream isolation and missing initialize handshake
 
