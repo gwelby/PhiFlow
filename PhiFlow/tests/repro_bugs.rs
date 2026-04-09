@@ -43,7 +43,9 @@ fn test_p2_newline_sensitivity_witness() {
     );
 
     match &expressions[0] {
-        PhiExpression::Witness { expression, body } => {
+        PhiExpression::Witness {
+            expression, body, ..
+        } => {
             assert!(expression.is_none(), "witness should be bare");
             assert!(body.is_none(), "witness should have no body");
         }
@@ -68,8 +70,8 @@ fn test_p2_newline_sensitivity_resonate() {
     );
 
     match &expressions[0] {
-        PhiExpression::Resonate { .. } => {
-            // direction is quantum-backend specific, not checked in this test
+        PhiExpression::Resonate { expression, .. } => {
+            assert!(expression.is_none(), "resonate should be bare");
         }
         other => panic!("first expression should be Resonate, got {:?}", other),
     }
