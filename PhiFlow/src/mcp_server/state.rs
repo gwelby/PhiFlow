@@ -227,6 +227,7 @@ fn append_queue_message(queue_path: &Path, message: &BusMessage) {
 /// A host provider that talks to the MCP state. It automatically yields on every witness.
 pub struct McpHostProvider {
     pub config: Arc<McpConfig>,
+    pub state: McpState,
 }
 
 impl PhiHostProvider for McpHostProvider {
@@ -246,6 +247,35 @@ impl PhiHostProvider for McpHostProvider {
 
     fn on_intention_push(&self, _intention: &str) {}
     fn on_intention_pop(&self, _intention: &str) {}
+
+    fn get_field_aggregate(&self) -> f64 {
+        let streams = self.state.streams.lock().unwrap();
+        let mut total_coherence = 0.0;
+        let mut count = 0;
+        for (_, ctx) in streams.iter() {
+            if ctx.status == "running" || ctx.status == "yielded" || ctx.status.starts_with("entangled_") {
+                if let Some(w) = &ctx.last_witness {
+                    total_coherence += w.coherence;
+                    count += 1;
+                }
+            }
+        }
+        if count == 0 {
+            0.0
+        } else {
+            total_coherence / (count as f64)
+        }
+    }
+
+    fn get_peer_coherence(&self, stream_id: &str) -> Option<f64> {
+        let streams = self.state.streams.lock().unwrap();
+        if let Some(ctx) = streams.get(stream_id) {
+            if let Some(w) = &ctx.last_witness {
+                return Some(w.coherence);
+            }
+        }
+        None
+    }
 
     // --- v0.3.0 Persistence & Dialogue ---
     fn broadcast(&self, channel: &str, message: &str) {

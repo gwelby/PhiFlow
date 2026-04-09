@@ -237,6 +237,15 @@ pub enum PhiIRNode {
     /// Evaluate program coherence NOW using backend-appropriate method.
     CoherenceCheck,
 
+    /// Read the resonance field aggregate
+    Field,
+
+    /// Calculate intention dissonance trajectory
+    Dissonance,
+
+    /// Look up the coherence of a peer stream
+    CoherenceOf(String),
+
     /// Pause execution for a specified duration (healing/stabilization).
     /// duration: Operand (value in milliseconds)
     Sleep { duration: Operand },

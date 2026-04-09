@@ -176,6 +176,7 @@ pub struct PhiVm {
     value_stack: Vec<PhiIRValue>,
     intention_stack: Vec<String>,
     resonance_field: HashMap<String, Vec<PhiIRValue>>,
+    coherence_history: Vec<(f64, f64)>,
     current_block: BlockId,
     instruction_ptr: usize,
 }
@@ -199,6 +200,7 @@ impl PhiVm {
             value_stack: Vec::new(),
             intention_stack: Vec::new(),
             resonance_field: HashMap::new(),
+            coherence_history: Vec::new(),
             current_block,
             instruction_ptr: 0,
         })

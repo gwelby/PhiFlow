@@ -32,6 +32,7 @@ pub struct VmState {
     pub resonance_events: Vec<(String, PhiIRValue)>,
     pub ended_streams: Vec<String>,
     pub witness_log: Vec<VmWitnessEvent>,
+    pub coherence_history: Vec<(f64, f64)>, // (timestamp, coherence)
     pub current_block: BlockId,
     pub instruction_ptr: usize,
     /// The timestamp (in seconds) when the program yielded execution.

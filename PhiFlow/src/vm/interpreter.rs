@@ -17,6 +17,48 @@ use std::sync::{Arc, Mutex};
 const SACRED_FREQUENCIES: &[u32] = &[432, 528, 594, 639, 693, 741, 852, 963];
 const PHI: f64 = 1.618033988749895;
 
+/// Read a named sensor value from the SOMA state file.
+///
+/// SOMA writes `soma_state.json` every second with live EM + acoustic + fusion
+/// sensor values from the GPU ring oscillator and microphone.
+///
+/// Returns 0.0 if SOMA is not running, the file is missing, or the name is unknown.
+///
+/// Sensor names:
+///   "soma_schumann"  — 7.83 Hz amplitude, normalized 0.0–1.0
+///   "soma_432"       — 432 Hz EM amplitude, normalized 0.0–1.0
+///   "soma_presence"  — cross-sensor presence fusion score, 0.0–1.0
+///   "soma_fan_hz"    — GPU fan speed in Hz (e.g. 38.6)
+///   "soma_ac_60"     — 60 Hz AC amplitude, normalized 0.0–1.0
+///   "soma_peak_dbc"  — peak ring oscillator amplitude in dBc
+fn read_soma_sensor(name: &str) -> f64 {
+    let candidates = [
+        "soma_state.json",
+        "../SOMA/soma_state.json",
+        "D:\\Projects\\PhiHarmonic\\SOMA\\soma_state.json",
+        "/mnt/d/Projects/PhiHarmonic/SOMA/soma_state.json",
+    ];
+    for path in &candidates {
+        if let Ok(content) = std::fs::read_to_string(path) {
+            // Simple key search without full JSON parse dependency
+            let key = format!("\"{}\"", name);
+            if let Some(pos) = content.find(&key) {
+                let after = &content[pos + key.len()..];
+                // Skip whitespace and colon
+                let after = after.trim_start_matches(|c: char| c.is_whitespace() || c == ':');
+                let num_str: String = after
+                    .chars()
+                    .take_while(|c| c.is_ascii_digit() || *c == '.' || *c == '-')
+                    .collect();
+                if let Ok(val) = num_str.parse::<f64>() {
+                    return val;
+                }
+            }
+        }
+    }
+    0.0
+}
+
 #[derive(Debug, Clone)]
 pub enum PhiFlowValue {
     Number(f64),
@@ -252,6 +294,7 @@ impl PhiFlowInterpreter {
             "phi_spiral",
             "sacred_resonate",
             "resonate",
+            "sensor",
         ];
         for name in built_ins {
             self.variables.insert(
@@ -1500,6 +1543,24 @@ impl PhiFlowInterpreter {
                     println!("{}", self.value_to_string(arg));
                 }
                 Ok(Some(PhiFlowValue::Nil))
+            }
+            // sensor("name") — read a named value from the SOMA sensor bridge.
+            // Returns a Number (0.0 if SOMA is not running or name is unknown).
+            // SOMA writes soma_state.json every second with live sensor values.
+            // Sensor names: soma_schumann, soma_432, soma_presence, soma_fan_hz,
+            //               soma_ac_60, soma_peak_dbc
+            "sensor" => {
+                let name = match args.first() {
+                    Some(PhiFlowValue::String(s)) => s.clone(),
+                    Some(other) => self.value_to_string(other),
+                    None => {
+                        return Err(RuntimeError::RuntimeError {
+                            message: "sensor() requires a sensor name argument".to_string(),
+                        })
+                    }
+                };
+                let val = read_soma_sensor(&name);
+                Ok(Some(PhiFlowValue::Number(val)))
             }
             "len" => {
                 if args.len() != 1 {

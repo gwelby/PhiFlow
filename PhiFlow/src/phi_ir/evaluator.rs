@@ -126,6 +126,8 @@ pub struct Evaluator<'a> {
 
     /// Every `Witness` execution appends an event here.
     pub witness_log: Vec<WitnessEvent>,
+    
+    pub coherence_history: Vec<(f64, f64)>,
 
     current_block: BlockId,
     instruction_ptr: usize,
@@ -179,6 +181,7 @@ impl<'a> Evaluator<'a> {
             resonance_events: Vec::new(),
             ended_streams: Vec::new(),
             witness_log: Vec::new(),
+            coherence_history: Vec::new(),
             current_block: program.entry,
             instruction_ptr: 0,
             agent_name: None,
@@ -280,6 +283,7 @@ impl<'a> Evaluator<'a> {
         self.resonance_events = state.resonance_events;
         self.ended_streams = state.ended_streams;
         self.witness_log = state.witness_log;
+        self.coherence_history = state.coherence_history;
         self.current_block = state.current_block;
         self.instruction_ptr = state.instruction_ptr;
         self.yield_timestamp = state.yield_timestamp;
@@ -304,6 +308,7 @@ impl<'a> Evaluator<'a> {
             resonance_events: self.resonance_events.clone(),
             ended_streams: self.ended_streams.clone(),
             witness_log: self.witness_log.clone(),
+            coherence_history: self.coherence_history.clone(),
             current_block: self.current_block,
             instruction_ptr: self.instruction_ptr,
             yield_timestamp: Some(now),

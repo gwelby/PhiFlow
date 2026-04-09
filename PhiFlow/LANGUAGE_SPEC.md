@@ -250,6 +250,54 @@ Exit codes: `0` = success, `1` = runtime error, `2` = parse error.
 
 ---
 
+## Built-in Functions
+
+### `sensor(name)`
+
+**Type**: `sensor(String) -> Number`
+
+Reads a named sensor value from the host environment. Returns `0.0` if the
+sensor is unavailable or the host does not provide it.
+
+The default host reads from `soma_state.json`, which SOMA writes every update
+cycle (~1 second). This makes PhiFlow programs physically grounded — they
+respond to real electromagnetic and acoustic data from the machine.
+
+**SOMA sensor names**:
+
+| Name | Description | Range |
+|------|-------------|-------|
+| `"soma_schumann"` | GPU ring 7.83 Hz amplitude | 0.0–1.0 |
+| `"soma_432"` | 432 Hz EM field amplitude | 0.0–1.0 |
+| `"soma_presence"` | Cross-sensor presence fusion | 0.0–1.0 |
+| `"soma_fan_hz"` | GPU fan speed detected in ring oscillator | Hz |
+| `"soma_ac_60"` | AC 60 Hz mains amplitude | 0.0–1.0 |
+| `"soma_peak_dbc"` | Peak ring oscillator amplitude | dBc |
+
+**Example** (see `examples/p1_soma_bridge.phi`):
+
+```phi
+stream "p1_soma_bridge" {
+    let schumann = sensor("soma_schumann")
+    let presence = sensor("soma_presence")
+    let target = 0.76
+    if schumann > 0.75 {
+        if presence > 0.5 { target = 0.93 }
+    }
+    intention "Earth field alignment" {
+        if target >= 0.9 { resonate 7.83 } else { resonate 432.015 }
+        coherence target
+        witness
+    }
+    witness
+}
+```
+
+`sensor()` is resolved by the `PhiHostProvider::read_sensor()` method in Rust.
+Custom hosts can override it to inject any external data source.
+
+---
+
 ## Reserved Keywords
 
 `let`, `function`, `return`, `intention`, `stream`, `break`, `witness`, `resonate`, `coherence`, `if`, `else`, `while`, `true`, `false`, `target`

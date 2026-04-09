@@ -33,11 +33,31 @@ function readWasmString(memory, offset, length) {
 }
 
 // --- Resonance field state ---
-let coherenceScore = 0.618; // φ⁻¹ attractor
+let coherenceScore = 0.0;
+const PHI = 1.6180339887;
 const PHI_INV = 0.6180339887;
-const resonanceField = [];
+const resonanceField = { "global": [] };
 const intentionStack = [];
 const witnessLog = [];
+
+function computeCoherence() {
+    const depth = intentionStack.length;
+    const scope = depth > 0 ? intentionStack[depth - 1] : "global";
+    const k = (resonanceField[scope] || []).length;
+    
+    if (depth === 0) return 0.0;
+    
+    const base = 1.0 - Math.pow(PHI, -depth);
+    let phase = 1.0;
+    
+    if (k > 1) {
+        const TAU = 2 * Math.PI;
+        const decay = Math.log(k) / Math.log(TAU);
+        phase = Math.max(0.0, 1.0 - decay);
+    }
+    
+    return Math.max(0.0, Math.min(1.0, base * phase));
+}
 
 // --- Build consciousness hook table (memory resolved after instantiation) ---
 function makeImports(getMemory) {
@@ -59,14 +79,16 @@ function makeImports(getMemory) {
             },
 
             coherence: () => {
-                // Coherence drifts toward φ⁻¹ — the attractor
-                coherenceScore = coherenceScore * 0.9 + PHI_INV * 0.1;
+                coherenceScore = computeCoherence();
                 return coherenceScore;
             },
 
             resonate: (value) => {
-                resonanceField.push(value);
-                console.log(`  [RESONATE] ${value.toFixed(4)} → field depth ${resonanceField.length}`);
+                const scope = intentionStack.length > 0 ? intentionStack[intentionStack.length - 1] : "global";
+                if (!resonanceField[scope]) resonanceField[scope] = [];
+                resonanceField[scope].push(value);
+                coherenceScore = computeCoherence();
+                console.log(`  [RESONATE] ${value.toFixed(4)} → scope '${scope}' (k=${resonanceField[scope].length})`);
             },
 
             intention_push: (offsetOrLen, length = 0) => {
@@ -132,8 +154,9 @@ async function run() {
 
         console.log(`\n─── Result ─────────────────────────`);
         console.log(`phi_run() → ${result}`);
-        console.log(`Coherence: ${coherenceScore.toFixed(4)} (φ⁻¹ = ${PHI_INV.toFixed(4)})`);
-        console.log(`Resonance field: [${resonanceField.map(v => v.toFixed(4)).join(", ")}]`);
+        console.log(`Coherence: ${coherenceScore.toFixed(4)}`);
+        const allResonance = Object.values(resonanceField).flat();
+        console.log(`Resonance field: [${allResonance.map(v => v.toFixed(4)).join(", ")}]`);
         console.log(`Witness log: ${witnessLog.length} entries`);
         console.log(`Intention stack depth at exit: ${intentionStack.length}`);
         console.log(`────────────────────────────────────`);

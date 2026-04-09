@@ -119,6 +119,53 @@ pub trait PhiHostProvider: Send + Sync {
     /// Emit a physical signal (haptic, acoustic, or visual).
     /// Maps `resonate` to the physical world.
     fn emit_signal(&self, _frequency: f64, _intensity: f64) {}
+
+    /// Read a named sensor value from the host environment.
+    ///
+    /// This is the bridge to SOMA (Sensor Observatory for Machine Awareness).
+    /// The default implementation reads from `soma_state.json` in the SOMA
+    /// directory, which SOMA writes every second with live sensor values.
+    ///
+    /// Sensor names (from SOMA):
+    ///   "soma_schumann"  — GPU ring 7.83 Hz amplitude, normalized 0.0–1.0
+    ///   "soma_432"       — 432 Hz EM field amplitude, normalized 0.0–1.0
+    ///   "soma_presence"  — cross-sensor presence fusion score, 0.0–1.0
+    ///   "soma_fan_hz"    — detected GPU fan speed in Hz
+    ///   "soma_ac_60"     — AC 60 Hz amplitude, normalized 0.0–1.0
+    ///   "soma_peak_dbc"  — peak ring oscillator amplitude in dBc
+    ///
+    /// Returns 0.0 if the sensor name is unknown or SOMA is not running.
+    fn read_sensor(&self, name: &str) -> f64 {
+        // Default: try to read soma_state.json from known paths
+        let candidates = [
+            "soma_state.json",
+            "../SOMA/soma_state.json",
+            "D:\\Projects\\PhiHarmonic\\SOMA\\soma_state.json",
+            "/mnt/d/Projects/PhiHarmonic/SOMA/soma_state.json",
+        ];
+        for path in &candidates {
+            if let Ok(content) = std::fs::read_to_string(path) {
+                if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
+                    if let Some(val) = json.get(name).and_then(|v| v.as_f64()) {
+                        return val;
+                    }
+                }
+            }
+        }
+        0.0
+    }
+
+    // --- Phase 4 / 5: Agentic Resonance Field ---
+
+    /// Retrieve the coherence of the shared global resonance field.
+    fn get_field_aggregate(&self) -> f64 {
+        0.0
+    }
+
+    /// Retrieve the coherence of a peer stream from the registry.
+    fn get_peer_coherence(&self, _stream_id: &str) -> Option<f64> {
+        None
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -150,6 +197,8 @@ pub struct CallbackHostProvider {
     broadcast_fn: Box<dyn Fn(&str, &str) + Send + Sync>,
     listen_fn: Box<dyn Fn(&str) -> Option<String> + Send + Sync>,
     entangle_fn: Box<dyn Fn(f64) + Send + Sync>,
+    field_aggregate_fn: Box<dyn Fn() -> f64 + Send + Sync>,
+    peer_coherence_fn: Box<dyn Fn(&str) -> Option<f64> + Send + Sync>,
 }
 
 impl CallbackHostProvider {
@@ -165,6 +214,8 @@ impl CallbackHostProvider {
             broadcast_fn: Box::new(|_, _| {}),
             listen_fn: Box::new(|_| None),
             entangle_fn: Box::new(|_| {}),
+            field_aggregate_fn: Box::new(|| 0.0),
+            peer_coherence_fn: Box::new(|_| None),
         }
     }
 
@@ -226,6 +277,19 @@ impl CallbackHostProvider {
         self.entangle_fn = Box::new(f);
         self
     }
+
+    pub fn with_field_aggregate<F: Fn() -> f64 + Send + Sync + 'static>(mut self, f: F) -> Self {
+        self.field_aggregate_fn = Box::new(f);
+        self
+    }
+
+    pub fn with_peer_coherence<F: Fn(&str) -> Option<f64> + Send + Sync + 'static>(
+        mut self,
+        f: F,
+    ) -> Self {
+        self.peer_coherence_fn = Box::new(f);
+        self
+    }
 }
 
 impl PhiHostProvider for CallbackHostProvider {
@@ -267,5 +331,13 @@ impl PhiHostProvider for CallbackHostProvider {
 
     fn on_entangle(&self, frequency: f64) {
         (self.entangle_fn)(frequency);
+    }
+
+    fn get_field_aggregate(&self) -> f64 {
+        (self.field_aggregate_fn)()
+    }
+
+    fn get_peer_coherence(&self, stream_id: &str) -> Option<f64> {
+        (self.peer_coherence_fn)(stream_id)
     }
 }

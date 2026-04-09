@@ -181,6 +181,7 @@ async fn spawn_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonRp
             .with_shared_resonance(shared_resonance)
             .with_host(Box::new(McpHostProvider {
                 config: Arc::clone(&state_clone.config),
+                state: (*state_clone).clone(),
             }))
             .with_max_steps(state_clone.config.max_execution_steps);
         let result = evaluator.run_or_yield();
@@ -360,6 +361,7 @@ fn resume_entangled_streams_internal(
                 .with_shared_resonance(shared_resonance)
                 .with_host(Box::new(McpHostProvider {
                     config: Arc::clone(&state_clone.config),
+                    state: (*state_clone).clone(),
                 }))
                 .with_max_steps(state_clone.config.max_execution_steps);
             let result = evaluator.resume(frozen_state);
@@ -513,6 +515,7 @@ async fn resume_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonR
             .with_shared_resonance(shared_resonance)
             .with_host(Box::new(McpHostProvider {
                 config: Arc::clone(&state_clone.config),
+                state: (*state_clone).clone(),
             }))
             .with_max_steps(state_clone.config.max_execution_steps);
         let result = evaluator.resume(frozen_state);
