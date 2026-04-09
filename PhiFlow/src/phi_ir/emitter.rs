@@ -443,15 +443,6 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
 
         PhiIRNode::CoherenceCheck => out.push(OP_COHERENCE_CHECK),
 
-        PhiIRNode::Field => out.push(OP_FIELD),
-
-        PhiIRNode::Dissonance => out.push(OP_DISSONANCE),
-
-        PhiIRNode::CoherenceOf(name) => {
-            out.push(OP_COHERENCE_OF);
-            emit_string_ref(out, name, ctx);
-        }
-
         PhiIRNode::Sleep { duration } => {
             out.push(OP_SLEEP);
             emit_u32(out, *duration);
