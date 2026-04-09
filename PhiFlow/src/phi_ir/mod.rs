@@ -289,15 +289,6 @@ pub enum PhiIRNode {
     /// Evaluate program coherence NOW using backend-appropriate method.
     CoherenceCheck,
 
-<<<<<<< HEAD
-    /// Read the resonance field aggregate
-    Field,
-
-    /// Calculate intention dissonance trajectory
-    Dissonance,
-
-    /// Look up the coherence of a peer stream
-=======
     /// Read the aggregate coherence of the entire resonance field (0.0–1.0).
     FieldCoherence,
 
@@ -305,7 +296,6 @@ pub enum PhiIRNode {
     Dissonance,
 
     /// Read the specific coherence of a named stream from the MCP bus.
->>>>>>> 4a82fd9742bd2dadaf46d9d7ccac012aec640cbf
     CoherenceOf(String),
 
     /// Pause execution for a specified duration (healing/stabilization).

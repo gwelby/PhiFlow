@@ -213,9 +213,6 @@ pub struct PhiVm {
     current_block: BlockId,
     instruction_ptr: usize,
     sensor_provider: Option<Arc<dyn Fn(SensorKind) -> Option<f64> + Send + Sync>>,
-    /// History of coherence values for dissonance calculation.
-    /// Each entry is (timestamp_seconds, coherence_value).
-    coherence_history: Vec<(f64, f64)>,
 }
 
 impl PhiVm {
@@ -241,7 +238,6 @@ impl PhiVm {
             current_block,
             instruction_ptr: 0,
             sensor_provider: None,
-            coherence_history: Vec::new(),
         })
     }
 
@@ -392,25 +388,19 @@ impl PhiVm {
                 None
             }
             BytecodeNode::FieldCoherence => {
-                // Compute aggregate coherence from shared resonance field if available,
-                // otherwise fall back to own coherence
-                if let Some(shared) = &self.shared_resonance {
-                    let guard = shared.lock().unwrap();
-                    let mut sum = 0.0;
-                    let mut count = 0;
-                    for vals in guard.values() {
-                        for val in vals {
-                            if let PhiIRValue::Number(n) = val {
-                                sum += n;
-                                count += 1;
-                            }
+                // Compute aggregate coherence from the local resonance field
+                let mut sum = 0.0;
+                let mut count = 0;
+                for vals in self.resonance_field.values() {
+                    for val in vals {
+                        if let PhiIRValue::Number(n) = val {
+                            sum += n;
+                            count += 1;
                         }
                     }
-                    let score = if count > 0 { sum / count as f64 } else { self.compute_coherence() };
-                    Some(PhiIRValue::Number(score))
-                } else {
-                    Some(PhiIRValue::Number(self.compute_coherence()))
                 }
+                let score = if count > 0 { sum / count as f64 } else { self.compute_coherence() };
+                Some(PhiIRValue::Number(score))
             }
             BytecodeNode::Dissonance => {
                 // Compute rate of coherence change over recent witness cycles
@@ -427,16 +417,10 @@ impl PhiVm {
                 }
             }
             BytecodeNode::CoherenceOf(name) => {
-                // Look up named stream's coherence from shared resonance field
-                if let Some(shared) = &self.shared_resonance {
-                    let guard = shared.lock().unwrap();
-                    if let Some(vals) = guard.get(name) {
-                        // Return the last resonated value if it's a number
-                        if let Some(PhiIRValue::Number(n)) = vals.last() {
-                            Some(PhiIRValue::Number(*n))
-                        } else {
-                            Some(PhiIRValue::Void)
-                        }
+                // Look up named stream's coherence from the local resonance field
+                if let Some(vals) = self.resonance_field.get(name) {
+                    if let Some(PhiIRValue::Number(n)) = vals.last() {
+                        Some(PhiIRValue::Number(*n))
                     } else {
                         Some(PhiIRValue::Void)
                     }
