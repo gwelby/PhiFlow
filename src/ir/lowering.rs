@@ -6,8 +6,7 @@
 //! lowered to Stub opcodes for future backends.
 
 use super::{FunctionDef, IrProgram, Label, Opcode};
-use crate::parser::{BinaryOperator, PhiExpression, PhiValue, UnaryOperator};
-use crate::TeamDirection;
+use crate::parser::{BinaryOperator, PhiExpression, PhiValue, ResonateDirection, UnaryOperator};
 use std::collections::HashMap;
 
 /// The lowering context, tracking state during AST – IR conversion.
@@ -45,7 +44,7 @@ impl Lowering {
     /// Lower a single expression, appending opcodes to the given buffer.
     fn lower_expression(&mut self, expr: &PhiExpression, buffer: &mut Vec<Opcode>) {
         match expr {
-            // ——— Literals ——————————————————————————————————————————    
+            // ——— Literals ——————————————————————————————————————————
             PhiExpression::Number(n) => {
                 self.emit(buffer, Opcode::PushNumber(*n));
             }
@@ -122,7 +121,7 @@ impl Lowering {
                 }
             }
 
-            // ——— If/Else ——————————————————————————————————————  
+            // ——— If/Else ——————————————————————————————————————
             PhiExpression::IfElse {
                 condition,
                 then_branch,
@@ -153,7 +152,7 @@ impl Lowering {
                 }
             }
 
-            // ——— While loop ————————————————————————————        
+            // ——— While loop ————————————————————————————
             PhiExpression::WhileLoop { condition, body } => {
                 let loop_start = self.program.fresh_label();
                 let loop_end = self.program.fresh_label();
@@ -168,7 +167,7 @@ impl Lowering {
                 self.emit(buffer, Opcode::PushVoid); // loops produce void
             }
 
-            // ——— For loop ——————————————————————————————    
+            // ——— For loop ——————————————————————————————
             PhiExpression::ForLoop {
                 variable,
                 iterable,
@@ -298,7 +297,17 @@ impl Lowering {
             // ╭————————————————————————————————————————————————╮
             // CONSCIOUSNESS CONSTRUCTS — The soul of PhiFlow
             // ╰————————————————————————————————————————————————╯
-            PhiExpression::Witness { expression, body } => {
+            PhiExpression::Witness {
+                expression,
+                body,
+                mid_circuit,
+            } => {
+                if *mid_circuit {
+                    eprintln!(
+                        "[WARNING] Legacy IR lowering ignores `witness mid_circuit`; \
+lowering it as a standard witness. Use the PhiIR/OpenQASM path for faithful semantics."
+                    );
+                }
                 let has_expression = expression.is_some();
                 let has_body = body.is_some();
 
@@ -328,8 +337,17 @@ impl Lowering {
                 self.emit(buffer, Opcode::IntentionPop);
             }
 
-            PhiExpression::Resonate { expression, .. } => {
-                // direction is quantum-backend specific, ignored by legacy IR
+            PhiExpression::Resonate {
+                expression,
+                direction,
+            } => {
+                if *direction != ResonateDirection::TeamA {
+                    eprintln!(
+                        "[WARNING] Legacy IR lowering ignores `toward {:?}`; \
+resonance polarity is not preserved in the flat IR path.",
+                        direction
+                    );
+                }
                 let has_expression = expression.is_some();
                 if let Some(expr) = expression {
                     self.lower_expression(expr, buffer);
@@ -625,6 +643,7 @@ mod tests {
     #[test]
     fn test_lower_witness() {
         let ast = vec![PhiExpression::Witness {
+            mid_circuit: false,
             expression: Some(Box::new(PhiExpression::Number(528.0))),
             body: None,
         }];
@@ -658,7 +677,7 @@ mod tests {
     fn test_lower_resonate() {
         let ast = vec![PhiExpression::Resonate {
             expression: Some(Box::new(PhiExpression::Number(528.0))),
-            direction: TeamDirection::TeamA,
+            direction: crate::parser::ResonateDirection::TeamA,
         }];
         let ir = lower(&ast);
         assert_eq!(ir.instructions[0], Opcode::PushNumber(528.0));

@@ -490,6 +490,10 @@ impl PhiLexer {
                 self.advance();
                 Ok(Some(PhiToken::Dot))
             }
+            Some('^') => {
+                self.advance();
+                Ok(Some(PhiToken::Power))
+            }
             Some('+') => {
                 self.advance();
                 Ok(Some(PhiToken::Plus))
@@ -1498,6 +1502,7 @@ impl PhiParser {
             PhiToken::Listen => self.parse_listen_expression()?,
             PhiToken::Evolve => self.parse_evolve_expression()?,
             PhiToken::Entangle => self.parse_entangle_expression()?,
+            PhiToken::Witness => self.parse_witness_statement()?,
             PhiToken::Create => {
                 // Handle create statements as expressions
                 self.parse_create_statement()?

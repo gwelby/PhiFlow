@@ -40,4 +40,6 @@ pub struct VmState {
     pub agent_name: Option<String>,
     /// The version of the agent owning this execution state.
     pub agent_version: Option<String>,
+    /// Cumulative coherence penalty from frequent witnessing (the observer cost).
+    pub measurement_coherence_penalty: f64,
 }

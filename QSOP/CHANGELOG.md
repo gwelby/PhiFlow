@@ -1,3 +1,22 @@
+## 2026-04-08 - [Codex] Active plan anchored to repo evidence and research references
+
+- ADDED: `QSOP/ACTIVE_PLAN.md`
+  - Current working plan for the three active lanes:
+    - IBM Cloud authorization and live receipt
+    - browser host semantic parity
+    - one-command verification gate
+  - Separates:
+    - local repo evidence
+    - external research backing
+    - remaining knowledge gaps that still require research instead of code guessing
+  - Includes exact research entry points under `D:\Projects\Research\` for the IBM authorization blocker.
+- UPDATED: `WORKSPACE.md`
+  - Added `QSOP/ACTIVE_PLAN.md` as the local execution-plan reference.
+  - Corrected the browser-host gap wording to reflect the current drift: host-side scoped-semantics mismatch, not an older additive formula.
+- UPDATED: `TASKS.md`
+  - Added `QSOP/ACTIVE_PLAN.md` to the top-level cross-reference line so active tasks point to the same evidence-backed plan.
+  - Corrected `T-007` wording so the browser task targets semantic parity instead of a stale additive-math description.
+
 ## 2026-03-29 - [Codex] Truth sync + Pipe 1 completion work + Pipe 2 runtime refactor
 
 - CORRECTED: `QSOP/STATE.md` now distinguishes verified canonical coherence from unverified live IBM execution.

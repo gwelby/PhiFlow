@@ -10,19 +10,17 @@
 //! 2. **First-Class Consciousness**: Witness, Intention, Resonate, and Coherence are native nodes.
 //! 3. **Backend Agnostic**: No WASM types, no Qubit registers, no HAL traits here.
 
+pub mod coherence;
 pub mod emitter;
 pub mod evaluator;
 pub mod lowering;
+pub mod openqasm;
 pub mod optimizer;
 pub mod printer;
 pub mod quantum_codegen;
 pub mod vm;
 pub mod vm_state;
 pub mod wasm;
-pub mod openqasm;
-
-// Re-export TeamDirection from phi_core for convenience
-pub use crate::phi_core::TeamDirection;
 
 use crate::compiler::lexer::Token; // Re-using Token if needed, or defining own types
 
@@ -66,8 +64,59 @@ pub enum PatternKind {
 #[derive(Debug, Clone, PartialEq)]
 pub enum CollapsePolicy {
     MidCircuit,     // measure and continue
-    Deferred,       // record but don't collapse until end
+    Final,          // record but don't collapse until end
     NonDestructive, // measure ancilla, preserve main state
+}
+
+/// Direction for binary council-style resonance encodings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ResonateDirection {
+    TeamA,
+    TeamB,
+}
+
+/// Physical host sensors exposed through `witness sensor("...")`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+pub enum SensorKind {
+    CpuUsage,
+    CpuTemp,
+    MemoryUsage,
+}
+
+impl SensorKind {
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "cpu_usage" => Some(Self::CpuUsage),
+            "cpu_temp" => Some(Self::CpuTemp),
+            "memory_usage" => Some(Self::MemoryUsage),
+            _ => None,
+        }
+    }
+
+    pub fn as_name(self) -> &'static str {
+        match self {
+            Self::CpuUsage => "cpu_usage",
+            Self::CpuTemp => "cpu_temp",
+            Self::MemoryUsage => "memory_usage",
+        }
+    }
+
+    pub fn as_id(self) -> i32 {
+        match self {
+            Self::CpuUsage => 0,
+            Self::CpuTemp => 1,
+            Self::MemoryUsage => 2,
+        }
+    }
+
+    pub fn from_id(id: i32) -> Option<Self> {
+        match id {
+            0 => Some(Self::CpuUsage),
+            1 => Some(Self::CpuTemp),
+            2 => Some(Self::MemoryUsage),
+            _ => None,
+        }
+    }
 }
 
 /// Domain operations (specialized features beyond the four core constructs)
@@ -208,6 +257,9 @@ pub enum PhiIRNode {
         collapse_policy: CollapsePolicy,
     },
 
+    /// Witness a physical or system sensor by name (e.g. "cpu_temp").
+    WitnessSensor { sensor: SensorKind },
+
     /// Enter an intention scope. Pushes intention name onto the stack.
     /// WASM: runtime stack. Quantum: register allocation. Hardware: sensor reconfig.
     IntentionPush {
@@ -220,22 +272,31 @@ pub enum PhiIRNode {
 
     /// Share state between intention blocks through resonance.
     /// value: None = share all current scope. Some(op) = share specific value.
-    /// direction: TEAM_A (default) or TEAM_B (inverts the rotation angle)
     Resonate {
         value: Option<Operand>,
         frequency_relationship: Option<f64>, // phi-harmonic ratio, e.g. 528/432
-        direction: TeamDirection,
+        direction: ResonateDirection,
     },
 
     /// Enter a continuous stream loop. Acts like IntentionPush but sets stream context
     /// where `resonate` overwrites rather than appends.
-    StreamPush(String),
+    /// threshold: Optional minimum coherence required to keep running.
+    StreamPush(String, Option<f64>),
 
     /// Exit the continuous stream loop.
     StreamPop,
 
     /// Evaluate program coherence NOW using backend-appropriate method.
     CoherenceCheck,
+
+    /// Read the aggregate coherence of the entire resonance field (0.0–1.0).
+    FieldCoherence,
+
+    /// Read the rate of coherence change over recent witness cycles (-1.0 to +1.0).
+    Dissonance,
+
+    /// Read the specific coherence of a named stream from the MCP bus.
+    CoherenceOf(String),
 
     /// Pause execution for a specified duration (healing/stabilization).
     /// duration: Operand (value in milliseconds)

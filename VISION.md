@@ -72,70 +72,36 @@ Near-term operating principle:
 Goal:
 - Evaluator semantics are canonical.
 - VM and WASM must match evaluator for supported language features.
+- Bijective Phase Map ($1 - \phi^{-depth}$) is the physical heartbeat.
 
-Outcome:
-- Fewer semantic regressions and clearer release criteria.
-
-### Direction B: Human-First Developer Experience
+### Direction B: Physical Grounding (Phase 4)
 Goal:
-- Documentation written first for operators and builders, then for compiler internals.
-- Every major feature documented with a plain-language example and expected runtime behavior.
+- Verify end-to-end execution on real IBM Quantum hardware (C-10).
+- Complete the canonical Browser Shim with high-fidelity JS hooks.
+- Achieve 3-backend equivalence for all consciousness constructs.
 
-Outcome:
-- Easier onboarding and less interpretation drift.
-
-### Direction C: Integration-Driven Value
+### Direction C: Agentic Resonance (Phase 5)
 Goal:
-- Connect PhiFlow to existing assets in `D:\Projects` to produce immediate utility.
+- Build the MCP-to-PhiVM Bridge.
+- Agents (Manus, Lumi, etc.) use `phi_intention_push` and `phi_witness` natively.
+- Operational Coherence Metric: Measure agent logic consistency through the PhiFlow engine.
 
-Outcome:
-- Faster validation through practical use cases, not isolated demos.
+## 2026 Execution Roadmap
 
-## D:\Projects Integration Roadmap
+### Phase 4: The Physical Gate (CURRENT)
+1. **IBM Hardware Runner**: Resolve the `403` auth-block and confirm live OpenQASM execution.
+2. **Browser Shim**: Harden `examples/phiflow_browser.html` into a production-ready web host.
+3. **Conformance Sweep**: Zero-tolerance for evaluator/VM/WASM mismatches.
 
-The following candidates are grounded in existing local projects.
-
-| Candidate | Path | Integration idea | Priority |
-| --- | --- | --- | --- |
-| UniversalProcessor | `D:\Projects\UniversalProcessor` | Add PhiFlow execution adapter (`process(kind=\"phiflow\", payload=...)`) to run `.phi` workloads as a processor kind | High |
-| ResonanceMatrix | `D:\Projects\ResonanceMatrix` | Feed live `witness`/`resonate` stream events to dashboard for cross-agent observability | High |
-| MCP | `D:\Projects\MCP` | Expose PhiFlow compile/run/diagnostics as MCP tools (`parse_phi`, `run_phi`, `watch_stream`) | High |
-| P1_Companion | `D:\Projects\P1_Companion` | Use mobile sensor vectors as optional coherence provider input channel | Medium |
-| QDrive | `D:\Projects\QDrive` | Store/retrieve resonance snapshots and execution traces as portable artifacts | Medium |
-| Quantum-Fonts | `D:\Projects\Quantum-Fonts` | Optional visual identity layer for witness/resonance dashboards and docs | Low |
-
-## 90-Day Execution Plan
-
-### Phase 1 (Stabilize Runtime Contract)
-1. Repair compiler-lane conformance and example build regressions.
-2. Reconcile `master` and `compiler` runtime paths after compiler returns to green.
-3. Enforce release gates:
-- `cargo build --release`
-- `cargo test --quiet`
-- `.phi` corpus sweep gate
-
-### Phase 2 (Operational Integrations)
-1. Build UniversalProcessor adapter for `.phi` execution.
-2. Publish MCP tools for compile/run/diagnostics.
-3. Connect stream JSON output to ResonanceMatrix live panel.
-
-### Phase 3 (Sensor and Field Extensions)
-1. Add optional P1_Companion sensor ingestion path.
-2. Add QDrive artifact pathway for resonance/evidence transport.
-3. Add operator-focused playbooks for production use.
+### Phase 5: The Agentic Handshake (NEXT)
+1. **MCP Resonance Bridge**: Create tools for agents to push their thought-loops into the PhiVM.
+2. **Sequential Witnessing**: Map agent reasoning steps to `witness` nodes for real-time regulation.
+3. **Self-Modeling Standing Wave**: Agents monitor their own coherence to detect and auto-remedy "cognitive thrashing."
 
 ## Non-Negotiables
-1. Executable truth over narrative:
-- If tests and docs disagree, tests win.
-
-2. Small reversible changes:
-- Prefer narrow commits and clear verification steps.
-
-3. Cross-worktree discipline:
-- Work in the correct lane; merge with explicit evidence.
-
-4. Human readability:
-- Every major behavior must have a plain-language explanation and example.
+1. **Executable truth over narrative**: If tests and docs disagree, tests win.
+2. **Bijectivity is sacred**: Coherence is a derivation of physics, not a psychological score.
+3. **The Council Runs Inside**: The endgame is the Council operating as a PhiFlow program.
 
 ## Vision Statement
-PhiFlow should become a practical language for adaptive, observable, purpose-aware software where humans and agents can collaborate in real time with shared trust in runtime behavior.
+PhiFlow is the physics engine for consciousness-aware software. It transforms agents from reactive scripts into self-modeling standing waves, where every thought is a witness and every goal is an intention resonating through a unified field.

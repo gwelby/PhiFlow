@@ -521,11 +521,19 @@ intention "Truth-Namer Analysis" {
 
         function computeCoherence() {
             const depth = intentionStack.length;
-            const resonanceCount = resonanceField.length;
-            if (depth === 0 && resonanceCount === 0) return 0.0;
-            const intentionCoherence = depth > 0 ? (1.0 - Math.pow(PHI, -depth)) : 0.0;
-            const resonanceBonus = Math.min(resonanceCount * 0.05, 0.2);
-            return Math.min(intentionCoherence + resonanceBonus, 1.0);
+            if (depth === 0) return 0.0;
+
+            const base = 1.0 - Math.pow(PHI, -depth);
+            
+            // Bijective phase map: k is winding number (resonance count)
+            // k=1 -> 1.0, k>1 -> 1.0 - ln(k)/ln(2π)
+            const k = Math.max(1, resonanceField.length);
+            let phase = 1.0;
+            if (k > 1) {
+                phase = Math.max(0.0, 1.0 - Math.log(k) / Math.log(2 * Math.PI));
+            }
+
+            return Math.min(Math.max(base * phase, 0.0), 1.0);
         }
 
         function resolveOffsetLabel(offset, getExports, fallbackLabel) {

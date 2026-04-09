@@ -46,6 +46,11 @@ const OP_SLEEP: u8 = 0x35;
 const OP_CREATE_PATTERN: u8 = 0x36;
 const OP_STREAM: u8 = 0x37;
 const OP_WITNESS_SENSOR: u8 = 0x38;
+const OP_FIELD: u8 = 0x39;
+const OP_DISSONANCE: u8 = 0x3A;
+const OP_COHERENCE_OF: u8 = 0x3B;
+const OP_STREAM_PUSH: u8 = 0x3C;
+const OP_STREAM_POP: u8 = 0x3D;
 const OP_DOMAIN_CALL: u8 = 0x40;
 // Terminators
 const OP_RETURN: u8 = 0xE0;
@@ -218,12 +223,13 @@ fn collect_node_strings(node: &PhiIRNode, interner: &mut StringInterner) {
         PhiIRNode::LoadVar(name)
         | PhiIRNode::Call { name, .. }
         | PhiIRNode::FuncDef { name, .. }
-        | PhiIRNode::StreamPush(name)
+        | PhiIRNode::StreamPush(name, _)
         | PhiIRNode::IntentionPush { name, .. }
         | PhiIRNode::Remember { key: name, .. }
         | PhiIRNode::Recall(name)
         | PhiIRNode::Broadcast { channel: name, .. }
         | PhiIRNode::Listen(name)
+        | PhiIRNode::CoherenceOf(name)
         | PhiIRNode::AgentDecl { name, .. } => {
             interner.intern(name);
         }
@@ -397,12 +403,26 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
 
         PhiIRNode::IntentionPop => out.push(OP_INTENTION_POP),
 
-        PhiIRNode::StreamPush(name) => {
-            out.push(OP_STREAM);
+        PhiIRNode::StreamPush(name, threshold) => {
+            out.push(OP_STREAM_PUSH);
             emit_string_ref(out, name, ctx);
+            match threshold {
+                Some(t) => {
+                    out.push(1);
+                    emit_f64(out, *t);
+                }
+                None => out.push(0),
+            }
         }
 
-        PhiIRNode::StreamPop => out.push(OP_BREAK_STREAM),
+        PhiIRNode::StreamPop => out.push(OP_STREAM_POP),
+
+        PhiIRNode::FieldCoherence => out.push(OP_FIELD),
+        PhiIRNode::Dissonance => out.push(OP_DISSONANCE),
+        PhiIRNode::CoherenceOf(name) => {
+            out.push(OP_COHERENCE_OF);
+            emit_string_ref(out, name, ctx);
+        }
 
         PhiIRNode::Resonate {
             value, direction, ..
