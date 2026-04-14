@@ -176,8 +176,14 @@ fn run(
     }
 
     // 4. Default execution via PhiIR Evaluator
+    // sensors::compute_coherence_from_sensors() is wired as a *multiplicative modifier*
+    // on the internal phi-stack coherence, not a replacement. This means:
+    //   - Phi-stack coherence stays the baseline (intention depth, resonance field)
+    //   - Live hardware health (thermal, memory, CPU, network) applies a reality penalty
+    //   - Under load: modifier ≈ 0.3–0.6 → stream thresholds trip earlier → self-throttle
+    //   - At idle: modifier ≈ 0.9–1.0 → near-transparent
     let mut evaluator = Evaluator::new(&ir_program)
-        .with_coherence_provider(sensors::compute_coherence_from_sensors);
+        .with_hardware_modifier(sensors::compute_coherence_from_sensors);
     let _result = evaluator.run().map_err(|e| CliError::Eval(e.to_string()))?;
 
     Ok(Some(RunReport {

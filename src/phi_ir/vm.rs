@@ -221,6 +221,8 @@ pub struct PhiVm {
     /// History of coherence values for dissonance calculation.
     /// Each entry is (timestamp_seconds, coherence_value).
     coherence_history: Vec<(f64, f64)>,
+    pub max_steps: Option<usize>,
+    pub step_count: usize,
 }
 
 impl PhiVm {
@@ -248,6 +250,8 @@ impl PhiVm {
             instruction_ptr: 0,
             sensor_provider: None,
             coherence_history: Vec::new(),
+            max_steps: None,
+            step_count: 0,
         })
     }
 
@@ -281,6 +285,12 @@ impl PhiVm {
         self
     }
 
+    /// Set an execution step limit to prevent infinite loops.
+    pub fn with_max_steps(mut self, steps: usize) -> Self {
+        self.max_steps = Some(steps);
+        self
+    }
+
     /// Return the loaded string table.
     pub fn string_table(&self) -> &[String] {
         &self.program.string_table
@@ -303,6 +313,13 @@ impl PhiVm {
         }
 
         loop {
+            if let Some(max) = self.max_steps {
+                if self.step_count > max {
+                    return Err(VmError::StepLimitExceeded(max));
+                }
+            }
+            self.step_count += 1;
+
             let block = self.get_block(self.current_block)?;
             let instr_count = block.instructions.len();
 
@@ -581,7 +598,18 @@ impl PhiVm {
             .and_then(|provider| provider(sensor))
             .or_else(|| crate::sensors::read_sensor(sensor));
 
-        value.ok_or(VmError::UnavailableSensor(sensor))
+        match value {
+            Some(v) => Ok(v),
+            None => match sensor {
+                SensorKind::SomaSchumann
+                | SensorKind::Soma432
+                | SensorKind::SomaPresence
+                | SensorKind::SomaFanHz
+                | SensorKind::SomaAc60
+                | SensorKind::SomaPeakDbc => Ok(0.0),
+                _ => Err(VmError::UnavailableSensor(sensor)),
+            },
+        }
     }
 
     fn eval_unop(&self, operand: Operand) -> VmResult<PhiIRValue> {

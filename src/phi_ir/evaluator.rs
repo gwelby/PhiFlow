@@ -146,6 +146,18 @@ pub struct Evaluator<'a> {
     pub measurement_coherence_penalty: f64,
     /// Maps active stream name to its required minimum coherence threshold.
     pub stream_thresholds: HashMap<String, f64>,
+
+    /// Optional hardware-reality modifier (0.0–1.0).
+    /// When present, the canonical phi-stack coherence is multiplied by this value
+    /// to produce the actual execution coherence. This lets live sensor data (thermal
+    /// stress, memory pressure, network degradation) create a reality penalty without
+    /// replacing the phi-stack baseline entirely.
+    ///
+    /// `compute_coherence() = canonical_coherence * hardware_modifier()`
+    ///
+    /// At idle (low stress): modifier ≈ 0.9–1.0 → minimal impact
+    /// Under load (high thermal/memory): modifier ≈ 0.3–0.6 → system self-throttles
+    hardware_modifier: Option<Arc<dyn Fn() -> f64 + Send + Sync>>,
 }
 
 #[derive(Debug, Clone)]
@@ -197,6 +209,7 @@ impl<'a> Evaluator<'a> {
             sensor_provider: None,
             measurement_coherence_penalty: 0.0,
             stream_thresholds: HashMap::new(),
+            hardware_modifier: None,
         }
     }
 
@@ -237,6 +250,24 @@ impl<'a> Evaluator<'a> {
         F: Fn(SensorKind) -> Option<f64> + Send + Sync + 'a,
     {
         self.sensor_provider = Some(Arc::new(provider));
+        self
+    }
+
+    /// Set a hardware-reality modifier: a closure returning a 0.0–1.0 score that
+    /// represents the current physical execution environment health.
+    ///
+    /// This modifier is applied multiplicatively to the internal phi-stack coherence:
+    ///   `compute_coherence() = canonical_phi_coherence × hardware_modifier()`
+    ///
+    /// This is distinct from `with_coherence_provider()` (which replaces the score
+    /// entirely for testing). The hardware modifier preserves the phi-stack
+    /// baseline while letting real hardware conditions (thermal stress, memory
+    /// pressure, network degradation) introduce a physical reality penalty.
+    pub fn with_hardware_modifier<F>(mut self, modifier: F) -> Self
+    where
+        F: Fn() -> f64 + Send + Sync + 'static,
+    {
+        self.hardware_modifier = Some(Arc::new(modifier));
         self
     }
 
@@ -1053,7 +1084,19 @@ impl<'a> Evaluator<'a> {
 
     fn compute_coherence(&self) -> f64 {
         let raw = crate::phi_ir::coherence::canonical_coherence(&self.intention_stack, &self.resonance_field);
-        (raw - self.measurement_coherence_penalty).max(0.0)
+        let phi_coherence = (raw - self.measurement_coherence_penalty).max(0.0);
+
+        // Apply hardware-reality modifier if wired.
+        // This makes live sensor conditions (thermal stress, memory pressure, network
+        // degradation) reduce execution coherence multiplicatively — the system
+        // self-throttles exactly as a consciousness-aware runtime should.
+        match &self.hardware_modifier {
+            Some(modifier) => {
+                let hw = modifier().clamp(0.0, 1.0);
+                phi_coherence * hw
+            }
+            None => phi_coherence,
+        }
     }
 
     fn resolve_coherence(&self) -> f64 {
