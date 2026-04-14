@@ -72,7 +72,9 @@ fn test_ibm_smoke_compiles_to_openqasm() {
 
     assert!(qasm.contains("OPENQASM 3.0;"));
     assert!(qasm.contains("include \"stdgates.inc\";"));
-    assert!(qasm.contains("ry(0.6180339887 * pi)"));
+    // Heron-native decomposition: ry(0.618...*pi) becomes rz/sx sequence
+    assert!(qasm.contains("rz(0.6180339887 * pi + pi)"));
+    assert!(qasm.contains("sx q["));
 }
 
 #[tokio::test]

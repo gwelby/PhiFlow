@@ -101,8 +101,7 @@ impl OpenQasmEmitter {
                             ));
                         }
                         let theta = self.resonate_theta(*value, *direction, &number_constants);
-                        self.source
-                            .push_str(&format!("    ry({theta}) q[{target_q}]; // Resonate\n"));
+                        self.emit_ry_native(target_q, &theta);
                     }
                     PhiIRNode::Witness {
                         collapse_policy, ..
@@ -158,10 +157,8 @@ impl OpenQasmEmitter {
                                 target_q
                             ));
                         }
-                        self.source.push_str(&format!(
-                            "    ry(0.6180339887 * pi) q[{}]; // Coherence\n",
-                            target_q
-                        ));
+                        // CoherenceCheck uses ry(phi * pi) where phi = 0.6180339887
+                        self.emit_ry_native(target_q, "0.6180339887 * pi");
                     }
                     PhiIRNode::Entangle(freq) => {
                         let f = freq.round() as u32;
@@ -212,6 +209,40 @@ impl OpenQasmEmitter {
         }
 
         Ok(self.source.clone())
+    }
+
+    /// Emit a Heron-native Ry(theta) decomposition using [rz, sx] basis gates.
+    /// Heron r2 native ISA: [id, rz, sx, x, ecr]
+    /// Ry(θ) = Rz(π/2) · SX · Rz(θ + π) · SX · Rz(π/2)
+    fn emit_ry_native(&mut self, target_q: usize, theta_expr: &str) {
+        self.source.push_str(&format!(
+            "    // ry({theta_expr}) decomposed for Heron (rz, sx basis)\n"
+        ));
+        self.source
+            .push_str(&format!("    rz(pi/2) q[{target_q}];\n"));
+        self.source.push_str(&format!("    sx q[{target_q}];\n"));
+        self.source
+            .push_str(&format!("    rz({theta_expr} + pi) q[{target_q}];\n"));
+        self.source.push_str(&format!("    sx q[{target_q}];\n"));
+        self.source
+            .push_str(&format!("    rz(pi/2) q[{target_q}];\n"));
+    }
+
+    /// Emit a Heron-native Rx(theta) decomposition using [rz, sx] basis gates.
+    /// Rx(θ) = Rz(π/2) · SX · Rz(θ) · SX · Rz(-π/2)
+    #[allow(dead_code)]
+    fn emit_rx_native(&mut self, target_q: usize, theta_expr: &str) {
+        self.source.push_str(&format!(
+            "    // rx({theta_expr}) decomposed for Heron (rz, sx basis)\n"
+        ));
+        self.source
+            .push_str(&format!("    rz(pi/2) q[{target_q}];\n"));
+        self.source.push_str(&format!("    sx q[{target_q}];\n"));
+        self.source
+            .push_str(&format!("    rz({theta_expr}) q[{target_q}];\n"));
+        self.source.push_str(&format!("    sx q[{target_q}];\n"));
+        self.source
+            .push_str(&format!("    rz(-pi/2) q[{target_q}];\n"));
     }
 
     fn reset(&mut self) {
@@ -321,9 +352,13 @@ mod tests {
         let code = emitter.emit(&program).expect("emit failed");
 
         assert!(
-            code.contains("ry(0.72 * pi)"),
-            "Expected ry(0.72 * pi) but got pi/2.\nIR dump:\n{}\nQASM:\n{}",
-            ir_dump,
+            code.contains("rz(pi/2)"),
+            "Expected Heron-native rz/sx decomposition but got:\n{}",
+            code
+        );
+        assert!(
+            code.contains("sx q[0]"),
+            "Expected sx gate in decomposition but got:\n{}",
             code
         );
     }
@@ -340,7 +375,9 @@ mod tests {
         let mut emitter = OpenQasmEmitter::new();
         let code = emitter.emit(&program).expect("emit failed");
 
-        assert!(code.contains("ry(pi - (0.72 * pi)) q[0]; // Resonate"));
+        // TeamB uses pi - (theta), still Heron-native decomposition
+        assert!(code.contains("rz(pi/2)"));
+        assert!(code.contains("sx q[0]"));
     }
 
     #[test]
@@ -406,8 +443,9 @@ mod tests {
         assert!(code.contains("OPENQASM 3.0;"));
         assert!(code.contains("qubit[2] q;"));
         assert!(code.contains("bit[2] c;"));
-        assert!(code.contains("ry(0.618")); // coherence on Eagles (q[0])
-        assert!(code.contains("ry(pi/2) q[1]")); // resonate on Chiefs (q[1])
+        assert!(code.contains("rz(pi/2)")); // coherence on Eagles (q[0]) Heron-native
+        assert!(code.contains("sx q[0]")); // sx gate in coherence decomposition
+        assert!(code.contains("sx q[1]")); // resonate on Chiefs (q[1]) decomposition
         assert!(code.contains("cx q[0], q[1]")); // entangle Eagles and Chiefs
         assert!(code.contains("c[1] = measure q[1]")); // witness on Chiefs
     }
@@ -540,8 +578,9 @@ mod tests {
         let mut emitter = OpenQasmEmitter::new();
         let code = emitter.emit(&ir).expect("numeric resonate should emit");
 
-        assert!(code.contains("ry(0.72 * pi) q[0]; // Resonate"));
-        assert!(!code.contains("ry(pi/2) q[0]; // Resonate"));
+        // Numeric resonate should emit Heron-native decomposition with the theta value
+        assert!(code.contains("rz(0.72 * pi + pi)")); // ry(0.72) decomposed
+        assert!(code.contains("sx q[0]"));
     }
 
     #[test]
@@ -581,8 +620,12 @@ mod tests {
             .emit(&ir)
             .expect("team direction mapping should emit");
 
-        assert!(code.contains("ry(0.72 * pi) q[0]; // Resonate"));
-        assert!(code.contains("ry(pi - (0.72 * pi)) q[1]; // Resonate"));
+        // TeamA: ry(0.72 * pi) decomposed
+        assert!(code.contains("rz(0.72 * pi + pi)"));
+        assert!(code.contains("sx q[0]"));
+        // TeamB: ry(pi - (0.72 * pi)) decomposed
+        assert!(code.contains("rz(pi - (0.72 * pi) + pi)"));
+        assert!(code.contains("sx q[1]"));
     }
 
     #[test]
@@ -616,8 +659,8 @@ mod tests {
                 panic!("witness should measure before later gates\ncode:\n{}", code)
             });
         let coherence_idx = code
-            .find("ry(0.6180339887 * pi) q[1]; // Coherence")
-            .unwrap_or_else(|| panic!("coherence gate should still be emitted\ncode:\n{}", code));
+            .find("rz(0.6180339887 * pi + pi)")
+            .unwrap_or_else(|| panic!("coherence gate (Heron-native) should still be emitted\ncode:\n{}", code));
 
         assert!(measure_idx < coherence_idx);
     }

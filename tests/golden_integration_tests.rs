@@ -18,14 +18,26 @@ witness
     let mut emitter = OpenQasmEmitter::new();
     let qasm = emitter.emit(&program).expect("emit failed");
 
+    // TEAM_A: Heron-native decomposition of ry(0.72 * pi)
     assert!(
-        qasm.contains("ry(0.72 * pi) q[0]"),
-        "Expected ry(0.72 * pi) for TEAM_A, but got:\n{}",
+        qasm.contains("rz(0.72 * pi + pi)"),
+        "Expected Heron-native rz decomposition for TEAM_A, but got:\n{}",
         qasm
     );
     assert!(
-        qasm.contains("ry(pi - (0.72 * pi)) q[1]"),
-        "Expected ry(pi - (0.72 * pi)) for TEAM_B, but got:\n{}",
+        qasm.contains("sx q[0]"),
+        "Expected sx gate for TEAM_A, but got:\n{}",
+        qasm
+    );
+    // TEAM_B: Heron-native decomposition of ry(pi - (0.72 * pi))
+    assert!(
+        qasm.contains("rz(pi - (0.72 * pi) + pi)"),
+        "Expected Heron-native rz decomposition for TEAM_B, but got:\n{}",
+        qasm
+    );
+    assert!(
+        qasm.contains("sx q[1]"),
+        "Expected sx gate for TEAM_B, but got:\n{}",
         qasm
     );
 }
@@ -44,7 +56,8 @@ intention \"Healing\" {
     let qasm = emitter.emit(&program).expect("emit failed");
 
     let measure_idx = qasm.find("measure").expect("measure not found");
-    let resonate_idx = qasm.find("ry(0.5 * pi)").expect("resonate not found");
+    // resonate 0.5 → Heron-native decomposition
+    let resonate_idx = qasm.find("rz(0.5 * pi + pi)").expect("resonate (Heron-native) not found");
 
     assert!(
         measure_idx < resonate_idx,
@@ -240,16 +253,17 @@ fn test_world_class_fundamentals_compiles() {
     let mut emitter = OpenQasmEmitter::new();
     let qasm = emitter.emit(&program).expect("emit failed");
 
-    // Verify The_Engineer (k=1, max bonus)
-    assert!(qasm.contains("ry(1 * pi) q[0]")); // TEAM_A
+    // Verify The_Engineer (k=1, max bonus) — Heron-native decomposition
+    assert!(qasm.contains("rz(1 * pi + pi)")); // TEAM_A ry(1*pi) decomposed
+    assert!(qasm.contains("sx q[0]"));
 
-    // Verify The_Duck (k=2, contradiction)
-    assert!(qasm.contains("ry(1 * pi) q[3]")); // TEAM_A
-    assert!(qasm.contains("ry(pi - (1 * pi)) q[3]")); // TEAM_B inversion
+    // Verify The_Duck (k=2, contradiction) — Heron-native decomposition
+    assert!(qasm.contains("rz(1 * pi + pi)")); // TEAM_A ry(1*pi) decomposed on q[3]
+    assert!(qasm.contains("rz(pi - (1 * pi) + pi)")); // TEAM_B inversion decomposed
 
     // Verify witness mid_circuit (inline measure)
     assert!(qasm.contains("// MidCircuit Witness"));
 
-    // Verify coherence (Golden Ratio rotation)
-    assert!(qasm.contains("ry(0.6180339887 * pi)"));
+    // Verify coherence (Golden Ratio rotation) — Heron-native decomposition
+    assert!(qasm.contains("rz(0.6180339887 * pi + pi)"));
 }

@@ -27,10 +27,10 @@ fn test_team_direction_openqasm() {
     "#;
 
     let qasm = compile_to_qasm(source);
-    // TEAM_B direction inverts: 1.0 - 0.72 = 0.28, emitted as ry(pi - (0.72 * pi))
+    // TEAM_B direction inverts: 1.0 - 0.72 = 0.28, emitted as Heron-native decomposition
     assert!(
         qasm.contains("pi - (0.72 * pi)"),
-        "TEAM_B should invert angle: expected 'pi - (0.72 * pi)'\ngot:\n{qasm}"
+        "TEAM_B should invert angle in decomposition: expected 'pi - (0.72 * pi)'\ngot:\n{qasm}"
     );
 }
 
@@ -49,8 +49,8 @@ fn test_mid_circuit_ordering() {
         .find("measure q[0]")
         .expect("Should contain 'measure q[0]'");
     let resonate_idx = qasm
-        .find("ry(0.5 * pi)")
-        .expect("Should contain 'ry(0.5 * pi)'");
+        .find("rz(0.5 * pi + pi)")
+        .expect("Should contain Heron-native resonate decomposition");
     assert!(
         measure_idx < resonate_idx,
         "mid_circuit witness must measure before the later resonate gate\ngot:\n{qasm}"
@@ -99,10 +99,10 @@ fn test_deferred_witness_no_collision() {
     "#;
 
     let qasm = compile_to_qasm(source);
-    // resonate should be emitted before the deferred measure
+    // resonate should be emitted before the deferred measure (Heron-native decomposition)
     let resonate_idx = qasm
-        .find("ry(0.1 * pi)")
-        .expect("resonate gate should be present");
+        .find("rz(0.1 * pi + pi)")
+        .expect("resonate gate (Heron-native) should be present");
     let measure_idx = qasm
         .find("measure q[0]")
         .expect("final measure should be present");
