@@ -817,10 +817,11 @@ fn test_all_four_constructs_together() {
     assert!((w0.coherence - (1.0 - phi.powi(-1))).abs() < 1e-9);
     assert_eq!(w0.resonance_count, 0);
 
-    // Snapshot 2: depth=1, k=1 — base(1) * phase(1) = 0.382 * 1.0
+    // Snapshot 2: depth=1, k=1 — base(1) * phase(1) = 0.382 * 1.0, minus 0.01 observer cost from w0
     let w1 = &eval.witness_log[1];
     assert_eq!(w1.intention_stack, vec!["Healing"]);
-    let expected_w1 = 1.0 - phi.powi(-1); // 0.382 (k=1 has no decay)
+    // w0 applied an observer-cost penalty of 0.01 that carries into w1's coherence reading
+    let expected_w1 = (1.0 - phi.powi(-1)) - 0.01; // ≈ 0.372 (k=1 phase, minus one prior witness cost)
     assert!((w1.coherence - expected_w1).abs() < 1e-9);
     assert_eq!(w1.resonance_count, 1);
 

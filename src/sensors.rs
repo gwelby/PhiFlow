@@ -1,11 +1,81 @@
 use crate::phi_ir::SensorKind;
-use std::sync::{Arc, Mutex, OnceLock, RwLock};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs;
+use std::sync::{Arc, OnceLock, RwLock};
 use std::thread;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use sysinfo::{Components, Networks, System, MINIMUM_CPU_UPDATE_INTERVAL};
 
 const DEFAULT_CRITICAL_TEMP_C: f64 = 90.0;
+const SOMA_STATE_PATH: &str = "D:/Projects/PhiHarmonic/SOMA/soma_state.json";
+const SOMA_FRESHNESS_THRESHOLD_MS: u64 = 5000; // 5 second stale threshold
+
+fn parse_updated_at_timestamp(updated_at: &str) -> Option<std::time::SystemTime> {
+    // Try ISO 8601 format first
+    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(updated_at) {
+        return Some(dt.into());
+    }
+    // Try common alternative format
+    if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(updated_at, "%Y-%m-%dT%H:%M:%S%.f") {
+        Some(dt.and_utc().into())
+    } else {
+        None
+    }
+}
+
+pub fn is_soma_state_fresh(state: &SomaState) -> bool {
+    // Use health.fresh if available
+    if state.health.fresh {
+        return true;
+    }
+
+    // Check age against freshness threshold
+    if let Some(updated_time) = parse_updated_at_timestamp(&state.updated_at) {
+        if let Ok(age) = updated_time.elapsed() {
+            return (age.as_millis() as u64) < SOMA_FRESHNESS_THRESHOLD_MS;
+        }
+    }
+
+    // Fall back to health age check
+    state.health.age_ms < SOMA_FRESHNESS_THRESHOLD_MS
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SomaRuntime {
+    pub sensor_stack: String,
+    pub ring_sensor_type: String,
+    pub sample_rate_hz: f64,
+    pub fusion_interval_hz: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SomaHealth {
+    pub fresh: bool,
+    pub age_ms: u64,
+    pub baseline_locked: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SomaSensors {
+    pub soma_schumann: f64,
+    pub soma_432: f64,
+    pub soma_presence: f64,
+    pub soma_fan_hz: f64,
+    pub soma_ac_60: f64,
+    pub soma_peak_dbc: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SomaState {
+    pub schema_version: String,
+    pub updated_at: String,
+    pub session_id: String,
+    pub runtime: SomaRuntime,
+    pub health: SomaHealth,
+    pub sensors: SomaSensors,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SensorSnapshot {
@@ -68,6 +138,7 @@ pub struct LiveSensorData {
     pub cpu_usage: f64,
     pub cpu_temp: Option<f64>,
     pub memory_usage: Option<f64>,
+    pub soma: Option<SomaState>,
 }
 
 static LIVE_DATA: OnceLock<Arc<RwLock<LiveSensorData>>> = OnceLock::new();
@@ -80,13 +151,14 @@ fn get_live_data() -> Arc<RwLock<LiveSensorData>> {
                 cpu_usage: 0.0,
                 cpu_temp: None,
                 memory_usage: None,
+                soma: None,
             }));
 
             let thread_data = Arc::clone(&initial_data);
 
             thread::spawn(move || {
                 let mut sampler = SensorSampler::new();
-                // Force first sample synchronously so we have real data immediately
+                // Force first sample synchronously
                 let mut first_coherence = sampler.sample();
 
                 loop {
@@ -118,11 +190,18 @@ fn get_live_data() -> Arc<RwLock<LiveSensorData>> {
                         None
                     };
 
+                    // --- SOMA Bridge ---
+                    let soma = match fs::read_to_string(SOMA_STATE_PATH) {
+                        Ok(content) => serde_json::from_str::<SomaState>(&content).ok(),
+                        Err(_) => None,
+                    };
+
                     if let Ok(mut data) = thread_data.write() {
                         data.coherence = coherence;
                         data.cpu_usage = cpu_usage;
                         data.cpu_temp = cpu_temp;
                         data.memory_usage = memory_usage;
+                        data.soma = soma;
                     }
                 }
             });
@@ -310,6 +389,36 @@ pub fn read_sensor(sensor: SensorKind) -> Option<f64> {
         SensorKind::CpuUsage => Some(data.cpu_usage),
         SensorKind::CpuTemp => data.cpu_temp,
         SensorKind::MemoryUsage => data.memory_usage,
+        SensorKind::SomaSchumann => data
+            .soma
+            .as_ref()
+            .filter(|s| is_soma_state_fresh(s))
+            .map(|s| s.sensors.soma_schumann),
+        SensorKind::Soma432 => data
+            .soma
+            .as_ref()
+            .filter(|s| is_soma_state_fresh(s))
+            .map(|s| s.sensors.soma_432),
+        SensorKind::SomaPresence => data
+            .soma
+            .as_ref()
+            .filter(|s| is_soma_state_fresh(s))
+            .map(|s| s.sensors.soma_presence),
+        SensorKind::SomaFanHz => data
+            .soma
+            .as_ref()
+            .filter(|s| is_soma_state_fresh(s))
+            .map(|s| s.sensors.soma_fan_hz),
+        SensorKind::SomaAc60 => data
+            .soma
+            .as_ref()
+            .filter(|s| is_soma_state_fresh(s))
+            .map(|s| s.sensors.soma_ac_60),
+        SensorKind::SomaPeakDbc => data
+            .soma
+            .as_ref()
+            .filter(|s| is_soma_state_fresh(s))
+            .map(|s| s.sensors.soma_peak_dbc),
     }
 }
 
@@ -361,5 +470,135 @@ mod tests {
         let stressed_score = compute_coherence_from_snapshot(&stressed);
 
         assert!(stable_score > stressed_score);
+    }
+
+    #[test]
+    fn test_soma_state_missing_file() {
+        // When soma_state.json doesn't exist, read_sensor should return None for SOMA sensors
+        let result = read_sensor(SensorKind::SomaSchumann);
+        // Result may be Some or None depending on whether the file exists,
+        // but it should not panic
+        let _ = result;
+    }
+
+    #[test]
+    fn test_soma_state_freshness_check() {
+        // Test with a stale state file (updated_at in the past)
+        let stale_state = SomaState {
+            schema_version: "1.0".to_string(),
+            updated_at: "2020-01-01T00:00:00Z".to_string(),
+            session_id: "test-session".to_string(),
+            runtime: SomaRuntime {
+                sensor_stack: "test".to_string(),
+                ring_sensor_type: "test".to_string(),
+                sample_rate_hz: 100.0,
+                fusion_interval_hz: 10.0,
+            },
+            health: SomaHealth {
+                fresh: false,
+                age_ms: 999999,
+                baseline_locked: false,
+            },
+            sensors: SomaSensors {
+                soma_schumann: 7.83,
+                soma_432: 432.0,
+                soma_presence: 1.0,
+                soma_fan_hz: 50.0,
+                soma_ac_60: 60.0,
+                soma_peak_dbc: -30.0,
+            },
+        };
+
+        // Stale state should be rejected
+        assert!(!is_soma_state_fresh(&stale_state));
+    }
+
+    #[test]
+    fn test_soma_state_fresh_data_accepted() {
+        // Test with fresh state (health.fresh = true)
+        let fresh_state = SomaState {
+            schema_version: "1.0".to_string(),
+            updated_at: chrono::Utc::now().to_rfc3339(),
+            session_id: "test-session".to_string(),
+            runtime: SomaRuntime {
+                sensor_stack: "test".to_string(),
+                ring_sensor_type: "test".to_string(),
+                sample_rate_hz: 100.0,
+                fusion_interval_hz: 10.0,
+            },
+            health: SomaHealth {
+                fresh: true,
+                age_ms: 100,
+                baseline_locked: true,
+            },
+            sensors: SomaSensors {
+                soma_schumann: 7.83,
+                soma_432: 432.0,
+                soma_presence: 1.0,
+                soma_fan_hz: 50.0,
+                soma_ac_60: 60.0,
+                soma_peak_dbc: -30.0,
+            },
+        };
+
+        // Fresh state should be accepted
+        assert!(is_soma_state_fresh(&fresh_state));
+    }
+
+    #[test]
+    fn test_soma_sensor_values_readable() {
+        // Verify that all SOMA sensor kinds can be queried without panic
+        let sensors = [
+            SensorKind::SomaSchumann,
+            SensorKind::Soma432,
+            SensorKind::SomaPresence,
+            SensorKind::SomaFanHz,
+            SensorKind::SomaAc60,
+            SensorKind::SomaPeakDbc,
+        ];
+
+        for sensor in sensors {
+            // Should not panic, may return None if file doesn't exist
+            let _ = read_sensor(sensor);
+        }
+    }
+
+    #[test]
+    fn test_soma_state_serialization_roundtrip() {
+        let state = SomaState {
+            schema_version: "1.0".to_string(),
+            updated_at: "2026-04-14T12:00:00Z".to_string(),
+            session_id: "test-123".to_string(),
+            runtime: SomaRuntime {
+                sensor_stack: "full".to_string(),
+                ring_sensor_type: "oura".to_string(),
+                sample_rate_hz: 256.0,
+                fusion_interval_hz: 4.0,
+            },
+            health: SomaHealth {
+                fresh: true,
+                age_ms: 500,
+                baseline_locked: true,
+            },
+            sensors: SomaSensors {
+                soma_schumann: 7.83,
+                soma_432: 432.0,
+                soma_presence: 0.95,
+                soma_fan_hz: 49.5,
+                soma_ac_60: 60.02,
+                soma_peak_dbc: -28.5,
+            },
+        };
+
+        let json = serde_json::to_string(&state).expect("serialization failed");
+        let deserialized: SomaState = serde_json::from_str(&json).expect("deserialization failed");
+
+        assert_eq!(deserialized.schema_version, state.schema_version);
+        assert_eq!(deserialized.sensors.soma_schumann, state.sensors.soma_schumann);
+        assert_eq!(deserialized.sensors.soma_432, state.sensors.soma_432);
+        assert_eq!(deserialized.sensors.soma_presence, state.sensors.soma_presence);
+        assert_eq!(deserialized.sensors.soma_fan_hz, state.sensors.soma_fan_hz);
+        assert_eq!(deserialized.sensors.soma_ac_60, state.sensors.soma_ac_60);
+        assert_eq!(deserialized.sensors.soma_peak_dbc, state.sensors.soma_peak_dbc);
     }
 }

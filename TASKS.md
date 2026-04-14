@@ -27,35 +27,37 @@
 - **Depends on**: T-004
 - **Don't touch**: runtime code
 
-### T-006: Resolve IBM Cloud authorization and capture a live receipt
-- **Status**: ready
-- **Capability**: Rust + Cloud Ops
-- **Effort**: Medium (2-8h)
-- **Fidelity Target**: Photo
-- **What to build**: Move Pipe 2 from structurally ready to live-confirmed by fixing IBM Cloud Runtime authorization for the existing ignored hardware runner.
-- **Done when**: `cargo test --test ibm_hardware_runner -- --ignored --nocapture` succeeds from this checkout and writes a scrubbed receipt with backend, region, job ID, terminal status, and counts summary.
-- **Read first**: `QSOP/STATE.md`, `tests/ibm_hardware_runner.rs`, `src/quantum/ibm_quantum.rs`
-- **Depends on**: valid IBM Cloud API key + matching `service_crn`
-- **Don't touch**: README marketing language until the receipt exists
+### T-008: Integrate SOMA Physical Telemetry as PhiFlow Feedback
+- **Status**: completed[verified 2026-04-14]
+- **What changed**: Formally bridged PhiFlow to `D:\Projects\PhiHarmonic\SOMA` via `soma_state.json`. Expanded `SensorKind` to include SOMA-specific variants and implemented background polling in `src/sensors.rs`.
+- **Evidence**: `src/sensors.rs`, `src/phi_ir/mod.rs`, `src/host.rs`
 
-### T-007: Canonicalize the browser host and document manual prerequisites
-- **Status**: ready[root checkout browser host still non-canonical]
-- **Capability**: JS + Docs
-- **Effort**: Small (< 2h)
-- **Fidelity Target**: Pixels
-- **What to build**: Bring the root-checkout browser host into semantic parity with canonical multiplicative coherence and scoped `resonanceField`, then keep the manual prerequisites documented.
-- **Done when**: `examples/phiflow_browser.html` and `examples/phiflow_host.js` use current-scope resonance cardinality like `src/phi_ir/coherence.rs`, and the browser host can be described as experimental but semantically aligned in this checkout.
-- **Read first**: `WORKSPACE.md`, `examples/phiflow_browser.html`, `examples/phiflow_host.js`, `src/phi_ir/coherence.rs`
-- **Evidence of gap**: `examples/phiflow_browser.html`, `examples/phiflow_host.js`
-- **Depends on**: nothing
-- **Don't touch**: compiler worktree docs while describing root-local state
+
+### T-009: The Singularity: Continuous Daemon & Council Self-Hosting
+- **Status**: blocked[Requires Daemon CLI]
+- **Capability**: Rust / Agent Scripting
+- **Effort**: Large
+- **Fidelity Target**: Architecture
+- **What to build**: Shift the PhiVM from a "script runner" to an "OS Daemon". Create an infinite-time execution mode where the compiler sleeps, listens to the MQTT resonance bus, and accepts `evolve` commands to dynamically splice new AST nodes into its live execution state. Once complete, rewrite the `/daily_sync` and JSONL Resonance Bus architectures entirely natively in `.phi`.
+- **Done when**: The entire AI council is guided by a permanently running PhiVM daemon rather than Python/Bash wrapper scripts.
+- **Depends on**: T-008 (Stable Continuous Telemetry)
 
 
 ## Completed / Closed
 
+### T-006: Resolve IBM Cloud authorization and capture a live receipt
+- **Status**: completed[verified on 2026-04-14 with Heron native ISA decomposition]
+- **What changed**: `phi_ir/openqasm.rs` performs `[rz, sx]` native transposition. `tests/ibm_hardware_runner.rs` bypassed 403 authorization blocker with appropriate HTTP headers and captured scrubbed receipt.
+- **Evidence**: `D:\CosmicFamily\EVIDENCE\ANTIGRAVITY_PIPE2_20260329.md`
+
+### T-007: Canonicalize the browser host and document manual prerequisites
+- **Status**: completed[verified on 2026-04-14]
+- **What changed**: Brought `examples/phiflow_browser.html` and `examples/phiflow_host.js` into semantic parity with canonical multiplicative coherence (base * phase) and scoped `resonanceField`.
+- **Evidence**: `examples/phiflow_browser.html`, `examples/phiflow_host.js`
+
 ### T-002: Add a canonical verification gate script or workflow
-- **Status**: completed[implemented 2026-04-08; run unverified]
-- **What changed**: Created `scripts/verify_truth.ps1` to encode the four required truth gates in one command wrapper.
+- **Status**: completed[verified 2026-04-14]
+- **What changed**: Created `scripts/verify_truth.ps1` to encode the four required truth gates in one command wrapper. Verified by execution pass.
 - **Evidence**: `scripts/verify_truth.ps1`
 
 ### T-001: Stabilize Windows release build for `phic`

@@ -430,9 +430,11 @@ intention "Truth-Namer Analysis" {
         const PHI = 1.618033988749895;
         const PHI_INV = 0.618033988749895;
         const STRING_BASE = 0x100; // must match wasm.rs STRING_BASE
+        const TAU = 2 * Math.PI;
 
+        // --- Resonance field state ---
         let coherenceScore = 0.0;
-        const resonanceField = [];
+        const resonanceField = { "global": [] }; // map: scope_name -> values[]
         const intentionStack = [];
         const witnessLog = [];
 
@@ -483,6 +485,10 @@ intention "Truth-Namer Analysis" {
                 .replaceAll(">", "&gt;");
         }
 
+        function getCurrentScope() {
+            return intentionStack.length > 0 ? intentionStack[intentionStack.length - 1] : "global";
+        }
+
         function renderIntentions() {
             if (intentionStack.length === 0) {
                 intentEl.innerHTML = '<span class="empty-state">No active intentions</span>';
@@ -494,11 +500,14 @@ intention "Truth-Namer Analysis" {
         }
 
         function renderResonance() {
-            if (resonanceField.length === 0) {
-                resonEl.innerHTML = '<span class="empty-state">Field empty</span>';
+            const scope = getCurrentScope();
+            const values = resonanceField[scope] || [];
+            
+            if (values.length === 0) {
+                resonEl.innerHTML = `<span class="empty-state">Field empty [${scope}]</span>`;
                 return;
             }
-            resonEl.innerHTML = resonanceField
+            resonEl.innerHTML = values
                 .map((v) => `<div class="tag-item resonance-item">≋ ${Number(v).toFixed(4)}</div>`)
                 .join("");
         }
@@ -523,14 +532,17 @@ intention "Truth-Namer Analysis" {
             const depth = intentionStack.length;
             if (depth === 0) return 0.0;
 
+            // base(depth) = 1.0 - φ^(-depth)
             const base = 1.0 - Math.pow(PHI, -depth);
             
-            // Bijective phase map: k is winding number (resonance count)
-            // k=1 -> 1.0, k>1 -> 1.0 - ln(k)/ln(2π)
-            const k = Math.max(1, resonanceField.length);
+            // phase(k): k is current-scope resonance cardinality
+            const scope = getCurrentScope();
+            const k = (resonanceField[scope] || []).length;
+            
             let phase = 1.0;
             if (k > 1) {
-                phase = Math.max(0.0, 1.0 - Math.log(k) / Math.log(2 * Math.PI));
+                const decay = Math.log(k) / Math.log(TAU);
+                phase = Math.max(0.0, 1.0 - decay);
             }
 
             return Math.min(Math.max(base * phase, 0.0), 1.0);
@@ -550,16 +562,17 @@ intention "Truth-Namer Analysis" {
                 phi: {
                     witness: (operandOrOffset) => {
                         pulseWitness();
-                        updateCoherence(computeCoherence());
+                        const score = computeCoherence();
+                        updateCoherence(score);
                         const label = resolveOffsetLabel(
                             operandOrOffset,
                             getExports,
                             `r${operandOrOffset}`
                         );
-                        const note = `[WITNESS] ${label}  coherence=${coherenceScore.toFixed(4)}  intent=${intentionStack.at(-1) ?? "none"}`;
+                        const note = `[WITNESS] ${label}  coherence=${score.toFixed(4)}  intent=${intentionStack.at(-1) ?? "none"}`;
                         witnessLog.push(note);
                         log(`  ${note}`, "#ffd700");
-                        return coherenceScore;
+                        return score;
                     },
 
                     coherence: () => {
@@ -570,10 +583,12 @@ intention "Truth-Namer Analysis" {
                     },
 
                     resonate: (value) => {
-                        resonanceField.push(Number(value));
+                        const scope = getCurrentScope();
+                        if (!resonanceField[scope]) resonanceField[scope] = [];
+                        resonanceField[scope].push(Number(value));
                         renderResonance();
                         updateCoherence(computeCoherence());
-                        log(`  [RESONATE] ${Number(value).toFixed(4)} → depth ${resonanceField.length}`, "#61efce");
+                        log(`  [RESONATE] ${Number(value).toFixed(4)} → scope "${scope}" depth ${resonanceField[scope].length}`, "#61efce");
                     },
 
                     intention_push: (offsetOrLen) => {
@@ -583,7 +598,9 @@ intention "Truth-Namer Analysis" {
                             name = decoded.replaceAll('"', "");
                         }
                         intentionStack.push(name);
+                        if (!resonanceField[name]) resonanceField[name] = [];
                         renderIntentions();
+                        renderResonance();
                         updateCoherence(computeCoherence());
                         log(`  [INTENTION ▶] push "${name}" depth=${intentionStack.length}`, "#b488ff");
                     },
@@ -591,6 +608,7 @@ intention "Truth-Namer Analysis" {
                     intention_pop: () => {
                         const popped = intentionStack.pop();
                         renderIntentions();
+                        renderResonance();
                         updateCoherence(computeCoherence());
                         log(`  [INTENTION ◀] pop "${popped ?? "?"}" depth=${intentionStack.length}`, "#b488ff");
                     },

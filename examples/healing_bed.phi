@@ -1,17 +1,37 @@
+// healing_bed.phi — SOMA Telemetry Resonance Loop
+// Witnesses SOMA environmental sensors and resonates them into the field.
+// Runs until coherence exceeds phi^-1 (0.618), or 100 cycles without SOMA bridge.
+
+let count = 0.0
+let schumann = 0.0
+let tone_432 = 0.0
+let presence = 0.0
+let live = 0.0
+
 intention "System_Harmonization" {
     stream "healing_bed" {
-        // Phase 1: Witness the system state via CPU usage
-        let cpu = witness sensor("cpu_usage")
-        
-        // Phase 2: Resonate the sensor data into the field
-        resonate cpu
-        
+        // Phase 1: Witness SOMA environmental sensors
+        schumann = witness sensor("soma_schumann")
+        tone_432 = witness sensor("soma_432")
+        presence = witness sensor("soma_presence")
+
+        // Phase 2: Resonate the SOMA sensor data into the field
+        resonate schumann
+        resonate tone_432
+        resonate presence
+
         // Phase 3: Observe the impact on global coherence
-        let live = coherence
+        live = coherence
         witness
-        
-        // Phase 4: Settle only when coherence exceeds the golden threshold
+
+        count = count + 1.0
+
+        // Phase 4: Settle when coherence exceeds the golden threshold,
+        // or after 100 iterations if SOMA bridge is offline.
         if live >= 0.618 {
+            break stream
+        }
+        if count >= 100.0 {
             break stream
         }
     }

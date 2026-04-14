@@ -157,10 +157,17 @@ fn assert_program_matches(source: &str, expected: PhiIRValue, label: &str) {
 
 fn sensor_provider(sensor: SensorKind) -> Option<f64> {
     match sensor {
-        SensorKind::CpuUsage => Some(12.5),
-        SensorKind::CpuTemp => Some(55.0),
+        SensorKind::CpuUsage => Some(42.0),
+        SensorKind::CpuTemp => Some(65.0),
         SensorKind::MemoryUsage => Some(62.0),
+        SensorKind::SomaSchumann => Some(0.783),
+        SensorKind::Soma432 => Some(0.432),
+        SensorKind::SomaPresence => Some(0.88),
+        SensorKind::SomaFanHz => Some(35.0),
+        SensorKind::SomaAc60 => Some(0.60),
+        SensorKind::SomaPeakDbc => Some(45.0),
     }
+
 }
 
 #[allow(dead_code)]
@@ -247,8 +254,8 @@ fn conformance_resonate_then_coherence() {
 #[test]
 fn conformance_sensor_witness_all_kinds() {
     let cases = [
-        ("cpu_usage", 12.5),
-        ("cpu_temp", 55.0),
+        ("cpu_usage", 42.0),
+        ("cpu_temp", 65.0),
         ("memory_usage", 62.0),
     ];
 

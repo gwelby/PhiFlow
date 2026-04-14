@@ -264,10 +264,7 @@ impl<'a> Evaluator<'a> {
 
             loop_counter += 1;
             if loop_counter > 100000 && self.max_steps.is_none() {
-                panic!(
-                    "Infinite loop detected in evaluator. current_block: {}, ip: {}",
-                    self.current_block, self.instruction_ptr
-                );
+                return Err(EvalError::StepLimitExceeded(100000));
             }
             let block_id = self.current_block;
             let block = self.get_block(block_id)?;
@@ -864,11 +861,14 @@ impl<'a> Evaluator<'a> {
         &mut self,
         target: Option<Operand>,
     ) -> EvalResult<(f64, WitnessSnapshot, WitnessAction)> {
-        // Measurement disturbances (the observer cost)
-        self.measurement_coherence_penalty += 0.01;
-
+        // Sample coherence BEFORE applying the observer cost penalty.
+        // The disturbance from this observation affects the NEXT reading, not the current one.
+        // (Canonical quantum semantics: measuring disturbs *future* state.)
         let observed = target.and_then(|op| self.get_reg(op).ok().cloned());
         let coherence = self.compute_coherence();
+
+        // Now accrue the observer-cost penalty for subsequent measurements
+        self.measurement_coherence_penalty += 0.01;
         let resonance_count = self.resonance_count();
 
         self.witness_log.push(WitnessEvent {
@@ -896,10 +896,9 @@ impl<'a> Evaluator<'a> {
         &mut self,
         sensor: SensorKind,
     ) -> EvalResult<(f64, WitnessSnapshot, WitnessAction)> {
-        // Measurement disturbances (the observer cost)
-        self.measurement_coherence_penalty += 0.01;
-
+        // Sample the sensor value, then accrue the observer-cost penalty
         let value = self.resolve_sensor(sensor)?;
+        self.measurement_coherence_penalty += 0.01;
         let coherence = self.compute_coherence();
         let resonance_count = self.resonance_count();
 
@@ -1069,12 +1068,24 @@ impl<'a> Evaluator<'a> {
             .and_then(|provider| provider(sensor))
             .or_else(|| crate::sensors::read_sensor(sensor));
 
-        value.ok_or_else(|| {
-            EvalError::InvalidOperation(format!(
-                "sensor `{}` is unavailable on this host",
-                sensor.as_name()
-            ))
-        })
+        // SOMA sensors are optional environmental enrichment from the SOMA bridge.
+        // When the bridge is offline, degrade gracefully to 0.0 (no signal) rather
+        // than aborting the program — the sensor being unavailable is valid runtime state.
+        match value {
+            Some(v) => Ok(v),
+            None => match sensor {
+                SensorKind::SomaSchumann
+                | SensorKind::Soma432
+                | SensorKind::SomaPresence
+                | SensorKind::SomaFanHz
+                | SensorKind::SomaAc60
+                | SensorKind::SomaPeakDbc => Ok(0.0),
+                _ => Err(EvalError::InvalidOperation(format!(
+                    "sensor `{}` is unavailable on this host",
+                    sensor.as_name()
+                ))),
+            },
+        }
     }
 
     fn get_reg(&self, op: Operand) -> EvalResult<&PhiIRValue> {

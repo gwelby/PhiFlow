@@ -75,20 +75,35 @@ pub enum ResonateDirection {
     TeamB,
 }
 
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
+
 /// Physical host sensors exposed through `witness sensor("...")`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum SensorKind {
     CpuUsage,
     CpuTemp,
     MemoryUsage,
+    SomaSchumann,
+    Soma432,
+    SomaPresence,
+    SomaFanHz,
+    SomaAc60,
+    SomaPeakDbc,
 }
 
 impl SensorKind {
     pub fn from_name(name: &str) -> Option<Self> {
-        match name {
+        match name.to_lowercase().as_str() {
             "cpu_usage" => Some(Self::CpuUsage),
             "cpu_temp" => Some(Self::CpuTemp),
             "memory_usage" => Some(Self::MemoryUsage),
+            "soma_schumann" => Some(Self::SomaSchumann),
+            "soma_432" => Some(Self::Soma432),
+            "soma_presence" => Some(Self::SomaPresence),
+            "soma_fan_hz" => Some(Self::SomaFanHz),
+            "soma_ac_60" => Some(Self::SomaAc60),
+            "soma_peak_dbc" => Some(Self::SomaPeakDbc),
             _ => None,
         }
     }
@@ -98,6 +113,12 @@ impl SensorKind {
             Self::CpuUsage => "cpu_usage",
             Self::CpuTemp => "cpu_temp",
             Self::MemoryUsage => "memory_usage",
+            Self::SomaSchumann => "soma_schumann",
+            Self::Soma432 => "soma_432",
+            Self::SomaPresence => "soma_presence",
+            Self::SomaFanHz => "soma_fan_hz",
+            Self::SomaAc60 => "soma_ac_60",
+            Self::SomaPeakDbc => "soma_peak_dbc",
         }
     }
 
@@ -106,6 +127,12 @@ impl SensorKind {
             Self::CpuUsage => 0,
             Self::CpuTemp => 1,
             Self::MemoryUsage => 2,
+            Self::SomaSchumann => 3,
+            Self::Soma432 => 4,
+            Self::SomaPresence => 5,
+            Self::SomaFanHz => 6,
+            Self::SomaAc60 => 7,
+            Self::SomaPeakDbc => 8,
         }
     }
 
@@ -114,6 +141,12 @@ impl SensorKind {
             0 => Some(Self::CpuUsage),
             1 => Some(Self::CpuTemp),
             2 => Some(Self::MemoryUsage),
+            3 => Some(Self::SomaSchumann),
+            4 => Some(Self::Soma432),
+            5 => Some(Self::SomaPresence),
+            6 => Some(Self::SomaFanHz),
+            7 => Some(Self::SomaAc60),
+            8 => Some(Self::SomaPeakDbc),
             _ => None,
         }
     }

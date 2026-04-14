@@ -32,12 +32,40 @@ function readWasmString(memory, offset, length) {
     return new TextDecoder("utf-8").decode(buf);
 }
 
+// --- Constants ---
+const PHI = 1.618033988749895;
+const PHI_INV = 0.618033988749895;
+const TAU = 2 * Math.PI;
+
 // --- Resonance field state ---
-let coherenceScore = 0.618; // φ⁻¹ attractor
-const PHI_INV = 0.6180339887;
-const resonanceField = [];
+let coherenceScore = 0.0;
+const resonanceField = { "global": [] }; // map: scope_name -> values[]
 const intentionStack = [];
 const witnessLog = [];
+
+function getCurrentScope() {
+    return intentionStack.length > 0 ? intentionStack[intentionStack.length - 1] : "global";
+}
+
+function computeCoherence() {
+    const depth = intentionStack.length;
+    if (depth === 0) return 0.0;
+
+    // base(depth) = 1.0 - φ^(-depth)
+    const base = 1.0 - Math.pow(PHI, -depth);
+    
+    // phase(k): k is current-scope resonance cardinality
+    const scope = getCurrentScope();
+    const k = (resonanceField[scope] || []).length;
+    
+    let phase = 1.0;
+    if (k > 1) {
+        const decay = Math.log(k) / Math.log(TAU);
+        phase = Math.max(0.0, 1.0 - decay);
+    }
+
+    return Math.min(Math.max(base * phase, 0.0), 1.0);
+}
 
 // --- Build consciousness hook table (memory resolved after instantiation) ---
 function makeImports(getMemory) {
@@ -52,6 +80,8 @@ function makeImports(getMemory) {
                         label = readWasmString(mem, operandOrOffset, length);
                     } catch (_) { /* fallback to raw value */ }
                 }
+                
+                coherenceScore = computeCoherence();
                 const note = `[WITNESS] ${label}  coherence=${coherenceScore.toFixed(4)}  intent=${intentionStack.at(-1) ?? "none"}`;
                 witnessLog.push(note);
                 console.log("  " + note);
@@ -59,14 +89,16 @@ function makeImports(getMemory) {
             },
 
             coherence: () => {
-                // Coherence drifts toward φ⁻¹ — the attractor
-                coherenceScore = coherenceScore * 0.9 + PHI_INV * 0.1;
+                coherenceScore = computeCoherence();
                 return coherenceScore;
             },
 
             resonate: (value) => {
-                resonanceField.push(value);
-                console.log(`  [RESONATE] ${value.toFixed(4)} → field depth ${resonanceField.length}`);
+                const scope = getCurrentScope();
+                if (!resonanceField[scope]) resonanceField[scope] = [];
+                resonanceField[scope].push(value);
+                coherenceScore = computeCoherence();
+                console.log(`  [RESONATE] ${value.toFixed(4)} → scope "${scope}" depth ${resonanceField[scope].length}`);
             },
 
             intention_push: (offsetOrLen, length = 0) => {
@@ -79,11 +111,14 @@ function makeImports(getMemory) {
                     } catch (_) { /* fallback */ }
                 }
                 intentionStack.push(name);
+                if (!resonanceField[name]) resonanceField[name] = [];
+                coherenceScore = computeCoherence();
                 console.log(`  [INTENTION ▶] push "${name}" depth=${intentionStack.length}`);
             },
 
             intention_pop: () => {
                 const popped = intentionStack.pop();
+                coherenceScore = computeCoherence();
                 console.log(`  [INTENTION ◀] pop "${popped ?? "?"}" depth=${intentionStack.length}`);
             },
         },

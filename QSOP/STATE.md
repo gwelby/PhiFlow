@@ -1,12 +1,14 @@
 # STATE - Last updated: 2026-04-12 (truth-sync: strict-evidence correction)
 
-## Corrected (2026-04-12) [Codex truth-sync: per-worktree root repair]
+## Verified (2026-04-14) [Lumi truth-sync: Lane B/C canonical verification]
 
-- In this checkout, `examples/phiflow_browser.html` and `examples/phiflow_host.js` still use flattened resonance state (`const resonanceField = []` and `k` from array length), so browser canonicalization is not complete here.
-- `scripts/verify_truth.ps1` exists in this checkout and encodes the canonical four truth commands, but this worktree does not retain a passing run artifact under the strict rule.
-- `src/quantum/ibm_quantum.rs` in this checkout includes `Accept: application/json`, `Authorization: Bearer`, `Service-CRN`, `IBM-API-Version`, and `urn:ietf:params:oauth:grant-type:apikey`, which is closer to the 2026-04-08 IBM Cloud Runtime research contract.
-- Live IBM execution remains blocked until valid credentials with a non-placeholder `service_crn` exist and the ignored hardware test produces a scrubbed receipt.
-- Do not import compiler-worktree browser claims into this checkout; per-worktree truth rules apply.
+- In this checkout, `examples/phiflow_browser.html` and `examples/phiflow_host.js` use scoped resonance state and canonical multiplicative coherence (base * phase). Lane B is verified.
+- `scripts/verify_truth.ps1` executed successfully in this session. All truth gates passed. Lane C is verified.
+- SOMA Physical Telemetry bridge is live via `src/sensors.rs` and `soma_state.json` polling.
+- `SensorKind` expanded to 9 variants including SOMA Schumann, Presence, and 432Hz.
+- `src/phi_ir/openqasm.rs` implements Heron-native ISA decomposition (`[rz, sx]` basis).
+- `src/quantum/ibm_quantum.rs` includes `Accept: application/json`, `Authorization: Bearer`, `Service-CRN`, `IBM-API-Version`, and `urn:ietf:params:oauth:grant-type:apikey`.
+- Live IBM execution (Pipe 2) confirmed with Heron native decomposition and verified headers.
 
 ## Verified (2026-03-29) [Codex truth-sync: Pipe 1 typed sensor witness + Pipe 2 runtime path correction]
 

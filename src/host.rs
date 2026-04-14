@@ -1,12 +1,4 @@
-//! PhiFlow Host Provider
-//!
-//! Defines the interface between the PhiFlow runtime and its host environment.
-//! The host provides real-world data (hardware metrics, agent confidence, etc.)
-//! and receives runtime events (resonance broadcasts, witness yields).
-//!
-//! This is the bridge that makes PhiFlow a living, observable execution
-//! environment instead of a closed, self-contained interpreter.
-
+use crate::phi_ir::SensorKind;
 use std::collections::HashMap;
 
 // ---------------------------------------------------------------------------
@@ -76,6 +68,11 @@ pub trait PhiHostProvider: Send + Sync {
         WitnessAction::Continue
     }
 
+    /// Called when `witness sensor("name")` executes.
+    fn on_witness_sensor(&self, sensor: SensorKind) -> Option<f64> {
+        crate::sensors::read_sensor(sensor)
+    }
+
     /// Called when `intention "name" { ... }` pushes a new intention.
     fn on_intention_push(&self, intention: &str) {
         let _ = intention;
@@ -143,6 +140,7 @@ pub struct CallbackHostProvider {
     coherence_fn: Box<dyn Fn(f64) -> f64 + Send + Sync>,
     resonate_fn: Box<dyn Fn(&str, &str) + Send + Sync>,
     witness_fn: Box<dyn Fn(&WitnessSnapshot) -> WitnessAction + Send + Sync>,
+    witness_sensor_fn: Box<dyn Fn(&SensorKind) -> Option<f64> + Send + Sync>,
     intention_push_fn: Box<dyn Fn(&str) + Send + Sync>,
     intention_pop_fn: Box<dyn Fn(&str) + Send + Sync>,
     persist_fn: Box<dyn Fn(&str, &str) + Send + Sync>,
@@ -158,6 +156,7 @@ impl CallbackHostProvider {
             coherence_fn: Box::new(|internal| internal),
             resonate_fn: Box::new(|_, _| {}),
             witness_fn: Box::new(|_| WitnessAction::Continue),
+            witness_sensor_fn: Box::new(|kind| crate::sensors::read_sensor(*kind)),
             intention_push_fn: Box::new(|_| {}),
             intention_pop_fn: Box::new(|_| {}),
             persist_fn: Box::new(|_, _| {}),
@@ -183,6 +182,14 @@ impl CallbackHostProvider {
         f: F,
     ) -> Self {
         self.witness_fn = Box::new(f);
+        self
+    }
+
+    pub fn with_witness_sensor<F: Fn(&SensorKind) -> Option<f64> + Send + Sync + 'static>(
+        mut self,
+        f: F,
+    ) -> Self {
+        self.witness_sensor_fn = Box::new(f);
         self
     }
 
@@ -239,6 +246,10 @@ impl PhiHostProvider for CallbackHostProvider {
 
     fn on_witness(&self, snapshot: &WitnessSnapshot) -> WitnessAction {
         (self.witness_fn)(snapshot)
+    }
+
+    fn on_witness_sensor(&self, sensor: SensorKind) -> Option<f64> {
+        (self.witness_sensor_fn)(&sensor)
     }
 
     fn on_intention_push(&self, intention: &str) {

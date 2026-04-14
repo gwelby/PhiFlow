@@ -12,6 +12,7 @@ fn sensor_provider(sensor: SensorKind) -> Option<f64> {
         SensorKind::CpuUsage => Some(12.5),
         SensorKind::CpuTemp => Some(55.0),
         SensorKind::MemoryUsage => Some(62.0),
+        _ => Some(0.5), // Dummy value for the SOMA sensors added recently
     }
 }
 

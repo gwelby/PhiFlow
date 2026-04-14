@@ -124,9 +124,7 @@ impl Optimizer {
         }
 
         if self.level == OptimizationLevel::PhiHarmonic {
-            if Self::action_cost_pass(program) {
-                changed = true;
-            }
+            Self::action_cost_pass(program);
             if Self::unroll_loops(program) {}
             self.monitor.analyze(program);
             self.stabilize(program);

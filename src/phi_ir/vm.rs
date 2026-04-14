@@ -62,6 +62,7 @@ pub enum VmError {
     DivisionByZero,
     InvalidOperation(String),
     UnavailableSensor(SensorKind),
+    StepLimitExceeded(usize),
     InvalidTerminator,
 }
 
@@ -98,6 +99,9 @@ impl std::fmt::Display for VmError {
                     "Sensor `{}` is unavailable on this host",
                     sensor.as_name()
                 )
+            }
+            VmError::StepLimitExceeded(max) => {
+                write!(f, "Execution step limit exceeded ({} steps)", max)
             }
             VmError::InvalidTerminator => write!(f, "Invalid terminator opcode"),
         }
