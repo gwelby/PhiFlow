@@ -4,7 +4,7 @@
 
 use crate::phi_ir::{BlockId, Operand, PhiIRBinOp, PhiIRValue, ResonateDirection, SensorKind};
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 const MAGIC: &[u8; 4] = b"PHIV";
 const VERSION: u8 = 1;
@@ -208,7 +208,9 @@ pub struct PhiVm {
     variables: HashMap<String, PhiIRValue>,
     value_stack: Vec<PhiIRValue>,
     intention_stack: Vec<String>,
+    active_streams: Vec<String>,
     resonance_field: HashMap<String, Vec<PhiIRValue>>,
+    shared_resonance: Option<Arc<Mutex<HashMap<String, Vec<PhiIRValue>>>>>,
     current_block: BlockId,
     instruction_ptr: usize,
     sensor_provider: Option<Arc<dyn Fn(SensorKind) -> Option<f64> + Send + Sync>>,
@@ -235,7 +237,9 @@ impl PhiVm {
             variables: HashMap::new(),
             value_stack: Vec::new(),
             intention_stack: Vec::new(),
+            active_streams: Vec::new(),
             resonance_field: HashMap::new(),
+            shared_resonance: None,
             current_block,
             instruction_ptr: 0,
             sensor_provider: None,
@@ -262,6 +266,14 @@ impl PhiVm {
         F: Fn(SensorKind) -> Option<f64> + Send + Sync + 'static,
     {
         self.sensor_provider = Some(Arc::new(provider));
+        self
+    }
+
+    pub fn with_shared_resonance(
+        mut self,
+        shared: Arc<Mutex<HashMap<String, Vec<PhiIRValue>>>>,
+    ) -> Self {
+        self.shared_resonance = Some(shared);
         self
     }
 
@@ -355,16 +367,7 @@ impl PhiVm {
                     let _ = self.get_reg(*op)?;
                 }
                 let coherence = self.compute_coherence();
-                // Record coherence history for dissonance calculation
-                let timestamp = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .map(|d| d.as_secs_f64())
-                    .unwrap_or(0.0);
-                self.coherence_history.push((timestamp, coherence));
-                // Keep only last 100 entries to prevent unbounded growth
-                if self.coherence_history.len() > 100 {
-                    self.coherence_history.drain(..self.coherence_history.len() - 100);
-                }
+                self.record_coherence_history(coherence);
                 Some(PhiIRValue::Number(coherence))
             }
             BytecodeNode::WitnessSensor { sensor } => {
@@ -379,19 +382,18 @@ impl PhiVm {
                 self.intention_stack.pop();
                 None
             }
-            BytecodeNode::StreamPush { name, threshold } => {
+            BytecodeNode::StreamPush { name, threshold: _ } => {
                 self.intention_stack.push(name.clone());
-                // In VM, stream push behavior is same as intention for resonance for now
-                self.resonance_field.entry(name.clone()).or_default();
+                self.active_streams.push(name.clone());
+                self.resonance_field.insert(name.clone(), Vec::new());
                 None
             }
             BytecodeNode::StreamPop => {
                 self.intention_stack.pop();
+                self.active_streams.pop();
                 None
             }
             BytecodeNode::FieldCoherence => {
-                // Compute aggregate coherence from shared resonance field if available,
-                // otherwise fall back to own coherence
                 if let Some(shared) = &self.shared_resonance {
                     let guard = shared.lock().unwrap();
                     let mut sum = 0.0;
@@ -404,7 +406,7 @@ impl PhiVm {
                             }
                         }
                     }
-                    let score = if count > 0 { sum / count as f64 } else { self.compute_coherence() };
+                    let score = if count > 0 { sum / count as f64 } else { 0.0 };
                     Some(PhiIRValue::Number(score))
                 } else {
                     Some(PhiIRValue::Number(self.compute_coherence()))
@@ -425,11 +427,9 @@ impl PhiVm {
                 }
             }
             BytecodeNode::CoherenceOf(name) => {
-                // Look up named stream's coherence from shared resonance field
                 if let Some(shared) = &self.shared_resonance {
                     let guard = shared.lock().unwrap();
                     if let Some(vals) = guard.get(name) {
-                        // Return the last resonated value if it's a number
                         if let Some(PhiIRValue::Number(n)) = vals.last() {
                             Some(PhiIRValue::Number(*n))
                         } else {
@@ -453,7 +453,22 @@ impl PhiVm {
                         .last()
                         .cloned()
                         .unwrap_or_else(|| "global".to_string());
-                    self.resonance_field.entry(key).or_default().push(val);
+                    if self.active_streams.contains(&key) {
+                        self.resonance_field.insert(key.clone(), vec![val.clone()]);
+                        if let Some(shared) = &self.shared_resonance {
+                            let mut guard = shared.lock().unwrap();
+                            guard.insert(key, vec![val]);
+                        }
+                    } else {
+                        self.resonance_field
+                            .entry(key.clone())
+                            .or_default()
+                            .push(val.clone());
+                        if let Some(shared) = &self.shared_resonance {
+                            let mut guard = shared.lock().unwrap();
+                            guard.entry(key).or_default().push(val);
+                        }
+                    }
                 }
                 None
             }
@@ -541,6 +556,18 @@ impl PhiVm {
 
     fn compute_coherence(&self) -> f64 {
         crate::phi_ir::coherence::canonical_coherence(&self.intention_stack, &self.resonance_field)
+    }
+
+    fn record_coherence_history(&mut self, coherence: f64) {
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs_f64())
+            .unwrap_or(0.0);
+        self.coherence_history.push((timestamp, coherence));
+        if self.coherence_history.len() > 100 {
+            self.coherence_history
+                .drain(..self.coherence_history.len() - 100);
+        }
     }
 
     fn resolve_sensor(&self, sensor: SensorKind) -> VmResult<f64> {
@@ -910,6 +937,8 @@ mod tests {
         OP_RESONATE, OP_RETURN, OP_WITNESS,
     };
     use crate::phi_ir::{emitter, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction};
+    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex};
 
     fn emit_u32(out: &mut Vec<u8>, value: u32) {
         out.extend_from_slice(&value.to_le_bytes());
@@ -1299,5 +1328,159 @@ mod tests {
             }
             other => panic!("expected InvalidOptionalOperandFlag, got {:?}", other),
         }
+    }
+
+    #[test]
+    fn vm_stream_resonance_overwrites_active_stream_scope() {
+        let program = single_block_program(
+            vec![
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::StreamPush("pulse".to_string(), None),
+                },
+                PhiInstruction {
+                    result: Some(0),
+                    node: PhiIRNode::Const(PhiIRValue::Number(1.0)),
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::Resonate {
+                        value: Some(0),
+                        frequency_relationship: None,
+                        direction: crate::phi_ir::ResonateDirection::TeamA,
+                    },
+                },
+                PhiInstruction {
+                    result: Some(1),
+                    node: PhiIRNode::Const(PhiIRValue::Number(2.0)),
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::Resonate {
+                        value: Some(1),
+                        frequency_relationship: None,
+                        direction: crate::phi_ir::ResonateDirection::TeamA,
+                    },
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::StreamPop,
+                },
+            ],
+            PhiIRNode::Return(1),
+        );
+
+        let bytes = emitter::emit(&program);
+        let mut vm = PhiVm::from_bytes(&bytes).expect("VM should decode emitted bytecode");
+        let result = vm.run().expect("VM should execute stream bytecode");
+
+        assert_eq!(result, PhiIRValue::Number(2.0));
+        assert_eq!(
+            vm.resonance_field.get("pulse"),
+            Some(&vec![PhiIRValue::Number(2.0)]),
+            "active streams should overwrite the previous resonated value",
+        );
+    }
+
+    #[test]
+    fn vm_field_coherence_reads_shared_resonance_average() {
+        let program = single_block_program(
+            vec![PhiInstruction {
+                result: Some(0),
+                node: PhiIRNode::FieldCoherence,
+            }],
+            PhiIRNode::Return(0),
+        );
+
+        let mut shared = HashMap::new();
+        shared.insert(
+            "alpha".to_string(),
+            vec![PhiIRValue::Number(0.25), PhiIRValue::Number(0.75)],
+        );
+        shared.insert("beta".to_string(), vec![PhiIRValue::Number(0.5)]);
+
+        let bytes = emitter::emit(&program);
+        let mut vm = PhiVm::from_bytes(&bytes)
+            .expect("VM should decode emitted bytecode")
+            .with_shared_resonance(Arc::new(Mutex::new(shared)));
+        let result = vm.run().expect("VM should execute field coherence opcode");
+
+        assert_eq!(result, PhiIRValue::Number(0.5));
+    }
+
+    #[test]
+    fn vm_coherence_of_reads_named_shared_stream() {
+        let program = single_block_program(
+            vec![PhiInstruction {
+                result: Some(0),
+                node: PhiIRNode::CoherenceOf("beta".to_string()),
+            }],
+            PhiIRNode::Return(0),
+        );
+
+        let mut shared = HashMap::new();
+        shared.insert(
+            "beta".to_string(),
+            vec![PhiIRValue::Number(0.25), PhiIRValue::Number(0.75)],
+        );
+
+        let bytes = emitter::emit(&program);
+        let mut vm = PhiVm::from_bytes(&bytes)
+            .expect("VM should decode emitted bytecode")
+            .with_shared_resonance(Arc::new(Mutex::new(shared)));
+        let result = vm.run().expect("VM should execute coherence_of opcode");
+
+        assert_eq!(result, PhiIRValue::Number(0.75));
+    }
+
+    #[test]
+    fn vm_dissonance_uses_recent_witness_history() {
+        let program = single_block_program(
+            vec![
+                PhiInstruction {
+                    result: Some(0),
+                    node: PhiIRNode::Witness {
+                        target: None,
+                        collapse_policy: crate::phi_ir::CollapsePolicy::Final,
+                    },
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::IntentionPush {
+                        name: "healing".to_string(),
+                        frequency_hint: None,
+                    },
+                },
+                PhiInstruction {
+                    result: Some(1),
+                    node: PhiIRNode::Const(PhiIRValue::Number(432.0)),
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::Resonate {
+                        value: Some(1),
+                        frequency_relationship: None,
+                        direction: crate::phi_ir::ResonateDirection::TeamA,
+                    },
+                },
+                PhiInstruction {
+                    result: Some(2),
+                    node: PhiIRNode::Witness {
+                        target: None,
+                        collapse_policy: crate::phi_ir::CollapsePolicy::Final,
+                    },
+                },
+                PhiInstruction {
+                    result: Some(3),
+                    node: PhiIRNode::Dissonance,
+                },
+            ],
+            PhiIRNode::Return(3),
+        );
+
+        let bytes = emitter::emit(&program);
+        let result = PhiVm::run_bytes(&bytes).expect("VM should execute dissonance opcode");
+
+        assert_eq!(result, PhiIRValue::Number(1.0));
     }
 }

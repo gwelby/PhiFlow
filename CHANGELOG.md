@@ -1,5 +1,16 @@
 # PhiFlow Changelog
 
+## 2026-04-12 | Truth-Sync Correction (Per-Worktree Root Repair)
+
+This correction supersedes only the stale status surfaces layered on top of the 2026-03-29 note below. The 2026-03-29 browser warning remains true in this checkout.
+
+- `scripts/verify_truth.ps1` exists in the root checkout, but there is no retained passing run artifact here, so T-002 is implemented rather than verified.
+- In the root checkout, `examples/phiflow_browser.html` and `examples/phiflow_host.js` still use flattened resonance state, so T-007 remains open here.
+- `src/quantum/ibm_quantum.rs` in this checkout is closer to the 2026-04-08 IBM Cloud Runtime research contract: `Accept: application/json`, `Authorization: Bearer`, `Service-CRN`, `IBM-API-Version`, and `urn:ietf:params:oauth:grant-type:apikey` are present.
+- Live IBM execution remains unconfirmed until a valid `service_crn` and scrubbed receipt exist.
+
+---
+
 ## 2026-03-29 | Truth-Sync Correction
 
 This correction supersedes unsupported or overstated language in older docs.

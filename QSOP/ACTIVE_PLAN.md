@@ -1,5 +1,5 @@
 # ACTIVE PLAN - PhiFlow
-*Last updated: 2026-04-08*
+*Last updated: 2026-04-12*
 *Purpose: keep the current execution plan, evidence, and research backing in one local reference so work does not depend on session memory.*
 
 ## Read First
@@ -8,7 +8,7 @@
 2. `WORKSPACE.md`
 3. `TASKS.md`
 4. `QSOP/PATTERNS.md`
-5. `QSOP/CHANGELOG.md`
+5. `CHANGELOG.md`
 6. This file
 
 ## Operating Rule
@@ -21,6 +21,11 @@ Every active lane below must show:
 - explicit unknowns when the backing is still missing
 
 If a lane does not have backing, the correct state is `UNKNOWN` or `RESEARCH NEEDED`, not a guess.
+
+Status convention for this file:
+- `verified` requires same-session repro or a retained in-repo run artifact
+- `inspection-verified` is only for claims closed by source inspection
+- `implemented` means the file/workflow exists but lacks retained passing execution proof
 
 Research control-plane references:
 - `D:\Projects\Research\AgentSettings\AGENTS.md`
@@ -42,45 +47,30 @@ Research control-plane references:
 - `TASKS.md`
 - `tests/ibm_hardware_runner.rs`
 - `src/quantum/ibm_quantum.rs`
+- `apikey.json`
 - `tests/fixtures/ibm_runtime_sampler_result.json`
 
 **What is already backed locally:**
 - Canonical OpenQASM compile path exists.
-- The runtime backend now persists `service_crn` and `region`.
-- Runtime requests include `Authorization`, `Service-CRN`, and `IBM-API-Version`.
-- A real attempt on 2026-03-29 reached IBM Cloud Runtime and failed at backend discovery with `GET /v1/backends -> 403`, code `1200`, authorization error.
+- This checkout's runtime path includes `Accept: application/json`, `Authorization: Bearer`, `Service-CRN`, and `IBM-API-Version`.
+- This checkout uses the IAM grant type `urn:ietf:params:oauth:grant-type:apikey`, which is closer to the 2026-04-08 research-backed contract.
 
 **Research backing available now:**
 - `D:\Projects\Research\AgentSettings\rules\claims_require_evidence.md`
-  - We cannot mark IBM live execution done without a passing run path or receipt.
-- `D:\Projects\Research\RESULTS\2026-03-14_q_ctrl_error_mitigation_on_ibm_brisbane\03_FINDINGS.md`
-  - Confirms current IBM hardware work is technically relevant, but this is optimization context, not authorization guidance.
-- `D:\Projects\Research\RESULTS\2026-03-14_stack_audit\03_FINDINGS.md`
-  - Confirms IBM experiments are real work, but does not resolve the runtime auth boundary.
+  - IBM live execution cannot be marked done without a passing run path or receipt.
+- `D:\Projects\Research\RESULTS\2026-04-08_ibm_cloud_runtime_authorization_for_back\03_FINDINGS.md`
+  - The research-backed contract for `/api/v1/backends` is Bearer token auth plus `Service-CRN`, `Accept: application/json`, `IBM-API-Version`, and IAM grant type `urn:ietf:params:oauth:grant-type:apikey`.
 
 **What is still missing:**
-- Official backing for the exact IBM Cloud Runtime authorization contract used by our `/api/v1/backends` call:
-  - required service roles
-  - API key to service-instance matching rules
-  - exact region and `service_crn` constraints
-  - official explanation for `403` / code `1200` in this path
+- A valid non-placeholder `service_crn` bound to the API key used here.
+- A passing ignored live gate with a scrubbed receipt.
+- Confirmation that the credential pair has the required IBM Quantum service permissions for backend discovery.
 
 **Non-guess rule for this lane:**
-- Do not keep changing runtime headers or endpoints blindly.
-- Until we have IBM documentation or a successful verified run, the blocker remains `authorization boundary unresolved`.
+- Do not claim live IBM verification until the ignored hardware runner succeeds and a scrubbed receipt is retained.
 
 **Immediate next action:**
-- Run targeted research before more code churn.
-
-**Research prompt to run from `D:\Projects\Research`:**
-```powershell
-.\research_spawn.ps1 -Topic "IBM Cloud Runtime authorization for backend discovery with API key, Service-CRN, region, and /api/v1/backends 403 code 1200"
-```
-
-**Research questions that must be answered:**
-1. What official IBM docs define the required roles and service-instance permissions for backend discovery?
-2. What is the correct binding between IAM API key, service CRN, region, and backend visibility?
-3. What are the documented causes of `403` / code `1200` for backend discovery?
+- Validate the root-checkout implementation against the 2026-04-08 research, then use valid credentials to rerun the smoke compile gate and the ignored live gate.
 
 **Verification commands:**
 ```powershell
@@ -92,69 +82,58 @@ cargo test --test ibm_hardware_runner -- --ignored --nocapture
 
 **Task ID:** `T-007`
 
-**Done when:**
-- `examples/phiflow_browser.html` uses the same canonical multiplicative coherence semantics as the runtime truth source
-- manual build and serve steps are written down
-- the browser host can be described as experimental but semantically aligned
+**Current state:** incomplete in this checkout
 
 **Local repo evidence:**
 - `src/phi_ir/coherence.rs`
-- `tests/phi_ir_wasm_runner.js`
 - `examples/phiflow_browser.html`
+- `examples/phiflow_host.js`
 - `WORKSPACE.md`
 - `TASKS.md`
 
 **What is already backed locally:**
 - Canonical coherence truth is internal to this repo and lives in `src/phi_ir/coherence.rs`.
-- The canonical semantics are multiplicative: `base(depth) * phase(k)`.
-- The browser host already has a local `computeCoherence()` helper, but it is still a host-side reimplementation and uses flattened resonance state rather than the scoped rule from the canonical module.
-- `WORKSPACE.md` explicitly says the browser host remains experimental and still needs canonicalization.
-
-**Research backing available now:**
-- None required for the semantics themselves. This is a local source-of-truth problem, not an external theory problem.
+- The root-checkout browser and host still use flattened resonance state (`const resonanceField = []`) and `k` derived from array length.
 
 **What is still missing:**
-- A local doc that states the exact browser prerequisites and run path.
-- A code-level parity check or documented reasoning tying browser `k` scope handling to the canonical runtime rule.
+- Scoped `resonanceField` handling that matches current intention scope.
+- Browser/host parity with canonical multiplicative coherence in this checkout.
+- Retained validation artifact once the root browser host is corrected.
 
 **Non-guess rule for this lane:**
-- Do not invent alternate browser coherence math.
-- If browser behavior differs from `src/phi_ir/coherence.rs`, the code is wrong until proven otherwise.
+- Do not inherit compiler-worktree browser claims into the root checkout.
+- If root browser behavior differs from `src/phi_ir/coherence.rs`, the root code is still wrong.
 
 **Immediate next action:**
-- [x] Refactor browser coherence handling to mirror the scoped rule, then document the actual manual serve path. (Completed by Antigravity on 2026-04-08)
-
-**Verification target:**
-- Browser host output should match the same depth and scope expectations used by `tests/phi_ir_wasm_runner.js` for supported programs.
+- Refactor the root `examples/phiflow_browser.html` and `examples/phiflow_host.js` to use scoped resonance cardinality, then retain validation evidence in this checkout.
 
 ### Lane C - One-command verification gate
 
 **Task ID:** `T-002`
 
-**Done when:**
-- one repo-level command runs the focused truth gates and fails on any regression
+**Current state:** implemented, not verified
 
 **Local repo evidence:**
+- `scripts/verify_truth.ps1`
 - `TASKS.md`
 - `WORKSPACE.md`
 - `QSOP/STATE.md`
 
-**Target command set:**
-```powershell
-cargo test --lib openqasm
-cargo test --quiet --test golden_integration_tests
-cargo test --quiet --test repro_bugs
-cargo test --test phi_ir_conformance_tests -- --nocapture
-```
+**What is already backed locally:**
+- The script exists and wraps the intended truth commands:
+  - `cargo test --lib openqasm`
+  - `cargo test --quiet --test golden_integration_tests`
+  - `cargo test --quiet --test repro_bugs`
+  - `cargo test --test phi_ir_conformance_tests -- --nocapture`
 
-**Research backing available now:**
-- None required. This is an internal workflow hardening task.
+**What is still missing:**
+- A retained passing execution artifact or same-session repro in this worktree.
 
 **Non-guess rule for this lane:**
-- The gate should encode the already-named truth commands, not a new moving target.
+- Do not upgrade T-002 to verified without retained passing evidence in the root checkout.
 
 **Immediate next action:**
-- [x] Add a small script or task runner wrapper once Lane A and Lane B context is stable enough that the gate list does not churn again. (Completed by Antigravity on 2026-04-08: scripts/verify_truth.ps1)
+- Record a retained passing run before promoting T-002 from implemented to verified.
 
 ## Working Agreement For Future Sessions
 
@@ -172,6 +151,4 @@ Before marking work complete:
 
 ## Handoff Note
 
-As of 2026-04-08, the highest-value lane is still IBM authorization, but it lacks the external documentation pack needed to proceed confidently. Browser canonicalization (Lane B) and the verification gate (Lane C) are both complete and verified.
-
-Looking forward, the compiler is currently encountering structural type errors (`Witness` mid_circuit fields, missing `TeamDirection`) that need attention from the Rust hardening agent (Codex/Jules) once Lane A completes.
+As of 2026-04-12, the root checkout is closer to the research-backed IBM auth contract than the compiler checkout, but it still lacks valid live credentials and a receipt. Browser canonicalization remains incomplete in the root checkout, and the one-command truth gate is implemented but not yet verified by retained execution proof.

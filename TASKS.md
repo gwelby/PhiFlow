@@ -1,5 +1,5 @@
 # TASKS: PhiFlow
-*Last updated: 2026-03-29 truth-sync pass*
+*Last updated: 2026-04-12 truth-sync strict-evidence correction*
 *See also: `WORKSPACE.md` (technical state) · `QSOP/ACTIVE_PLAN.md` (active execution plan + evidence map) · `BUSINESS.md` (income state)*
 
 ## Active Tasks
@@ -38,18 +38,25 @@
 - **Depends on**: valid IBM Cloud API key + matching `service_crn`
 - **Don't touch**: README marketing language until the receipt exists
 
+### T-007: Canonicalize the browser host and document manual prerequisites
+- **Status**: ready[root checkout browser host still non-canonical]
+- **Capability**: JS + Docs
+- **Effort**: Small (< 2h)
+- **Fidelity Target**: Pixels
+- **What to build**: Bring the root-checkout browser host into semantic parity with canonical multiplicative coherence and scoped `resonanceField`, then keep the manual prerequisites documented.
+- **Done when**: `examples/phiflow_browser.html` and `examples/phiflow_host.js` use current-scope resonance cardinality like `src/phi_ir/coherence.rs`, and the browser host can be described as experimental but semantically aligned in this checkout.
+- **Read first**: `WORKSPACE.md`, `examples/phiflow_browser.html`, `examples/phiflow_host.js`, `src/phi_ir/coherence.rs`
+- **Evidence of gap**: `examples/phiflow_browser.html`, `examples/phiflow_host.js`
+- **Depends on**: nothing
+- **Don't touch**: compiler worktree docs while describing root-local state
+
 
 ## Completed / Closed
 
 ### T-002: Add a canonical verification gate script or workflow
-- **Status**: completed[verified 2026-04-08]
-- **What changed**: Created `scripts/verify_truth.ps1` to run all four required truth gates, failing on any regression.
+- **Status**: completed[implemented 2026-04-08; run unverified]
+- **What changed**: Created `scripts/verify_truth.ps1` to encode the four required truth gates in one command wrapper.
 - **Evidence**: `scripts/verify_truth.ps1`
-
-### T-007: Canonicalize the browser host and document manual prerequisites
-- **Status**: completed[verified 2026-04-08]
-- **What changed**: Brought `examples/phiflow_browser.html` and `examples/phiflow_host.js` into semantic parity with multiplicative coherence (base * phase) and scoped `resonanceField`. Build/serve steps documented in HTML header.
-- **Evidence**: `examples/phiflow_browser.html`, `examples/phiflow_host.js`
 
 ### T-001: Stabilize Windows release build for `phic`
 - **Status**: completed[verified 2026-03-24]

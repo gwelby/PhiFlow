@@ -1,3 +1,23 @@
+## 2026-04-08 - [Codex] PhiVM opcode repair: shared resonance wiring + stream overwrite semantics
+
+- UPDATED: `src/phi_ir/vm.rs`
+  - Added missing `shared_resonance` VM state and `with_shared_resonance(...)` builder so the new opcode handlers compile against real VM state instead of dangling evaluator-only references.
+  - Added `active_streams` tracking so `StreamPush` / `StreamPop` restore stream-specific resonance overwrite semantics instead of treating streams like ordinary intentions.
+  - Updated `Resonate` to overwrite active-stream resonance locally and in shared resonance, matching the current evaluator contract.
+  - Added coherence-history recording helper used by `Witness`, so `Dissonance` now reads real recent witness deltas instead of an uninitialized stub path.
+  - Kept `FieldCoherence` / `CoherenceOf` behavior aligned with the evaluator's current shared-resonance contract.
+- ADDED: focused VM tests in `src/phi_ir/vm.rs`
+  - stream resonance overwrite
+  - field coherence from shared resonance
+  - named `coherence_of(...)` lookup
+  - dissonance from recent witness history
+- VERIFIED:
+  - `cargo check --quiet --lib` ✅
+  - `cargo check --quiet --tests` ✅
+  - `rustfmt --check src/phi_ir/vm.rs` ✅
+- BLOCKED:
+  - linked test execution is not currently available in this shell because MSVC `link.exe` is missing, so no new `cargo test` pass is claimed from this environment.
+
 ## 2026-04-08 - [Codex] Active plan anchored to repo evidence and research references
 
 - ADDED: `QSOP/ACTIVE_PLAN.md`

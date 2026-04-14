@@ -1,4 +1,12 @@
-# STATE - Last updated: 2026-03-29 (truth-sync: canonical coherence real, Pipe 1 complete locally, Pipe 2 auth-blocked live)
+# STATE - Last updated: 2026-04-12 (truth-sync: strict-evidence correction)
+
+## Corrected (2026-04-12) [Codex truth-sync: per-worktree root repair]
+
+- In this checkout, `examples/phiflow_browser.html` and `examples/phiflow_host.js` still use flattened resonance state (`const resonanceField = []` and `k` from array length), so browser canonicalization is not complete here.
+- `scripts/verify_truth.ps1` exists in this checkout and encodes the canonical four truth commands, but this worktree does not retain a passing run artifact under the strict rule.
+- `src/quantum/ibm_quantum.rs` in this checkout includes `Accept: application/json`, `Authorization: Bearer`, `Service-CRN`, `IBM-API-Version`, and `urn:ietf:params:oauth:grant-type:apikey`, which is closer to the 2026-04-08 IBM Cloud Runtime research contract.
+- Live IBM execution remains blocked until valid credentials with a non-placeholder `service_crn` exist and the ignored hardware test produces a scrubbed receipt.
+- Do not import compiler-worktree browser claims into this checkout; per-worktree truth rules apply.
 
 ## Verified (2026-03-29) [Codex truth-sync: Pipe 1 typed sensor witness + Pipe 2 runtime path correction]
 
