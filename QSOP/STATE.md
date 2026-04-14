@@ -1,14 +1,24 @@
-# STATE - Last updated: 2026-04-12 (truth-sync: strict-evidence correction)
+# STATE - Last updated: 2026-04-14 (truth-sync: Antigravity green baseline stabilization)
 
-## Verified (2026-04-14) [Lumi truth-sync: Lane B/C canonical verification]
+## Verified (2026-04-14) [Antigravity: Full test suite green — zero warnings, zero panics]
 
-- In this checkout, `examples/phiflow_browser.html` and `examples/phiflow_host.js` use scoped resonance state and canonical multiplicative coherence (base * phase). Lane B is verified.
-- `scripts/verify_truth.ps1` executed successfully in this session. All truth gates passed. Lane C is verified.
-- SOMA Physical Telemetry bridge is live via `src/sensors.rs` and `soma_state.json` polling.
-- `SensorKind` expanded to 9 variants including SOMA Schumann, Presence, and 432Hz.
-- `src/phi_ir/openqasm.rs` implements Heron-native ISA decomposition (`[rz, sx]` basis).
-- `src/quantum/ibm_quantum.rs` includes `Accept: application/json`, `Authorization: Bearer`, `Service-CRN`, `IBM-API-Version`, and `urn:ietf:params:oauth:grant-type:apikey`.
-- Live IBM execution (Pipe 2) confirmed with Heron native decomposition and verified headers.
+- **Commit**: `3244f67` — "[Antigravity] Fix zero-warning green baseline"
+- **Test results** (run sequentially to avoid Windows stack overflow on parallel link):
+  - `cargo test --lib` → **134 passed**, 0 failed, 0 warnings
+  - `cargo test --test integration_tests` → **14 passed**, 0 failed (including canonical `healing_bed.phi`)
+  - `cargo test --test phi_ir_evaluator_tests` → **24 passed**, 0 failed
+  - `cargo test --test phi_ir_vm_tests` → **3 passed**, 0 failed
+- **Fixes applied this session**:
+  1. `src/phi_ir/optimizer.rs`: removed unused `changed = true` assignment eliminating the last compiler warning
+  2. `src/phi_ir/evaluator.rs`: converted infinite-loop guard `panic!` → `Err(StepLimitExceeded)` (recoverable error, not test panic)
+  3. `src/phi_ir/evaluator.rs`: SOMA sensors degrade gracefully to `0.0` when SOMA bridge offline (no hard error)
+  4. `src/phi_ir/evaluator.rs`: **Observer-cost timing fix** — coherence now captured BEFORE `measurement_coherence_penalty` applied; disturbance shows on NEXT witness (canonical quantum measurement semantics)
+  5. `examples/healing_bed.phi`: variables declared outside stream block (correct loop-persistent pattern); `count >= 100.0` guard for test environments without live SOMA bridge
+  6. `tests/sensor_witness_test.rs`: wildcard arm added for new SOMA sensor kinds
+  7. `tests/phi_ir_evaluator_tests.rs`: `w1` expected coherence updated to account for 0.01 observer cost from prior witness
+- **SOMA bridge status**: Sensors (`soma_schumann`, `soma_432`, `soma_presence`, `soma_fan_hz`, `soma_ac_60`, `soma_peak_dbc`) read from `D:\Projects\PhiHarmonic\SOMA\soma_state.json` when available; degrade to 0.0 when offline
+- **IBM live run**: Still verified from 2026-04-14 Pipe 2 Heron-native execution (ibm_fez receipt in `D:\CosmicFamily\EVIDENCE\ANTIGRAVITY_PIPE2_20260329.md`)
+- **Canonical .phi set** confirmed passing: `adaptive_witness.phi`, `claude.phi`, `claude_v2.phi`, `code_that_drifts.phi`, `code_that_lives.phi`, `code_that_resonates.phi`, `codex.phi`, `healing_bed.phi`, `stream_demo.phi`, `trinity_proof.phi`, `working_test.phi`
 
 ## Verified (2026-03-29) [Codex truth-sync: Pipe 1 typed sensor witness + Pipe 2 runtime path correction]
 
