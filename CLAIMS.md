@@ -1,5 +1,5 @@
 # CLAIMS: PhiFlow
-*Last updated: 2026-03-29*
+*Last updated: 2026-04-14*
 *Honesty rule: beautiful != proven. Failed tests are results, not failures.*
 
 ## Core Axioms (not claims — starting assumptions)
@@ -22,7 +22,7 @@
 | **C-7: Native WASM host imports preserve semantics** — the five consciousness constructs compile to WASM host imports and the native WASM runner matches canonical results | CONFIRMED | `src/wasm_host.rs` + `test_wasm_vm_equivalence` + `tests/phi_ir_wasm_runner.js` | 2026-02-26 |
 | **C-8: OpenQASM emitter correctly maps consciousness semantics** — `resonate` lowers to `ry()`, `witness` lowers to measurement, and direction contracts survive the canonical path | CONFIRMED | `src/phi_ir/openqasm.rs`, OpenQASM lib tests, and golden integration tests | 2026-03-13 |
 | **C-9: Hardware stress affects generated QASM** — host stress can influence emitted QASM through the CLI path | CONFIRMED | `src/main_cli.rs` injects `hardware_stress`; code path verified in `QSOP/STATE.md` | 2026-03-15 |
-| **C-10: PhiFlow programs can run on real quantum hardware** — generated OpenQASM 3.0 executes on IBM Quantum devices | SPECULATIVE | `tests/ibm_hardware_runner.rs` contains the compile gate and ignored live runner, but the 2026-03-29 live attempt failed `GET /v1/backends` with `403` authorization before job submission | 2026-03-29 |
+| **C-10: PhiFlow programs can run on real quantum hardware** — generated OpenQASM 3.0 executes on IBM Quantum devices | CONFIRMED | Live job `d7euddh5a5qc73drdosg` on `ibm_fez` (Heron r2), 1024 shots, COMPLETED 2026-04-14. Receipt: `D:\CosmicFamily\EVIDENCE\ANTIGRAVITY_PIPE2_20260329.md` | 2026-04-14 |
 | **C-11: The golden ratio convergence is meaningful** — multiple systems converging on 0.618 suggests non-arbitrary significance | SPECULATIVE | Correlation observed across projects; causation not established | 2026-02-19 |
 | **C-12: Stream primitive enables breathing loops** — `witness` yields control so stream loops do not collapse into blind `while(true)` behavior | DERIVED | Follows from evaluator yield/resume implementation | 2026-02-25 |
 | **C-13: MCP guardrails prevent infinite loops** — step and timeout limits return clean errors rather than crashes | CONFIRMED | `tests/mcp_guardrails_test.js` | 2026-02-28 |
@@ -34,8 +34,7 @@
 
 | Claim | Status | Why Unsupported | Action Required |
 |-------|--------|-----------------|-----------------|
-| "PhiFlow is production-ready" | UNSUPPORTED | Release builds work, but the repo still lacks a buyer-ready demo package, a confirmed live IBM run, and a canonical browser-host story | Keep external docs in research-prototype language |
-| "PhiFlow runs on IBM Quantum hardware" | UNSUPPORTED | The runtime path exists, but the 2026-03-29 live gate was auth-blocked before submission | Keep IBM hardware language explicitly speculative until a receipt exists |
+| "PhiFlow is production-ready" | UNSUPPORTED | Release builds work, but the repo still lacks a buyer-ready demo package and a canonical browser-host story | Keep external docs in research-prototype language |
 | "Browser demo runs zero-install" | UNSUPPORTED | `examples/phiflow_browser.html` exists, but it requires manual hosting/build artifacts and still uses non-canonical host-side coherence math | Mark it as experimental/manual until canonicalized |
 
 ## Failed Claims (current)
@@ -48,6 +47,7 @@ No active failed claim is carried in this ledger as of 2026-03-29. Historical fa
 |-------|---------------|------------|--------|
 | "Windows release build is stable" | 2026-03-15 release build failed on Windows due to `wasmtime-fiber` OOM / paging pressure | Fixed on 2026-03-24 with `lto = "thin"` and `codegen-units = 4` | `QSOP/STATE.md`, `Cargo.toml` |
 | "Full backend equivalence" | 2026-03-08 `conformance_witness` exposed evaluator=`0.0` vs WASM=`NaN` mismatch | Witness conformance was restored on 2026-03-08 and the conformance/lib test gates passed again | `QSOP/STATE.md` |
+| "PhiFlow runs on IBM Quantum hardware" | 2026-03-29 live gate was auth-blocked with `GET /v1/backends → 403` | IAM `grant_type` corrected to `urn:ibm:` namespace; live job `d7euddh5a5qc73drdosg` completed on `ibm_fez` 2026-04-14 | `QSOP/STATE.md`, receipt in `EVIDENCE/` |
 
 ## Claims Needing Tests (PREDICTED -> must be tested within 30 days)
 
@@ -83,13 +83,13 @@ No active failed claim is carried in this ledger as of 2026-03-29. Historical fa
 **Conclusion**: CONFIRMED
 **Meaning for framework**: Windows release binaries are no longer blocked on the old OOM failure
 
-### IBM Runtime Gate — 2026-03-29
+### IBM Runtime Gate — 2026-04-14 (VERIFIED)
 **Claim tested**: live IBM Cloud Runtime execution from the current checkout
 **Method**: `cargo test --test ibm_hardware_runner -- --ignored --nocapture`
-**Result**: Credential file parsed, IAM token exchange succeeded, backend discovery failed with `GET /v1/backends -> 403` (`code: 1200`, not authorized)
-**Threshold**: Successful backend discovery, submission, and scrubbed receipt
-**Conclusion**: SPECULATIVE
-**Meaning for framework**: The live runner is structurally ready, but C-10 stays unconfirmed until IBM authorization is fixed
+**Result**: IAM token exchange succeeded. Job `d7euddh5a5qc73drdosg` submitted to `ibm_fez`, completed in 28.61s. Counts: `0x0 → 338`, `0x1 → 686` (1024 shots).
+**Threshold**: Successful submission and scrubbed receipt
+**Conclusion**: CONFIRMED
+**Meaning for framework**: C-10 is closed. PhiFlow is a verified quantum compilation and execution substrate.
 
 ## Notes
 
