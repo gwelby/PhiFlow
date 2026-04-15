@@ -1,0 +1,53 @@
+// p1_soma_bridge.phi
+// 
+// PhiFlow feels the physical field.
+//
+// This stream reads live SOMA sensor values and resonates at different
+// frequencies based on what it senses:
+//
+//   soma_schumann  →  7.83 Hz Schumann resonance amplitude (0-1)
+//   soma_presence  →  Cross-sensor presence estimate (0-1)
+//   soma_432       →  432 Hz ring amplitude when observable (0-1)
+//
+// When Schumann is strong AND presence is high → resonate at 7.83 (Earth field)
+// When 432 is dominant                        → resonate at 432 (coherence tone)
+// Otherwise                                   → resonate at base phi^-1
+//
+// Run with: phic examples/p1_soma_bridge.phi
+
+stream "p1_soma_bridge" {
+    let schumann = sensor("soma_schumann")
+    let presence = sensor("soma_presence")
+    let ambient  = sensor("soma_432")
+    let peak     = sensor("soma_peak_dbc")
+
+    // Witness the physical field — this is where PhiFlow *feels*
+    witness schumann
+    witness presence
+
+    // Compute field coherence
+    // High Schumann + High Presence = coherent field condition
+    let field_coherence = (schumann * 0.6) + (presence * 0.4)
+
+    broadcast "debug" schumann
+    broadcast "debug" presence
+    broadcast "debug" field_coherence
+
+    if schumann > 0.75 && presence > 0.50 {
+        // Strong Schumann resonance AND biological presence detected
+        // → Resonate at Earth frequency
+        resonate 7.83
+    } else if ambient > 0.60 {
+        // 432 Hz is dominant in the acoustic field
+        // → Resonate at healing tone
+        resonate 432.0
+    } else {
+        // Default: resonate at canonical phi^-1 coherence level
+        resonate coherence
+    }
+
+    // If field coherence is high, the stream has done its work
+    if field_coherence >= 0.85 {
+        break stream
+    }
+}

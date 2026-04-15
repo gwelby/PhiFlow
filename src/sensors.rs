@@ -146,12 +146,17 @@ static LIVE_DATA: OnceLock<Arc<RwLock<LiveSensorData>>> = OnceLock::new();
 fn get_live_data() -> Arc<RwLock<LiveSensorData>> {
     LIVE_DATA
         .get_or_init(|| {
+            let initial_soma = match fs::read_to_string(SOMA_STATE_PATH) {
+                Ok(content) => serde_json::from_str::<SomaState>(&content).ok(),
+                Err(_) => None,
+            };
+
             let initial_data = Arc::new(RwLock::new(LiveSensorData {
                 coherence: 1.0,
                 cpu_usage: 0.0,
                 cpu_temp: None,
                 memory_usage: None,
-                soma: None,
+                soma: initial_soma,
             }));
 
             let thread_data = Arc::clone(&initial_data);

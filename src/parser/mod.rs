@@ -71,6 +71,14 @@ pub enum PhiToken {
     // v0.4.0 Reserved
     Evolve,
     Entangle,
+    Import,
+
+    // Type keywords
+    F64,
+    I32,
+    Bool,
+    Qubit,
+    Circuit,
 
     // Pattern types
     Spiral,
@@ -342,6 +350,11 @@ pub enum PhiExpression {
         operator: UnaryOperator,
         operand: Box<PhiExpression>,
     },
+
+    // Module import
+    Import {
+        module_path: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -373,6 +386,13 @@ pub enum PhiType {
     List(Box<PhiType>),
     Function(Vec<PhiType>, Box<PhiType>),
     Void,
+    // Quantum and consciousness types
+    Float64,
+    Integer,
+    Qubit,
+    QuantumCircuit,
+    ConsciousnessState,
+    Custom(String),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -523,6 +543,25 @@ impl PhiLexer {
                     // Line comment - skip to end of line
                     while let Some(c) = self.current_char {
                         if c == '\n' {
+                            break;
+                        }
+                        self.advance();
+                    }
+                    self.next_token()
+                } else if self.peek() == Some('*') {
+                    // Block comment - skip until */
+                    self.advance(); // skip /
+                    self.advance(); // skip *
+                    loop {
+                        if self.current_char.is_none() {
+                            return Err(format!(
+                                "Unterminated block comment at line {}, column {}",
+                                self.line, self.column
+                            ));
+                        }
+                        if self.current_char == Some('*') && self.peek() == Some('/') {
+                            self.advance(); // skip *
+                            self.advance(); // skip /
                             break;
                         }
                         self.advance();
@@ -686,6 +725,14 @@ impl PhiLexer {
             // v0.4.0 Reserved
             "evolve" => PhiToken::Evolve,
             "entangle" => PhiToken::Entangle,
+            "import" => PhiToken::Import,
+
+            // Type keywords
+            "f64" => PhiToken::F64,
+            "i32" => PhiToken::I32,
+            "bool" => PhiToken::Bool,
+            "qubit" => PhiToken::Qubit,
+            "circuit" => PhiToken::Circuit,
 
             // Patterns
             "spiral" => PhiToken::Spiral,
@@ -897,6 +944,7 @@ impl PhiParser {
             PhiToken::VoidDepth => Ok(PhiExpression::VoidDepth),
             PhiToken::Evolve => self.parse_evolve_expression(),
             PhiToken::Entangle => self.parse_entangle_expression(),
+            PhiToken::Import => self.parse_import_statement(),
             // Handle pattern tokens as variable names in statement context
             PhiToken::Pattern => {
                 let var_name = "pattern".to_string();
@@ -1241,6 +1289,37 @@ impl PhiParser {
             self.advance();
         }
         Ok(PhiExpression::Entangle(freq))
+    }
+
+    fn parse_import_statement(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Import)?;
+
+        // Support: import from "path.phi"
+        match &self.current_token {
+            PhiToken::From => {
+                self.advance();
+                let path = match &self.current_token {
+                    PhiToken::String(s) => {
+                        let path = s.clone();
+                        self.advance();
+                        path
+                    }
+                    other => {
+                        return Err(format!(
+                            "Expected string path after 'from' in import, found {:?}",
+                            other
+                        ))
+                    }
+                };
+                Ok(PhiExpression::Import { module_path: path })
+            }
+            other => {
+                return Err(format!(
+                    "Expected 'from' after 'import', found {:?}",
+                    other
+                ))
+            }
+        }
     }
 
     fn parse_phi_value(&mut self) -> Result<PhiValue, String> {
@@ -1879,12 +1958,21 @@ impl PhiParser {
             PhiToken::Audio => Ok(PhiType::Audio),
             PhiToken::Frequency => Ok(PhiType::Number), // Frequencies are numbers
             PhiToken::Identifier(s) if s == "ValidationResult" => Ok(PhiType::ValidationResult),
+            // New type keywords
+            PhiToken::F64 => Ok(PhiType::Float64),
+            PhiToken::I32 => Ok(PhiType::Integer),
+            PhiToken::Bool => Ok(PhiType::Boolean),
+            PhiToken::Qubit => Ok(PhiType::Qubit),
+            PhiToken::Circuit => Ok(PhiType::QuantumCircuit),
+            PhiToken::Consciousness => Ok(PhiType::ConsciousnessState),
             PhiToken::Identifier(s) if s == "List" => {
                 self.expect(PhiToken::Less)?; // Expect '<'
                 let inner_type = self.parse_type()?;
                 self.expect(PhiToken::Greater)?; // Expect '>'
                 Ok(PhiType::List(Box::new(inner_type)))
             }
+            // Custom type (any identifier not otherwise recognized)
+            PhiToken::Identifier(s) => Ok(PhiType::Custom(s)),
             _ => Err(format!("Unknown type: {:?}", type_token)),
         }
     }

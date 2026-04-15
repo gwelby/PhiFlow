@@ -215,19 +215,6 @@ fn validate_sensor_witness(expr: &PhiExpression) -> Result<(), LoweringError> {
             expression, body, ..
         } => {
             if let Some(inner) = expression {
-                if let PhiExpression::FunctionCall { name, arguments } = &**inner {
-                    if name == "sensor" {
-                        if arguments.len() != 1 {
-                            return Err(LoweringError::InvalidSensorWitnessSyntax);
-                        }
-                        let sensor_name = match &arguments[0] {
-                            PhiExpression::String(name) => name,
-                            _ => return Err(LoweringError::InvalidSensorWitnessSyntax),
-                        };
-                        SensorKind::from_name(sensor_name)
-                            .ok_or_else(|| LoweringError::UnknownSensor(sensor_name.clone()))?;
-                    }
-                }
                 validate_sensor_witness(inner)?;
             }
             if let Some(body) = body {
@@ -235,7 +222,25 @@ fn validate_sensor_witness(expr: &PhiExpression) -> Result<(), LoweringError> {
             }
             Ok(())
         }
+        PhiExpression::FunctionCall { name, arguments } => {
+            if name == "sensor" {
+                if arguments.len() != 1 {
+                    return Err(LoweringError::InvalidSensorWitnessSyntax);
+                }
+                let sensor_name = match &arguments[0] {
+                    PhiExpression::String(name) => name,
+                    _ => return Err(LoweringError::InvalidSensorWitnessSyntax),
+                };
+                SensorKind::from_name(sensor_name)
+                    .ok_or_else(|| LoweringError::UnknownSensor(sensor_name.clone()))?;
+            }
+            for argument in arguments {
+                validate_sensor_witness(argument)?;
+            }
+            Ok(())
+        }
         PhiExpression::FunctionDef { body, .. }
+
         | PhiExpression::Evolve(body)
         | PhiExpression::Return(body)
         | PhiExpression::PatternTransform { pattern: body, .. }
@@ -256,8 +261,7 @@ fn validate_sensor_witness(expr: &PhiExpression) -> Result<(), LoweringError> {
             validate_sensor_witness(expression)?;
             validate_sensor_witness(callback)
         }
-        PhiExpression::FunctionCall { arguments, .. }
-        | PhiExpression::List(arguments)
+        PhiExpression::List(arguments)
         | PhiExpression::Block(arguments)
         | PhiExpression::PatternCombine {
             patterns: arguments,
@@ -333,7 +337,8 @@ fn validate_sensor_witness(expr: &PhiExpression) -> Result<(), LoweringError> {
         | PhiExpression::Number(_)
         | PhiExpression::String(_)
         | PhiExpression::Boolean(_)
-        | PhiExpression::Entangle(_) => Ok(()),
+        | PhiExpression::Entangle(_)
+        | PhiExpression::Import { .. } => Ok(()),
     }
 }
 
@@ -414,6 +419,14 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             if name == "coherence_of" && arguments.len() == 1 {
                 if let PhiExpression::String(target) = &arguments[0] {
                     let op = ctx.emit(PhiIRNode::CoherenceOf(target.clone()));
+                    return LowerResult::Value(op);
+                }
+            }
+
+            if name == "sensor" && arguments.len() == 1 {
+                if let PhiExpression::String(s) = &arguments[0] {
+                    let sensor = SensorKind::from_name(s).expect("validated");
+                    let op = ctx.emit(PhiIRNode::WitnessSensor { sensor });
                     return LowerResult::Value(op);
                 }
             }
