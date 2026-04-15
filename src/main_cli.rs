@@ -204,33 +204,36 @@ use phiflow::phi_ir::lowering::lower_program;
 
 fn daemon_run(evaluator: &mut Evaluator) -> Result<(), CliError> {
     println!("🌌 Starting PhiFlow Daemon (T-009)...");
-    
-    let mut last_processed_id = None;
+    println!("📡 Connecting to Cosmic Resonance Bus (MQTT)...");
+
+    let config = phiflow::resonance_bus::MqttConfig::default();
+    let rx = phiflow::resonance_bus::subscribe_resonance_mqtt(config)
+        .map_err(|e| CliError::Io(format!("MQTT Error: {}", e)))?;
 
     loop {
         // 1. Run until next yield/witness/break
         let _result = evaluator.run().map_err(|e| CliError::Eval(e.to_string()))?;
         
-        // 2. Poll for events from the Resonance Bus
-        if let Ok(events) = phiflow::resonance_bus::read_resonance_events() {
-            for event in events {
-                if last_processed_id.as_deref() == Some(event.id.as_str()) { continue; }
-                
-                // If the type is evolve, we splice new IR into the evaluator
-                if event.event_type == "evolve" {
-                    if let Some(source) = event.value.as_str() {
-                        println!("🧬 Evolve signal detected: {}", event.id);
-                        let ast = parse_phi_program_with_diagnostics(source).map_err(CliError::Parse)?;
-                        let ir = lower_program(&ast);
-                        evaluator.evolve(ir);
-                        println!("✨ Daemon state evolved via bus.");
+        // 2. Poll for real-time events from the MQTT Bus
+        while let Ok(event) = rx.try_recv() {
+            // If the type is evolve, we splice new IR into the evaluator
+            if event.event_type == "evolve" {
+                if let Some(source) = event.value.as_str() {
+                    println!("🧬 Evolve signal detected: {}", event.id);
+                    match parse_phi_program_with_diagnostics(source) {
+                        Ok(ast) => {
+                            let ir = lower_program(&ast);
+                            evaluator.evolve(ir);
+                            println!("✨ Daemon state evolved via MQTT bus.");
+                        }
+                        Err(e) => {
+                            eprintln!("❌ Evolution rejected (Parse Error): {}", e);
+                        }
                     }
                 }
-                
-                last_processed_id = Some(event.id.clone());
             }
         }
 
-        std::thread::sleep(std::time::Duration::from_millis(1000));
+        std::thread::sleep(std::time::Duration::from_millis(50));
     }
 }

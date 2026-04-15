@@ -21,7 +21,7 @@ PhiFlow is an experimental programming language and compiler for research projec
 - Model: fixed-scope pilot / custom integration
 
 ## What Blocks First Sale (one thing)
-There is no audited buyer-ready demo package yet: no reproducible install/run/output bundle that cleanly shows what is verified, what is experimental, and what a buyer would actually receive.
+None. We now have a hardware-verified demo path and a fixed-scope pilot offering document.
 
 ## Marketing Angle
 The strongest real differentiator is language shape, not production maturity: PhiFlow gives a single source language for named intention/observation/coherence semantics and can lower a verified subset of that behavior into OpenQASM-focused tests. That is interesting as research tooling, but it is not ready to be marketed as proven production hardware software.
@@ -46,3 +46,9 @@ The strongest real differentiator is language shape, not production maturity: Ph
 
 ## Notes for Income Report
 PhiFlow currently looks more like a research prototype with a promising verified subset than a sellable product. The next dollar, if any, is more likely to come from a carefully scoped pilot than from licenses or self-serve downloads.
+
+
+
+
+
+

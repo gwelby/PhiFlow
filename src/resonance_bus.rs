@@ -5,7 +5,14 @@ use serde_json::Value;
 use std::fs::OpenOptions;
 use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
+use rumqttc::{Client, MqttOptions, QoS, Event, Packet};
+use std::sync::mpsc;
+use std::time::Duration;
+use std::thread;
+use std::sync::{OnceLock, Mutex};
 use uuid::Uuid;
+
+static MQTT_CLIENT: OnceLock<Mutex<Client>> = OnceLock::new();
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResonanceEvent {
@@ -46,6 +53,14 @@ pub fn emit_resonance(value: Value, intention: &str, source: &str) -> Result<()>
     let mut file = OpenOptions::new().create(true).append(true).open(path)?;
 
     writeln!(file, "{}", json_line)?;
+
+    // Fallback: also try to push to MQTT if a global client exists
+    if let Some(client_mutex) = MQTT_CLIENT.get() {
+        if let Ok(mut client) = client_mutex.lock() {
+            let topic = std::env::var("RESONANCE_MQTT_TOPIC").unwrap_or_else(|_| "cosmic/resonance".into());
+            let _ = client.publish(topic, QoS::AtMostOnce, false, json_line);
+        }
+    }
 
     Ok(())
 }
@@ -93,4 +108,50 @@ pub fn get_latest_event(intention_filter: Option<&str>) -> Result<Option<Resonan
         .collect();
 
     Ok(filtered.into_iter().last())
+}
+
+pub struct MqttConfig {
+    pub host: String,
+    pub port: u16,
+    pub topic: String,
+}
+
+impl Default for MqttConfig {
+    fn default() -> Self {
+        let host = std::env::var("RESONANCE_MQTT_HOST").unwrap_or_else(|_| "127.0.0.1".into());
+        let port = std::env::var("RESONANCE_MQTT_PORT")
+            .ok()
+            .and_then(|p| p.parse().ok())
+            .unwrap_or(1883);
+        let topic = std::env::var("RESONANCE_MQTT_TOPIC").unwrap_or_else(|_| "cosmic/resonance".into());
+
+        Self { host, port, topic }
+    }
+}
+
+pub fn subscribe_resonance_mqtt(config: MqttConfig) -> Result<mpsc::Receiver<ResonanceEvent>> {
+    let mut mqttoptions = MqttOptions::new(format!("phiflow-daemon-{}", Uuid::new_v4()), &config.host, config.port);
+    mqttoptions.set_keep_alive(Duration::from_secs(5));
+
+    let (mut client, mut connection) = Client::new(mqttoptions, 10);
+    client.subscribe(&config.topic, QoS::AtMostOnce)?;
+
+    // Store cloned client globally so emit_resonance can use it.
+    let _ = MQTT_CLIENT.set(Mutex::new(client.clone()));
+
+    let (tx, rx) = mpsc::channel();
+
+    thread::spawn(move || {
+        for notification in connection.iter() {
+            if let Ok(Event::Incoming(Packet::Publish(p))) = notification {
+                if let Ok(payload) = String::from_utf8(p.payload.to_vec()) {
+                    if let Ok(event) = serde_json::from_str::<ResonanceEvent>(&payload) {
+                        let _ = tx.send(event);
+                    }
+                }
+            }
+        }
+    });
+
+    Ok(rx)
 }

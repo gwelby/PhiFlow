@@ -1,4 +1,20 @@
-# STATE - Last updated: 2026-04-14 (truth-sync: Antigravity green baseline stabilization)
+# STATE - Last updated: 2026-04-15 (truth-sync: SOMA Bridge Stabilized + Language Epoch)
+
+## Verified (2026-04-15) [Antigravity: SOMA Reality Bridge + Language Hardening]
+
+- **Commit**: `5f9efea` — "[Antigravity] Fix SOMA Bridge Integration (T-008 Completion)"
+- **SOMA Reality Bridge (T-008) CLOSED**:
+  - **Race Condition Fixed**: `src/sensors.rs` now initializes `LIVE_DATA` synchronously from `soma_state.json` on first access. This prevents the previous "200ms None gap" that caused infinite loops in `.phi` programs starting with sensor reads.
+  - **Syntax Universalized**: `lowering.rs` now treats `sensor("name")` as a built-in `WitnessSensor` call regardless of whether it's wrapped in a `witness` block. This enables `let x = sensor("soma_schumann")`.
+  - **Verification Example**: `examples/p1_soma_bridge.phi` verified on this workstation. It reads the Schumann and Presence sensors, computes a field coherence, and breaks the stream when the threshold is met.
+- **Language Epoch (T-004 / T-105 Sub-tasks)**:
+  - **Block Comments**: `/* ... */` support added to `parser/mod.rs`. Verified multiline and inline ignore states.
+  - **Import System**: `import from "file.phi"` syntax added. Parsed end-to-end.
+  - **Type Annotations**: `f64`, `i32`, `bool`, `qubit`, `circuit`, and `consciousness` type keywords added. `custom: MyType` supported.
+  - **Verification Suite**: `tests/predicted_claims_20260415.rs` → **18 passed**, 0 failed.
+- **Test Integrity**:
+  - `cargo run --release --bin phic -- examples/p1_soma_bridge.phi` → **SUCCESS** (Resonating Field: 7.8300Hz observed).
+  - `cargo test --test predicted_claims_20260415` → **SUCCESS** (18 tests).
 
 ## Verified (2026-04-14) [Antigravity: Full test suite green — zero warnings, zero panics]
 
