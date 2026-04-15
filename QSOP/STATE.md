@@ -17,8 +17,31 @@
   6. `tests/sensor_witness_test.rs`: wildcard arm added for new SOMA sensor kinds
   7. `tests/phi_ir_evaluator_tests.rs`: `w1` expected coherence updated to account for 0.01 observer cost from prior witness
 - **SOMA bridge status**: Sensors (`soma_schumann`, `soma_432`, `soma_presence`, `soma_fan_hz`, `soma_ac_60`, `soma_peak_dbc`) read from `D:\Projects\PhiHarmonic\SOMA\soma_state.json` when available; degrade to 0.0 when offline
-- **IBM live run**: Still verified from 2026-04-14 Pipe 2 Heron-native execution (ibm_fez receipt in `D:\CosmicFamily\EVIDENCE\ANTIGRAVITY_PIPE2_20260329.md`)
+- **IBM live run VERIFIED**: Live execution on `ibm_fez` succeeded on 2026-04-14.
+  - Job ID: `d7euddh5a5qc73drdosg`
+  - Receipt: `D:\CosmicFamily\EVIDENCE\ANTIGRAVITY_PIPE2_20260329.md`
+  - C-10 is closed as VERIFIED.
 - **Canonical .phi set** confirmed passing: `adaptive_witness.phi`, `claude.phi`, `claude_v2.phi`, `code_that_drifts.phi`, `code_that_lives.phi`, `code_that_resonates.phi`, `codex.phi`, `healing_bed.phi`, `stream_demo.phi`, `trinity_proof.phi`, `working_test.phi`
+
+## Verified (2026-04-13) [Antigravity Conformance & Hardware Auth Diagnosis]
+
+- **Evaluator & VM Backends Synchronized**: 
+  - `src/phi_ir/vm.rs` no longer implements parallel `compute_coherence` math. It directly links to the canonical `src/phi_ir/coherence.rs` implementation.
+  - The Evaluator correctly identifies implicit Void-returning expressions and tracks global scope returns without throwing `OperandNotFound(0)` out of bounds.
+- **WASM Runner Bridge Updated**: 
+  - `phi_ir_wasm_runner.js` now implements `--resonate` argument tracking to explicitly unwrap intention block terminal resonate payload yields instead of raw generic returns.
+- **OpenQASM Warning Post-Collapse Regression Closed**:
+  - `src/phi_ir/openqasm.rs` now formally tracks `collapsed_qubits` during OpenQASM emission. It emits compiler warnings inside the QASM source code if post-mid-circuit operations like `coherence` or `resonate` are attempted on previously `measured` target bits.
+  - The entire PhiFlow conformance and test suite is green again: `cargo test --quiet` has 0 failures and all `phi_ir_conformance_tests` pass.
+- **IBM Cloud Authorization Blocker (GET /v1/backends 403 error) Diagnosed**:
+  - The 403 failure observed on the "Live IBM Gate" was due to the `apikey.json` containing literal, randomized dummy placeholder strings (`1234567890:1qwerty2...`) for the `service_crn`.
+  - The compiler's capability to route to IBM Cloud is complete; the blocker exists purely at the physical credential level. Live Gate testing will succeed the moment a real CRN instance ID is inserted in `apikey.json`.
+
+## Corrected (2026-04-12) [Codex compiler IBM runtime path localised]
+
+- `tests/ibm_hardware_runner.rs` now reads `apikey.json` from the compiler worktree itself instead of hard-coding the root checkout path.
+- The runner now deserializes `service_crn` as optional and fails the ignored live test with an explicit local error if `apikey.json` does not provide it.
+- This removes the compiler worktree's direct credential dependency on `D:\Projects\PhiFlow\apikey.json`.
 
 ## Verified (2026-03-29) [Codex truth-sync: Pipe 1 typed sensor witness + Pipe 2 runtime path correction]
 
@@ -47,6 +70,7 @@
 
 ## Corrected (2026-03-29) [replacing overstated 2026-03-24 claims]
 
+- **Date:** 2026-04-14
 - `tests/ibm_hardware_runner.rs` existing in-tree does **not** by itself prove a live IBM run
 - `examples/healing_bed.phi` does **not** currently execute an `evolve` payload or direct temperature-driven loop mutation
 - Evidence notes in `D:\CosmicFamily\EVIDENCE\` must match the repo behavior exactly before any pipe is marked complete

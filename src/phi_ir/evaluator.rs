@@ -234,6 +234,15 @@ impl<'a> Evaluator<'a> {
         self
     }
 
+    /// Inject new IR blocks into the running evaluator state.
+    pub fn evolve(&mut self, evolved_prog: PhiIRProgram) {
+        let id_offset = self.program.blocks.len() as BlockId;
+        for mut block in evolved_prog.blocks.clone() {
+            block.id += id_offset;
+            self.program.blocks.push(block);
+        }
+    }
+
     /// Backwards-compatible: set a coherence provider closure.
     pub fn with_coherence_provider<F>(mut self, provider: F) -> Self
     where

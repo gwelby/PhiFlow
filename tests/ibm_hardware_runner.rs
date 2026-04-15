@@ -5,14 +5,14 @@ use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
-const APIKEY_PATH: &str = "D:/Projects/PhiFlow/apikey.json";
+const APIKEY_PATH: &str = "apikey.json";
 const EVIDENCE_PATH: &str = "D:/CosmicFamily/EVIDENCE/ANTIGRAVITY_PIPE2_20260329.md";
 const IBM_SMOKE_PATH: &str = "examples/ibm_smoke.phi";
 
 #[derive(Debug, Deserialize)]
 struct IbmCredentials {
     apikey: String,
-    service_crn: String,
+    service_crn: Option<String>,
     region: Option<String>,
     backend: Option<String>,
 }
@@ -90,10 +90,12 @@ async fn test_live_ibm_hardware_runner() {
         .unwrap_or_else(|| "ibm_osaka".to_string());
     let region = credentials.region.clone();
 
+    let service_crn = credentials.service_crn.clone().expect("apikey.json must include service_crn for the IBM Cloud Runtime live test");
+
     let config = QuantumConfig {
         backend_name: backend_name.clone(),
         api_token: Some(credentials.apikey),
-        service_crn: Some(credentials.service_crn),
+        service_crn: Some(service_crn),
         region: region.clone(),
         hub: None,
         group: None,

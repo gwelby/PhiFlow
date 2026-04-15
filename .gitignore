@@ -94,3 +94,6 @@ consciousness_*.phi
 
 # P1 host (separate project)
 p1_host/
+
+# IBM Quantum credentials (never commit live keys)
+apikey.json

@@ -29,6 +29,10 @@ struct Args {
     /// Optimize quantum circuit depth using tree topology.
     #[arg(long, default_value_t = false)]
     optimize_depth: bool,
+
+    /// Run as a daemon, listening for evolve events.
+    #[arg(long, default_value_t = false)]
+    daemon: bool,
 }
 
 #[derive(Debug)]
@@ -53,6 +57,7 @@ fn main() {
         args.json_errors,
         args.target,
         args.optimize_depth,
+        args.daemon,
     ) {
         Ok(Some(report)) => {
             if args.json_errors {
@@ -130,6 +135,7 @@ fn run(
     json_errors: bool,
     target: Option<String>,
     optimize_depth: bool,
+    daemon: bool,
 ) -> Result<Option<RunReport>, CliError> {
     let source = fs::read_to_string(file_path)
         .map_err(|e| CliError::Io(format!("Failed to read file: {}", e)))?;
@@ -176,14 +182,14 @@ fn run(
     }
 
     // 4. Default execution via PhiIR Evaluator
-    // sensors::compute_coherence_from_sensors() is wired as a *multiplicative modifier*
-    // on the internal phi-stack coherence, not a replacement. This means:
-    //   - Phi-stack coherence stays the baseline (intention depth, resonance field)
-    //   - Live hardware health (thermal, memory, CPU, network) applies a reality penalty
-    //   - Under load: modifier ≈ 0.3–0.6 → stream thresholds trip earlier → self-throttle
-    //   - At idle: modifier ≈ 0.9–1.0 → near-transparent
     let mut evaluator = Evaluator::new(&ir_program)
         .with_hardware_modifier(sensors::compute_coherence_from_sensors);
+
+    if daemon {
+        daemon_run(&mut evaluator)?;
+        return Ok(None);
+    }
+
     let _result = evaluator.run().map_err(|e| CliError::Eval(e.to_string()))?;
 
     Ok(Some(RunReport {
@@ -191,4 +197,40 @@ fn run(
         resonance_events: evaluator.resonance_events().to_vec(),
         ended_streams: evaluator.ended_streams().to_vec(),
     }))
+}
+
+
+use phiflow::phi_ir::lowering::lower_program;
+
+fn daemon_run(evaluator: &mut Evaluator) -> Result<(), CliError> {
+    println!("🌌 Starting PhiFlow Daemon (T-009)...");
+    
+    let mut last_processed_id = None;
+
+    loop {
+        // 1. Run until next yield/witness/break
+        let _result = evaluator.run().map_err(|e| CliError::Eval(e.to_string()))?;
+        
+        // 2. Poll for events from the Resonance Bus
+        if let Ok(events) = phiflow::resonance_bus::read_resonance_events() {
+            for event in events {
+                if last_processed_id.as_deref() == Some(event.id.as_str()) { continue; }
+                
+                // If the type is evolve, we splice new IR into the evaluator
+                if event.event_type == "evolve" {
+                    if let Some(source) = event.value.as_str() {
+                        println!("🧬 Evolve signal detected: {}", event.id);
+                        let ast = parse_phi_program_with_diagnostics(source).map_err(CliError::Parse)?;
+                        let ir = lower_program(&ast);
+                        evaluator.evolve(ir);
+                        println!("✨ Daemon state evolved via bus.");
+                    }
+                }
+                
+                last_processed_id = Some(event.id.clone());
+            }
+        }
+
+        std::thread::sleep(std::time::Duration::from_millis(1000));
+    }
 }

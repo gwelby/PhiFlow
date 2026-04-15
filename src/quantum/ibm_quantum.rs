@@ -102,7 +102,7 @@ impl IBMQuantumBackend {
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Accept", "application/json")
                 .form(&[
-                    ("grant_type", "urn:ietf:params:oauth:grant-type:apikey"),
+                    ("grant_type", "urn:ibm:params:oauth:grant-type:apikey"),
                     ("apikey", token.as_str()),
                 ])
                 .send()
@@ -159,7 +159,9 @@ impl IBMQuantumBackend {
         path: &str,
     ) -> reqwest::RequestBuilder {
         let url = format!("{}{}", self.base_url, path);
-        let mut req = self.client.request(method, &url);
+        let mut req = self.client.request(method, &url)
+            .header("Accept", "application/json")
+            .header("User-Agent", "phiflow-runtime/0.4.0");
 
         if let Some(crn) = &self.service_crn {
             req = req

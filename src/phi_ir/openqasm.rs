@@ -33,6 +33,9 @@ pub struct OpenQasmEmitter {
     pub optimize_depth: bool,
     /// Deferred measurements emitted after the last gate (Final / NonDestructive policy)
     deferred_measures: Vec<String>,
+    /// Hardware stress level (0.0 to 1.0). 
+    /// High stress triggers decoherence noise injection (Rx gates) in Witness.
+    pub hardware_stress: f64,
     /// Qubits that have been collapsed by a mid-circuit measurement
     collapsed_qubits: HashSet<usize>,
 }
@@ -46,6 +49,7 @@ impl OpenQasmEmitter {
             freq_chains: HashMap::new(),
             num_qubits: 1,
             optimize_depth: false,
+            hardware_stress: 0.0,
             deferred_measures: Vec::new(),
             collapsed_qubits: HashSet::new(),
         }
@@ -106,6 +110,21 @@ impl OpenQasmEmitter {
                     PhiIRNode::Witness {
                         collapse_policy, ..
                     } => {
+                        // Body Stress Bridge: Inject noise if hardware stress is high
+                        // stability = 1.0 - hardware_stress. If stability < 0.5 (stress > 0.5), inject Rx.
+                        let stability = 1.0 - self.hardware_stress;
+                        if stability < 0.5 {
+                            let angle = format_multiplier((0.5 - stability) * 2.0);
+                            self.source.push_str(&format!(
+                                "    // Hardware Stress detected (stability {:.4}) - injecting decoherence\n",
+                                stability
+                            ));
+                            for i in 0..self.num_qubits {
+                                let theta_expr = format!("{angle} * pi");
+                                self.emit_rx_native(i, &theta_expr);
+                            }
+                        }
+
                         match collapse_policy {
                             CollapsePolicy::MidCircuit => {
                                 // Mid-circuit: emit measurement immediately so later gates
@@ -230,7 +249,6 @@ impl OpenQasmEmitter {
 
     /// Emit a Heron-native Rx(theta) decomposition using [rz, sx] basis gates.
     /// Rx(θ) = Rz(π/2) · SX · Rz(θ) · SX · Rz(-π/2)
-    #[allow(dead_code)]
     fn emit_rx_native(&mut self, target_q: usize, theta_expr: &str) {
         self.source.push_str(&format!(
             "    // rx({theta_expr}) decomposed for Heron (rz, sx basis)\n"
@@ -764,5 +782,52 @@ mod tests {
         assert!(code.contains("cx q[0], q[3]; // Entangle via 528Hz"));
         assert!(code.contains("cx q[3], q[4]; // Entangle via 528Hz"));
         assert!(!code.contains("cx q[2], q[3]"));
+    }
+
+    #[test]
+    fn test_openqasm_hardware_stress_injection() {
+        use crate::phi_ir::{CollapsePolicy, PhiIRNode, PhiInstruction, PhiIRProgram, PhiIRBlock};
+        
+        let mut ir = PhiIRProgram::new();
+        ir.intentions_declared = vec!["I0".to_string()];
+
+        let mut block = PhiIRBlock {
+            id: 0,
+            label: "entry".to_string(),
+            instructions: Vec::new(),
+            terminator: crate::phi_ir::PhiIRNode::Fallthrough,
+        };
+        block.instructions.push(PhiInstruction {
+            result: None,
+            node: PhiIRNode::IntentionPush { 
+                name: "I0".to_string(), 
+                frequency_hint: None 
+            },
+        });
+        block.instructions.push(PhiInstruction {
+            result: None,
+            node: PhiIRNode::Witness {
+                target: None,
+                collapse_policy: CollapsePolicy::MidCircuit,
+            },
+        });
+        ir.blocks.push(block);
+
+        let mut emitter = OpenQasmEmitter::new();
+
+        // No stress: stability 1.0 (defaults to 0.0 stress)
+        emitter.hardware_stress = 0.0;
+        let code_no_stress = emitter.emit(&ir).expect("emit failed");
+        assert!(!code_no_stress.contains("rx("));
+
+        // High stress: stability 0.4 (stress 0.6)
+        emitter.hardware_stress = 0.6;
+        let code_stress = emitter.emit(&ir).expect("emit failed");
+
+        // stability = 1.0 - 0.6 = 0.4.
+        // stability < 0.5 triggers Rx native decomposition.
+        assert!(code_stress.contains("Hardware Stress detected"));
+        assert!(code_stress.contains("rx("));
+        assert!(code_stress.contains("sx q[0];"));
     }
 }
