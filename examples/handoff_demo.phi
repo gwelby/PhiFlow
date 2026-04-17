@@ -1,0 +1,16 @@
+// handoff_demo.phi
+// Demonstrating first-class agentic handoffs on the Cosmic Bus.
+
+intention "analysis" {
+    let current_coherence = coherence
+    witness current_coherence
+    
+    // Simulation: Analysis complete, handing over to the Hardener for stabilization.
+    handoff "Hardener" task "T-102-STABILIZE" {
+        let msg = "Substrate stabilized at depth 2. Ready for hardening."
+        resonate msg as "handoff_context"
+        
+        // Return the msg as the handoff context value
+        msg
+    }
+}

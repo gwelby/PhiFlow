@@ -141,6 +141,14 @@ fn format_instr(node: &PhiIRNode) -> String {
         // v0.4.0 Strategic Capabilities
         PhiIRNode::Evolve(op) => format!("Evolve %{}", op),
         PhiIRNode::Entangle(freq) => format!("Entangle on {}Hz", freq),
+        PhiIRNode::Handoff {
+            target_agent,
+            task_id,
+            context_op,
+        } => format!(
+            "Handoff target=\"{}\" task=\"{}\" ctx=%{}",
+            target_agent, task_id, context_op
+        ),
 
         PhiIRNode::Nop => "Nop".to_string(),
         PhiIRNode::FuncDef { name, .. } => format!("FuncDef '{}'", name),

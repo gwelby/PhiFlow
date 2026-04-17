@@ -118,7 +118,7 @@ impl LoweringContext {
                 | PhiIRNode::CreatePattern { .. }
                 | PhiIRNode::DomainCall { .. }
                 | PhiIRNode::Witness { .. }     // returns coherence score (0.0–1.0)
-                | PhiIRNode::WitnessSensor { .. }
+                | PhiIRNode::WitnessSensor { .. } // FIX: returns sensor value
                 | PhiIRNode::CoherenceCheck     // returns coherence score (0.0–1.0)
                 | PhiIRNode::Recall(_)
                 | PhiIRNode::Listen(_)
@@ -253,6 +253,7 @@ fn validate_sensor_witness(expr: &PhiExpression) -> Result<(), LoweringError> {
         | PhiExpression::IntentionBlock { body, .. }
         | PhiExpression::StreamBlock { body, .. }
         | PhiExpression::AgentBlock { body, .. }
+        | PhiExpression::Handoff { context: body, .. }
         | PhiExpression::AudioSynthesis { pattern: body, .. } => validate_sensor_witness(body),
         PhiExpression::ConsciousnessMonitor {
             expression,
@@ -670,6 +671,20 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
         }
         PhiExpression::Entangle(freq) => {
             let op = ctx.emit(PhiIRNode::Entangle(*freq));
+            LowerResult::Value(op)
+        }
+        PhiExpression::Handoff {
+            target_agent,
+            task_id,
+            context,
+        } => {
+            let res = lower_expr(ctx, context);
+            let ctx_op = unwrap_val(ctx, res);
+            let op = ctx.emit(PhiIRNode::Handoff {
+                target_agent: target_agent.clone(),
+                task_id: task_id.clone(),
+                context_op: ctx_op,
+            });
             LowerResult::Value(op)
         }
 

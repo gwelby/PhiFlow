@@ -1,0 +1,30 @@
+// 🌌 PhiFlow Daemon Configuration (T-009 Singularity)
+// This script runs as the "Council" stream in the persistent background daemon.
+
+intention "SYSTEM_MONITOR" {
+    loop {
+        // Observe the reality state
+        let current_coherence = coherence;
+        resonate "council/coherence" current_coherence;
+
+        witness sensor("cpu_usage");
+
+        // System Maintenance - requires "SYSTEM" intention
+        intention "SYSTEM" {
+            // Persist the state log to the resonance field
+            persist "daemon_heartbeat" "active";
+        }
+
+        // Wait for resonance or external signals
+        witness;
+    }
+}
+
+// Stream 2: Resonance Field Sanitizer (example of multi-intent logic)
+intention "TRUTH_SYNC" {
+    loop {
+        witness current_block;
+        resonate "daemon/uptime" 1.0;
+        witness;
+    }
+}

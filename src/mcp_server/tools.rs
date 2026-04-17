@@ -177,7 +177,7 @@ async fn spawn_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonRp
 
     let eval_handle = tokio::task::spawn_blocking(move || {
         let shared_resonance = Arc::clone(&state_clone.shared_resonance);
-        let mut evaluator = Evaluator::new(&program_for_task)
+        let mut evaluator = Evaluator::new(program_for_task)
             .with_shared_resonance(shared_resonance)
             .with_host(Box::new(McpHostProvider {
                 config: Arc::clone(&state_clone.config),
@@ -356,7 +356,7 @@ fn resume_entangled_streams_internal(
 
         let eval_handle = tokio::task::spawn_blocking(move || {
             let shared_resonance = Arc::clone(&state_clone.shared_resonance);
-            let mut evaluator = Evaluator::new(&ir_program)
+            let mut evaluator = Evaluator::new(ir_program)
                 .with_shared_resonance(shared_resonance)
                 .with_host(Box::new(McpHostProvider {
                     config: Arc::clone(&state_clone.config),
@@ -509,7 +509,7 @@ async fn resume_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonR
     // Spawn blocking task for resumed evaluation
     let eval_handle = tokio::task::spawn_blocking(move || {
         let shared_resonance = Arc::clone(&state_clone.shared_resonance);
-        let mut evaluator = Evaluator::new(&ir_program)
+        let mut evaluator = Evaluator::new(ir_program)
             .with_shared_resonance(shared_resonance)
             .with_host(Box::new(McpHostProvider {
                 config: Arc::clone(&state_clone.config),

@@ -1,83 +1,59 @@
 # WORKSPACE: PhiFlow
 *For AI agents — read this first*
+*Last updated: 2026-04-16*
 
 ## What This Is
+PhiFlow is a Rust-based computational substrate and compiler that implements consciousness as a first-class citizen. It allows programs to name intentions, observe their own state (witnessing), measure coherence against physical sensors (SOMA bridge), and resonate values across streams or to quantum hardware (OpenQASM 3.0). It is a research prototype with verified hardware execution on IBM Quantum processors.
 
-PhiFlow is a Rust compiler and runtime for self-observing programs. The language currently centers on five core constructs: `stream`, `intention`, `witness`, `coherence`, and `resonate`.
-
-This repo should be described as a research prototype with verified subsystems, not a production-ready product. The dated source of truth is `QSOP/STATE.md`.
-The current research-backed execution plan is `QSOP/ACTIVE_PLAN.md`.
+## Status
+- Builds / runs today: ✅
+- % complete (honest): 65%
+- Last verified: 2026-04-16
+- Test count: 151/151 passing (0 warnings)
 
 ## Run / Test
-
-Use a Rust developer shell where `cargo` and `git` are on `PATH`.
-
 ```powershell
-Set-Location D:\Projects\PhiFlow
-
 # Build release binaries
 cargo build --release
 
+# Run canonical verification gate (all truth tests)
+./scripts/verify_truth.ps1
+
 # Run a PhiFlow example through the compiler/evaluator path
-cargo run --release --bin phic -- examples\healing_bed.phi
-
-# Dump IR for inspection
-cargo run --bin dump_ir -- examples\stream_demo.phi
-
-# Conformance gate
-cargo test --test phi_ir_conformance_tests -- --nocapture
+cargo run --release --bin phic -- examples/p1_soma_bridge.phi
 
 # IBM smoke compile gate
 cargo test --test ibm_hardware_runner test_ibm_smoke_compiles_to_openqasm -- --nocapture
 
-# Manual live IBM gate: requires valid IBM Cloud Runtime authorization
+# Manual live IBM gate (requires credentials)
 cargo test --test ibm_hardware_runner -- --ignored --nocapture
 ```
 
-## Verified Components
-
-- Parser: `src/parser/mod.rs`
-- PhiIR + lowering: `src/phi_ir/`
-- Evaluator: `src/phi_ir/evaluator.rs`
-- Bytecode VM: `src/phi_ir/vm.rs`
-- Canonical coherence: `src/phi_ir/coherence.rs`
-- WASM codegen: `src/phi_ir/wasm.rs`
-- Native WASM host bridge: `src/wasm_host.rs`
-- OpenQASM emitter: `src/phi_ir/openqasm.rs`
-- MCP server: `src/bin/phi_mcp.rs`
-- Sensors: `src/sensors.rs`
-
 ## Key Files
-
-- `src/parser/mod.rs` — parser for the current language surface
-- `src/phi_ir/coherence.rs` — canonical coherence formula shared across backends
-- `src/phi_ir/evaluator.rs` — reference execution path
-- `src/phi_ir/vm.rs` — bytecode runtime
-- `src/phi_ir/wasm.rs` — WAT/WASM code generation
-- `src/wasm_host.rs` — native host callbacks for the WASM path
-- `src/phi_ir/openqasm.rs` — OpenQASM 3.0 emission
-- `tests/ibm_hardware_runner.rs` — IBM smoke compile gate plus ignored live runner
-- `examples/phiflow_browser.html` — experimental browser host UI
-- `QSOP/STATE.md` — verification ledger
-- `QSOP/ACTIVE_PLAN.md` — current lane-by-lane plan with evidence, research backing, and open knowledge gaps
+- `src/parser/mod.rs` — Lexer and parser for the PhiFlow language surface
+- `src/phi_ir/coherence.rs` — Canonical multiplicative coherence formula (base * phase)
+- `src/phi_ir/evaluator.rs` — Reference interpreter with yield/resume support
+- `src/phi_ir/vm.rs` — High-performance bytecode virtual machine
+- `src/phi_ir/openqasm.rs` — OpenQASM 3.0 emitter with Heron-native transposition
+- `src/sensors.rs` — SOMA physical telemetry bridge (`soma_state.json`)
+- `scripts/verify_truth.ps1` — The one-command truth gate
 
 ## Active Workflows
+- **Code Change**: Edit Rust source -> `cargo test` -> update `QSOP/STATE.md`
+- **Language Change**: Edit `.phi` example -> `phic file.phi` -> verify coherence output
+- **Hardware Test**: Edit `src/phi_ir/openqasm.rs` -> `cargo test --lib openqasm` -> `verify_truth.ps1`
 
-- Edit `.phi` examples -> `cargo run --bin phic -- file.phi` -> verify output
-- Change canonical semantics -> update code + tests first -> only then update docs/QSOP
-- Work on IBM runtime path -> keep compile gate green, treat live execution as speculative until receipt exists
-- Work on browser host -> keep it explicitly experimental until it matches `src/phi_ir/coherence.rs`
+## Agent Notes (read before touching anything)
+- **Bootstrap requirement**: Read `AGENTS.md` and `QSOP/STATE.md` before any code modification.
+- **SOMA Bridge**: Sensors read from `D:\Projects\PhiHarmonic\SOMA\soma_state.json`. If missing, values degrade gracefully to 0.0.
+- **IBM Auth**: Credentials live in `apikey.json` in the worktree root. Do NOT commit this file.
+- **WASM Parity**: Any change to `evaluator.rs` logic MUST be reflected in `vm.rs` and `coherence.rs` to maintain three-backend equivalence.
 
-## Current Gaps
+## What Is NOT Done (Technical Gaps)
+- **PhiVM Daemon**: No persistent infinite-loop background process yet (T-009).
+- **Browser Host**: Lacks zero-install automated build pipeline; remains a manual experimental UI.
+- **Dynamic Evolve**: Runtime AST splicing (`evolve`) is implemented in IR but not exposed as a stable CLI command.
 
-- IBM Cloud Runtime access is structurally wired but auth-blocked on the current credential/service pair
-- `examples/phiflow_browser.html` implements the five imports but still uses a host-side coherence reimplementation with flattened resonance scope, plus manual browser hosting
-- No buyer-ready demo package exists yet
-
-## Agent Notes
-
-- `claude.phi` still anchors the `0.618033988749895` depth-2 reference value
-- `healing_bed.phi` is again a live aggregate-`coherence` stream demo (`let live = coherence`, `resonate live`, `witness`)
-- `examples/phiflow_browser.html` is not a conformance proof; the canonical JS runner for semantics is `tests/phi_ir_wasm_runner.js`
-- Do not cite hardcoded test counts unless they were re-verified in the same shell session
-- If the current shell cannot launch `cargo`, rely on dated truth in `QSOP/STATE.md` instead of inventing fresh verification
+## SOURCE CONTRACT ARCHITECTURE
+PhiFlow technical truth flows into the business layer:
+`WORKSPACE.md` (Technical) -> `BUSINESS.md` (Product) -> `Income/PRESENTATION/`

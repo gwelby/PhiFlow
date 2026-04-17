@@ -58,6 +58,7 @@ pub enum PhiToken {
     ConsciousnessFlow,
     Stream,
     Break,
+    Handoff,
 
     // v0.3.0 Persistence & Dialogue
     Remember,
@@ -311,6 +312,11 @@ pub enum PhiExpression {
     // v0.4.0 Transcendent Capabilities
     Evolve(Box<PhiExpression>),
     Entangle(f64),
+    Handoff {
+        target_agent: String,
+        task_id: String,
+        context: Box<PhiExpression>,
+    },
 
     // Control flow
     Block(Vec<PhiExpression>),
@@ -712,6 +718,7 @@ impl PhiLexer {
             "consciousness_flow" => PhiToken::ConsciousnessFlow,
             "stream" => PhiToken::Stream,
             "break" => PhiToken::Break,
+            "handoff" => PhiToken::Handoff,
 
             // v0.3.0 Persistence & Dialogue
             "remember" => PhiToken::Remember,
@@ -936,6 +943,7 @@ impl PhiParser {
             PhiToken::QuantumBridge => self.parse_quantum_bridge(),
             PhiToken::Stream => self.parse_stream_block(),
             PhiToken::Break => self.parse_break_stream(),
+            PhiToken::Handoff => self.parse_handoff_statement(),
             PhiToken::Remember => self.parse_remember_statement(),
             PhiToken::Recall => self.parse_recall_expression(),
             PhiToken::Broadcast => self.parse_broadcast_statement(),
@@ -2031,6 +2039,32 @@ impl PhiParser {
                 self.current_token
             )),
         }
+    }
+
+    fn parse_handoff_statement(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Handoff)?;
+        let target_agent = self.expect_string()?;
+
+        // Optional "task" keyword
+        let task_id = if let PhiToken::Identifier(s) = &self.current_token {
+            if s == "task" {
+                self.advance();
+                self.expect_string()?
+            } else {
+                "unknown".to_string()
+            }
+        } else {
+            "unknown".to_string()
+        };
+
+        // Context block
+        let context = Box::new(self.parse_statement()?);
+
+        Ok(PhiExpression::Handoff {
+            target_agent,
+            task_id,
+            context,
+        })
     }
 
     fn expect_identifier(&mut self) -> Result<String, String> {

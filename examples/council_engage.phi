@@ -1,0 +1,17 @@
+// council_engage.phi
+// Trigger: Wake the Council for live operation
+stream "council_sync" {
+    // 1. Witness the physical state
+    let schumann = sensor("soma_schumann")
+    witness schumann
+
+    // 2. Broadcast the readiness state to the Resonance Bus
+    // The Daemon will pick this up in its next loop tick
+    broadcast "council_channel" "READY_FOR_SINGULARITY"
+
+    // 3. Resonate at Phi to signal the Council's harmonic baseline
+    resonate 0.618
+
+    // 4. Evolve to the next operational state
+    evolve "let council_mode = 1"
+}

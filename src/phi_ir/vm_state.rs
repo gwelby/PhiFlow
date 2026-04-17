@@ -3,7 +3,7 @@
 //! This state is captured when execution yields at `witness`, and can be
 //! serialized/deserialized across process boundaries before resuming.
 
-use crate::phi_ir::{BlockId, Operand, PhiIRValue};
+use crate::phi_ir::{BlockId, Operand, PhiIRValue, PhiIRProgram};
 use std::collections::HashMap;
 
 /// A snapshot of program state recorded each time `witness` executes.
@@ -24,6 +24,7 @@ pub struct VmWitnessEvent {
 /// Serializable evaluator state, captured when the program yields.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct VmState {
+    pub program: PhiIRProgram,
     pub registers: HashMap<Operand, PhiIRValue>,
     pub variables: HashMap<String, PhiIRValue>,
     pub intention_stack: Vec<String>,

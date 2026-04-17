@@ -92,7 +92,8 @@ fn run_eval_and_wasm(source: &str) -> (PhiIRValue, f64) {
     let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
     optimizer.optimize(&mut program);
 
-    let mut evaluator = Evaluator::new(&program);
+    let mut evaluator = Evaluator::new(program.clone());
+
     let eval_result = evaluator.run().expect("evaluator failed");
 
     let wat = emit_wat(&program);
@@ -122,7 +123,8 @@ fn run_all_paths(source: &str) -> (PhiIRValue, PhiIRValue, f64) {
     let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
     optimizer.optimize(&mut program);
 
-    let mut evaluator = Evaluator::new(&program);
+    let mut evaluator = Evaluator::new(program.clone());
+
     let eval_result = evaluator.run().expect("evaluator failed");
 
     let bytes = emitter::emit(&program);
@@ -266,7 +268,7 @@ fn conformance_sensor_witness_all_kinds() {
         let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
         optimizer.optimize(&mut program);
 
-        let mut evaluator = Evaluator::new(&program).with_sensor_provider(sensor_provider);
+        let mut evaluator = Evaluator::new(program.clone()).with_sensor_provider(sensor_provider);
         let eval_result = evaluator.run().expect("evaluator failed");
 
         let bytes = emitter::emit(&program);
@@ -299,7 +301,8 @@ fn assert_program_runs_on_eval_and_wasm(source: &str, label: &str) {
     optimizer.optimize(&mut program);
 
     // Evaluator: must run without error
-    let mut evaluator = Evaluator::new(&program);
+    let mut evaluator = Evaluator::new(program.clone());
+
     evaluator
         .run()
         .unwrap_or_else(|e| panic!("{}: evaluator failed: {:?}", label, e));
@@ -391,7 +394,8 @@ fn test_wasm_claude_formula_returns_618() {
     let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
     optimizer.optimize(&mut program);
 
-    let mut evaluator = Evaluator::new(&program);
+    let mut evaluator = Evaluator::new(program.clone());
+
     evaluator.run().expect("evaluator failed");
 
     let eval_number = match evaluator.resonated_values("LAMBDA_convergence").last() {

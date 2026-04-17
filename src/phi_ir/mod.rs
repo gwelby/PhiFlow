@@ -32,7 +32,7 @@ pub type Operand = u32;
 pub type BlockId = u32;
 
 /// Sacred frequency annotation (optional, backends can ignore)
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SacredFrequency {
     Ground,         // 432 Hz
     Creation,       // 528 Hz
@@ -45,7 +45,7 @@ pub enum SacredFrequency {
 }
 
 /// Pattern types that CreatePattern can produce
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PatternKind {
     Spiral,
     Flower,
@@ -61,7 +61,7 @@ pub enum PatternKind {
 }
 
 /// Measurement strategy hint (quantum backend uses this, others ignore)
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CollapsePolicy {
     MidCircuit,     // measure and continue
     Final,          // record but don't collapse until end
@@ -69,7 +69,7 @@ pub enum CollapsePolicy {
 }
 
 /// Direction for binary council-style resonance encodings.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ResonateDirection {
     TeamA,
     TeamB,
@@ -153,7 +153,7 @@ impl SensorKind {
 }
 
 /// Domain operations (specialized features beyond the four core constructs)
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum DomainOp {
     AudioSynthesize,
     ConsciousnessMonitor,
@@ -168,7 +168,7 @@ pub enum DomainOp {
 }
 
 /// Binary operators
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PhiIRBinOp {
     Add,
     Sub,
@@ -187,14 +187,14 @@ pub enum PhiIRBinOp {
 }
 
 /// Unary operators
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PhiIRUnOp {
     Neg,
     Not,
 }
 
 /// Function parameter
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Param {
     pub name: String,
     // Type annotation is optional in PhiFlow
@@ -221,7 +221,7 @@ impl PhiIRValue {
 }
 
 /// A wrapper around a PhiIRNode that explicitly tracks the result operand.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PhiInstruction {
     /// The SSA value defined by this instruction, if any.
     pub result: Option<Operand>,
@@ -231,7 +231,7 @@ pub struct PhiInstruction {
 
 /// One instruction in the PhiIR.
 /// Each instruction produces at most one value, referenced by its index (Operand).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PhiIRNode {
     // --- Primitives ---
     /// No operation (used for padding or deleted instructions)
@@ -369,6 +369,13 @@ pub enum PhiIRNode {
     /// Request a phase-locking with other streams on a given frequency.
     Entangle(f64),
 
+    /// Agentic context handoff between council members.
+    Handoff {
+        target_agent: String,
+        task_id: String,
+        context_op: Operand,
+    },
+
     // --- Domain Operations (backend-specific interpretation) ---
     /// Specialized operation. Each backend maps these to its own implementation.
     /// Backends that don't support a domain op emit a warning or no-op.
@@ -394,7 +401,7 @@ pub enum PhiIRNode {
 }
 
 /// A basic block: a named sequence of instructions with a terminator.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PhiIRBlock {
     pub id: BlockId,
     pub label: String, // human-readable name (e.g., "intention_healing_entry")
@@ -403,7 +410,7 @@ pub struct PhiIRBlock {
 }
 
 /// A complete PhiIR program.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PhiIRProgram {
     /// All basic blocks in the program, in order.
     pub blocks: Vec<PhiIRBlock>,

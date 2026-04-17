@@ -28,6 +28,7 @@ pub mod compiler;
 pub mod quantum_feedback;
 pub mod resonance_bus;
 pub mod sensors;
+pub mod system_host;
 pub mod vm;
 pub mod wasm_host;
 
@@ -82,7 +83,7 @@ pub fn compile_and_run_phi_ir(source: &str) -> Result<phi_ir::PhiIRValue, String
 
     // 4. Evaluate
     use phi_ir::evaluator::Evaluator;
-    let mut evaluator = Evaluator::new(&program);
+    let mut evaluator = Evaluator::new(program);
     evaluator
         .run()
         .map_err(|e| format!("Runtime error: {:?}", e))

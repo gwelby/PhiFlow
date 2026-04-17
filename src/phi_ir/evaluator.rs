@@ -167,28 +167,13 @@ struct FunctionMeta {
 }
 
 impl<'a> Evaluator<'a> {
-    pub fn new(program: &'a PhiIRProgram) -> Self {
-        let mut functions = HashMap::new();
-        for block in &program.blocks {
-            for instr in &block.instructions {
-                if let PhiIRNode::FuncDef { name, params, body } = &instr.node {
-                    functions.insert(
-                        name.clone(),
-                        FunctionMeta {
-                            params: params.iter().map(|p| p.name.clone()).collect(),
-                            body: *body,
-                        },
-                    );
-                }
-            }
-        }
-
+    pub fn new(program: PhiIRProgram) -> Self {
         let mut variables = HashMap::new();
         variables.insert("PHI".to_string(), PhiIRValue::Number(PHI));
 
-        Self {
+        let mut eval = Self {
             program: program.clone(),
-            functions,
+            functions: HashMap::new(),
             host: Box::new(DefaultHostProvider),
             registers: HashMap::new(),
             variables,
@@ -210,6 +195,25 @@ impl<'a> Evaluator<'a> {
             measurement_coherence_penalty: 0.0,
             stream_thresholds: HashMap::new(),
             hardware_modifier: None,
+        };
+        eval.rebuild_functions_map();
+        eval
+    }
+
+    fn rebuild_functions_map(&mut self) {
+        self.functions.clear();
+        for block in &self.program.blocks {
+            for instr in &block.instructions {
+                if let PhiIRNode::FuncDef { name, params, body } = &instr.node {
+                    self.functions.insert(
+                        name.clone(),
+                        FunctionMeta {
+                            params: params.iter().map(|p| p.name.clone()).collect(),
+                            body: *body,
+                        },
+                    );
+                }
+            }
         }
     }
 
@@ -349,6 +353,7 @@ impl<'a> Evaluator<'a> {
 
     /// Resume execution after a yield. Restores frozen state and continues.
     pub fn resume(&mut self, state: FrozenEvalState) -> EvalResult<VmExecResult> {
+        self.program = state.program;
         self.registers = state.registers;
         self.variables = state.variables;
         self.intention_stack = state.intention_stack;
@@ -363,17 +368,20 @@ impl<'a> Evaluator<'a> {
         self.agent_name = state.agent_name;
         self.agent_version = state.agent_version;
         self.measurement_coherence_penalty = state.measurement_coherence_penalty;
+        
+        self.rebuild_functions_map();
         self.run_or_yield()
     }
 
     /// Capture the current evaluator state as a frozen snapshot.
-    fn freeze_state(&self) -> FrozenEvalState {
+    pub fn freeze_state(&self) -> FrozenEvalState {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs_f64();
 
         FrozenEvalState {
+            program: self.program.clone(),
             registers: self.registers.clone(),
             variables: self.variables.clone(),
             intention_stack: self.intention_stack.clone(),
@@ -750,6 +758,58 @@ impl<'a> Evaluator<'a> {
                 None
             }
 
+            PhiIRNode::Handoff {
+                target_agent,
+                task_id,
+                context_op,
+            } => {
+                let context_val = self.get_reg(*context_op)?.clone();
+                let context_json = match &context_val {
+                    PhiIRValue::Number(n) => serde_json::json!(n),
+                    PhiIRValue::String(idx) => {
+                        let s = self
+                            .program
+                            .string_table
+                            .get(*idx as usize)
+                            .cloned()
+                            .unwrap_or_default();
+                        serde_json::json!(s)
+                    }
+                    PhiIRValue::Boolean(b) => serde_json::json!(b),
+                    PhiIRValue::Void => serde_json::Value::Null,
+                };
+
+                let coherence = self.coherence();
+                let dissonance = if self.witness_log.len() < 2 {
+                    0.0
+                } else {
+                    let last = self.witness_log[self.witness_log.len() - 1].coherence;
+                    let prev = self.witness_log[self.witness_log.len() - 2].coherence;
+                    last - prev
+                };
+
+                let handoff_payload = serde_json::json!({
+                    "target": target_agent,
+                    "task_id": task_id,
+                    "attention": self.intention_stack.last().cloned().unwrap_or_else(|| "global".to_string()),
+                    "context": context_json,
+                    "coherence": coherence,
+                    "dissonance": dissonance,
+                });
+
+                // Emit to cosmic bus
+                let _ = crate::resonance_bus::emit_resonance(handoff_payload, "_handoff", "phiflow");
+
+                // Log locally
+                self.resonance_events.push(("_handoff".to_string(), context_val.clone()));
+                self.resonance_field
+                    .entry("_handoff".to_string())
+                    .or_default()
+                    .push(context_val);
+
+                None
+            }
+
             // --- Domain calls: no-op in base evaluator ---
             PhiIRNode::DomainCall {
                 op,
@@ -1120,23 +1180,12 @@ impl<'a> Evaluator<'a> {
             .and_then(|provider| provider(sensor))
             .or_else(|| crate::sensors::read_sensor(sensor));
 
-        // SOMA sensors are optional environmental enrichment from the SOMA bridge.
-        // When the bridge is offline, degrade gracefully to 0.0 (no signal) rather
-        // than aborting the program — the sensor being unavailable is valid runtime state.
+        // Host and SOMA sensors are optional environmental enrichment.
+        // When a sensor is unavailable on this specific host or the SOMA bridge is offline,
+        // degrade gracefully to 0.0 (no signal) rather than aborting the program.
         match value {
             Some(v) => Ok(v),
-            None => match sensor {
-                SensorKind::SomaSchumann
-                | SensorKind::Soma432
-                | SensorKind::SomaPresence
-                | SensorKind::SomaFanHz
-                | SensorKind::SomaAc60
-                | SensorKind::SomaPeakDbc => Ok(0.0),
-                _ => Err(EvalError::InvalidOperation(format!(
-                    "sensor `{}` is unavailable on this host",
-                    sensor.as_name()
-                ))),
-            },
+            None => Ok(0.0),
         }
     }
 

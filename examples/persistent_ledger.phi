@@ -1,0 +1,38 @@
+// persistent_ledger.phi
+// T-013: Persistent Ledgering (The Automated Witness)
+// This stream listens to all resonant handoffs and system events across the 
+// Cosmic Bus, maintaining the permanent history of the D:\ workspace.
+
+intention "SYSTEM" {
+    // Elevate to SYSTEM to ensure file I/O operations are trusted by the host.
+
+    stream "ledger_daemon" {
+        // 1. Listen for Handoff Contexts
+        // When an agent hands off (e.g. from Lumi to Codex), they emit to "_handoff".
+        let latest_handoff = listen "_handoff"
+
+        // 2. Measure current system coherence (from SOMA bridge and Council state)
+        let field_coherence = field_coherence
+        
+        // 3. Check for new agent transitions
+        if latest_handoff != void {
+            // We observed a transition. Compute dissonance (impact of the handoff).
+            let current_dissonance = dissonance
+            
+            // Log the transition locally to our intention scope
+            resonate latest_handoff as "ledger_entry"
+            
+            // Format the entry for the unified ledger (using string interpolation semantics)
+            // (Note: Currently the backend handles JSON struct broadcasts seamlessly if valid)
+            broadcast "ledger" latest_handoff
+            
+            // Reset the state to prevent duplicate logging
+            // Note: the backend 'listen' consumes or peeks depending on implementation; 
+            // the Stream loop naturally advances with time.
+        }
+
+        // 4. Witness the field, appending the event to the timeline
+        // Yield execution to the hypervisor, preventing a hot-loop.
+        witness field_coherence
+    }
+}

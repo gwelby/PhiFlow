@@ -1,0 +1,35 @@
+// soma_reality_bridge.phi
+// The first-class Reality Bridge for the PhiFlow Singularity.
+// Maintains a persistent connection between physical telemetry and the resonance field.
+
+intention "reality_bridge" {
+    stream "bridge" {
+        // 1. Witness high-fidelity SOMA sensors
+        let schumann = witness sensor("soma_schumann")
+        let presence = witness sensor("soma_presence")
+        let heartbeat = witness sensor("soma_432")
+        let decibel = witness sensor("soma_peak_dbc")
+        
+        // 2. Compute local bridge coherence
+        // The bridge is coherent when Schumann is active and Presence is high.
+        let bridge_coherence = (schumann * 0.4) + (presence * 0.6)
+        
+        // 3. Resonate physical truth to the Cosmic Bus
+        resonate schumann as "reality/schumann"
+        resonate presence as "reality/presence"
+        resonate decibel as "reality/noise_floor"
+        resonate bridge_coherence as "reality/bridge_coherence"
+        
+        // 4. Emergency monitoring
+        if bridge_coherence < 0.382 {
+            // Signal a drop in physical alignment
+            intention "SYSTEM_MONITOR" {
+                resonate "Reality Bridge signal weak. Check SOMA hardware." as "status/warning"
+                witness bridge_coherence
+            }
+        }
+        
+        // 5. Yield to allow Hypervisor to process other streams
+        witness bridge_coherence
+    }
+}

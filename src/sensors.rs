@@ -26,6 +26,11 @@ fn parse_updated_at_timestamp(updated_at: &str) -> Option<std::time::SystemTime>
 }
 
 pub fn is_soma_state_fresh(state: &SomaState) -> bool {
+    // 0. Schema validation: only trust v1 schema
+    if state.schema_version != "soma.phiflow.v1" && state.schema_version != "1.0" {
+        return false;
+    }
+
     // Use health.fresh if available
     if state.health.fresh {
         return true;
