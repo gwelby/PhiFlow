@@ -1542,12 +1542,8 @@ mod tests {
 
         let result = vm.run().expect("VM should execute bytecode");
         match result {
-            PhiIRValue::String(index) => {
-                let value = vm
-                    .string_table()
-                    .get(index as usize)
-                    .expect("string index should resolve in VM table");
-                assert_eq!(value, "hello");
+            PhiIRValue::String(s) => {
+                assert_eq!(s, "hello");
             }
             other => panic!("expected string result, got {:?}", other),
         }
@@ -1810,5 +1806,16 @@ mod tests {
         let result = PhiVm::run_bytes(&bytes).expect("VM should execute dissonance opcode");
 
         assert_eq!(result, PhiIRValue::Number(1.0));
+    }
+}
+  );
+
+        let bytes = emitter::emit(&program);
+        let result = PhiVm::run_bytes(&bytes).expect("VM should execute dissonance opcode");
+
+        assert_eq!(result, PhiIRValue::Number(1.0));
+    }
+}
+0));
     }
 }

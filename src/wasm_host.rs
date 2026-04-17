@@ -50,7 +50,11 @@ pub fn unbox_f64(val: f64, string_table: &[String]) -> PhiIRValue {
             TAG_BOOLEAN => PhiIRValue::Boolean(payload != 0),
             TAG_STRING => {
                 let idx = payload as u32;
-                PhiIRValue::String(idx) // return the u32 index, matching what evaluator does
+                if (idx as usize) < string_table.len() {
+                    PhiIRValue::String(string_table[idx as usize].clone())
+                } else {
+                    PhiIRValue::String(format!("_str_{}", idx))
+                }
             }
             TAG_VOID => PhiIRValue::Void,
             _ => PhiIRValue::Void, // Unknown tag, default to void
