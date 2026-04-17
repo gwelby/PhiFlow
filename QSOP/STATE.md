@@ -1,4 +1,25 @@
-# STATE - Last updated: 2026-04-15 (truth-sync: SOMA Bridge Stabilized + Language Epoch)
+# STATE - Last updated: 2026-04-16 (truth-sync: Singularity Phase 1 Complete)
+
+## Verified (2026-04-16) [Lumi: Singularity Phase 1 — Substrate, Handoffs, SOMA, Ledger]
+
+- **Persistent Substrate (T-009/T-010) CLOSED**:
+  - **Logic Persistence**: `DaemonHypervisor` now snapshots the mutated `PhiIRProgram` to `DAEMON_STATE.json` upon every yield. Resuming the daemon correctly restores the evolved logic and rebuilds function metadata.
+  - **Ownership & Lifetimes**: `Evaluator::new` refactored to take an owned `PhiIRProgram`. Fixed 12+ move/borrow errors across the workspace to support this sovereign ownership model.
+  - **Circuit Breaker**: `--max-steps` flag implemented in `main_cli.rs` and wired to `Evaluator` to allow safe validation of infinite daemon loops.
+- **Resonant Handoffs (T-011) CLOSED**:
+  - **Construct Support**: `handoff "Agent" task "ID" { context }` added to parser, IR, and evaluator.
+  - **MQTT Streaming**: Handoff events successfully broadcast agentic context (attention, dissonance, task_id) to the `_handoff` channel on the Cosmic Bus.
+  - **CLI Trigger**: `--handoff` flag implemented for manual agent context injection. Verified via `examples/handoff_demo.phi`.
+- **Managed SOMA Reality Bridge (T-012) CLOSED**:
+  - **Subsystem Management**: `SomaManager` implemented in `main_cli.rs` to handle the `python soma.py --phiflow --headless` process lifecycle via `--with-soma`.
+  - **Schema Lock**: `sensors.rs` hardened with `soma.phiflow.v1` check.
+  - **High-Fidelity Integration**: Added `ring_slope_1f` (Aliveness), `ring_phase_delta` (Die Mapping), and `RingCoherence432/528` sensors. Verified via `examples/soma_reality_bridge.phi`.
+- **Automated Ledgering (T-013) CLOSED**:
+  - **Logic**: `examples/persistent_ledger.phi` created and wired to boot automatically with the daemon.
+  - **Translation**: `SystemHostProvider` now automatically maps PhiFlow handoff events to the strict `AGENT_REPORTS/LEDGER.ndjson` schema (injecting RFC3339 timestamps and mapping target -> agent).
+- **Bytecode Hardening (T-014) CLOSED**:
+  - **Opcode Parity**: `emitter.rs` and `vm.rs` updated to support all 0.3.0/0.4.0 constructs, including persistence (`Remember/Recall`), dialogue (`Broadcast/Listen`), and `Handoff`. 
+  - **Verification**: `cargo check` clean on the full bytecode path.
 
 ## Verified (2026-04-15) [Antigravity: SOMA Reality Bridge + Language Hardening]
 

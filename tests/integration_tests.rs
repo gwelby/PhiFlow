@@ -19,7 +19,7 @@ async fn test_basic_phiflow_program() {
     let program = parser.parse().expect("Parsing should succeed");
 
     let ir_program = phiflow::phi_ir::lowering::lower_program(&program);
-    let mut evaluator = phiflow::phi_ir::evaluator::Evaluator::new(&ir_program);
+    let mut evaluator = phiflow::phi_ir::evaluator::Evaluator::new(ir_program.clone());
     let result = evaluator.run();
 
     match result {
@@ -45,7 +45,7 @@ async fn test_sacred_frequency_program() {
     let program = parser.parse().expect("Parsing should succeed");
 
     let ir_program = phiflow::phi_ir::lowering::lower_program(&program);
-    let mut evaluator = phiflow::phi_ir::evaluator::Evaluator::new(&ir_program);
+    let mut evaluator = phiflow::phi_ir::evaluator::Evaluator::new(ir_program.clone());
     let result = evaluator.run();
 
     match result {
@@ -499,7 +499,7 @@ fn test_all_phi_files_parse_and_execute() {
         std::thread::spawn(move || {
             let result = std::panic::catch_unwind(|| {
                 let ir_program = phiflow::phi_ir::lowering::lower_program(&parsed_program);
-                let mut evaluator = phiflow::phi_ir::evaluator::Evaluator::new(&ir_program);
+                let mut evaluator = phiflow::phi_ir::evaluator::Evaluator::new(ir_program.clone());
                 evaluator.run()
             });
             let _ = tx.send(result);

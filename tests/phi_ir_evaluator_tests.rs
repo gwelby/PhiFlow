@@ -49,7 +49,7 @@ where
     let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
     optimizer.optimize(&mut program);
 
-    let mut evaluator = Evaluator::new(&program).with_coherence_provider(provider);
+    let mut evaluator = Evaluator::new(program.clone()).with_coherence_provider(provider);
     evaluator.run().expect("evaluation failed");
 
     let mut resonance_field = HashMap::new();
@@ -76,7 +76,7 @@ where
     let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
     optimizer.optimize(&mut program);
 
-    let mut evaluator = Evaluator::new(&program).with_coherence_provider(provider);
+    let mut evaluator = Evaluator::new(program.clone()).with_coherence_provider(provider);
     evaluator.run().expect("evaluation failed");
 
     evaluator
@@ -107,7 +107,7 @@ fn test_evaluator_basic_arithmetic() {
     }];
 
     let program = lower_program(&exprs);
-    let mut evaluator = Evaluator::new(&program);
+    let mut evaluator = Evaluator::new(program.clone());
     let result = evaluator.run().expect("Evaluation failed");
 
     match result {
@@ -129,7 +129,7 @@ fn test_evaluator_multiple_instructions() {
     }];
 
     let program = lower_program(&exprs);
-    let mut evaluator = Evaluator::new(&program);
+    let mut evaluator = Evaluator::new(program.clone());
     let result = evaluator.run().expect("Evaluation failed");
 
     match result {
@@ -156,7 +156,7 @@ fn test_witness_outside_intention_returns_zero_coherence() {
         0,
     );
 
-    let mut eval = Evaluator::new(&prog);
+    let mut eval = Evaluator::new(prog.clone());
     let result = eval.run().unwrap();
 
     assert_eq!(result, PhiIRValue::Number(0.0));
@@ -189,7 +189,7 @@ fn test_witness_inside_intention_returns_nonzero_coherence() {
         0,
     );
 
-    let mut eval = Evaluator::new(&prog);
+    let mut eval = Evaluator::new(prog.clone());
     let result = eval.run().unwrap();
 
     let phi: f64 = 1.618033988749895;
@@ -226,7 +226,7 @@ fn test_witness_records_event_in_log() {
         0,
     );
 
-    let mut eval = Evaluator::new(&prog);
+    let mut eval = Evaluator::new(prog.clone());
     eval.run().unwrap();
 
     assert_eq!(eval.witness_log.len(), 1);
@@ -255,7 +255,7 @@ fn test_witness_callback_called_once_per_instruction() {
         WitnessAction::Continue
     });
 
-    let mut eval = Evaluator::new(&prog).with_host(Box::new(host));
+    let mut eval = Evaluator::new(prog.clone()).with_host(Box::new(host));
     let result = eval.run_or_yield().expect("evaluation failed");
     assert!(
         matches!(result, EvalExecResult::Complete(PhiIRValue::Number(_))),
@@ -291,7 +291,7 @@ fn test_witness_yield_preserves_observed_value_snapshot() {
         WitnessAction::Yield
     });
 
-    let mut eval = Evaluator::new(&prog).with_host(Box::new(host));
+    let mut eval = Evaluator::new(prog.clone()).with_host(Box::new(host));
     let result = eval.run_or_yield().expect("evaluation failed");
     let frozen_state = match result {
         EvalExecResult::Yielded {
@@ -341,7 +341,7 @@ fn test_frozen_eval_state_roundtrips_through_json() {
     );
 
     let host = CallbackHostProvider::new().with_witness(|_| WitnessAction::Yield);
-    let mut eval = Evaluator::new(&prog).with_host(Box::new(host));
+    let mut eval = Evaluator::new(prog.clone()).with_host(Box::new(host));
     let yielded = eval.run_or_yield().expect("evaluation failed");
     let frozen_state = match yielded {
         EvalExecResult::Yielded { frozen_state, .. } => frozen_state,
@@ -400,7 +400,7 @@ fn test_two_nested_intentions_yield_golden_ratio() {
         0,
     );
 
-    let mut eval = Evaluator::new(&prog);
+    let mut eval = Evaluator::new(prog.clone());
     let result = eval.run().unwrap();
 
     let phi: f64 = 1.618033988749895;
@@ -460,7 +460,7 @@ fn test_callback_host_receives_intention_push_and_pop() {
                 .push(name.to_string());
         });
 
-    let mut eval = Evaluator::new(&prog).with_host(Box::new(host));
+    let mut eval = Evaluator::new(prog.clone()).with_host(Box::new(host));
     eval.run().expect("evaluation failed");
 
     assert_eq!(
@@ -503,7 +503,7 @@ fn test_resonate_stores_value_under_current_intention() {
         1,
     );
 
-    let mut eval = Evaluator::new(&prog);
+    let mut eval = Evaluator::new(prog.clone());
     eval.run().unwrap();
 
     let resonated = eval.resonated_values("Healing");
@@ -529,7 +529,7 @@ fn test_resonate_without_intention_uses_global() {
         1,
     );
 
-    let mut eval = Evaluator::new(&prog);
+    let mut eval = Evaluator::new(prog.clone());
     eval.run().unwrap();
 
     let global = eval.resonated_values("global");
@@ -565,7 +565,7 @@ fn test_resonance_adds_bonus_to_coherence() {
         1,
     );
 
-    let mut eval = Evaluator::new(&prog);
+    let mut eval = Evaluator::new(prog.clone());
     let result = eval.run().unwrap();
 
     let phi: f64 = 1.618033988749895;
@@ -586,7 +586,7 @@ fn test_resonance_adds_bonus_to_coherence() {
 fn test_coherence_check_zero_with_no_context() {
     let prog = single_block(vec![instr(Some(0), PhiIRNode::CoherenceCheck)], 0);
 
-    let mut eval = Evaluator::new(&prog);
+    let mut eval = Evaluator::new(prog.clone());
     let result = eval.run().unwrap();
     assert_eq!(result, PhiIRValue::Number(0.0));
 }
@@ -616,7 +616,7 @@ fn test_coherence_check_matches_witness() {
         0, // return CoherenceCheck result
     );
 
-    let mut eval = Evaluator::new(&prog);
+    let mut eval = Evaluator::new(prog.clone());
     let check_result = eval.run().unwrap();
     let witness_coherence = eval.witness_log[0].coherence;
 
@@ -650,7 +650,7 @@ fn test_resolved_coherence_exposes_injected_value() {
         0,
     );
 
-    let evaluator = Evaluator::new(&prog).with_coherence_provider(|| 0.75);
+    let evaluator = Evaluator::new(prog.clone()).with_coherence_provider(|| 0.75);
 
     assert!((evaluator.coherence() - 0.0).abs() < 1e-9);
     assert!((evaluator.resolved_coherence() - 0.75).abs() < 1e-9);
@@ -662,7 +662,7 @@ fn test_sensor_witness_uses_injected_provider() {
     let exprs = parse_phi_program(source).expect("parse failed");
     let program = lower_program_checked(&exprs).expect("lowering failed");
 
-    let mut evaluator = Evaluator::new(&program).with_sensor_provider(|sensor| match sensor {
+    let mut evaluator = Evaluator::new(program.clone()).with_sensor_provider(|sensor| match sensor {
         SensorKind::MemoryUsage => Some(73.0),
         _ => None,
     });
@@ -744,7 +744,7 @@ fn test_load_store_var_roundtrip() {
         1,
     );
 
-    let mut eval = Evaluator::new(&prog);
+    let mut eval = Evaluator::new(prog.clone());
     let result = eval.run().unwrap();
     assert_eq!(result, PhiIRValue::Number(99.0));
 }
@@ -803,7 +803,7 @@ fn test_all_four_constructs_together() {
         3,
     );
 
-    let mut eval = Evaluator::new(&prog);
+    let mut eval = Evaluator::new(prog.clone());
     let final_coherence = eval.run().unwrap();
 
     let phi: f64 = 1.618033988749895;
@@ -851,7 +851,7 @@ fn test_observer_cost_penalty() {
         2,
     );
 
-    let mut eval = Evaluator::new(&prog);
+    let mut eval = Evaluator::new(prog.clone());
     eval.run().unwrap();
 
     let c0 = eval.witness_log[0].coherence;
@@ -874,7 +874,7 @@ fn test_field_and_dissonance_initial() {
         1,
     );
 
-    let mut eval = Evaluator::new(&prog);
+    let mut eval = Evaluator::new(prog.clone());
     eval.run().unwrap();
 
     let field_val = eval.registers.get(&0).unwrap();

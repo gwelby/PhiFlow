@@ -7,7 +7,7 @@ use phiflow::phi_ir::PhiIRValue;
 
 fn run_ast(exprs: Vec<PhiExpression>) -> PhiIRValue {
     let program = lower_program(&exprs);
-    let mut evaluator = Evaluator::new(&program);
+    let mut evaluator = Evaluator::new(program.clone());
     evaluator.run().expect("Evaluation failed")
 }
 

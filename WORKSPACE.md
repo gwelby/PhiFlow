@@ -50,9 +50,9 @@ cargo test --test ibm_hardware_runner -- --ignored --nocapture
 - **WASM Parity**: Any change to `evaluator.rs` logic MUST be reflected in `vm.rs` and `coherence.rs` to maintain three-backend equivalence.
 
 ## What Is NOT Done (Technical Gaps)
-- **PhiVM Daemon**: No persistent infinite-loop background process yet (T-009).
+- **PhiVM Daemon (T-014)**: The daemon currently uses the Direct Evaluator (`evaluator.rs`). It needs to be migrated to the bytecode VM (`vm.rs`) for production-grade performance.
 - **Browser Host**: Lacks zero-install automated build pipeline; remains a manual experimental UI.
-- **Dynamic Evolve**: Runtime AST splicing (`evolve`) is implemented in IR but not exposed as a stable CLI command.
+- **Dynamic Evolve CLI**: Runtime AST splicing (`evolve`) is implemented in IR and MQTT, but not exposed as a stable CLI command.
 
 ## SOURCE CONTRACT ARCHITECTURE
 PhiFlow technical truth flows into the business layer:

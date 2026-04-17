@@ -1233,9 +1233,24 @@ impl<'a> Evaluator<'a> {
                     "Unsupported boolean binary op".to_string(),
                 )),
             },
-            _ => Err(EvalError::InvalidOperation(
-                "Type mismatch in binary operation".to_string(),
-            )),
+            (PhiIRValue::Void, PhiIRValue::Void) => match op {
+                PhiIRBinOp::Eq => Ok(PhiIRValue::Boolean(true)),
+                PhiIRBinOp::Neq => Ok(PhiIRValue::Boolean(false)),
+                _ => Err(EvalError::InvalidOperation("Unsupported Void binary op".to_string())),
+            },
+            (PhiIRValue::String(l_idx), PhiIRValue::String(r_idx)) => match op {
+                PhiIRBinOp::Eq => Ok(PhiIRValue::Boolean(l_idx == r_idx)),
+                PhiIRBinOp::Neq => Ok(PhiIRValue::Boolean(l_idx != r_idx)),
+                _ => Err(EvalError::InvalidOperation("Unsupported String binary op".to_string())),
+            },
+            (a, b) => match op {
+                PhiIRBinOp::Eq => Ok(PhiIRValue::Boolean(false)),
+                PhiIRBinOp::Neq => Ok(PhiIRValue::Boolean(true)),
+                _ => Err(EvalError::InvalidOperation(format!(
+                    "Type mismatch in binary operation between {:?} and {:?}",
+                    a, b
+                ))),
+            },
         }
     }
 

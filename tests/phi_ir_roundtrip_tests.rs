@@ -19,7 +19,7 @@ fn assert_values_close(lhs: &PhiIRValue, rhs: &PhiIRValue, context: &str) {
 }
 
 fn run_roundtrip_program(program: &PhiIRProgram) -> (PhiIRValue, PhiIRValue) {
-    let mut evaluator = Evaluator::new(program);
+    let mut evaluator = Evaluator::new(program.clone());
     let eval_result = evaluator.run().expect("evaluator failed");
 
     let bytes = emitter::emit(program);

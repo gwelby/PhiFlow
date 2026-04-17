@@ -70,6 +70,12 @@ pub struct SomaSensors {
     pub soma_fan_hz: f64,
     pub soma_ac_60: f64,
     pub soma_peak_dbc: f64,
+    // High-fidelity ring metrics
+    pub ring_slope_1f: f64,
+    pub ring_jitter_ns: f64,
+    pub ring_coherence_432: f64,
+    pub ring_coherence_528: f64,
+    pub ring_phase_delta: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -429,6 +435,31 @@ pub fn read_sensor(sensor: SensorKind) -> Option<f64> {
             .as_ref()
             .filter(|s| is_soma_state_fresh(s))
             .map(|s| s.sensors.soma_peak_dbc),
+        SensorKind::RingSlope1f => data
+            .soma
+            .as_ref()
+            .filter(|s| is_soma_state_fresh(s))
+            .map(|s| s.sensors.ring_slope_1f),
+        SensorKind::RingJitterNs => data
+            .soma
+            .as_ref()
+            .filter(|s| is_soma_state_fresh(s))
+            .map(|s| s.sensors.ring_jitter_ns),
+        SensorKind::RingCoherence432 => data
+            .soma
+            .as_ref()
+            .filter(|s| is_soma_state_fresh(s))
+            .map(|s| s.sensors.ring_coherence_432),
+        SensorKind::RingCoherence528 => data
+            .soma
+            .as_ref()
+            .filter(|s| is_soma_state_fresh(s))
+            .map(|s| s.sensors.ring_coherence_528),
+        SensorKind::RingPhaseDelta => data
+            .soma
+            .as_ref()
+            .filter(|s| is_soma_state_fresh(s))
+            .map(|s| s.sensors.ring_phase_delta),
     }
 }
 
@@ -516,6 +547,11 @@ mod tests {
                 soma_fan_hz: 50.0,
                 soma_ac_60: 60.0,
                 soma_peak_dbc: -30.0,
+                ring_slope_1f: -1.0,
+                ring_jitter_ns: 0.5,
+                ring_coherence_432: 0.8,
+                ring_coherence_528: 0.7,
+                ring_phase_delta: 45.0,
             },
         };
 
@@ -548,6 +584,11 @@ mod tests {
                 soma_fan_hz: 50.0,
                 soma_ac_60: 60.0,
                 soma_peak_dbc: -30.0,
+                ring_slope_1f: -1.0,
+                ring_jitter_ns: 0.5,
+                ring_coherence_432: 0.8,
+                ring_coherence_528: 0.7,
+                ring_phase_delta: 45.0,
             },
         };
 
@@ -597,6 +638,11 @@ mod tests {
                 soma_fan_hz: 49.5,
                 soma_ac_60: 60.02,
                 soma_peak_dbc: -28.5,
+                ring_slope_1f: -0.9,
+                ring_jitter_ns: 0.4,
+                ring_coherence_432: 0.85,
+                ring_coherence_528: 0.75,
+                ring_phase_delta: 90.0,
             },
         };
 
@@ -610,5 +656,7 @@ mod tests {
         assert_eq!(deserialized.sensors.soma_fan_hz, state.sensors.soma_fan_hz);
         assert_eq!(deserialized.sensors.soma_ac_60, state.sensors.soma_ac_60);
         assert_eq!(deserialized.sensors.soma_peak_dbc, state.sensors.soma_peak_dbc);
+        assert_eq!(deserialized.sensors.ring_slope_1f, state.sensors.ring_slope_1f);
+        assert_eq!(deserialized.sensors.ring_phase_delta, state.sensors.ring_phase_delta);
     }
 }

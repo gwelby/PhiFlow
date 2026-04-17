@@ -57,7 +57,7 @@ intention "LAMBDA_convergence" {
 fn run_and_get_var(source: &str, intention_name: &str) -> PhiIRValue {
     let ast = parse_phi_program(source).expect("parse failed");
     let ir = lower_program(&ast);
-    let mut evaluator = Evaluator::new(&ir);
+    let mut evaluator = Evaluator::new(ir.clone());
     evaluator.run().expect("eval fails");
 
     let val = evaluator.resonated_values(intention_name).last().cloned();

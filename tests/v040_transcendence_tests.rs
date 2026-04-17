@@ -11,7 +11,7 @@ fn test_entangle_yields_with_frequency() {
     let exprs = parse_phi_program(source).unwrap();
     let program = lower_program(&exprs);
 
-    let mut eval = Evaluator::new(&program);
+    let mut eval = Evaluator::new(program.clone());
     let res = eval.run_or_yield().unwrap();
 
     if let VmExecResult::Entangled {
@@ -48,7 +48,7 @@ fn test_evolve_blocks() {
         println!("  Terminator: {:?}", block.terminator);
     }
 
-    let mut eval = Evaluator::new(&program);
+    let mut eval = Evaluator::new(program.clone());
     let result = eval.run().unwrap();
     println!("Final Result: {:?}", result);
 }
@@ -77,7 +77,7 @@ fn test_evolve_boolean_return() {
     "#;
     let exprs = phiflow::parser::parse_phi_program(source).unwrap();
     let program = phiflow::phi_ir::lowering::lower_program(&exprs);
-    let mut eval = Evaluator::new(&program);
+    let mut eval = Evaluator::new(program.clone());
     let result = eval.run().unwrap();
     assert_eq!(result.as_number(), Some(1.0));
 }

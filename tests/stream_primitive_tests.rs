@@ -32,7 +32,7 @@ fn test_stream_execution_and_resonance_overwrite() {
     let ast = parser.parse().unwrap();
     let ir = lower_program(&ast);
 
-    let mut evaluator = Evaluator::new(&ir);
+    let mut evaluator = Evaluator::new(ir.clone());
     evaluator.run().unwrap();
 
     // The final resonance value in 'test_loop' field should be 3.0

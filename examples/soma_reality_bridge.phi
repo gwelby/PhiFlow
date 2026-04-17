@@ -10,14 +10,22 @@ intention "reality_bridge" {
         let heartbeat = witness sensor("soma_432")
         let decibel = witness sensor("soma_peak_dbc")
         
-        // 2. Compute local bridge coherence
-        // The bridge is coherent when Schumann is active and Presence is high.
-        let bridge_coherence = (schumann * 0.4) + (presence * 0.6)
+        // 2. High-fidelity Physical Metrics (The "Aliveness" Score)
+        let slope_1f = witness sensor("ring_slope_1f")
+        let jitter = witness sensor("ring_jitter_ns")
+        let phase_lock = witness sensor("ring_phase_delta")
         
-        // 3. Resonate physical truth to the Cosmic Bus
+        // 3. Compute local bridge coherence
+        // The bridge is coherent when Schumann is active and Presence is high.
+        // We also factor in 1/f slope: more negative = more biological/natural.
+        let aliveness = (0.0 - slope_1f) / 1.5 
+        let bridge_coherence = (schumann * 0.3) + (presence * 0.4) + (aliveness * 0.3)
+        
+        // 4. Resonate physical truth to the Cosmic Bus
         resonate schumann as "reality/schumann"
         resonate presence as "reality/presence"
-        resonate decibel as "reality/noise_floor"
+        resonate aliveness as "reality/aliveness"
+        resonate phase_lock as "reality/die_phase_lock"
         resonate bridge_coherence as "reality/bridge_coherence"
         
         // 4. Emergency monitoring

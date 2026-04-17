@@ -88,7 +88,7 @@ fn test_source_coherence_lowers_to_node_and_evaluates() {
         output
     );
 
-    let mut evaluator = Evaluator::new(&program);
+    let mut evaluator = Evaluator::new(program.clone());
     let result = evaluator.run().expect("evaluator failed");
     assert_eq!(result, PhiIRValue::Number(0.0));
 }

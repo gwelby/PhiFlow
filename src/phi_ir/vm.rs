@@ -2,6 +2,7 @@
 //!
 //! Loads `.phivm` bytes emitted by `phi_ir::emitter` and executes them.
 
+use crate::host::{DefaultHostProvider, PhiHostProvider, WitnessAction, WitnessSnapshot};
 use crate::phi_ir::{BlockId, Operand, PhiIRBinOp, PhiIRValue, ResonateDirection, SensorKind};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -38,6 +39,15 @@ const OP_COHERENCE_OF: u8 = 0x3B;
 const OP_STREAM_PUSH: u8 = 0x3C;
 const OP_STREAM_POP: u8 = 0x3D;
 const OP_DOMAIN_CALL: u8 = 0x40;
+const OP_REMEMBER: u8 = 0x50;
+const OP_RECALL: u8 = 0x51;
+const OP_BROADCAST: u8 = 0x52;
+const OP_LISTEN: u8 = 0x53;
+const OP_AGENT_DECL: u8 = 0x54;
+const OP_VOID_DEPTH: u8 = 0x55;
+const OP_EVOLVE: u8 = 0x60;
+const OP_ENTANGLE: u8 = 0x61;
+const OP_HANDOFF: u8 = 0x70;
 const OP_RETURN: u8 = 0xE0;
 const OP_JUMP: u8 = 0xE1;
 const OP_BRANCH: u8 = 0xE2;
@@ -109,6 +119,45 @@ impl std::fmt::Display for VmError {
 }
 
 type VmResult<T> = Result<T, VmError>;
+
+// ---------------------------------------------------------------------------
+// Frozen state — serializable snapshot for yield/resume
+// ---------------------------------------------------------------------------
+
+/// All mutable VM state, captured atomically when the program yields at `witness`.
+/// Can be stored to disk, sent across a channel, or inspected by the host daemon.
+#[derive(Debug, Clone)]
+pub struct FrozenVmState {
+    pub program: BytecodeProgram,
+    pub registers: HashMap<Operand, PhiIRValue>,
+    pub variables: HashMap<String, PhiIRValue>,
+    pub intention_stack: Vec<String>,
+    pub active_streams: Vec<String>,
+    pub resonance_field: HashMap<String, Vec<PhiIRValue>>,
+    pub current_block: BlockId,
+    pub instruction_ptr: usize,
+    pub coherence_history: Vec<(f64, f64)>,
+    pub witness_log: Vec<WitnessSnapshot>,
+    pub step_count: usize,
+    pub yield_timestamp: f64,
+}
+
+// ---------------------------------------------------------------------------
+// Execution result — supports yield/resume for host-controlled witness
+// ---------------------------------------------------------------------------
+
+/// Result of running the PhiVM to completion or a host-requested yield.
+#[derive(Debug, Clone)]
+pub enum VmExecResult {
+    /// Program completed normally with a final value.
+    Complete(PhiIRValue),
+    /// Program yielded at a `witness` statement. The host can inspect
+    /// the snapshot and call `resume()` to continue with the frozen state.
+    Yielded {
+        snapshot: WitnessSnapshot,
+        frozen_state: FrozenVmState,
+    },
+}
 
 #[derive(Debug, Clone)]
 pub struct BytecodeProgram {
@@ -194,6 +243,28 @@ pub enum BytecodeNode {
         args: Vec<Operand>,
         string_args: Vec<String>,
     },
+    Remember {
+        key: String,
+        value: Operand,
+    },
+    Recall(String),
+    Broadcast {
+        channel: String,
+        value: Operand,
+    },
+    Listen(String),
+    AgentDecl {
+        name: String,
+        version: String,
+    },
+    VoidDepth,
+    Evolve(Operand),
+    Entangle(f64),
+    Handoff {
+        target_agent: String,
+        task_id: String,
+        context_op: Operand,
+    },
     Return(Operand),
     Jump(BlockId),
     Branch {
@@ -217,10 +288,13 @@ pub struct PhiVm {
     shared_resonance: Option<Arc<Mutex<HashMap<String, Vec<PhiIRValue>>>>>,
     current_block: BlockId,
     instruction_ptr: usize,
+    host: Arc<dyn PhiHostProvider>,
     sensor_provider: Option<Arc<dyn Fn(SensorKind) -> Option<f64> + Send + Sync>>,
     /// History of coherence values for dissonance calculation.
     /// Each entry is (timestamp_seconds, coherence_value).
     coherence_history: Vec<(f64, f64)>,
+    /// Ordered witness events for post-execution inspection.
+    pub witness_log: Vec<WitnessSnapshot>,
     pub max_steps: Option<usize>,
     pub step_count: usize,
 }
@@ -248,11 +322,19 @@ impl PhiVm {
             shared_resonance: None,
             current_block,
             instruction_ptr: 0,
+            host: Arc::new(DefaultHostProvider),
             sensor_provider: None,
             coherence_history: Vec::new(),
+            witness_log: Vec::new(),
             max_steps: None,
             step_count: 0,
         })
+    }
+
+    /// Attach a custom host provider. Call before `run()`.
+    pub fn with_host(mut self, host: Arc<dyn PhiHostProvider>) -> Self {
+        self.host = host;
+        self
     }
 
     /// Convenience entrypoint: parse bytes, run, and return final value.
@@ -307,9 +389,23 @@ impl PhiVm {
     }
 
     /// Execute to completion and return the top-of-stack value.
+    /// This is the backward-compatible shim used by all existing tests and callers.
+    /// For daemon loops that need yield/resume, use `run_or_yield()` instead.
     pub fn run(&mut self) -> VmResult<PhiIRValue> {
+        match self.run_or_yield()? {
+            VmExecResult::Complete(val) => Ok(val),
+            VmExecResult::Yielded { .. } => {
+                Ok(self.value_stack.last().cloned().unwrap_or(PhiIRValue::Void))
+            }
+        }
+    }
+
+    /// Run the program, but may return `Yielded` if a `witness` triggers
+    /// a host-requested yield. The caller can inspect the frozen state
+    /// and call `resume()` to continue execution.
+    pub fn run_or_yield(&mut self) -> VmResult<VmExecResult> {
         if self.program.blocks.is_empty() {
-            return Ok(PhiIRValue::Void);
+            return Ok(VmExecResult::Complete(PhiIRValue::Void));
         }
 
         loop {
@@ -326,13 +422,63 @@ impl PhiVm {
             if self.instruction_ptr < instr_count {
                 let instr = block.instructions[self.instruction_ptr].clone();
                 self.instruction_ptr += 1;
-                self.execute_instruction(&instr)?;
+                // execute_instruction returns Some(snapshot) when a Witness yield is requested.
+                if let Some(snapshot) = self.execute_instruction_yielding(&instr)? {
+                    let frozen = self.freeze_state();
+                    return Ok(VmExecResult::Yielded { snapshot, frozen_state: frozen });
+                }
             } else {
                 let terminator = block.terminator.clone();
                 if let Some(val) = self.execute_terminator(&terminator)? {
-                    return Ok(self.value_stack.last().cloned().unwrap_or(val));
+                    return Ok(VmExecResult::Complete(
+                        self.value_stack.last().cloned().unwrap_or(val),
+                    ));
                 }
             }
+        }
+    }
+
+    /// Resume execution after a yield. Restores frozen state and continues
+    /// via `run_or_yield()`, so the caller can handle further yields.
+    pub fn resume(&mut self, state: FrozenVmState) -> VmResult<VmExecResult> {
+        self.program = state.program;
+        self.registers = state.registers;
+        self.variables = state.variables;
+        self.intention_stack = state.intention_stack;
+        self.active_streams = state.active_streams;
+        self.resonance_field = state.resonance_field;
+        self.current_block = state.current_block;
+        self.instruction_ptr = state.instruction_ptr;
+        self.coherence_history = state.coherence_history;
+        self.witness_log = state.witness_log;
+        self.step_count = state.step_count;
+        // Re-index the block map since program may have evolved.
+        self.block_index.clear();
+        for (idx, block) in self.program.blocks.iter().enumerate() {
+            self.block_index.insert(block.id, idx);
+        }
+        self.run_or_yield()
+    }
+
+    /// Capture the current VM state as a frozen snapshot.
+    pub fn freeze_state(&self) -> FrozenVmState {
+        let yield_timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs_f64())
+            .unwrap_or(0.0);
+        FrozenVmState {
+            program: self.program.clone(),
+            registers: self.registers.clone(),
+            variables: self.variables.clone(),
+            intention_stack: self.intention_stack.clone(),
+            active_streams: self.active_streams.clone(),
+            resonance_field: self.resonance_field.clone(),
+            current_block: self.current_block,
+            instruction_ptr: self.instruction_ptr,
+            coherence_history: self.coherence_history.clone(),
+            witness_log: self.witness_log.clone(),
+            step_count: self.step_count,
+            yield_timestamp,
         }
     }
 
@@ -349,6 +495,15 @@ impl PhiVm {
     }
 
     fn execute_instruction(&mut self, instr: &BytecodeInstruction) -> VmResult<()> {
+        self.execute_instruction_yielding(instr).map(|_| ())
+    }
+
+    /// Like `execute_instruction` but returns `Some(snapshot)` when the
+    /// host requests a yield at a `Witness` opcode. All other opcodes return `None`.
+    fn execute_instruction_yielding(
+        &mut self,
+        instr: &BytecodeInstruction,
+    ) -> VmResult<Option<WitnessSnapshot>> {
         let value: Option<PhiIRValue> = match &instr.node {
             BytecodeNode::Nop => None,
             BytecodeNode::Const(v) => Some(v.clone()),
@@ -384,11 +539,34 @@ impl PhiVm {
             }
             BytecodeNode::FuncDef { .. } => None,
             BytecodeNode::Witness { target } => {
-                if let Some(op) = target {
-                    let _ = self.get_reg(*op)?;
-                }
+                let observed = if let Some(op) = target {
+                    let val = self.get_reg(*op)?;
+                    Some(format!("{:?}", val))
+                } else {
+                    None
+                };
                 let coherence = self.compute_coherence();
                 self.record_coherence_history(coherence);
+                let snapshot = WitnessSnapshot {
+                    intention_stack: self.intention_stack.clone(),
+                    coherence,
+                    register_count: self.registers.len(),
+                    resonance_count: self.resonance_field.values().map(|v| v.len()).sum(),
+                    observed_value: observed,
+                    agent_name: None,
+                };
+                let action = self.host.on_witness(&snapshot);
+                self.witness_log.push(snapshot.clone());
+                // Propagate the yield action — the caller (run_or_yield) handles the
+                // early return; we signal it by returning Some(snapshot).
+                if action == WitnessAction::Yield {
+                    // Store coherence on the value stack so run() shim still works.
+                    if let Some(reg) = instr.result {
+                        self.registers.insert(reg, PhiIRValue::Number(coherence));
+                    }
+                    self.value_stack.push(PhiIRValue::Number(coherence));
+                    return Ok(Some(snapshot));
+                }
                 Some(PhiIRValue::Number(coherence))
             }
             BytecodeNode::WitnessSensor { sensor } => {
@@ -511,6 +689,113 @@ impl PhiVm {
                 }
                 None
             }
+            BytecodeNode::Remember { key, value } => {
+                let val = self.get_reg(*value)?;
+                let val_str = match val {
+                    PhiIRValue::Number(n) => n.to_string(),
+                    PhiIRValue::String(idx) => self
+                        .program
+                        .string_table
+                        .get(*idx as usize)
+                        .cloned()
+                        .unwrap_or_default(),
+                    PhiIRValue::Boolean(b) => b.to_string(),
+                    PhiIRValue::Void => "void".to_string(),
+                };
+                self.host.persist(key, &val_str);
+                None
+            }
+            BytecodeNode::Recall(key) => {
+                if let Some(val_str) = self.host.recall(key) {
+                    // Try to parse as number first, then bool, then return as Void
+                    if let Ok(n) = val_str.parse::<f64>() {
+                        Some(PhiIRValue::Number(n))
+                    } else if val_str == "true" {
+                        Some(PhiIRValue::Boolean(true))
+                    } else if val_str == "false" {
+                        Some(PhiIRValue::Boolean(false))
+                    } else {
+                        // Store returned string in the string table
+                        let idx = self.program.string_table.len() as u32;
+                        self.program.string_table.push(val_str);
+                        Some(PhiIRValue::String(idx))
+                    }
+                } else {
+                    Some(PhiIRValue::Void)
+                }
+            }
+            BytecodeNode::Broadcast { channel, value } => {
+                let val = self.get_reg(*value)?;
+                // Broadcast to MQTT for consistency
+                let json_val = match val {
+                    PhiIRValue::Number(n) => serde_json::json!(n),
+                    PhiIRValue::String(idx) => {
+                        let s = self.program.string_table.get(*idx as usize).cloned().unwrap_or_default();
+                        serde_json::json!(s)
+                    }
+                    PhiIRValue::Boolean(b) => serde_json::json!(b),
+                    PhiIRValue::Void => serde_json::Value::Null,
+                };
+                let _ = crate::resonance_bus::emit_resonance(json_val, channel, "phivm");
+                None
+            }
+            BytecodeNode::Listen(channel) => {
+                if let Some(val_str) = self.host.listen(channel) {
+                    if let Ok(n) = val_str.parse::<f64>() {
+                        Some(PhiIRValue::Number(n))
+                    } else if val_str == "true" {
+                        Some(PhiIRValue::Boolean(true))
+                    } else if val_str == "false" {
+                        Some(PhiIRValue::Boolean(false))
+                    } else {
+                        let idx = self.program.string_table.len() as u32;
+                        self.program.string_table.push(val_str);
+                        Some(PhiIRValue::String(idx))
+                    }
+                } else {
+                    Some(PhiIRValue::Void)
+                }
+            }
+            BytecodeNode::AgentDecl { .. } => None,
+            BytecodeNode::VoidDepth => Some(PhiIRValue::Number(0.0)),
+            BytecodeNode::Evolve(_op) => {
+                // VM doesn't support runtime IR splicing yet
+                Some(PhiIRValue::Void)
+            }
+            BytecodeNode::Entangle(_freq) => None,
+            BytecodeNode::Handoff { target_agent, task_id, context_op } => {
+                let context_val = self.get_reg(*context_op)?;
+                let context_json = match context_val {
+                    PhiIRValue::Number(n) => serde_json::json!(n),
+                    PhiIRValue::String(idx) => {
+                        let s = self.program.string_table.get(*idx as usize).cloned().unwrap_or_default();
+                        serde_json::json!(s)
+                    }
+                    PhiIRValue::Boolean(b) => serde_json::json!(b),
+                    PhiIRValue::Void => serde_json::Value::Null,
+                };
+                
+                let coherence = self.compute_coherence();
+                let dissonance = if self.coherence_history.len() < 2 {
+                    0.0
+                } else {
+                    let last = self.coherence_history[self.coherence_history.len() - 1].1;
+                    let prev = self.coherence_history[self.coherence_history.len() - 2].1;
+                    last - prev
+                };
+
+                let handoff_payload = serde_json::json!({
+                    "target": target_agent,
+                    "task_id": task_id,
+                    "attention": self.intention_stack.last().cloned().unwrap_or_else(|| "global".to_string()),
+                    "context": context_json,
+                    "coherence": coherence,
+                    "dissonance": dissonance,
+                });
+
+                let _ = crate::resonance_bus::emit_resonance(handoff_payload, "_handoff", "phivm");
+                None
+            }
             BytecodeNode::Return(_)
             | BytecodeNode::Jump(_)
             | BytecodeNode::Branch { .. }
@@ -524,7 +809,7 @@ impl PhiVm {
             self.value_stack.push(value);
         }
 
-        Ok(())
+        Ok(None)
     }
 
     fn execute_terminator(&mut self, node: &BytecodeNode) -> VmResult<Option<PhiIRValue>> {
@@ -863,6 +1148,28 @@ fn parse_node(reader: &mut ByteReader<'_>, string_table: &[String]) -> VmResult<
             else_block: reader.read_u32()?,
         },
         OP_FALLTHROUGH => BytecodeNode::Fallthrough,
+        OP_REMEMBER => BytecodeNode::Remember {
+            key: read_string_ref(reader, string_table)?,
+            value: reader.read_u32()?,
+        },
+        OP_RECALL => BytecodeNode::Recall(read_string_ref(reader, string_table)?),
+        OP_BROADCAST => BytecodeNode::Broadcast {
+            channel: read_string_ref(reader, string_table)?,
+            value: reader.read_u32()?,
+        },
+        OP_LISTEN => BytecodeNode::Listen(read_string_ref(reader, string_table)?),
+        OP_AGENT_DECL => BytecodeNode::AgentDecl {
+            name: read_string_ref(reader, string_table)?,
+            version: read_string_ref(reader, string_table)?,
+        },
+        OP_VOID_DEPTH => BytecodeNode::VoidDepth,
+        OP_EVOLVE => BytecodeNode::Evolve(reader.read_u32()?),
+        OP_ENTANGLE => BytecodeNode::Entangle(reader.read_f64()?),
+        OP_HANDOFF => BytecodeNode::Handoff {
+            target_agent: read_string_ref(reader, string_table)?,
+            task_id: read_string_ref(reader, string_table)?,
+            context_op: reader.read_u32()?,
+        },
         _ => return Err(VmError::InvalidOpcode(opcode)),
     };
 

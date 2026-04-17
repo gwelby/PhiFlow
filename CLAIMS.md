@@ -29,6 +29,10 @@
 | **C-14: Parser handles the five core constructs** — `stream`, `intention`, `witness`, `coherence`, `resonate` parse without panics in the current surface | CONFIRMED | `tests/repro_bugs.rs` + `tests/integration_tests.rs` corpus sweep | 2026-02-25 |
 | **C-15: Windows release build works reliably** | CONFIRMED | `lto = "thin"` + `codegen-units = 4` repair, verified in `QSOP/STATE.md` | 2026-03-24 |
 | **C-16: Agentic reasoning can be modeled as a PhiFlow stream** — agent reasoning loops (Reasoning/Acting) map 1:1 to `witness` and `intention` primitives | SPECULATIVE | Theoretical mapping proposed by Manus/AntiGravity; requires Pipe 4 MCP bridge | 2026-04-04 |
+| **C-17: Persistent Daemon state preserves evolved logic** — the `DaemonHypervisor` snapshots mutated IR to `DAEMON_STATE.json` and resumes it across restarts | CONFIRMED | Verified 2026-04-16 via `DAEMON_STATE.json` inspection after `evolve` signal | 2026-04-16 |
+| **C-18: Resonant Handoffs broadcast agentic context** — the `handoff` construct and `--handoff` CLI flag successfully stream attention and dissonance to the Cosmic Bus | CONFIRMED | Verified 2026-04-16 via `examples/handoff_demo.phi` and MQTT monitoring | 2026-04-16 |
+| **C-19: Managed SOMA subsystem provides physical grounding** — the daemon-managed `soma.py` process provides fresh, schema-validated telemetry to drive coherence | CONFIRMED | Verified 2026-04-16 via `soma_reality_bridge.phi` executing with high-fidelity ring sensors | 2026-04-16 |
+| **C-20: Substrate-level Ledgering automates the witness** — the `persistent_ledger.phi` stream automatically translates handoff events to the strict `LEDGER.ndjson` schema | CONFIRMED | Verified 2026-04-16 via `--max-steps 500` validation of the ledger stream | 2026-04-16 |
 
 ## Unsupported Claims (must be derived or removed)
 

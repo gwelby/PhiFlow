@@ -57,7 +57,7 @@ fn main() {
         .unwrap_or_else(|e| println!("    (Could not write: {})", e));
 
     // ── Evaluate ──────────────────────────────────────────────────
-    let mut evaluator = Evaluator::new(&program);
+    let mut evaluator = Evaluator::new(program.clone());
     match evaluator.run() {
         Ok(result) => {
             println!("\n─── Result ─────────────────────────────────");

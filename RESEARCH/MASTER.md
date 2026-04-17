@@ -20,6 +20,7 @@ PhiFlow serves as the empirical testbed for the Propagation Framework. All major
 |------|-------|----------|----------|
 | 2026-04-14 | Quantum Hardware | HERON native ISA transpilation succeeds. | Job `d7euddh5a5qc73drdosg` |
 | 2026-04-16 | Standard Sync | Workspace aligned with SETUP_ANY_WORKSPACE.md v1.0. | `SOUL.md` created |
+| 2026-04-16 | Deep Coherence (SOMA) | Physical entropy bottlenecking via CUDA L1 cache mapping succeeds; SOMA Reality Bridge gracefully computes coherence and resonates physical values. | `ANTIGRAVITY_SOMA_DEEP_COHERENCE_20260416.md` |
 
 ## Derived Truths (Proven)
 - **C-10**: PhiFlow programs can run on real quantum hardware (IBM QPU).

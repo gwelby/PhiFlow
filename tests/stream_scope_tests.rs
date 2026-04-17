@@ -28,7 +28,7 @@ stream "counter" {
     let ast = parser.parse().unwrap();
     let ir = lower_program(&ast);
 
-    let mut evaluator = Evaluator::new(&ir);
+    let mut evaluator = Evaluator::new(ir.clone());
     evaluator.run().unwrap();
 
     // The stream should have run 3 cycles (x=1, x=2, x=3 before break)
@@ -62,7 +62,7 @@ stream "test" {
     let ast = parser.parse().unwrap();
     let ir = lower_program(&ast);
 
-    let mut evaluator = Evaluator::new(&ir);
+    let mut evaluator = Evaluator::new(ir.clone());
     evaluator.run().unwrap();
 
     let resonated = evaluator.resonated_values("test");

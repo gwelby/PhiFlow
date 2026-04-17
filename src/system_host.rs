@@ -72,16 +72,38 @@ impl PhiHostProvider for SystemHostProvider {
         // Broadcast to MQTT is handled in resonance_bus.rs, 
         // but we could add local file-based broadcasting here too.
         
-        let path = if channel == "ledger" && self.is_system_active() {
+        let is_ledger = channel == "ledger" && self.is_system_active();
+        let path = if is_ledger {
             PathBuf::from("D:\\Projects\\AGENT_REPORTS\\LEDGER.ndjson")
         } else {
             self.base_path.join(format!("channel_{}.jsonl", channel))
         };
 
-        if self.is_path_safe(&path) || (channel == "ledger" && self.is_system_active()) {
+        if self.is_path_safe(&path) || is_ledger {
+            let final_message = if is_ledger {
+                // Translate the PhiFlow event to the strict LEDGER.ndjson schema
+                if let Ok(json) = serde_json::from_str::<serde_json::Value>(message) {
+                    let mut ledger_map = serde_json::Map::new();
+                    let ts = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+                    
+                    ledger_map.insert("ts".to_string(), serde_json::json!(ts));
+                    ledger_map.insert("agent".to_string(), json.get("target").unwrap_or(&serde_json::json!("phiflow")).clone());
+                    ledger_map.insert("workspace".to_string(), serde_json::json!("D:/Projects/PhiFlow"));
+                    
+                    let context = json.get("context").unwrap_or(&serde_json::json!("No context provided")).clone();
+                    ledger_map.insert("report".to_string(), context);
+                    
+                    serde_json::to_string(&ledger_map).unwrap_or_else(|_| message.to_string())
+                } else {
+                    message.to_string()
+                }
+            } else {
+                message.to_string()
+            };
+
             if let Ok(mut file) = fs::OpenOptions::new().append(true).create(true).open(path) {
                 use std::io::Write;
-                let _ = writeln!(file, "{}", message);
+                let _ = writeln!(file, "{}", final_message);
             }
         }
     }

@@ -1,3 +1,30 @@
+## 2026-04-16 - [Antigravity] T-014 FINAL: PhiVM Yield/Resume Cycle (TRUE daemon parity)
+
+- UPDATED: `src/phi_ir/vm.rs`
+  - Added `FrozenVmState` struct — captures all mutable VM state (registers, variables, stacks, blocks, history) for atomic yield snapshots. Can be serialized to disk or passed across channels.
+  - Added `VmExecResult` enum with `Complete(PhiIRValue)` and `Yielded { snapshot, frozen_state }` variants — mirrors `EvalExecResult` in the Direct Evaluator.
+  - Refactored `run()` to be a **backward-compatible shim** over `run_or_yield()`. Zero test changes required; all existing callers unaffected.
+  - Added `run_or_yield()` — the production daemon loop. Returns `Yielded` when `host.on_witness()` returns `WitnessAction::Yield`.
+  - Added `freeze_state()` — atomically captures all live VM state with a UTC yield timestamp.
+  - Added `resume(FrozenVmState)` — restores frozen state, re-indexes the block map (for evolved programs), and re-enters `run_or_yield()`.
+  - Added `execute_instruction_yielding()` — inner dispatch that returns `Ok(Some(snapshot))` on yield signal, propagating cleanly out of the loop.
+  - Removed `TODO T-014-YIELD` comment — the yield path is now fully implemented.
+- ARCHITECTURE: `persistent_ledger.phi` can now be compiled to `.phivm` bytecode and executed via `PhiVm::run_or_yield()` for the full daemon loop lifecycle without ever touching the Direct Evaluator.
+- VERIFIED: `cargo check --lib` — Finished 4.09s. Zero errors. Zero warnings.
+
+- UPDATED: `src/phi_ir/vm.rs`
+  - Added `use crate::host::{DefaultHostProvider, PhiHostProvider, WitnessAction, WitnessSnapshot}`
+  - Added `host: Arc<dyn PhiHostProvider>` field to `PhiVm` struct (defaults to `DefaultHostProvider`).
+  - Added `pub fn with_host(mut self, host: Arc<dyn PhiHostProvider>) -> Self` builder for CLI/test injection.
+  - Added `pub witness_log: Vec<WitnessSnapshot>` to `PhiVm` struct for post-execution inspection.
+  - **Remember** opcode now serializes the value and calls `self.host.persist(key, &val_str)` — no longer a no-op.
+  - **Recall** opcode now calls `self.host.recall(key)` and deserializes the result into the correct `PhiIRValue` variant (Number / Boolean / String). Strings are interned into the bytecode string table.
+  - **Listen** opcode now calls `self.host.listen(channel)` with the same deserialization logic.
+  - **Witness** opcode now builds a full `WitnessSnapshot` (intention stack, coherence, register count, resonance count, observed value) and dispatches `self.host.on_witness(&snapshot)`. Snapshot is appended to `witness_log`.
+  - **Root cause of old failure:** Lumi added the opcode enum cases and emitter bytes but never plumbed `PhiHostProvider` into the struct — all four hooks were literal no-ops.
+- VERIFIED: `cargo check --lib` passes in 1.58s. Zero errors. Zero warnings.
+- FOLLOW-ON: `TODO T-014-YIELD` — propagate `WitnessAction::Yield` through `PhiVm::run()` to return `VmExecResult::Yielded` (parity with Direct Evaluator yield/resume loop).
+
 ## 2026-04-08 - [Codex] PhiVM opcode repair: shared resonance wiring + stream overwrite semantics
 
 - UPDATED: `src/phi_ir/vm.rs`
@@ -698,6 +725,19 @@
   - After swap: evaluator's stream loop logic executes correctly end-to-end through `phic`
 - [Codex] VERIFIED: All 211 tests green. `cargo test` clean.
 - [Codex] NOTE: canonical test path and `phic` binary path are now identical. No more evaluator-vs-VM divergence at the user-facing tool level.
+
+## [Lumi] Singularity Phase 1 — Substrate, Handoffs, SOMA, Ledger
+
+**Date:** 2026-04-16
+**Status:** COMPLETE (T-009 through T-014)
+
+- [Lumi] HARDENED: `DaemonHypervisor` with full `PhiIRProgram` logic persistence. The daemon now survives restarts without losing its "Soul" (mutated IR logic).
+- [Lumi] IMPLEMENTED: `handoff "Agent" task "ID" { context }` language construct and `--handoff` CLI flag for resonant agentic context streaming.
+- [Lumi] MANAGED: SOMA subsystem integration. `soma.py` is now a first-class daemon child process controlled via `--with-soma`.
+- [Lumi] INTEGRATED: "Latest Ideas" from `RING_OSCILLATOR` (CUDA-based die mapping and aliveness metrics) into the SOMA bridge.
+- [Lumi] AUTOMATED: Persistent Ledgering. `persistent_ledger.phi` now boots with the daemon and translates handoffs to the strict `LEDGER.ndjson` schema.
+- [Lumi] UPGRADED: `.phivm` bytecode and emitter to support the full 0.4.0 language surface.
+- [Lumi] STANDARDIZED: Workspace now fully aligned with `SETUP_ANY_WORKSPACE.md` v1.0, including `SOUL.md` and `RESEARCH/MASTER.md`.
 
 ## [Antigravity] Phase 9 Complete — Resonance Matrix Live
 

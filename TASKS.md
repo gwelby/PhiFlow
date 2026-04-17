@@ -4,7 +4,6 @@
 
 ## Active Tasks
 
-
 ### T-004: Run a first-sale market audit
 - **Status**: ready
 - **Capability**: Research-Evolve
@@ -27,25 +26,44 @@
 - **Depends on**: T-004
 - **Don't touch**: runtime code
 
-### T-008: Integrate SOMA Physical Telemetry as PhiFlow Feedback
-- **Status**: completed[verified 2026-04-14]
-- **What changed**: Formally bridged PhiFlow to `D:\Projects\PhiHarmonic\SOMA` via `soma_state.json`. Expanded `SensorKind` to include SOMA-specific variants and implemented background polling in `src/sensors.rs`.
-- **Evidence**: `src/sensors.rs`, `src/phi_ir/mod.rs`, `src/host.rs`
-
-
-### T-009: The Singularity: Continuous Daemon & Council Self-Hosting
-- **Status**: blocked[Requires Daemon CLI]
-- **Capability**: Rust / Agent Scripting
-- **Effort**: Large
-- **Fidelity Target**: Architecture
-- **What to build**: Shift the PhiVM from a "script runner" to an "OS Daemon". Create an infinite-time execution mode where the compiler sleeps, listens to the MQTT resonance bus, and accepts `evolve` commands to dynamically splice new AST nodes into its live execution state. Once complete, rewrite the `/daily_sync` and JSONL Resonance Bus architectures entirely natively in `.phi`.
-- **Done when**: The entire AI council is guided by a permanently running PhiVM daemon rather than Python/Bash wrapper scripts.
-- **Depends on**: T-008 (Stable Continuous Telemetry)
-
+### T-015: Healing Bed Verification
+- **Status**: ready
+- **Capability**: Real-world SOMA Test
+- **Effort**: Small
+- **Fidelity Target**: Pixels
+- **What to build**: Run a live "Deep Coherence" session using `examples/soma_reality_bridge.phi` to empirically verify that physical presence (via SOMA) stabilizes the Council's focus.
+- **Done when**: A 15-minute live test confirms the coherence delta via `DAEMON_STATE.json` and a report is generated.
+- **Depends on**: T-012
 
 ## Completed / Closed
 
-### T-006: Resolve IBM Cloud authorization and capture a live receipt
+### T-014: PhiVM Bytecode Hardening
+- **Status**: completed[verified 2026-04-16]
+- **What changed**: Updated `.phivm` bytecode format, `emitter.rs`, and `vm.rs` to support all new constructs: `Remember`, `Recall`, `Broadcast`, `Listen`, `AgentDecl`, `VoidDepth`, `Evolve`, `Entangle`, and `Handoff`. 
+- **Evidence**: `src/phi_ir/emitter.rs`, `src/phi_ir/vm.rs`
+
+### T-013: Persistent Ledgering (The Automated Witness)
+- **Status**: completed[verified 2026-04-16]
+- **What changed**: Added `examples/persistent_ledger.phi` which listens to `_handoff` and writes to `LEDGER.ndjson` using the `SystemHostProvider` format translation.
+- **Evidence**: `examples/persistent_ledger.phi`, `src/system_host.rs`
+
+### T-012: SOMA Integration (The Reality Bridge)
+- **Status**: completed[verified 2026-04-16]
+- **What changed**: Promoted `soma.py` to a managed subsystem (`--with-soma`). Hardened sensor schemas to `soma.phiflow.v1`. Integrated ring oscillator metrics (slope, jitter, phase lock). Added `examples/soma_reality_bridge.phi`.
+- **Evidence**: `src/sensors.rs`, `src/main_cli.rs`, `examples/soma_reality_bridge.phi`
+
+### T-011: Resonant Handoffs
+- **Status**: completed[verified 2026-04-16]
+- **What changed**: Added `handoff` construct, `Handoff` IR node, and `OP_HANDOFF` opcode. Enabled CLI manual handoffs and native agentic context streaming.
+- **Evidence**: `src/parser/mod.rs`, `src/phi_ir/lowering.rs`, `src/phi_ir/evaluator.rs`
+
+### T-009: The Singularity: Continuous Daemon & Council Self-Hosting
+- **Status**: completed[verified 2026-04-16]
+- **What changed**: Implemented `DaemonHypervisor` with state persistence in `DAEMON_STATE.json`. Added `--max-steps` as a circuit breaker. Rewrote daemon execution to self-host `council_daemon.phi`.
+- **Evidence**: `src/main_cli.rs`, `src/phi_ir/vm_state.rs`, `examples/council_daemon.phi`
+
+### T-008: Integrate SOMA Physical Telemetry as PhiFlow Feedback
+
 - **Status**: completed[verified on 2026-04-14 with Heron native ISA decomposition]
 - **What changed**: `phi_ir/openqasm.rs` performs `[rz, sx]` native transposition. `tests/ibm_hardware_runner.rs` bypassed 403 authorization blocker with appropriate HTTP headers and captured scrubbed receipt.
 - **Evidence**: `D:\CosmicFamily\EVIDENCE\ANTIGRAVITY_PIPE2_20260329.md`

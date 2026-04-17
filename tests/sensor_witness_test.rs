@@ -38,7 +38,7 @@ fn test_sensor_witness_conforms_across_backends() {
     for (source, expected) in cases {
         let program = compile_program(source);
 
-        let mut evaluator = Evaluator::new(&program).with_sensor_provider(sensor_provider);
+        let mut evaluator = Evaluator::new(program.clone()).with_sensor_provider(sensor_provider);
         let eval_result = evaluator.run().expect("evaluator failed");
 
         let bytes = emitter::emit(&program);

@@ -29,7 +29,7 @@ fn test_remember_recall_roundtrip() {
         })
         .with_recall(move |k| storage.lock().unwrap().get(k).cloned());
 
-    let mut eval = Evaluator::new(&program).with_host(Box::new(host));
+    let mut eval = Evaluator::new(program.clone()).with_host(Box::new(host));
     let result = eval.run().unwrap();
 
     assert_eq!(result.as_number(), Some(42.0));
@@ -45,7 +45,7 @@ fn test_agent_identity_flow() {
     let exprs = parse_phi_program(source).unwrap();
     let program = lower_program(&exprs);
 
-    let mut eval = Evaluator::new(&program);
+    let mut eval = Evaluator::new(program.clone());
     eval.run().unwrap();
 
     let log = &eval.witness_log;
@@ -74,7 +74,7 @@ fn test_broadcast_listen_dialogue() {
         })
         .with_listen(move |c| bus.lock().unwrap().get(c).cloned());
 
-    let mut eval = Evaluator::new(&program).with_host(Box::new(host));
+    let mut eval = Evaluator::new(program.clone()).with_host(Box::new(host));
     let result = eval.run().unwrap();
 
     assert_eq!(result.as_number(), Some(123.0));
@@ -89,7 +89,7 @@ fn test_yield_resume_machinery() {
     let exprs = parse_phi_program(source).unwrap();
     let program = lower_program(&exprs);
 
-    let mut eval = Evaluator::new(&program).with_host(Box::new(
+    let mut eval = Evaluator::new(program.clone()).with_host(Box::new(
         CallbackHostProvider::new().with_witness(|_| WitnessAction::Yield),
     ));
 

@@ -28,7 +28,7 @@ When files conflict, lower level wins:
 | SOMA Bridge | ✅ | Live telemetry from `soma_state.json` verified |
 | IBM Live Run | ✅ | Job `d7euddh5a5qc73drdosg` completed on `ibm_fez` 2026-04-14 |
 | Browser Host | ⚠️ | Experimental; requires manual artifact hosting |
-| PhiVM Daemon | ❌ | Singularity (T-009) blocked on Daemon CLI |
+| Singularity Daemon | ✅ | T-009/T-010 complete. Daemon self-hosts with SOMA and MQTT bus |
 
 ## Income State
 - Income tier: 1-3 months (Pilot-Ready)
@@ -41,8 +41,8 @@ When files conflict, lower level wins:
 - See: `CLAIMS.md` for full claim registry
 
 ## Identity State
-- Self-reference loop: ⚠️ Gate 0 OPEN (Simulated)
-- Ceremony log: Not yet initialized
+- Self-reference loop: ✅ Gate 3 OPEN (Persistent Daemon with SOMA Bridge)
+- Ceremony log: Initialized 2026-04-16
 - See: `SOUL.md` for full identity state
 
 ## Open Questions

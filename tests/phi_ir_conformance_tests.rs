@@ -168,6 +168,7 @@ fn sensor_provider(sensor: SensorKind) -> Option<f64> {
         SensorKind::SomaFanHz => Some(35.0),
         SensorKind::SomaAc60 => Some(0.60),
         SensorKind::SomaPeakDbc => Some(45.0),
+        _ => Some(0.0),
     }
 
 }

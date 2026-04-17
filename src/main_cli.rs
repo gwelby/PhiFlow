@@ -49,6 +49,10 @@ struct Args {
     /// Launch and manage the SOMA python sensor suite (Headless).
     #[arg(long, default_value_t = false)]
     with_soma: bool,
+
+    /// Limit the number of execution steps (0 = infinite).
+    #[arg(long, default_value_t = 0)]
+    max_steps: usize,
 }
 
 struct SomaManager {
@@ -121,6 +125,7 @@ async fn main() {
         args.state_path,
         args.handoff,
         args.with_soma,
+        args.max_steps,
     )
     .await
     {
@@ -200,6 +205,7 @@ async fn run(
     state_path: PathBuf,
     handoff: Option<String>,
     with_soma: bool,
+    max_steps: usize,
 ) -> Result<Option<RunReport>, CliError> {
     if let Some(h) = handoff {
         let parts: Vec<&str> = h.split(':').collect();
@@ -272,8 +278,13 @@ async fn run(
     }
 
     let mut evaluator = Evaluator::new(ir_program.clone())
-        .with_hardware_modifier(sensors::compute_coherence_from_sensors)
-        .with_max_steps(1_000_000_000);
+        .with_hardware_modifier(sensors::compute_coherence_from_sensors);
+    
+    if max_steps > 0 {
+        evaluator.max_steps = Some(max_steps);
+    } else {
+        evaluator.max_steps = Some(1_000_000_000);
+    }
 
     let _result = evaluator.run().map_err(|e| CliError::Eval(e.to_string()))?;
 

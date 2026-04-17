@@ -90,6 +90,11 @@ pub enum SensorKind {
     SomaFanHz,
     SomaAc60,
     SomaPeakDbc,
+    RingSlope1f,
+    RingJitterNs,
+    RingCoherence432,
+    RingCoherence528,
+    RingPhaseDelta,
 }
 
 impl SensorKind {
@@ -104,6 +109,11 @@ impl SensorKind {
             "soma_fan_hz" => Some(Self::SomaFanHz),
             "soma_ac_60" => Some(Self::SomaAc60),
             "soma_peak_dbc" => Some(Self::SomaPeakDbc),
+            "ring_slope_1f" => Some(Self::RingSlope1f),
+            "ring_jitter_ns" => Some(Self::RingJitterNs),
+            "ring_coherence_432" => Some(Self::RingCoherence432),
+            "ring_coherence_528" => Some(Self::RingCoherence528),
+            "ring_phase_delta" => Some(Self::RingPhaseDelta),
             _ => None,
         }
     }
@@ -119,6 +129,11 @@ impl SensorKind {
             Self::SomaFanHz => "soma_fan_hz",
             Self::SomaAc60 => "soma_ac_60",
             Self::SomaPeakDbc => "soma_peak_dbc",
+            Self::RingSlope1f => "ring_slope_1f",
+            Self::RingJitterNs => "ring_jitter_ns",
+            Self::RingCoherence432 => "ring_coherence_432",
+            Self::RingCoherence528 => "ring_coherence_528",
+            Self::RingPhaseDelta => "ring_phase_delta",
         }
     }
 
@@ -133,6 +148,11 @@ impl SensorKind {
             Self::SomaFanHz => 6,
             Self::SomaAc60 => 7,
             Self::SomaPeakDbc => 8,
+            Self::RingSlope1f => 9,
+            Self::RingJitterNs => 10,
+            Self::RingCoherence432 => 11,
+            Self::RingCoherence528 => 12,
+            Self::RingPhaseDelta => 13,
         }
     }
 
@@ -147,6 +167,11 @@ impl SensorKind {
             6 => Some(Self::SomaFanHz),
             7 => Some(Self::SomaAc60),
             8 => Some(Self::SomaPeakDbc),
+            9 => Some(Self::RingSlope1f),
+            10 => Some(Self::RingJitterNs),
+            11 => Some(Self::RingCoherence432),
+            12 => Some(Self::RingCoherence528),
+            13 => Some(Self::RingPhaseDelta),
             _ => None,
         }
     }
