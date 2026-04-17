@@ -1,7 +1,7 @@
 use clap::Parser;
 use phiflow::parser::parse_phi_program_with_diagnostics;
 use phiflow::phi_ir::evaluator::Evaluator;
-use phiflow::phi_ir::lowering::lower_program_checked;
+use phiflow::phi_ir::lowering::lower_program;
 use phiflow::phi_ir::openqasm::OpenQasmEmitter;
 use phiflow::phi_ir::quantum_codegen::compile_ir_to_quantum;
 use phiflow::phi_ir::PhiIRValue;
@@ -22,13 +22,17 @@ struct Args {
     #[arg(long, default_value_t = false)]
     json_errors: bool,
 
-    /// The target backend to compile to (e.g., 'quantum'). If not specified, runs in the interpreter.
+    /// The target backend to compile to (e.g., 'quantum', 'openqasm'). If not specified, runs in the interpreter.
     #[arg(long)]
     target: Option<String>,
 
-    /// Optimize quantum circuit depth using tree topology.
+    /// Optimize the depth of quantum circuits (uses tree topology for entanglement).
     #[arg(long, default_value_t = false)]
     optimize_depth: bool,
+
+    /// Output file path (used by phivm target).
+    #[arg(short, long)]
+    output: Option<PathBuf>,
 }
 
 #[derive(Debug)]
@@ -36,7 +40,6 @@ enum CliError {
     Parse(PhiDiagnostic),
     Io(String),
     Eval(String),
-    Lower(String),
 }
 
 struct RunReport {
@@ -48,12 +51,7 @@ struct RunReport {
 fn main() {
     let args = Args::parse();
 
-    match run(
-        &args.file,
-        args.json_errors,
-        args.target,
-        args.optimize_depth,
-    ) {
+    match run(&args.file, args.json_errors, args.target, args.optimize_depth, args.output) {
         Ok(Some(report)) => {
             if args.json_errors {
                 // Contract: parse success emits pure JSON array and nothing else.
@@ -115,13 +113,6 @@ fn main() {
             eprintln!("Runtime error: {}", msg);
             std::process::exit(1);
         }
-        Err(CliError::Lower(msg)) => {
-            if args.json_errors {
-                println!("[]");
-            }
-            eprintln!("Lowering error: {}", msg);
-            std::process::exit(1);
-        }
     }
 }
 
@@ -130,6 +121,7 @@ fn run(
     json_errors: bool,
     target: Option<String>,
     optimize_depth: bool,
+    output: Option<PathBuf>,
 ) -> Result<Option<RunReport>, CliError> {
     let source = fs::read_to_string(file_path)
         .map_err(|e| CliError::Io(format!("Failed to read file: {}", e)))?;
@@ -147,8 +139,10 @@ fn run(
     }
 
     // 2. Lower AST -> PhiIR
-    println!("Compiling to PhiFlow IR...");
-    let ir_program = lower_program_checked(&ast).map_err(|e| CliError::Lower(e.to_string()))?;
+    if target.is_some() {
+        eprintln!("Compiling to PhiFlow IR...");
+    }
+    let ir_program = lower_program(&ast);
 
     // 3. Check compilation target
     if let Some(t) = target {
@@ -163,10 +157,23 @@ fn run(
             "openqasm" => {
                 let mut emitter = OpenQasmEmitter::new();
                 emitter.optimize_depth = optimize_depth;
+                
+                // Body Stress Bridge: Environment affects physical realization
+                let stability = sensors::compute_coherence_from_sensors();
+                emitter.hardware_stress = 1.0 - stability;
+                
                 let qasm = emitter
                     .emit(&ir_program)
                     .map_err(|e| CliError::Eval(e.to_string()))?;
-                print!("{}", qasm);
+                println!("{}", qasm);
+                return Ok(None);
+            }
+            "phivm" => {
+                let bytes = phiflow::phi_ir::emitter::emit(&ir_program);
+                let out_path = output.unwrap_or_else(|| file_path.with_extension("phivm"));
+                fs::write(&out_path, bytes)
+                    .map_err(|e| CliError::Io(format!("Failed to write phivm: {}", e)))?;
+                println!("✨ Compiled to bytecode: {}", out_path.display());
                 return Ok(None);
             }
             _ => {
@@ -181,7 +188,7 @@ fn run(
     let _result = evaluator.run().map_err(|e| CliError::Eval(e.to_string()))?;
 
     Ok(Some(RunReport {
-        final_coherence: evaluator.resolved_coherence(),
+        final_coherence: evaluator.coherence(),
         resonance_events: evaluator.resonance_events().to_vec(),
         ended_streams: evaluator.ended_streams().to_vec(),
     }))

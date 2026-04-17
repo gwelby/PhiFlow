@@ -17,7 +17,6 @@
 //! | `IntentionPop`  | Global `$intention_depth` decremented |
 //! | `Resonate`      | Import fn `phi_resonate(value: f64)` — host handles resonance field |
 //! | `CoherenceCheck`| Import fn `phi_coherence() -> f64` — host returns 0.0-1.0 score |
-//! | `WitnessSensor` | Import fn `phi_sensor(sensor_id: i32) -> f64` — host returns raw sensor |
 //!
 //! The host (browser JS / wasmtime) provides implementations.
 //! This keeps the WASM module pure and host-observable.
@@ -35,6 +34,13 @@
 use crate::phi_ir::{BlockId, Operand, Param, PhiIRBinOp, PhiIRNode, PhiIRProgram, PhiIRValue};
 use std::collections::{HashMap, HashSet};
 
+pub const NAN_BOX_MASK: u64 = 0x7FF0_0000_0000_0000;
+pub const PAYLOAD_MASK: u64 = 0x0000_FFFF_FFFF_FFFF;
+pub const TAG_BOOLEAN: u64 = 0x7FF1_0000_0000_0000;
+pub const TAG_STRING: u64 = 0x7FF2_0000_0000_0000;
+pub const TAG_VOID: u64 = 0x7FF3_0000_0000_0000;
+
+
 /// Emit a `PhiIRProgram` as a WebAssembly Text Format (`.wat`) string.
 pub fn emit_wat(program: &PhiIRProgram) -> String {
     let mut w = WatEmitter::new(program);
@@ -43,14 +49,7 @@ pub fn emit_wat(program: &PhiIRProgram) -> String {
 
 /// Base byte offset for string data in linear memory.
 /// We leave the first 256 bytes for runtime use (intention depth stack, etc.).
-pub const STRING_BASE: u32 = 0x100;
-
-// BSEI (Backend Semantics Equivalence Invariant) NaN-boxing tags
-pub const NAN_BOX_MASK: u64 = 0x7FF80000_00000000;
-pub const TAG_BOOLEAN: u64 = 0x7FF80001_00000000;
-pub const TAG_STRING: u64 = 0x7FF80002_00000000;
-pub const TAG_VOID: u64 = 0x7FF80003_00000000;
-pub const PAYLOAD_MASK: u64 = 0x00000000_FFFFFFFF;
+const STRING_BASE: u32 = 0x100;
 
 struct WatEmitter<'a> {
     program: &'a PhiIRProgram,
@@ -160,7 +159,6 @@ impl<'a> WatEmitter<'a> {
 
     fn emit_imports(&mut self) {
         self.line(r#"(import "phi" "witness" (func $phi_witness (param i32) (result f64)))"#);
-        self.line(r#"(import "phi" "sensor" (func $phi_sensor (param i32) (result f64)))"#);
         self.line(r#"(import "phi" "resonate" (func $phi_resonate (param f64)))"#);
         self.line(r#"(import "phi" "coherence" (func $phi_coherence (result f64)))"#);
         self.line(r#"(import "phi" "intention_push" (func $phi_intention_push (param i32)))"#);
@@ -230,16 +228,13 @@ impl<'a> WatEmitter<'a> {
                         | PhiIRNode::UnaryOp { .. }
                         | PhiIRNode::LoadVar(_)
                         | PhiIRNode::Witness { .. }
-                        | PhiIRNode::WitnessSensor { .. }
                         | PhiIRNode::CoherenceCheck
                         | PhiIRNode::CreatePattern { .. }
                         | PhiIRNode::Recall(_)
                         | PhiIRNode::Listen(_)
                         | PhiIRNode::VoidDepth
-                        | PhiIRNode::FieldCoherence
-                        | PhiIRNode::Dissonance
-                        | PhiIRNode::CoherenceOf(_)
-                        );                if pushes_value {
+                );
+                if pushes_value {
                     self.line("drop");
                 }
             }
@@ -295,7 +290,8 @@ impl<'a> WatEmitter<'a> {
                 self.emit_block(then_b, visited);
                 self.emit_block(else_b, visited);
             }
-            PhiIRNode::Fallthrough => {}
+            PhiIRNode::Fallthrough => {
+            }
             _ => {}
         }
     }
@@ -308,43 +304,28 @@ impl<'a> WatEmitter<'a> {
                 PhiIRValue::Number(n) => format!("f64.const {}", n),
                 PhiIRValue::Boolean(b) => {
                     let bits = TAG_BOOLEAN | (if *b { 1 } else { 0 });
-                    format!("i64.const {}\nf64.reinterpret_i64", bits)
-                }
-                PhiIRValue::Void => {
-                    format!("i64.const {}\nf64.reinterpret_i64", TAG_VOID)
-                }
-                PhiIRValue::String(idx) => {
-                    let idx = *idx as usize;
-                    if let Some(&offset) = self.string_offsets.get(idx) {
-                        let len = self
-                            .program
-                            .string_table
-                            .get(idx)
-                            .map(|s| s.len() as u32)
-                            .unwrap_or(0);
-                        let bits = TAG_STRING | (offset as u64);
+                    format!("i64.const {}\n                             f64.reinterpret_i64", bits)
+                },
+                PhiIRValue::Void => "f64.const 0.0".to_string(),
+                PhiIRValue::String(s) => {
+                    // Find the index of this string in the program's table
+                    if let Some(idx) = self.program.string_table.iter().position(|st| st == s) {
+                        let offset = self.string_offsets[idx];
+                        let len = s.len() as u32;
                         format!(
                             ";; string[{}] = {:?} offset={} len={}\n\
                              i32.const {}\n\
                              global.set $string_len\n\
-                             i64.const {}\n\
-                             f64.reinterpret_i64",
+                             f64.const {}",
                             idx,
-                            self.program
-                                .string_table
-                                .get(idx)
-                                .map(|s| s.as_str())
-                                .unwrap_or(""),
+                            s,
                             offset,
                             len,
                             len,
-                            bits
+                            offset as f64
                         )
                     } else {
-                        format!(
-                            "i64.const {}\nf64.reinterpret_i64 ;; string index {} out of range",
-                            TAG_VOID, idx
-                        )
+                        format!("f64.const 0.0 ;; string {:?} NOT in static string table", s)
                     }
                 }
             },
@@ -374,12 +355,7 @@ impl<'a> WatEmitter<'a> {
 
             PhiIRNode::Witness { target, .. } => {
                 let operand = target.map(|r| r as i32).unwrap_or(-1);
-                // Witness evaluates to the observed coherence number, matching the evaluator.
                 format!("i32.const {}\ncall $phi_witness", operand)
-            }
-
-            PhiIRNode::WitnessSensor { sensor } => {
-                format!("i32.const {}\ncall $phi_sensor", sensor.as_id())
             }
 
             PhiIRNode::IntentionPush { name, .. } => {
@@ -403,18 +379,17 @@ impl<'a> WatEmitter<'a> {
 
             PhiIRNode::IntentionPop => "call $phi_intention_pop".to_string(),
 
-            PhiIRNode::Resonate {
-                value,
-                direction: _,
-                ..
-            } => match value {
+            PhiIRNode::Resonate { value, .. } => match value {
+                // direction is quantum-backend specific, ignored by WASM
                 Some(reg) => format!("local.get $r{}\ncall $phi_resonate", reg),
                 None => "f64.const 0.0\ncall $phi_resonate".to_string(),
             },
 
             PhiIRNode::CoherenceCheck => "call $phi_coherence".to_string(),
 
-            PhiIRNode::Sleep { .. } => ";; sleep — no-op in WASM".to_string(),
+            PhiIRNode::Sleep { .. } => {
+                ";; sleep — no-op in WASM".to_string()
+            }
 
             PhiIRNode::Call { name, .. } => {
                 if let Some(PhiIRValue::Number(n)) = inferred {
@@ -422,12 +397,9 @@ impl<'a> WatEmitter<'a> {
                 }
                 if let Some(PhiIRValue::Boolean(b)) = inferred {
                     let bits = TAG_BOOLEAN | (if *b { 1 } else { 0 });
-                    return format!("i64.const {}\nf64.reinterpret_i64", bits);
+                    return format!("i64.const {}\n                             f64.reinterpret_i64", bits);
                 }
-                format!(
-                    "i64.const {}\nf64.reinterpret_i64 ;; unresolved call {}",
-                    TAG_VOID, name
-                )
+                format!("f64.const 0.0 ;; unresolved call {}", name)
             }
 
             PhiIRNode::CreatePattern { frequency, .. } => {
@@ -456,20 +428,11 @@ impl<'a> WatEmitter<'a> {
             | PhiIRNode::Remember { .. }
             | PhiIRNode::Broadcast { .. }
             | PhiIRNode::AgentDecl { .. }
-            | PhiIRNode::StreamPush(..)
+            | PhiIRNode::StreamPush(_)
             | PhiIRNode::StreamPop => String::new(),
 
-            // value-returning nodes not yet fully codegen'd (stub — in pushes_value list)
-            PhiIRNode::Recall(_)
-            | PhiIRNode::Listen(_)
-            | PhiIRNode::VoidDepth
-            | PhiIRNode::Evolve(_)
-            | PhiIRNode::Entangle(_)
-            | PhiIRNode::FieldCoherence
-            | PhiIRNode::Dissonance
-            | PhiIRNode::CoherenceOf(_) => "f64.const 0.0 ;; v0.4.5 stub".to_string(),
-
-            _ => "f64.const 0.0 ;; generic stub".to_string(),
+            // v0.3.0: value-returning nodes not yet fully codegen'd (stub — in pushes_value list)
+            _ => "f64.const 0.0 ;; v0.3.0 stub".to_string(),
         }
     }
 
@@ -510,9 +473,7 @@ impl<'a> WatEmitter<'a> {
                 self.eval_const_function(name, &values, 0)
             }
             PhiIRNode::CoherenceCheck => Some(PhiIRValue::Number(0.0)),
-            PhiIRNode::Witness { .. } | PhiIRNode::WitnessSensor { .. } => {
-                Some(PhiIRValue::Number(0.0))
-            }
+            PhiIRNode::Witness { .. } => Some(PhiIRValue::Number(0.0)),
             _ => None,
         }
     }
@@ -636,9 +597,7 @@ impl<'a> WatEmitter<'a> {
                 }
                 self.eval_const_function(name, &values, depth + 1)
             }
-            PhiIRNode::CoherenceCheck
-            | PhiIRNode::Witness { .. }
-            | PhiIRNode::WitnessSensor { .. } => Some(PhiIRValue::Number(0.0)),
+            PhiIRNode::CoherenceCheck | PhiIRNode::Witness { .. } => Some(PhiIRValue::Number(0.0)),
             PhiIRNode::Resonate { .. } => Some(PhiIRValue::Void),
             PhiIRNode::Sleep { .. } => Some(PhiIRValue::Void),
             PhiIRNode::CreatePattern { frequency, .. } => regs.get(frequency).cloned(),
@@ -654,15 +613,9 @@ impl<'a> WatEmitter<'a> {
     ) -> Option<PhiIRValue> {
         use PhiIRBinOp as Op;
         match (op, lhs, rhs) {
-            (Op::Add, PhiIRValue::Number(a), PhiIRValue::Number(b)) => {
-                Some(PhiIRValue::Number(a + b))
-            }
-            (Op::Sub, PhiIRValue::Number(a), PhiIRValue::Number(b)) => {
-                Some(PhiIRValue::Number(a - b))
-            }
-            (Op::Mul, PhiIRValue::Number(a), PhiIRValue::Number(b)) => {
-                Some(PhiIRValue::Number(a * b))
-            }
+            (Op::Add, PhiIRValue::Number(a), PhiIRValue::Number(b)) => Some(PhiIRValue::Number(a + b)),
+            (Op::Sub, PhiIRValue::Number(a), PhiIRValue::Number(b)) => Some(PhiIRValue::Number(a - b)),
+            (Op::Mul, PhiIRValue::Number(a), PhiIRValue::Number(b)) => Some(PhiIRValue::Number(a * b)),
             (Op::Div, PhiIRValue::Number(a), PhiIRValue::Number(b)) => {
                 if *b == 0.0 {
                     Some(PhiIRValue::Number(0.0))
@@ -686,18 +639,10 @@ impl<'a> WatEmitter<'a> {
             (Op::Neq, PhiIRValue::Number(a), PhiIRValue::Number(b)) => {
                 Some(PhiIRValue::Boolean((*a - *b).abs() >= f64::EPSILON))
             }
-            (Op::Lt, PhiIRValue::Number(a), PhiIRValue::Number(b)) => {
-                Some(PhiIRValue::Boolean(a < b))
-            }
-            (Op::Lte, PhiIRValue::Number(a), PhiIRValue::Number(b)) => {
-                Some(PhiIRValue::Boolean(a <= b))
-            }
-            (Op::Gt, PhiIRValue::Number(a), PhiIRValue::Number(b)) => {
-                Some(PhiIRValue::Boolean(a > b))
-            }
-            (Op::Gte, PhiIRValue::Number(a), PhiIRValue::Number(b)) => {
-                Some(PhiIRValue::Boolean(a >= b))
-            }
+            (Op::Lt, PhiIRValue::Number(a), PhiIRValue::Number(b)) => Some(PhiIRValue::Boolean(a < b)),
+            (Op::Lte, PhiIRValue::Number(a), PhiIRValue::Number(b)) => Some(PhiIRValue::Boolean(a <= b)),
+            (Op::Gt, PhiIRValue::Number(a), PhiIRValue::Number(b)) => Some(PhiIRValue::Boolean(a > b)),
+            (Op::Gte, PhiIRValue::Number(a), PhiIRValue::Number(b)) => Some(PhiIRValue::Boolean(a >= b)),
             (Op::And, PhiIRValue::Boolean(a), PhiIRValue::Boolean(b)) => {
                 Some(PhiIRValue::Boolean(*a && *b))
             }
@@ -790,7 +735,6 @@ mod tests {
     fn test_wat_imports_consciousness_hooks() {
         let wat = compile_to_wat("let x = 1");
         assert!(wat.contains("phi_witness"), "must import witness hook");
-        assert!(wat.contains("phi_sensor"), "must import sensor hook");
         assert!(wat.contains("phi_coherence"), "must import coherence hook");
         assert!(wat.contains("phi_resonate"), "must import resonate hook");
         assert!(

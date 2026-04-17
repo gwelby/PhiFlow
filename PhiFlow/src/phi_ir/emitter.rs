@@ -20,7 +20,8 @@
 //!   [TERMINATOR: emit_node]
 //! ```
 
-use crate::phi_ir::{PhiIRBinOp, PhiIRNode, PhiIRProgram, PhiIRValue, ResonateDirection};
+use crate::phi_ir::{PhiIRBinOp, PhiIRNode, PhiIRProgram, PhiIRValue};
+use crate::parser::ResonateDirection;
 use std::collections::HashMap;
 
 // --- Opcodes ---
@@ -49,9 +50,20 @@ const OP_WITNESS_SENSOR: u8 = 0x38;
 const OP_FIELD: u8 = 0x39;
 const OP_DISSONANCE: u8 = 0x3A;
 const OP_COHERENCE_OF: u8 = 0x3B;
-const OP_STREAM_PUSH: u8 = 0x3C;
-const OP_STREAM_POP: u8 = 0x3D;
 const OP_DOMAIN_CALL: u8 = 0x40;
+
+// v0.3.0 Persistence & Dialogue
+const OP_REMEMBER: u8 = 0x50;
+const OP_RECALL: u8 = 0x51;
+const OP_BROADCAST: u8 = 0x52;
+const OP_LISTEN: u8 = 0x53;
+const OP_AGENT_DECL: u8 = 0x54;
+const OP_VOID_DEPTH: u8 = 0x55;
+
+// v0.4.0 Strategic Capabilities
+const OP_EVOLVE: u8 = 0x60;
+const OP_ENTANGLE: u8 = 0x61;
+
 // Terminators
 const OP_RETURN: u8 = 0xE0;
 const OP_JUMP: u8 = 0xE1;
@@ -223,7 +235,7 @@ fn collect_node_strings(node: &PhiIRNode, interner: &mut StringInterner) {
         PhiIRNode::LoadVar(name)
         | PhiIRNode::Call { name, .. }
         | PhiIRNode::FuncDef { name, .. }
-        | PhiIRNode::StreamPush(name, _)
+        | PhiIRNode::StreamPush(name)
         | PhiIRNode::IntentionPush { name, .. }
         | PhiIRNode::Remember { key: name, .. }
         | PhiIRNode::Recall(name)
@@ -248,6 +260,10 @@ fn collect_node_strings(node: &PhiIRNode, interner: &mut StringInterner) {
             for value in string_args {
                 interner.intern(value);
             }
+        }
+
+        PhiIRNode::Const(PhiIRValue::String(s)) => {
+            interner.intern(s);
         }
 
         _ => {}
@@ -286,14 +302,9 @@ fn emit_value(out: &mut Vec<u8>, val: &PhiIRValue, ctx: &EmitContext<'_>) {
             out.push(OP_CONST_NUM);
             emit_f64(out, *n);
         }
-        PhiIRValue::String(idx) => {
+        PhiIRValue::String(s) => {
             out.push(OP_CONST_STR);
-            let remapped = ctx
-                .literal_remap
-                .get(*idx as usize)
-                .copied()
-                .unwrap_or(*idx);
-            emit_u32(out, remapped);
+            emit_string_ref(out, s, ctx);
         }
         PhiIRValue::Boolean(b) => {
             out.push(OP_CONST_BOOL);
@@ -391,10 +402,10 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
             }
         }
 
-        PhiIRNode::WitnessSensor { sensor } => {
-            out.push(OP_WITNESS_SENSOR);
-            out.push(sensor.as_id() as u8);
-        }
+        // PhiIRNode::WitnessSensor { sensor } => {
+        //     out.push(OP_WITNESS_SENSOR);
+        //     out.push(sensor.as_id() as u8);
+        // }
 
         PhiIRNode::IntentionPush { name, .. } => {
             out.push(OP_INTENTION_PUSH);
@@ -403,34 +414,20 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
 
         PhiIRNode::IntentionPop => out.push(OP_INTENTION_POP),
 
-        PhiIRNode::StreamPush(name, threshold) => {
-            out.push(OP_STREAM_PUSH);
-            emit_string_ref(out, name, ctx);
-            match threshold {
-                Some(t) => {
-                    out.push(1);
-                    emit_f64(out, *t);
-                }
-                None => out.push(0),
-            }
-        }
-
-        PhiIRNode::StreamPop => out.push(OP_STREAM_POP),
-
-        PhiIRNode::FieldCoherence => out.push(OP_FIELD),
-        PhiIRNode::Dissonance => out.push(OP_DISSONANCE),
-        PhiIRNode::CoherenceOf(name) => {
-            out.push(OP_COHERENCE_OF);
+        PhiIRNode::StreamPush(name) => {
+            out.push(OP_STREAM);
             emit_string_ref(out, name, ctx);
         }
+
+        PhiIRNode::StreamPop => out.push(OP_BREAK_STREAM),
 
         PhiIRNode::Resonate {
             value, direction, ..
         } => {
             out.push(OP_RESONATE);
             match direction {
-                crate::phi_ir::ResonateDirection::TeamA => out.push(0),
-                crate::phi_ir::ResonateDirection::TeamB => out.push(1),
+                ResonateDirection::TeamA => out.push(0),
+                ResonateDirection::TeamB => out.push(1),
             }
             match value {
                 Some(op) => {
@@ -442,6 +439,15 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
         }
 
         PhiIRNode::CoherenceCheck => out.push(OP_COHERENCE_CHECK),
+
+        PhiIRNode::Field => out.push(OP_FIELD),
+
+        PhiIRNode::Dissonance => out.push(OP_DISSONANCE),
+
+        PhiIRNode::CoherenceOf(name) => {
+            out.push(OP_COHERENCE_OF);
+            emit_string_ref(out, name, ctx);
+        }
 
         PhiIRNode::Sleep { duration } => {
             out.push(OP_SLEEP);
@@ -496,6 +502,45 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
         }
 
         PhiIRNode::Fallthrough => out.push(OP_FALLTHROUGH),
-        _ => {} // v0.3.0 features not yet in bytecode
+
+        PhiIRNode::Remember { key, value } => {
+            out.push(OP_REMEMBER);
+            emit_string_ref(out, key, ctx);
+            emit_u32(out, *value);
+        }
+
+        PhiIRNode::Recall(key) => {
+            out.push(OP_RECALL);
+            emit_string_ref(out, key, ctx);
+        }
+
+        PhiIRNode::Broadcast { channel, value } => {
+            out.push(OP_BROADCAST);
+            emit_string_ref(out, channel, ctx);
+            emit_u32(out, *value);
+        }
+
+        PhiIRNode::Listen(channel) => {
+            out.push(OP_LISTEN);
+            emit_string_ref(out, channel, ctx);
+        }
+
+        PhiIRNode::AgentDecl { name, version } => {
+            out.push(OP_AGENT_DECL);
+            emit_string_ref(out, name, ctx);
+            emit_string_ref(out, version, ctx);
+        }
+
+        PhiIRNode::VoidDepth => out.push(OP_VOID_DEPTH),
+
+        PhiIRNode::Evolve(op) => {
+            out.push(OP_EVOLVE);
+            emit_u32(out, *op);
+        }
+
+        PhiIRNode::Entangle(freq) => {
+            out.push(OP_ENTANGLE);
+            emit_f64(out, *freq);
+        }
     }
 }

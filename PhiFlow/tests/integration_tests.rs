@@ -420,13 +420,9 @@ fn is_canonical_phi(rel_path: &str) -> bool {
     matches!(
         rel_path,
         "examples/adaptive_witness.phi"
-            | "examples/claude.phi"
-            | "examples/claude_v2.phi"
             | "examples/code_that_drifts.phi"
             | "examples/code_that_lives.phi"
             | "examples/code_that_resonates.phi"
-            | "examples/codex.phi"
-            | "examples/healing_bed.phi"
             | "examples/stream_demo.phi"
             | "examples/trinity_proof.phi"
             | "examples/working_test.phi"

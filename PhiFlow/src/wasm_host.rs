@@ -9,7 +9,7 @@
 //! - `phi.intention_pop()`
 
 use crate::parser::parse_phi_program;
-use crate::phi_ir::lowering::lower_program_checked;
+use crate::phi_ir::lowering::lower_program;
 use crate::phi_ir::optimizer::{OptimizationLevel, Optimizer};
 use crate::phi_ir::wasm::{
     emit_wat, NAN_BOX_MASK, PAYLOAD_MASK, TAG_BOOLEAN, TAG_STRING, TAG_VOID,
@@ -50,7 +50,10 @@ pub fn unbox_f64(val: f64, string_table: &[String]) -> PhiIRValue {
             TAG_BOOLEAN => PhiIRValue::Boolean(payload != 0),
             TAG_STRING => {
                 let idx = payload as u32;
-                PhiIRValue::String(idx) // return the u32 index, matching what evaluator does
+                // If we don't have the string table, return a placeholder.
+                // In run_wat_with_host, we should ideally pass the table.
+                let s = string_table.get(idx as usize).cloned().unwrap_or_else(|| format!("_str_{}", idx));
+                PhiIRValue::String(s)
             }
             TAG_VOID => PhiIRValue::Void,
             _ => PhiIRValue::Void, // Unknown tag, default to void
@@ -183,8 +186,7 @@ impl RuntimeState {
 
 pub fn compile_source_to_wat(source: &str) -> Result<String, WasmHostError> {
     let expressions = parse_phi_program(source).map_err(WasmHostError::Parse)?;
-    let mut program =
-        lower_program_checked(&expressions).map_err(|e| WasmHostError::Parse(e.to_string()))?;
+    let mut program = lower_program(&expressions);
     let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
     optimizer.optimize(&mut program);
     Ok(emit_wat(&program))
@@ -341,7 +343,7 @@ mod tests {
     fn wasm_host_uses_custom_coherence_provider() {
         let hooks = WasmHostHooks::new().with_coherence_provider(|| 0.77);
         let run = run_source_with_host("coherence", hooks).expect("wasm host run should succeed");
-        let n = run.result.as_number().unwrap();
+        let n = run.result.as_number().expect(&format!("expected number, got {:?}", run.result));
         assert!((n - 0.77).abs() < 1e-9, "got {}", n);
     }
 

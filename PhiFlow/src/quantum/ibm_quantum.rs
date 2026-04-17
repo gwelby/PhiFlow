@@ -100,6 +100,7 @@ impl IBMQuantumBackend {
                 .client
                 .post("https://iam.cloud.ibm.com/identity/token")
                 .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept", "application/json")
                 .form(&[
                     ("grant_type", "urn:ibm:params:oauth:grant-type:apikey"),
                     ("apikey", token.as_str()),
@@ -158,7 +159,9 @@ impl IBMQuantumBackend {
         path: &str,
     ) -> reqwest::RequestBuilder {
         let url = format!("{}{}", self.base_url, path);
-        let mut req = self.client.request(method, &url);
+        let mut req = self.client.request(method, &url)
+            .header("Accept", "application/json")
+            .header("User-Agent", "phiflow-runtime/0.4.0");
 
         if let Some(crn) = &self.service_crn {
             req = req
@@ -439,6 +442,7 @@ impl IBMQuantumBackend {
                     return Ok(result);
                 }
                 "CANCELLED" | "ERROR" | "FAILED" => {
+                    println!("IBM JOB FAILED DATA: {}", serde_json::to_string_pretty(&job_data).unwrap_or_default());
                     return Err(QuantumError::BackendError {
                         message: format!("IBM job {} failed with status {}", job_id, status),
                     });

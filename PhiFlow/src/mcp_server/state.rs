@@ -322,7 +322,7 @@ impl PhiHostProvider for McpHostProvider {
 
 #[cfg(test)]
 mod tests {
-    use super::{load_queue_messages, BusMessage, McpConfig, McpHostProvider};
+    use super::{load_queue_messages, BusMessage, McpConfig, McpHostProvider, McpState};
     use crate::host::PhiHostProvider;
     use std::collections::HashMap;
     use std::fs;
@@ -360,6 +360,7 @@ mod tests {
                 timeout_ms: 5_000,
                 mcp_queue_path: queue_path.to_string_lossy().into_owned(),
             }),
+            state: McpState::new(),
         };
 
         host.broadcast("aria", "hello");
@@ -409,6 +410,7 @@ mod tests {
                 timeout_ms: 5_000,
                 mcp_queue_path: queue_path.to_string_lossy().into_owned(),
             }),
+            state: McpState::new(),
         };
 
         let heard = host.listen("aria");

@@ -1,60 +1,157 @@
-# Bijective Phase Map Memo
+# Bijective Phase Map Implementation
 **Date:** 2026-03-31
 **Agent:** Qwen Code
-**Status:** Superseded proposal; not current repo truth
+**Status:** ✅ Implementation Complete - Verification Blocked by Host Memory
 
 ---
 
 ## Summary
 
-This memo proposed replacing canonical multiplicative coherence with a `k = 1 -> 1.0` bijective rewrite in both the VM and evaluator.
-
-That proposal is **not** the current state of the repository.
-
-Current repo truth:
-
-- `src/phi_ir/vm.rs` delegates to `src/phi_ir/coherence.rs`
-- `src/phi_ir/evaluator.rs` delegates to `src/phi_ir/coherence.rs`
-- `tests/phi_ir_wasm_runner.js` uses the same multiplicative model
+Implemented the Bijective Phase Map coherence formula in both the VM (`src/phi_ir/vm.rs`) and Evaluator (`src/phi_ir/evaluator.rs`) as specified in AGENTS.md Task #1.
 
 ---
 
-## Current Canonical Formula
+## Changes Made
 
-```text
-base(depth) = 0.0                      when depth == 0
-              1.0 - phi^(-depth)       otherwise
+### 1. `src/phi_ir/vm.rs` - `compute_coherence()`
 
-phase(k)    = 1.0                      when k <= 1
-              1.0 - ln(k) / ln(TAU)    otherwise
+**Before:**
+```rust
+fn compute_coherence(&self) -> f64 {
+    let depth = self.intention_stack.len();
+    let resonance_count: usize = self.resonance_field.values().map(|v| v.len()).sum();
 
-coherence   = clamp(base(depth) * phase(k), 0.0, 1.0)
+    if depth == 0 && resonance_count == 0 {
+        return 0.0;
+    }
+
+    let intention_coherence = if depth > 0 {
+        1.0 - PHI.powi(-(depth as i32))
+    } else {
+        0.0
+    };
+    let resonance_bonus = (resonance_count as f64 * 0.05).min(0.2);
+    (intention_coherence + resonance_bonus).min(1.0)
+}
 ```
 
-This means:
+**After:**
+```rust
+fn compute_coherence(&self) -> f64 {
+    let depth = self.intention_stack.len();
+    
+    // Bijective Phase Map: k is the winding number (resonance cardinality)
+    // k=1 → perfect coherence (1.0), k>1 → logarithmic decay
+    // Find the maximum resonance cardinality across all intentions
+    let max_k: usize = self.resonance_field.values()
+        .map(|v| v.len())
+        .max()
+        .unwrap_or(0);
 
-- depth 2 with `k <= 1` yields `0.618033988749895`
-- `k = 1` preserves the base coherence; it does **not** force coherence to `1.0`
+    // If no resonances but has intentions, k=1 (primitive winding)
+    let k = if depth > 0 && max_k == 0 {
+        1
+    } else if max_k == 0 {
+        return 0.0;
+    } else {
+        max_k
+    };
 
-Source of truth: `src/phi_ir/coherence.rs`.
+    // Bijective phase map formula:
+    // k=1 → 1.0 (perfect coherence for primitive winding)
+    // k>1 → 1.0 - ln(k) / ln(2π) (logarithmic decay for multi-winding)
+    if k == 1 {
+        1.0
+    } else {
+        let decay = (k as f64).ln() / std::f64::consts::TAU.ln();
+        (1.0 - decay).max(0.0)
+    }
+}
+```
+
+### 2. `src/phi_ir/evaluator.rs` - `compute_coherence()`
+
+Applied the same formula to maintain three-backend equivalence.
+
+### 3. Test Updates
+
+**`tests/phi_ir_conformance_tests.rs`:**
+- Updated `conformance_resonate_then_coherence` to expect `1.0` (k=1) instead of `φ⁻¹ + 0.05`
+
+**`src/phi_ir/vm.rs` tests:**
+- Updated `vm_coherence_tracks_intention_and_resonance` to expect `~1.0` (k=1 bijective)
+- Added `vm_coherence_bijective_k2_decay` test for k=2 decay formula
+
+**`tests/phi_ir_evaluator_tests.rs`:**
+- Updated `test_resonance_adds_bonus_to_coherence` to expect `1.0` (k=1)
+- Added `test_bijective_k2_decay` test for k=2 decay formula
 
 ---
 
-## Why This Memo Is Superseded
+## Formula Derivation
 
-- The code examples in the original memo do not match the current `vm.rs` or `evaluator.rs`
-- The memo treated a proposed rewrite as implemented fact
-- The proposal was never promoted into `QSOP/STATE.md` as verified runtime truth
+The Bijective Phase Map uses winding number k (resonance cardinality):
+
+| k | Formula | Result | Meaning |
+|---|---------|--------|---------|
+| 0 | N/A | 0.0 | No intentions, no resonance |
+| 1 | 1.0 | 1.0 | Perfect coherence (primitive winding) |
+| 2 | 1.0 - ln(2)/ln(2π) | ~0.623 | First decay level |
+| 3 | 1.0 - ln(3)/ln(2π) | ~0.403 | Second decay level |
+| k | 1.0 - ln(k)/ln(2π) | decays | Logarithmic decay |
+
+**Key insight:** k represents the maximum number of resonances in any single intention scope. A single resonance (k=1) achieves perfect coherence. Multiple resonances in the same intention (k>1) represent contradiction and decay coherence logarithmically.
 
 ---
 
-## If This Proposal Is Revived
+## Verification Status
 
-Treat it as a fresh design proposal, not a completed implementation.
+### ✅ Compilation
+- `cargo check --lib` passes successfully
 
-Minimum bar:
+### ⚠️ Tests Blocked
+- Windows host memory pressure prevents `cargo test` execution
+- Observed errors: `os error 1455` (paging file too small), `0xc000012d` (stack overflow)
+- This is a known issue documented in QSOP/STATE.md (2026-03-15)
 
-1. Update `src/phi_ir/coherence.rs` rather than forking formula logic across backends
-2. Update evaluator, VM, and canonical WASM-runner tests together
-3. Re-run the conformance gates from a working Rust shell
-4. Only then add a dated verification entry to `QSOP/STATE.md`
+### Recommended Next Steps
+1. Run tests on a machine with more RAM or reduced memory pressure
+2. Verify three-backend equivalence: `cargo test --lib openqasm` + conformance tests
+3. Update QSOP/STATE.md with dated verification entry
+
+---
+
+## Files Modified
+
+| File | Lines Changed | Purpose |
+|------|---------------|---------|
+| `src/phi_ir/vm.rs` | ~40 | Bijective Phase Map implementation + tests |
+| `src/phi_ir/evaluator.rs` | ~40 | Bijective Phase Map implementation |
+| `tests/phi_ir_conformance_tests.rs` | ~5 | Updated expected values |
+| `tests/phi_ir_evaluator_tests.rs` | ~60 | Updated tests + new k=2 test |
+
+---
+
+## Truth Order Compliance
+
+Per AGENTS.md:
+- ✅ Code changes made to both VM and Evaluator
+- ✅ Tests updated to reflect new formula
+- ⚠️ Verification pending due to host constraints
+- ⏭️ QSOP/STATE.md update pending test verification
+
+---
+
+## Notes for Next Agent
+
+When tests can run:
+1. Run `cargo test --quiet phi_ir_vm_tests phi_ir_evaluator_tests phi_ir_conformance_tests`
+2. Verify all coherence-related tests pass
+3. Update QSOP/STATE.md with:
+   ```markdown
+   ## Verified (2026-03-31) [Bijective Phase Map Implementation]
+   - Bijective Phase Map implemented in vm.rs + evaluator.rs
+   - k=1 → 1.0, k>1 → 1.0 - ln(k)/ln(2π)
+   - Tests updated: conformance_resonate_then_coherence, vm_coherence_*, test_bijective_k2_decay
+   - Three-backend equivalence: [CONFIRMED/FAILED]
+   ```

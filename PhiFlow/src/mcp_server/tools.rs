@@ -189,12 +189,12 @@ async fn spawn_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonRp
         let mut streams = state_clone.streams.lock().unwrap();
         if let Some(ctx) = streams.get_mut(&id_clone) {
             match result {
-                Ok(EvalExecResult::Complete(val)) => {
+                Ok(crate::phi_ir::VmExecResult::Finished(val)) => {
                     ctx.status = "completed".to_string();
                     ctx.result = Some(format!("{:?}", val));
                     ctx.resonance_field = snapshot_shared_resonance(&state_clone);
                 }
-                Ok(EvalExecResult::Yielded {
+                Ok(crate::phi_ir::VmExecResult::Yielded {
                     snapshot,
                     frozen_state,
                 }) => {
@@ -203,7 +203,7 @@ async fn spawn_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonRp
                     ctx.frozen_state = Some(frozen_state);
                     ctx.resonance_field = snapshot_shared_resonance(&state_clone);
                 }
-                Ok(EvalExecResult::Entangled {
+                Ok(crate::phi_ir::VmExecResult::Entangled {
                     frequency,
                     frozen_state,
                 }) => {
@@ -228,6 +228,10 @@ async fn spawn_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonRp
                             let _ = resume_entangled_streams_internal(frequency, s);
                         });
                     }
+                }
+                Ok(crate::phi_ir::VmExecResult::Error(err)) => {
+                    ctx.status = "failed".to_string();
+                    ctx.result = Some(format!("Error: {}", err));
                 }
                 Err(e) => {
                     ctx.status = "failed".to_string();
@@ -369,7 +373,7 @@ fn resume_entangled_streams_internal(
             let mut streams = state_clone.streams.lock().unwrap();
             if let Some(ctx) = streams.get_mut(&id_clone) {
                 match result {
-                    Ok(EvalExecResult::Complete(val)) => {
+                    Ok(crate::phi_ir::VmExecResult::Finished(val)) => {
                         ctx.status = "completed".to_string();
                         ctx.result = Some(format!("{:?}", val));
                         ctx.resonance_field = snapshot_shared_resonance(&state_clone);
@@ -383,7 +387,7 @@ fn resume_entangled_streams_internal(
                         ctx.frozen_state = Some(frozen_state);
                         ctx.resonance_field = snapshot_shared_resonance(&state_clone);
                     }
-                    Ok(EvalExecResult::Entangled {
+                    Ok(crate::phi_ir::VmExecResult::Entangled {
                         frequency: next_freq,
                         frozen_state,
                     }) => {
@@ -406,6 +410,10 @@ fn resume_entangled_streams_internal(
                                 let _ = resume_entangled_streams_internal(next_freq, s);
                             });
                         }
+                    }
+                    Ok(crate::phi_ir::VmExecResult::Error(err)) => {
+                        ctx.status = "failed".to_string();
+                        ctx.result = Some(format!("Error: {}", err));
                     }
                     Err(e) => {
                         ctx.status = "failed".to_string();
@@ -523,12 +531,12 @@ async fn resume_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonR
         let mut streams = state_clone.streams.lock().unwrap();
         if let Some(ctx) = streams.get_mut(&id_clone) {
             match result {
-                Ok(EvalExecResult::Complete(val)) => {
+                Ok(crate::phi_ir::VmExecResult::Finished(val)) => {
                     ctx.status = "completed".to_string();
                     ctx.result = Some(format!("{:?}", val));
                     ctx.resonance_field = snapshot_shared_resonance(&state_clone);
                 }
-                Ok(EvalExecResult::Yielded {
+                Ok(crate::phi_ir::VmExecResult::Yielded {
                     snapshot,
                     frozen_state,
                 }) => {
@@ -537,7 +545,7 @@ async fn resume_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonR
                     ctx.frozen_state = Some(frozen_state);
                     ctx.resonance_field = snapshot_shared_resonance(&state_clone);
                 }
-                Ok(EvalExecResult::Entangled {
+                Ok(crate::phi_ir::VmExecResult::Entangled {
                     frequency,
                     frozen_state,
                 }) => {
@@ -559,6 +567,10 @@ async fn resume_phi_stream(args: Value, state: &McpState) -> Result<Value, JsonR
                             let _ = resume_entangled_streams_internal(frequency, s);
                         });
                     }
+                }
+                Ok(crate::phi_ir::VmExecResult::Error(err)) => {
+                    ctx.status = "failed".to_string();
+                    ctx.result = Some(format!("Error: {}", err));
                 }
                 Err(e) => {
                     ctx.status = "failed".to_string();

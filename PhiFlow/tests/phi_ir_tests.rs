@@ -57,7 +57,7 @@ fn test_lower_witness() {
     let program = lower_program(&[expr]);
     let output = PhiIRPrinter::print(&program);
 
-    assert!(output.contains("Witness target=ALL policy=Final"));
+    assert!(output.contains("Witness target=ALL policy=Deferred"));
 }
 
 #[test]

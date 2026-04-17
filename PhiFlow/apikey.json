@@ -1,9 +1,9 @@
 {
-  "name": "Claude",
-  "description": "IBM Quantum API key",
-  "createdAt": "2025-07-08T16:16+0000",
-  "apikey": "KM18t_k4UeROZPXm8WFlS2xzo3txuDn4WGF0XUFGupWf",
-  "service_crn": "crn:v1:bluemix:public:quantum-computing:us-east:a/1234567890:1qwerty2:service-instance:3zxcvbn5",
-  "backend": "ibm_brisbane",
+  "name": "PhiFlow",
+  "description": "PhiFlow Access",
+  "createdAt": "2026-04-14T04:07+0000",
+  "apikey": "0G7-SkAlbdRZ_Rs8zZik0AJNkJv_E_5UAdBmxjcw6SRZ",
+  "service_crn": "crn:v1:bluemix:public:quantum-computing:us-east:a/c9f741010303450f8c11d09f92d7ccb1:c67eb8df-3b38-476c-8015-ddc7fb6a7791::",
+  "backend": "ibm_fez",
   "region": "us-east"
 }

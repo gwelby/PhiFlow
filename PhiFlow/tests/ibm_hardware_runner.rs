@@ -1,18 +1,20 @@
-use phiflow::compile_to_openqasm;
+use phiflow::parser::parse_phi_program;
+use phiflow::phi_ir::lowering::lower_program;
+use phiflow::phi_ir::openqasm::OpenQasmEmitter;
 use phiflow::quantum::{ibm_quantum::IBMQuantumBackend, QuantumBackend, QuantumConfig};
 use serde::Deserialize;
 use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
-const APIKEY_PATH: &str = "D:/Projects/PhiFlow/apikey.json";
+const APIKEY_PATH: &str = "apikey.json";
 const EVIDENCE_PATH: &str = "D:/CosmicFamily/EVIDENCE/ANTIGRAVITY_PIPE2_20260329.md";
 const IBM_SMOKE_PATH: &str = "examples/ibm_smoke.phi";
 
 #[derive(Debug, Deserialize)]
 struct IbmCredentials {
     apikey: String,
-    service_crn: String,
+    service_crn: Option<String>,
     region: Option<String>,
     backend: Option<String>,
 }
@@ -25,6 +27,15 @@ fn load_credentials() -> IbmCredentials {
     let apikey_content = fs::read_to_string(APIKEY_PATH).expect("could not read apikey.json");
     serde_json::from_str(&apikey_content).expect("failed to parse apikey.json")
 }
+
+fn compile_to_openqasm(source: &str, optimize_depth: bool) -> Result<String, String> {
+    let exprs = parse_phi_program(source).map_err(|e| e.to_string())?;
+    let ir = lower_program(&exprs);
+    let mut emitter = OpenQasmEmitter::new();
+    emitter.optimize_depth = optimize_depth;
+    emitter.emit(&ir).map_err(|e| e.to_string())
+}
+
 
 fn write_receipt(
     backend_name: &str,
@@ -72,7 +83,7 @@ fn test_ibm_smoke_compiles_to_openqasm() {
 
     assert!(qasm.contains("OPENQASM 3.0;"));
     assert!(qasm.contains("include \"stdgates.inc\";"));
-    assert!(qasm.contains("ry(0.6180339887 * pi)"));
+    assert!(qasm.contains("rz(pi/2) q[0];"));
 }
 
 #[tokio::test]
@@ -81,6 +92,10 @@ async fn test_live_ibm_hardware_runner() {
     let credentials = load_credentials();
     let source = load_ibm_smoke_source();
     let qasm = compile_to_openqasm(&source, false).expect("ibm_smoke should compile");
+    let service_crn = credentials
+        .service_crn
+        .clone()
+        .expect("apikey.json must include service_crn for the IBM Cloud Runtime live test");
 
     let backend_name = credentials
         .backend
@@ -91,7 +106,7 @@ async fn test_live_ibm_hardware_runner() {
     let config = QuantumConfig {
         backend_name: backend_name.clone(),
         api_token: Some(credentials.apikey),
-        service_crn: Some(credentials.service_crn),
+        service_crn: Some(service_crn),
         region: region.clone(),
         hub: None,
         group: None,
@@ -133,3 +148,4 @@ async fn test_live_ibm_hardware_runner() {
 
     write_receipt(&backend_name, region.as_deref(), &qasm, &result);
 }
+

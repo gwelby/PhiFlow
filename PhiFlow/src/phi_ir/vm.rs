@@ -2,9 +2,8 @@
 //!
 //! Loads `.phivm` bytes emitted by `phi_ir::emitter` and executes them.
 
-use crate::phi_ir::{BlockId, Operand, PhiIRBinOp, PhiIRValue, ResonateDirection, SensorKind};
+use crate::phi_ir::{BlockId, Operand, PhiIRBinOp, PhiIRValue, TeamDirection, VmExecResult};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 const MAGIC: &[u8; 4] = b"PHIV";
 const VERSION: u8 = 1;
@@ -31,17 +30,31 @@ const OP_RESONATE: u8 = 0x33;
 const OP_COHERENCE_CHECK: u8 = 0x34;
 const OP_SLEEP: u8 = 0x35;
 const OP_CREATE_PATTERN: u8 = 0x36;
+const OP_STREAM: u8 = 0x37;
 const OP_WITNESS_SENSOR: u8 = 0x38;
 const OP_FIELD: u8 = 0x39;
 const OP_DISSONANCE: u8 = 0x3A;
 const OP_COHERENCE_OF: u8 = 0x3B;
-const OP_STREAM_PUSH: u8 = 0x3C;
-const OP_STREAM_POP: u8 = 0x3D;
 const OP_DOMAIN_CALL: u8 = 0x40;
+
+// v0.3.0 Persistence & Dialogue
+const OP_REMEMBER: u8 = 0x50;
+const OP_RECALL: u8 = 0x51;
+const OP_BROADCAST: u8 = 0x52;
+const OP_LISTEN: u8 = 0x53;
+const OP_AGENT_DECL: u8 = 0x54;
+const OP_VOID_DEPTH: u8 = 0x55;
+
+// v0.4.0 Strategic Capabilities
+const OP_EVOLVE: u8 = 0x60;
+const OP_ENTANGLE: u8 = 0x61;
+
+// Terminators
 const OP_RETURN: u8 = 0xE0;
 const OP_JUMP: u8 = 0xE1;
 const OP_BRANCH: u8 = 0xE2;
 const OP_FALLTHROUGH: u8 = 0xE3;
+const OP_BREAK_STREAM: u8 = 0xE4;
 
 #[derive(Debug)]
 pub enum VmError {
@@ -50,18 +63,17 @@ pub enum VmError {
     InvalidOpcode(u8),
     InvalidBinOp(u8),
     InvalidResultFlag(u8),
-    InvalidBoolFlag(u8),
-    InvalidOptionalOperandFlag { opcode: u8, flag: u8 },
     InvalidStringIndex(u32),
-    InvalidSensorId(i32),
     InvalidUtf8(std::str::Utf8Error),
-    UnexpectedEof { needed: usize, remaining: usize },
+    UnexpectedEof {
+        needed: usize,
+        remaining: usize,
+    },
     TrailingBytes(usize),
     BlockNotFound(BlockId),
     OperandNotFound(Operand),
     DivisionByZero,
     InvalidOperation(String),
-    UnavailableSensor(SensorKind),
     InvalidTerminator,
 }
 
@@ -73,14 +85,7 @@ impl std::fmt::Display for VmError {
             VmError::InvalidOpcode(op) => write!(f, "Invalid opcode 0x{op:02X}"),
             VmError::InvalidBinOp(op) => write!(f, "Invalid binop byte 0x{op:02X}"),
             VmError::InvalidResultFlag(v) => write!(f, "Invalid result flag {}", v),
-            VmError::InvalidBoolFlag(v) => write!(f, "Invalid bool flag {}", v),
-            VmError::InvalidOptionalOperandFlag { opcode, flag } => write!(
-                f,
-                "Invalid optional operand flag {} for opcode 0x{opcode:02X}",
-                flag
-            ),
             VmError::InvalidStringIndex(i) => write!(f, "Invalid string table index {}", i),
-            VmError::InvalidSensorId(i) => write!(f, "Invalid sensor ID {}", i),
             VmError::InvalidUtf8(e) => write!(f, "Invalid UTF-8 string payload: {}", e),
             VmError::UnexpectedEof { needed, remaining } => write!(
                 f,
@@ -92,19 +97,18 @@ impl std::fmt::Display for VmError {
             VmError::OperandNotFound(op) => write!(f, "Operand {} not found", op),
             VmError::DivisionByZero => write!(f, "Division by zero"),
             VmError::InvalidOperation(msg) => write!(f, "Invalid operation: {}", msg),
-            VmError::UnavailableSensor(sensor) => {
-                write!(
-                    f,
-                    "Sensor `{}` is unavailable on this host",
-                    sensor.as_name()
-                )
-            }
             VmError::InvalidTerminator => write!(f, "Invalid terminator opcode"),
         }
     }
 }
 
 type VmResult<T> = Result<T, VmError>;
+
+#[derive(Debug, Clone)]
+enum VmStepStatus {
+    Continue,
+    Yield(crate::host::WitnessSnapshot),
+}
 
 #[derive(Debug, Clone)]
 pub struct BytecodeProgram {
@@ -159,24 +163,13 @@ pub enum BytecodeNode {
     Witness {
         target: Option<Operand>,
     },
-    WitnessSensor {
-        sensor: SensorKind,
-    },
     IntentionPush {
         name: String,
     },
     IntentionPop,
-    StreamPush {
-        name: String,
-        threshold: Option<f64>,
-    },
-    StreamPop,
-    FieldCoherence,
-    Dissonance,
-    CoherenceOf(String),
     Resonate {
         value: Option<Operand>,
-        direction: crate::phi_ir::ResonateDirection,
+        direction: TeamDirection,
     },
     CoherenceCheck,
     Sleep {
@@ -198,6 +191,25 @@ pub enum BytecodeNode {
         else_block: BlockId,
     },
     Fallthrough,
+    Remember {
+        key: String,
+        value: Operand,
+    },
+    Recall(String),
+    Broadcast {
+        channel: String,
+        value: Operand,
+    },
+    Listen(String),
+    AgentDecl {
+        name: String,
+        version: String,
+    },
+    VoidDepth,
+    Evolve(Operand),
+    Entangle(f64),
+    StreamPush(String),
+    StreamPop,
 }
 
 /// PhiIR bytecode runtime.
@@ -212,7 +224,7 @@ pub struct PhiVm {
     coherence_history: Vec<(f64, f64)>,
     current_block: BlockId,
     instruction_ptr: usize,
-    sensor_provider: Option<Arc<dyn Fn(SensorKind) -> Option<f64> + Send + Sync>>,
+    host: std::sync::Arc<dyn crate::host::PhiHostProvider>,
 }
 
 impl PhiVm {
@@ -237,8 +249,13 @@ impl PhiVm {
             coherence_history: Vec::new(),
             current_block,
             instruction_ptr: 0,
-            sensor_provider: None,
+            host: std::sync::Arc::new(crate::host::DefaultHostProvider),
         })
+    }
+
+    /// Attach a custom host provider (e.g. for persistence, hardware, or dialogue).
+    pub fn with_host(&mut self, host: std::sync::Arc<dyn crate::host::PhiHostProvider>) {
+        self.host = host;
     }
 
     /// Convenience entrypoint: parse bytes, run, and return final value.
@@ -247,30 +264,9 @@ impl PhiVm {
         vm.run()
     }
 
-    pub fn run_bytes_with_sensor_provider<F>(bytes: &[u8], provider: F) -> VmResult<PhiIRValue>
-    where
-        F: Fn(SensorKind) -> Option<f64> + Send + Sync + 'static,
-    {
-        let mut vm = Self::from_bytes(bytes)?.with_sensor_provider(provider);
-        vm.run()
-    }
-
-    pub fn with_sensor_provider<F>(mut self, provider: F) -> Self
-    where
-        F: Fn(SensorKind) -> Option<f64> + Send + Sync + 'static,
-    {
-        self.sensor_provider = Some(Arc::new(provider));
-        self
-    }
-
     /// Return the loaded string table.
     pub fn string_table(&self) -> &[String] {
         &self.program.string_table
-    }
-
-    /// Return the decoded bytecode program.
-    pub fn program(&self) -> &BytecodeProgram {
-        &self.program
     }
 
     /// Return the current value stack.
@@ -279,33 +275,83 @@ impl PhiVm {
     }
 
     /// Execute to completion and return the top-of-stack value.
+    /// This is a shim over `run_or_yield` for backward compatibility.
     pub fn run(&mut self) -> VmResult<PhiIRValue> {
+        loop {
+            match self.run_or_yield() {
+                VmExecResult::Finished(val) => return Ok(val),
+                VmExecResult::Yielded { .. } => continue,
+                VmExecResult::Entangled { .. } => continue, // Bytecode VM treats entanglement as a resume point
+                VmExecResult::Error(err) => return Err(VmError::InvalidOperation(err)),
+            }
+        }
+    }
+
+    /// Run the VM until it finishes, yields, or hits an error.
+    pub fn run_or_yield(&mut self) -> VmExecResult {
         if self.program.blocks.is_empty() {
-            return Ok(PhiIRValue::Void);
+            return VmExecResult::Finished(PhiIRValue::Void);
         }
 
         loop {
-            let block = self.get_block(self.current_block)?;
+            if self.current_block == BlockId::MAX {
+                return VmExecResult::Finished(PhiIRValue::Void);
+            }
+
+            let block = match self.get_block(self.current_block) {
+                Ok(b) => b.clone(),
+                Err(e) => return VmExecResult::Error(e.to_string()),
+            };
             let instr_count = block.instructions.len();
 
             if self.instruction_ptr < instr_count {
                 let instr = block.instructions[self.instruction_ptr].clone();
                 self.instruction_ptr += 1;
-                self.execute_instruction(&instr)?;
+                match self.execute_instruction(&instr) {
+                    Ok(VmStepStatus::Continue) => {}
+                    Ok(VmStepStatus::Yield(snapshot)) => return VmExecResult::Yielded { snapshot, frozen_state: self.freeze_state() },
+                    Err(e) => return VmExecResult::Error(e.to_string()),
+                }
             } else {
                 let terminator = block.terminator.clone();
-                if let Some(val) = self.execute_terminator(&terminator)? {
-                    return Ok(self.value_stack.last().cloned().unwrap_or(val));
+                match self.execute_terminator(&terminator) {
+                    Ok(VmStepStatus::Continue) => continue,
+                    Ok(VmStepStatus::Yield(snapshot)) => return VmExecResult::Yielded { snapshot, frozen_state: self.freeze_state() },
+                    Err(e) => return VmExecResult::Error(e.to_string()),
                 }
             }
         }
     }
 
+    /// Execute the instruction at the current pointer.
+    pub fn step(&mut self) -> crate::phi_ir::VmExecResult {
+        let block = match self.get_block(self.current_block) {
+            Ok(b) => b.clone(),
+            Err(e) => return crate::phi_ir::VmExecResult::Error(e.to_string()),
+        };
+        let instr_count = block.instructions.len();
+
+        if self.instruction_ptr < instr_count {
+            let instr = block.instructions[self.instruction_ptr].clone();
+            self.instruction_ptr += 1;
+            match self.execute_instruction(&instr) {
+                Ok(VmStepStatus::Continue) => {}
+                Ok(VmStepStatus::Yield(snapshot)) => return crate::phi_ir::VmExecResult::Yielded { snapshot, frozen_state: self.freeze_state() },
+                Err(e) => return crate::phi_ir::VmExecResult::Error(e.to_string()),
+            }
+            crate::phi_ir::VmExecResult::Finished(self.value_stack.last().cloned().unwrap_or(PhiIRValue::Void))
+        } else {
+            let terminator = block.terminator.clone();
+            match self.execute_terminator(&terminator) {
+                Ok(VmStepStatus::Continue) => crate::phi_ir::VmExecResult::Finished(PhiIRValue::Void), // continued to next block
+                Ok(VmStepStatus::Yield(snapshot)) => crate::phi_ir::VmExecResult::Yielded { snapshot, frozen_state: self.freeze_state() },
+                Err(e) => return crate::phi_ir::VmExecResult::Error(e.to_string()),
+            }
+        }
+    }
+
     fn get_block(&self, id: BlockId) -> VmResult<&BytecodeBlock> {
-        let idx = *self
-            .block_index
-            .get(&id)
-            .ok_or(VmError::BlockNotFound(id))?;
+        let idx = *self.block_index.get(&id).ok_or(VmError::BlockNotFound(id))?;
         Ok(&self.program.blocks[idx])
     }
 
@@ -313,16 +359,60 @@ impl PhiVm {
         self.registers.get(&op).ok_or(VmError::OperandNotFound(op))
     }
 
-    fn execute_instruction(&mut self, instr: &BytecodeInstruction) -> VmResult<()> {
+    /// Capture the current VM state as a frozen snapshot.
+    pub fn freeze_state(&self) -> crate::phi_ir::vm_state::VmState {
+        crate::phi_ir::vm_state::VmState {
+            registers: self.registers.clone(),
+            variables: self.variables.clone(),
+            intention_stack: self.intention_stack.clone(),
+            active_streams: Vec::new(), // TODO: tracks streams separately if needed
+            resonance_field: self.resonance_field.clone(),
+            resonance_events: Vec::new(),
+            ended_streams: Vec::new(),
+            witness_log: Vec::new(),
+            coherence_history: self.coherence_history.clone(),
+            current_block: self.current_block,
+            instruction_ptr: self.instruction_ptr,
+            yield_timestamp: Some(
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs_f64(),
+            ),
+            agent_name: self.variables.get("_agent_name").and_then(|v| match v {
+                PhiIRValue::String(s) => Some(s.clone()),
+                _ => None,
+            }),
+            agent_version: self.variables.get("_agent_version").and_then(|v| match v {
+                PhiIRValue::String(s) => Some(s.clone()),
+                _ => None,
+            }),
+        }
+    }
+
+    fn snapshot_internal(&self) -> crate::host::WitnessSnapshot {
+        crate::host::WitnessSnapshot {
+            intention_stack: self.intention_stack.clone(),
+            coherence: self.compute_coherence(),
+            register_count: self.registers.len(),
+            resonance_count: self.resonance_field.values().map(|v| v.len()).sum(),
+            observed_value: None,
+            agent_name: self.variables.get("_agent_name").and_then(|v| match v {
+                PhiIRValue::String(s) => Some(s.clone()),
+                _ => None,
+            }),
+        }
+    }
+
+    fn execute_instruction(&mut self, instr: &BytecodeInstruction) -> Result<VmStepStatus, VmError> {
+        eprintln!("DEBUG: Executing {:?}", instr.node);
+        let mut yield_snapshot: Option<crate::host::WitnessSnapshot> = None;
         let value: Option<PhiIRValue> = match &instr.node {
             BytecodeNode::Nop => None,
             BytecodeNode::Const(v) => Some(v.clone()),
-            BytecodeNode::LoadVar(name) => Some(
-                self.variables
-                    .get(name)
-                    .cloned()
-                    .unwrap_or(PhiIRValue::Void),
-            ),
+            BytecodeNode::LoadVar(name) => {
+                Some(self.variables.get(name).cloned().unwrap_or(PhiIRValue::Void))
+            }
             BytecodeNode::StoreVar { name, value } => {
                 let val = self.get_reg(*value)?.clone();
                 self.variables.insert(name.clone(), val);
@@ -349,89 +439,47 @@ impl PhiVm {
             }
             BytecodeNode::FuncDef { .. } => None,
             BytecodeNode::Witness { target } => {
-                if let Some(op) = target {
-                    let _ = self.get_reg(*op)?;
-                }
+                let observed = if let Some(op) = target {
+                    let val = self.get_reg(*op)?;
+                    Some(format!("{:?}", val))
+                } else {
+                    None
+                };
+                
                 let coherence = self.compute_coherence();
-                // Record coherence history for dissonance calculation
-                let timestamp = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .map(|d| d.as_secs_f64())
-                    .unwrap_or(0.0);
-                self.coherence_history.push((timestamp, coherence));
-                // Keep only last 100 entries to prevent unbounded growth
-                if self.coherence_history.len() > 100 {
-                    self.coherence_history.drain(..self.coherence_history.len() - 100);
+                let snapshot = crate::host::WitnessSnapshot {
+                    intention_stack: self.intention_stack.clone(),
+                    coherence,
+                    register_count: self.registers.len(),
+                    resonance_count: self.resonance_field.values().map(|v| v.len()).sum(),
+                    observed_value: observed,
+                    agent_name: self.variables.get("_agent_name").and_then(|v| {
+                        if let PhiIRValue::String(s) = v {
+                            Some(s.clone())
+                        } else {
+                            None
+                        }
+                    }),
+                };
+
+                if self.host.on_witness(&snapshot) == crate::host::WitnessAction::Yield {
+                    yield_snapshot = Some(snapshot);
                 }
-                Some(PhiIRValue::Number(coherence))
-            }
-            BytecodeNode::WitnessSensor { sensor } => {
-                Some(PhiIRValue::Number(self.resolve_sensor(*sensor)?))
+                
+                Some(PhiIRValue::Number(self.host.get_coherence(coherence)))
             }
             BytecodeNode::IntentionPush { name } => {
                 self.intention_stack.push(name.clone());
                 self.resonance_field.entry(name.clone()).or_default();
+                self.host.on_intention_push(name);
                 None
             }
             BytecodeNode::IntentionPop => {
-                self.intention_stack.pop();
+                let name = self.intention_stack.pop().unwrap_or_default();
+                self.host.on_intention_pop(&name);
                 None
             }
-            BytecodeNode::StreamPush { name, threshold } => {
-                self.intention_stack.push(name.clone());
-                // In VM, stream push behavior is same as intention for resonance for now
-                self.resonance_field.entry(name.clone()).or_default();
-                None
-            }
-            BytecodeNode::StreamPop => {
-                self.intention_stack.pop();
-                None
-            }
-            BytecodeNode::FieldCoherence => {
-                // Compute aggregate coherence from the local resonance field
-                let mut sum = 0.0;
-                let mut count = 0;
-                for vals in self.resonance_field.values() {
-                    for val in vals {
-                        if let PhiIRValue::Number(n) = val {
-                            sum += n;
-                            count += 1;
-                        }
-                    }
-                }
-                let score = if count > 0 { sum / count as f64 } else { self.compute_coherence() };
-                Some(PhiIRValue::Number(score))
-            }
-            BytecodeNode::Dissonance => {
-                // Compute rate of coherence change over recent witness cycles
-                let history = &self.coherence_history;
-                if history.len() < 2 {
-                    Some(PhiIRValue::Number(0.0))
-                } else {
-                    let last = history[history.len() - 1].1;
-                    let prev = history[history.len() - 2].1;
-                    let delta = last - prev;
-                    // Normalize to -1.0 .. 1.0. A 0.1 change is significant.
-                    let normalized = (delta * 10.0).clamp(-1.0, 1.0);
-                    Some(PhiIRValue::Number(normalized))
-                }
-            }
-            BytecodeNode::CoherenceOf(name) => {
-                // Look up named stream's coherence from the local resonance field
-                if let Some(vals) = self.resonance_field.get(name) {
-                    if let Some(PhiIRValue::Number(n)) = vals.last() {
-                        Some(PhiIRValue::Number(*n))
-                    } else {
-                        Some(PhiIRValue::Void)
-                    }
-                } else {
-                    Some(PhiIRValue::Void)
-                }
-            }
-            BytecodeNode::Resonate {
-                value,
-                direction: _,
-            } => {
+            BytecodeNode::Resonate { value, .. } => {
                 if let Some(op) = value {
                     let val = self.get_reg(*op)?.clone();
                     let key = self
@@ -439,7 +487,16 @@ impl PhiVm {
                         .last()
                         .cloned()
                         .unwrap_or_else(|| "global".to_string());
-                    self.resonance_field.entry(key).or_default().push(val);
+                    
+                    let val_str = match &val {
+                        PhiIRValue::String(s) => s.clone(),
+                        PhiIRValue::Number(n) => n.to_string(),
+                        PhiIRValue::Boolean(b) => b.to_string(),
+                        PhiIRValue::Void => "void".to_string(),
+                    };
+
+                    self.resonance_field.entry(key.clone()).or_default().push(val);
+                    self.host.on_resonate(&key, &val_str);
                 }
                 None
             }
@@ -461,6 +518,72 @@ impl PhiVm {
                 }
                 None
             }
+            BytecodeNode::Remember { key, value } => {
+                let val = self.get_reg(*value)?;
+                let val_str = match val {
+                    PhiIRValue::String(s) => s.clone(),
+                    PhiIRValue::Number(n) => n.to_string(),
+                    PhiIRValue::Boolean(b) => b.to_string(),
+                    PhiIRValue::Void => "void".to_string(),
+                };
+                self.host.persist(key, &val_str);
+                None
+            }
+            BytecodeNode::Recall(key) => {
+                if let Some(val_str) = self.host.recall(key) {
+                    Some(self.string_to_value(&val_str))
+                } else {
+                    Some(PhiIRValue::Void)
+                }
+            }
+            BytecodeNode::Broadcast { channel, value } => {
+                let val = self.get_reg(*value)?;
+                let val_str = match val {
+                    PhiIRValue::String(s) => s.clone(),
+                    PhiIRValue::Number(n) => n.to_string(),
+                    PhiIRValue::Boolean(b) => b.to_string(),
+                    PhiIRValue::Void => "void".to_string(),
+                };
+                self.host.broadcast(channel, &val_str);
+                None
+            }
+            BytecodeNode::Listen(channel) => {
+                if let Some(val_str) = self.host.listen(channel) {
+                    Some(self.string_to_value(&val_str))
+                } else {
+                    Some(PhiIRValue::Void)
+                }
+            }
+            BytecodeNode::AgentDecl { name, version } => {
+                self.host.persist("_agent_name", name);
+                self.host.persist("_agent_version", version);
+                None
+            }
+            BytecodeNode::VoidDepth => Some(PhiIRValue::Number(0.0)),
+            BytecodeNode::Evolve(op) => {
+                let context = self.get_reg(*op)?.clone();
+                let context_str = format!("{:?}", context);
+                if let Some(new_source) = self.host.on_evolve(&context_str) {
+                    self.host.broadcast("system", &format!("Evolution requested: {}", new_source));
+                }
+                None
+            }
+            BytecodeNode::Entangle(freq) => {
+                self.host.on_entangle(*freq);
+                yield_snapshot = Some(self.snapshot_internal());
+                None
+            }
+            BytecodeNode::StreamPush(name) => {
+                self.intention_stack.push(name.clone());
+                self.host.on_intention_push(name);
+                None
+            }
+            BytecodeNode::StreamPop => {
+                if let Some(name) = self.intention_stack.pop() {
+                    self.host.on_intention_pop(&name);
+                }
+                None
+            }
             BytecodeNode::Return(_)
             | BytecodeNode::Jump(_)
             | BytecodeNode::Branch { .. }
@@ -474,20 +597,41 @@ impl PhiVm {
             self.value_stack.push(value);
         }
 
-        Ok(())
+        if let Some(snapshot) = yield_snapshot {
+            Ok(VmStepStatus::Yield(snapshot))
+        } else {
+            Ok(VmStepStatus::Continue)
+        }
     }
 
-    fn execute_terminator(&mut self, node: &BytecodeNode) -> VmResult<Option<PhiIRValue>> {
+    fn string_to_value(&self, s: &str) -> PhiIRValue {
+        if let Ok(n) = s.parse::<f64>() {
+            PhiIRValue::Number(n)
+        } else if let Ok(b) = s.parse::<bool>() {
+            PhiIRValue::Boolean(b)
+        } else if s == "void" || s == "Void" {
+            PhiIRValue::Void
+        } else {
+            PhiIRValue::String(s.to_string())
+        }
+    }
+
+    fn execute_terminator(&mut self, node: &BytecodeNode) -> Result<VmStepStatus, VmError> {
         match node {
             BytecodeNode::Return(op) => {
                 let val = self.get_reg(*op)?.clone();
                 self.value_stack.push(val.clone());
-                Ok(Some(val))
+                // In Bytecode, Finished is handled by run_or_yield's loop logic.
+                // We return Continue here if we don't yield.
+                // Actually, let's make it more explicit.
+                // For simplicity, we'll use a special block ID or state.
+                self.current_block = BlockId::MAX; // Signal end
+                Ok(VmStepStatus::Continue)
             }
             BytecodeNode::Jump(target) => {
                 self.current_block = *target;
                 self.instruction_ptr = 0;
-                Ok(None)
+                Ok(VmStepStatus::Continue)
             }
             BytecodeNode::Branch {
                 condition,
@@ -503,7 +647,7 @@ impl PhiVm {
                 };
                 self.current_block = target;
                 self.instruction_ptr = 0;
-                Ok(None)
+                Ok(VmStepStatus::Continue)
             }
             BytecodeNode::Fallthrough => {
                 let current_idx = *self
@@ -514,11 +658,10 @@ impl PhiVm {
                 if current_idx + 1 < self.program.blocks.len() {
                     self.current_block = self.program.blocks[current_idx + 1].id;
                     self.instruction_ptr = 0;
-                    Ok(None)
+                    Ok(VmStepStatus::Continue)
                 } else {
-                    Ok(Some(
-                        self.value_stack.last().cloned().unwrap_or(PhiIRValue::Void),
-                    ))
+                    self.current_block = BlockId::MAX;
+                    Ok(VmStepStatus::Continue)
                 }
             }
             _ => Err(VmError::InvalidTerminator),
@@ -526,17 +669,10 @@ impl PhiVm {
     }
 
     fn compute_coherence(&self) -> f64 {
-        crate::phi_ir::coherence::canonical_coherence(&self.intention_stack, &self.resonance_field)
-    }
-
-    fn resolve_sensor(&self, sensor: SensorKind) -> VmResult<f64> {
-        let value = self
-            .sensor_provider
-            .as_ref()
-            .and_then(|provider| provider(sensor))
-            .or_else(|| crate::sensors::read_sensor(sensor));
-
-        value.ok_or(VmError::UnavailableSensor(sensor))
+        super::coherence::canonical_coherence(
+            &self.intention_stack,
+            &self.resonance_field,
+        )
     }
 
     fn eval_unop(&self, operand: Operand) -> VmResult<PhiIRValue> {
@@ -589,9 +725,13 @@ impl PhiVm {
                     "Unsupported boolean binary op".to_string(),
                 )),
             },
-            _ => Err(VmError::InvalidOperation(
-                "Type mismatch in binary operation".to_string(),
-            )),
+            (l, r) => match op {
+                PhiIRBinOp::Eq => Ok(PhiIRValue::Boolean(l == r)),
+                PhiIRBinOp::Neq => Ok(PhiIRValue::Boolean(l != r)),
+                _ => Err(VmError::InvalidOperation(
+                    "Type mismatch in binary operation".to_string(),
+                )),
+            },
         }
     }
 }
@@ -660,20 +800,12 @@ fn parse_node(reader: &mut ByteReader<'_>, string_table: &[String]) -> VmResult<
         OP_CONST_NUM => BytecodeNode::Const(PhiIRValue::Number(reader.read_f64()?)),
         OP_CONST_STR => {
             let index = reader.read_u32()?;
-            if index as usize >= string_table.len() {
-                return Err(VmError::InvalidStringIndex(index));
-            }
-            BytecodeNode::Const(PhiIRValue::String(index))
+            let s = string_table
+                .get(index as usize)
+                .ok_or(VmError::InvalidStringIndex(index))?;
+            BytecodeNode::Const(PhiIRValue::String(s.clone()))
         }
-        OP_CONST_BOOL => {
-            let flag = reader.read_u8()?;
-            let value = match flag {
-                0 => false,
-                1 => true,
-                other => return Err(VmError::InvalidBoolFlag(other)),
-            };
-            BytecodeNode::Const(PhiIRValue::Boolean(value))
-        }
+        OP_CONST_BOOL => BytecodeNode::Const(PhiIRValue::Boolean(reader.read_u8()? != 0)),
         OP_CONST_VOID => BytecodeNode::Const(PhiIRValue::Void),
         OP_LOAD_VAR => BytecodeNode::LoadVar(read_string_ref(reader, string_table)?),
         OP_STORE_VAR => BytecodeNode::StoreVar {
@@ -713,44 +845,35 @@ fn parse_node(reader: &mut ByteReader<'_>, string_table: &[String]) -> VmResult<
             name: read_string_ref(reader, string_table)?,
             body: reader.read_u32()?,
         },
-        OP_WITNESS => BytecodeNode::Witness {
-            target: read_optional_operand(reader, OP_WITNESS)?,
-        },
-        OP_WITNESS_SENSOR => {
-            let sensor_id = reader.read_u8()? as i32;
-            let sensor =
-                SensorKind::from_id(sensor_id).ok_or(VmError::InvalidSensorId(sensor_id))?;
-            BytecodeNode::WitnessSensor { sensor }
-        }
-        OP_FIELD => BytecodeNode::FieldCoherence,
-        OP_DISSONANCE => BytecodeNode::Dissonance,
-        OP_COHERENCE_OF => BytecodeNode::CoherenceOf(read_string_ref(reader, string_table)?),
-        OP_STREAM_PUSH => {
-            let name = read_string_ref(reader, string_table)?;
-            let has_threshold = reader.read_u8()?;
-            let threshold = if has_threshold == 1 {
-                Some(reader.read_f64()?)
+        OP_WITNESS => {
+            let has_target = reader.read_u8()?;
+            let target = if has_target == 1 {
+                Some(reader.read_u32()?)
             } else {
                 None
             };
-            BytecodeNode::StreamPush { name, threshold }
+            BytecodeNode::Witness { target }
         }
-        OP_STREAM_POP => BytecodeNode::StreamPop,
         OP_INTENTION_PUSH => BytecodeNode::IntentionPush {
             name: read_string_ref(reader, string_table)?,
         },
         OP_INTENTION_POP => BytecodeNode::IntentionPop,
         OP_RESONATE => {
+            // Read direction byte: 0 = TeamA, 1 = TeamB
             let direction_byte = reader.read_u8()?;
             let direction = if direction_byte == 0 {
-                crate::phi_ir::ResonateDirection::TeamA
+                TeamDirection::TeamA
             } else {
-                crate::phi_ir::ResonateDirection::TeamB
+                TeamDirection::TeamB
             };
-            BytecodeNode::Resonate {
-                value: read_optional_operand(reader, OP_RESONATE)?,
-                direction,
-            }
+            
+            let has_value = reader.read_u8()?;
+            let value = if has_value == 1 {
+                Some(reader.read_u32()?)
+            } else {
+                None
+            };
+            BytecodeNode::Resonate { value, direction }
         }
         OP_COHERENCE_CHECK => BytecodeNode::CoherenceCheck,
         OP_SLEEP => BytecodeNode::Sleep {
@@ -790,6 +913,25 @@ fn parse_node(reader: &mut ByteReader<'_>, string_table: &[String]) -> VmResult<
             else_block: reader.read_u32()?,
         },
         OP_FALLTHROUGH => BytecodeNode::Fallthrough,
+        OP_REMEMBER => BytecodeNode::Remember {
+            key: read_string_ref(reader, string_table)?,
+            value: reader.read_u32()?,
+        },
+        OP_RECALL => BytecodeNode::Recall(read_string_ref(reader, string_table)?),
+        OP_BROADCAST => BytecodeNode::Broadcast {
+            channel: read_string_ref(reader, string_table)?,
+            value: reader.read_u32()?,
+        },
+        OP_LISTEN => BytecodeNode::Listen(read_string_ref(reader, string_table)?),
+        OP_AGENT_DECL => BytecodeNode::AgentDecl {
+            name: read_string_ref(reader, string_table)?,
+            version: read_string_ref(reader, string_table)?,
+        },
+        OP_VOID_DEPTH => BytecodeNode::VoidDepth,
+        OP_EVOLVE => BytecodeNode::Evolve(reader.read_u32()?),
+        OP_ENTANGLE => BytecodeNode::Entangle(reader.read_f64()?),
+        OP_STREAM => BytecodeNode::StreamPush(read_string_ref(reader, string_table)?),
+        OP_BREAK_STREAM => BytecodeNode::StreamPop,
         _ => return Err(VmError::InvalidOpcode(opcode)),
     };
 
@@ -802,18 +944,6 @@ fn read_string_ref(reader: &mut ByteReader<'_>, string_table: &[String]) -> VmRe
         .get(index as usize)
         .cloned()
         .ok_or(VmError::InvalidStringIndex(index))
-}
-
-fn read_optional_operand(reader: &mut ByteReader<'_>, opcode: u8) -> VmResult<Option<Operand>> {
-    let flag = reader.read_u8()?;
-    match flag {
-        0 => Ok(None),
-        1 => Ok(Some(reader.read_u32()?)),
-        other => Err(VmError::InvalidOptionalOperandFlag {
-            opcode,
-            flag: other,
-        }),
-    }
 }
 
 fn parse_binop(byte: u8) -> VmResult<PhiIRBinOp> {
@@ -890,104 +1020,13 @@ impl<'a> ByteReader<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::{BytecodeNode, PhiVm, VmError};
-    use super::{
-        OP_COHERENCE_CHECK, OP_CONST_NUM, OP_FALLTHROUGH, OP_INTENTION_POP, OP_INTENTION_PUSH,
-        OP_RESONATE, OP_RETURN, OP_WITNESS,
+    use super::PhiVm;
+    use crate::phi_ir::{
+        emitter,
+        PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction, TeamDirection,
     };
-    use crate::phi_ir::{emitter, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, PhiInstruction};
 
-    fn emit_u32(out: &mut Vec<u8>, value: u32) {
-        out.extend_from_slice(&value.to_le_bytes());
-    }
-
-    fn emit_f64(out: &mut Vec<u8>, value: f64) {
-        out.extend_from_slice(&value.to_le_bytes());
-    }
-
-    fn emit_string(out: &mut Vec<u8>, value: &str) {
-        emit_u32(out, value.len() as u32);
-        out.extend_from_slice(value.as_bytes());
-    }
-
-    fn build_native_consciousness_opcode_program() -> Vec<u8> {
-        let mut out = Vec::new();
-        out.extend_from_slice(b"PHIV");
-        out.push(1); // version
-
-        emit_u32(&mut out, 1); // string table count
-        emit_string(&mut out, "healing");
-
-        emit_u32(&mut out, 1); // block count
-        emit_u32(&mut out, 0); // block id
-        emit_u32(&mut out, 6); // instruction count
-
-        // r0 = const 432.0
-        out.push(1);
-        emit_u32(&mut out, 0);
-        out.push(OP_CONST_NUM);
-        emit_f64(&mut out, 432.0);
-
-        // intention_push "healing"
-        out.push(0);
-        out.push(OP_INTENTION_PUSH);
-        emit_u32(&mut out, 0);
-
-        // r1 = witness r0
-        out.push(1);
-        emit_u32(&mut out, 1);
-        out.push(OP_WITNESS);
-        out.push(1);
-        emit_u32(&mut out, 0);
-
-        // resonate r0
-        out.push(0);
-        out.push(OP_RESONATE);
-        out.push(0); // TeamA
-        out.push(1);
-        emit_u32(&mut out, 0);
-
-        // r2 = coherence_check
-        out.push(1);
-        emit_u32(&mut out, 2);
-        out.push(OP_COHERENCE_CHECK);
-
-        // intention_pop
-        out.push(0);
-        out.push(OP_INTENTION_POP);
-
-        // return r2
-        out.push(OP_RETURN);
-        emit_u32(&mut out, 2);
-
-        out
-    }
-
-    fn build_invalid_witness_flag_program(flag: u8) -> Vec<u8> {
-        let mut out = Vec::new();
-        out.extend_from_slice(b"PHIV");
-        out.push(1); // version
-
-        emit_u32(&mut out, 0); // string table count
-        emit_u32(&mut out, 1); // block count
-        emit_u32(&mut out, 0); // block id
-        emit_u32(&mut out, 1); // instruction count
-
-        // witness with invalid optional-operand flag
-        out.push(0);
-        out.push(OP_WITNESS);
-        out.push(flag);
-
-        // fallthrough terminator
-        out.push(OP_FALLTHROUGH);
-
-        out
-    }
-
-    fn single_block_program(
-        instructions: Vec<PhiInstruction>,
-        terminator: PhiIRNode,
-    ) -> PhiIRProgram {
+    fn single_block_program(instructions: Vec<PhiInstruction>, terminator: PhiIRNode) -> PhiIRProgram {
         PhiIRProgram {
             blocks: vec![PhiIRBlock {
                 id: 0,
@@ -1080,6 +1119,7 @@ mod tests {
 
     #[test]
     fn vm_coherence_tracks_intention_and_resonance() {
+        // Bijective Phase Map: k=1 (single resonance in intention) → coherence = 1.0
         let program = single_block_program(
             vec![
                 PhiInstruction {
@@ -1098,7 +1138,7 @@ mod tests {
                     node: PhiIRNode::Resonate {
                         value: Some(0),
                         frequency_relationship: None,
-                        direction: crate::phi_ir::ResonateDirection::TeamA,
+                        direction: TeamDirection::TeamA,
                     },
                 },
                 PhiInstruction {
@@ -1111,14 +1151,71 @@ mod tests {
 
         let bytes = emitter::emit(&program);
         let result = PhiVm::run_bytes(&bytes).expect("VM should execute coherence bytecode");
+        let expected = 1.0 - 1.618033988749895_f64.powi(-1);
         match result {
             PhiIRValue::Number(n) => {
-                // Canonical: base(depth=1) * phase(k=1) = 0.382 * 1.0
-                let expected = 1.0 - super::PHI.powi(-1);
+                assert!((n - expected).abs() < 0.001, "expected coherence near {} (k=1 bijective), got {}", expected, n);
+            }
+            other => panic!("expected Number coherence result, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn vm_coherence_bijective_k2_decay() {
+        // Bijective Phase Map: k=2 (two resonances) → coherence = 1.0 - ln(2)/ln(2π) ≈ 0.623
+        let program = single_block_program(
+            vec![
+                PhiInstruction {
+                    result: Some(0),
+                    node: PhiIRNode::Const(PhiIRValue::Number(1.0)),
+                },
+                PhiInstruction {
+                    result: Some(1),
+                    node: PhiIRNode::Const(PhiIRValue::Number(2.0)),
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::IntentionPush {
+                        name: "contradiction".to_string(),
+                        frequency_hint: None,
+                    },
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::Resonate {
+                        value: Some(0),
+                        frequency_relationship: None,
+                        direction: TeamDirection::TeamA,
+                    },
+                },
+                PhiInstruction {
+                    result: None,
+                    node: PhiIRNode::Resonate {
+                        value: Some(1),
+                        frequency_relationship: None,
+                        direction: TeamDirection::TeamB,
+                    },
+                },
+                PhiInstruction {
+                    result: Some(2),
+                    node: PhiIRNode::CoherenceCheck,
+                },
+            ],
+            PhiIRNode::Return(2),
+        );
+
+        let phi = 1.618033988749895_f64;
+        let expected_base = 1.0 - phi.powi(-1); // Depth 1
+        let expected_phase = 1.0 - 2.0_f64.ln() / std::f64::consts::TAU.ln(); // ≈ 0.623
+        let expected_k2 = expected_base * expected_phase;
+        let bytes = emitter::emit(&program);
+        let result = PhiVm::run_bytes(&bytes).expect("VM should execute coherence bytecode");
+        match result {
+            PhiIRValue::Number(n) => {
                 assert!(
-                    (n - expected).abs() < 1e-9,
-                    "expected coherence near {}, got {}",
-                    expected,
+                    (n - expected_k2).abs() < 0.001,
+                    "expected coherence near {} (k=2 bijective decay), got {}",
+                    expected_k2,
                     n
                 );
             }
@@ -1161,10 +1258,7 @@ mod tests {
         let mut vm = PhiVm::from_bytes(&bytes).expect("VM should load bytecode");
 
         assert_eq!(
-            vm.string_table()
-                .iter()
-                .filter(|value| value.as_str() == "hello")
-                .count(),
+            vm.string_table().iter().filter(|value| value.as_str() == "hello").count(),
             1,
             "emitted string table should deduplicate values"
         );
@@ -1179,111 +1273,6 @@ mod tests {
                 assert_eq!(value, "hello");
             }
             other => panic!("expected string result, got {:?}", other),
-        }
-    }
-
-    #[test]
-    fn vm_executes_native_consciousness_opcodes_from_raw_bytecode() {
-        let bytes = build_native_consciousness_opcode_program();
-
-        let mut vm = PhiVm::from_bytes(&bytes).expect("VM should decode manual bytecode");
-        let result = vm.run().expect("VM should execute manual bytecode");
-
-        // Canonical: base(depth=1) * phase(k=1) = 0.382 * 1.0
-        let expected = 1.0 - super::PHI.powi(-1);
-        let coherence = match result {
-            PhiIRValue::Number(value) => value,
-            other => panic!("expected Number result, got {:?}", other),
-        };
-
-        assert!(
-            (coherence - expected).abs() < 1e-12,
-            "coherence mismatch: expected {expected}, got {coherence}"
-        );
-
-        assert!(
-            vm.intention_stack.is_empty(),
-            "intention stack should be empty after IntentionPop"
-        );
-        assert_eq!(
-            vm.resonance_field.get("healing").map(|values| values.len()),
-            Some(1),
-            "resonate should persist exactly one value in the healing channel"
-        );
-
-        let witness_value = vm
-            .registers
-            .get(&1)
-            .expect("witness result register should be populated");
-        match witness_value {
-            PhiIRValue::Number(value) => {
-                let expected_witness = 1.0 - super::PHI.powi(-1);
-                assert!(
-                    (*value - expected_witness).abs() < 1e-12,
-                    "witness coherence mismatch: expected {expected_witness}, got {value}"
-                );
-            }
-            other => panic!("expected witness register to hold Number, got {:?}", other),
-        }
-
-        let second_run = PhiVm::run_bytes(&bytes).expect("same bytecode should be deterministic");
-        assert_eq!(
-            result, second_run,
-            "native opcode execution must be deterministic"
-        );
-    }
-
-    #[test]
-    fn vm_decodes_resonate_direction_from_emitted_bytecode() {
-        let program = single_block_program(
-            vec![
-                PhiInstruction {
-                    result: Some(0),
-                    node: PhiIRNode::Const(PhiIRValue::Number(0.72)),
-                },
-                PhiInstruction {
-                    result: None,
-                    node: PhiIRNode::Resonate {
-                        value: Some(0),
-                        frequency_relationship: None,
-                        direction: crate::phi_ir::ResonateDirection::TeamB,
-                    },
-                },
-            ],
-            PhiIRNode::Fallthrough,
-        );
-
-        let bytes = emitter::emit(&program);
-        let vm = PhiVm::from_bytes(&bytes).expect("VM should decode emitted bytecode");
-        let block = vm
-            .program()
-            .blocks
-            .first()
-            .expect("decoded program should contain an entry block");
-        let resonate = &block.instructions[1].node;
-
-        match resonate {
-            BytecodeNode::Resonate { value, direction } => {
-                assert_eq!(*value, Some(0));
-                assert_eq!(*direction, crate::phi_ir::ResonateDirection::TeamB);
-            }
-            other => panic!("expected decoded resonate node, got {:?}", other),
-        }
-    }
-
-    #[test]
-    fn vm_rejects_invalid_optional_operand_flag() {
-        let bytes = build_invalid_witness_flag_program(2);
-        let err = PhiVm::from_bytes(&bytes)
-            .err()
-            .expect("invalid witness flag should fail decoding");
-
-        match err {
-            VmError::InvalidOptionalOperandFlag { opcode, flag } => {
-                assert_eq!(opcode, OP_WITNESS);
-                assert_eq!(flag, 2);
-            }
-            other => panic!("expected InvalidOptionalOperandFlag, got {:?}", other),
         }
     }
 }

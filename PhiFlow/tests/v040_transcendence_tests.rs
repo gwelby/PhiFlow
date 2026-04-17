@@ -1,5 +1,6 @@
 use phiflow::parser::parse_phi_program;
-use phiflow::phi_ir::evaluator::{Evaluator, VmExecResult};
+use phiflow::phi_ir::evaluator::Evaluator;
+use phiflow::phi_ir::VmExecResult;
 use phiflow::phi_ir::lowering::lower_program;
 
 #[test]

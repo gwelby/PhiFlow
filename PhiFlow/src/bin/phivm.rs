@@ -37,9 +37,29 @@ fn run(args: Args) -> Result<(), String> {
 
     let mut vm = PhiVm::from_bytes(&bytes)
         .map_err(|e| format!("Failed to load bytecode {}: {}", args.input.display(), e))?;
-    let result = vm
-        .run()
-        .map_err(|e| format!("VM runtime error in {}: {}", args.input.display(), e))?;
+
+    // Use SystemHostProvider to enable persistence and ledgering
+    // Defaulting to current directory for persistence if not otherwise directed.
+    let host = phiflow::system_host::SystemHostProvider::new(std::env::current_dir().unwrap_or_default());
+    vm.with_host(std::sync::Arc::new(host));
+
+    let result = loop {
+        match vm.run_or_yield() {
+            phiflow::phi_ir::VmExecResult::Finished(val) => break val,
+            phiflow::phi_ir::VmExecResult::Yielded { .. } => {
+                // In a production daemon, this is where we'd snapshot or pulse.
+                // For the proof-of-concept, we just log the yield and resume.
+                continue;
+            }
+            phiflow::phi_ir::VmExecResult::Entangled { .. } => {
+                // Entanglement yield - resume for sync
+                continue;
+            }
+            phiflow::phi_ir::VmExecResult::Error(err) => {
+                return Err(format!("VM runtime error in {}: {}", args.input.display(), err));
+            }
+        }
+    };
 
     if args.dump_stack {
         println!("result: {}", render_value(&result, vm.string_table())?);
@@ -56,14 +76,11 @@ fn run(args: Args) -> Result<(), String> {
     Ok(())
 }
 
-fn render_value(value: &PhiIRValue, string_table: &[String]) -> Result<String, String> {
+fn render_value(value: &PhiIRValue, _string_table: &[String]) -> Result<String, String> {
     match value {
         PhiIRValue::Number(n) => Ok(n.to_string()),
-        PhiIRValue::String(index) => {
-            let resolved = string_table
-                .get(*index as usize)
-                .ok_or_else(|| format!("VM produced invalid string index {}", index))?;
-            serde_json::to_string(resolved)
+        PhiIRValue::String(s) => {
+            serde_json::to_string(s)
                 .map_err(|e| format!("Failed to render string value: {}", e))
         }
         PhiIRValue::Boolean(value) => Ok(value.to_string()),

@@ -16,6 +16,7 @@ async function main() {
   const TAU = 2.0 * Math.PI;
   let intentionDepth = 0;
   let resonanceCount = 0;
+  let lastResonatedValue = null;
   const sensorValues = new Map([
     [0, 12.5],
     [1, 55.0],
@@ -43,8 +44,9 @@ async function main() {
         }
         return sensorValues.get(sensorId);
       },
-      resonate: (_value) => {
+      resonate: (value) => {
         resonanceCount += 1;
+        lastResonatedValue = value;
       },
       coherence: () => coherence(),
       intention_push: (_offset) => {
@@ -58,7 +60,12 @@ async function main() {
 
   const { instance } = await WebAssembly.instantiate(buffer, imports);
   const result = instance.exports.phi_run();
-  process.stdout.write(String(result));
+  const mode = process.argv[3];
+  if (mode === "resonate" && lastResonatedValue !== null) {
+      process.stdout.write(String(lastResonatedValue));
+  } else {
+      process.stdout.write(String(result));
+  }
 }
 
 main().catch((err) => {

@@ -1,12 +1,14 @@
 // examples/f1_optimizer_prune.phi
 // Tests: F₁ action-cost reduction (optimizer should prune redundant resonate nodes)
 
-let limit = 0.7
+let limit = 10
+let current_iter = 0
 intention "Redundant_Chaos" {
     stream "chaos" {
         resonate 0.8
         let current = coherence
-        if current < limit {
+        current_iter = current_iter + 1
+        if current_iter > limit {
             break stream
         }
     }

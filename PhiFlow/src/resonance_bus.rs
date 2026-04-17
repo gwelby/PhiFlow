@@ -9,7 +9,6 @@ use uuid::Uuid;
 
 #[derive(Debug, Serialize)]
 pub struct ResonanceEvent {
-    #[serde(rename = "type")]
     pub event_type: String,
     pub value: Value,
     pub intention: String,

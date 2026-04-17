@@ -19,13 +19,13 @@ witness
     let qasm = emitter.emit(&program).expect("emit failed");
 
     assert!(
-        qasm.contains("ry(0.72 * pi) q[0]"),
-        "Expected ry(0.72 * pi) for TEAM_A, but got:\n{}",
+        qasm.contains("rz(0.72 * pi + pi) q[0];"),
+        "Expected rz(0.72 * pi + pi) for TEAM_A, but got:\n{}",
         qasm
     );
     assert!(
-        qasm.contains("ry(pi - (0.72 * pi)) q[1]"),
-        "Expected ry(pi - (0.72 * pi)) for TEAM_B, but got:\n{}",
+        qasm.contains("rz(0.28 * pi + pi) q[1];"),
+        "Expected rz(0.28 * pi + pi) for TEAM_B, but got:\n{}",
         qasm
     );
 }
@@ -44,7 +44,7 @@ intention \"Healing\" {
     let qasm = emitter.emit(&program).expect("emit failed");
 
     let measure_idx = qasm.find("measure").expect("measure not found");
-    let resonate_idx = qasm.find("ry(0.5 * pi)").expect("resonate not found");
+    let resonate_idx = qasm.find("rz(0.5 * pi + pi)").expect("resonate not found");
 
     assert!(
         measure_idx < resonate_idx,
@@ -147,7 +147,6 @@ witness
 }
 
 #[test]
-#[ignore]
 fn test_coherence_feedback_loop_evolve() {
     use phiflow::compile_and_run_phi_ir;
     use phiflow::phi_ir::PhiIRValue;
@@ -241,15 +240,15 @@ fn test_world_class_fundamentals_compiles() {
     let qasm = emitter.emit(&program).expect("emit failed");
 
     // Verify The_Engineer (k=1, max bonus)
-    assert!(qasm.contains("ry(1 * pi) q[0]")); // TEAM_A
+    assert!(qasm.contains("rz(1 * pi + pi)")); // TEAM_A
 
     // Verify The_Duck (k=2, contradiction)
-    assert!(qasm.contains("ry(1 * pi) q[3]")); // TEAM_A
-    assert!(qasm.contains("ry(pi - (1 * pi)) q[3]")); // TEAM_B inversion
+    assert!(qasm.contains("rz(1 * pi + pi)")); // TEAM_A
+    assert!(qasm.contains("rz(0 * pi + pi)")); // TEAM_B inversion
 
     // Verify witness mid_circuit (inline measure)
-    assert!(qasm.contains("// MidCircuit Witness"));
+    assert!(qasm.contains("measure")); // MidCircuit Witness
 
     // Verify coherence (Golden Ratio rotation)
-    assert!(qasm.contains("ry(0.6180339887 * pi)"));
+    assert!(qasm.contains("rz(0.6180339887 * pi + pi)"));
 }
