@@ -693,12 +693,7 @@ impl PhiVm {
                 let val = self.get_reg(*value)?;
                 let val_str = match val {
                     PhiIRValue::Number(n) => n.to_string(),
-                    PhiIRValue::String(idx) => self
-                        .program
-                        .string_table
-                        .get(*idx as usize)
-                        .cloned()
-                        .unwrap_or_default(),
+                    PhiIRValue::String(s) => s.clone(),
                     PhiIRValue::Boolean(b) => b.to_string(),
                     PhiIRValue::Void => "void".to_string(),
                 };
@@ -729,10 +724,7 @@ impl PhiVm {
                 // Broadcast to MQTT for consistency
                 let json_val = match val {
                     PhiIRValue::Number(n) => serde_json::json!(n),
-                    PhiIRValue::String(idx) => {
-                        let s = self.program.string_table.get(*idx as usize).cloned().unwrap_or_default();
-                        serde_json::json!(s)
-                    }
+                    PhiIRValue::String(s) => serde_json::json!(s),
                     PhiIRValue::Boolean(b) => serde_json::json!(b),
                     PhiIRValue::Void => serde_json::Value::Null,
                 };
@@ -767,10 +759,7 @@ impl PhiVm {
                 let context_val = self.get_reg(*context_op)?;
                 let context_json = match context_val {
                     PhiIRValue::Number(n) => serde_json::json!(n),
-                    PhiIRValue::String(idx) => {
-                        let s = self.program.string_table.get(*idx as usize).cloned().unwrap_or_default();
-                        serde_json::json!(s)
-                    }
+                    PhiIRValue::String(s) => serde_json::json!(s),
                     PhiIRValue::Boolean(b) => serde_json::json!(b),
                     PhiIRValue::Void => serde_json::Value::Null,
                 };

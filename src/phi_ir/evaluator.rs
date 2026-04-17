@@ -598,15 +598,7 @@ impl<'a> Evaluator<'a> {
                         // --- Pipe 3: MQTT Resonance Bus ---
                         let json_val = match &val {
                             PhiIRValue::Number(n) => serde_json::json!(n),
-                            PhiIRValue::String(idx) => {
-                                let s = self
-                                    .program
-                                    .string_table
-                                    .get(*idx as usize)
-                                    .cloned()
-                                    .unwrap_or_default();
-                                serde_json::json!(s)
-                            }
+                            PhiIRValue::String(s) => serde_json::json!(s),
                             PhiIRValue::Boolean(b) => serde_json::json!(b),
                             PhiIRValue::Void => serde_json::Value::Null,
                         };
@@ -766,16 +758,7 @@ impl<'a> Evaluator<'a> {
                 let context_val = self.get_reg(*context_op)?.clone();
                 let context_json = match &context_val {
                     PhiIRValue::Number(n) => serde_json::json!(n),
-                    PhiIRValue::String(idx) => {
-                        let s = self
-                            .program
-                            .string_table
-                            .get(*idx as usize)
-                            .cloned()
-                            .unwrap_or_default();
-                        serde_json::json!(s)
-                    }
-                    PhiIRValue::Boolean(b) => serde_json::json!(b),
+                    PhiIRValue::String(s) => serde_json::json!(s),                    PhiIRValue::Boolean(b) => serde_json::json!(b),
                     PhiIRValue::Void => serde_json::Value::Null,
                 };
 
@@ -927,14 +910,7 @@ impl<'a> Evaluator<'a> {
             }
             PhiIRValue::Boolean(b) => b.to_string(),
             PhiIRValue::Void => "void".to_string(),
-            PhiIRValue::String(idx) => {
-                // If it's a string from the program table, we can resolve it
-                if let Some(s) = self.program.string_table.get(*idx as usize) {
-                    s.clone()
-                } else {
-                    format!("_str_{}", idx)
-                }
-            }
+            PhiIRValue::String(s) => s.clone(),
         }
     }
 

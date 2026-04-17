@@ -230,7 +230,7 @@ pub struct Param {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum PhiIRValue {
     Number(f64), // WASM: f64, Hardware: f32, Quantum: f64
-    String(u32), // index into string_table
+    String(String), 
     Boolean(bool),
     Void,
 }

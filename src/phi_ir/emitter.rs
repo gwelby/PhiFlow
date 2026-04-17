@@ -295,14 +295,9 @@ fn emit_value(out: &mut Vec<u8>, val: &PhiIRValue, ctx: &EmitContext<'_>) {
             out.push(OP_CONST_NUM);
             emit_f64(out, *n);
         }
-        PhiIRValue::String(idx) => {
+        PhiIRValue::String(s) => {
             out.push(OP_CONST_STR);
-            let remapped = ctx
-                .literal_remap
-                .get(*idx as usize)
-                .copied()
-                .unwrap_or(*idx);
-            emit_u32(out, remapped);
+            emit_string_ref(out, s, ctx);
         }
         PhiIRValue::Boolean(b) => {
             out.push(OP_CONST_BOOL);

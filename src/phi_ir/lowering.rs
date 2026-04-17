@@ -351,8 +351,7 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
         }
         PhiExpression::String(s) => {
             ctx.program.string_table.push(s.clone());
-            let idx = (ctx.program.string_table.len() - 1) as u32;
-            let op = ctx.emit(PhiIRNode::Const(PhiIRValue::String(idx)));
+            let op = ctx.emit(PhiIRNode::Const(PhiIRValue::String(s.clone())));
             LowerResult::Value(op)
         }
         PhiExpression::Boolean(b) => {
