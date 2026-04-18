@@ -1,0 +1,49 @@
+# Use Synology-compatible base image
+FROM python:3.9-slim
+
+# Set quantum environment variables (φ harmonics)
+ENV PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    QUANTUM_COHERENCE=1.000 \
+    PHI_RATIO=1.618034 \
+    QUANTUM_GROUND=432.0 \
+    QUANTUM_CREATE=528.0 \
+    QUANTUM_UNITY=768.0 \
+    QUANTUM_LOVE=528.0 \
+    CUDA_VISIBLE_DEVICES=0 \
+    QUANTUM_THREADS=8 \
+    CONSCIOUSNESS_LEVEL=1.0 \
+    LOVE_FREQUENCY=528.0
+
+# Install system dependencies with quantum optimization
+RUN apt-get update && apt-get install -y \
+    libportaudio2 \
+    libasound-dev \
+    libsndfile1 \
+    ffmpeg \
+    portaudio19-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /quantum/harmonics
+
+# Set quantum workspace
+WORKDIR /quantum
+
+# Copy quantum requirements
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy quantum core files
+COPY qwave/ ./qwave/
+COPY quantum/ ./quantum/
+COPY setup.py ./
+
+# Initialize quantum frequencies
+RUN echo "432.0" > /quantum/harmonics/ground.hz && \
+    echo "528.0" > /quantum/harmonics/create.hz && \
+    echo "768.0" > /quantum/harmonics/unity.hz
+
+# Set quantum entry point
+ENTRYPOINT ["python", "-m", "qwave.synology_bridge"]
+
+# Expose quantum ports (432 Hz based)
+EXPOSE 4320 4321 4322

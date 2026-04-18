@@ -1,0 +1,79 @@
+   Compiling phiflow v0.2.0 (D:\Projects\PhiFlow-compiler\PhiFlow)
+warning: unused import: `QuantumCircuit`
+ --> tests\quantum_codegen_tests.rs:4:24
+  |
+4 | use phiflow::quantum::{QuantumCircuit, QuantumGate};
+  |                        ^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused variable: `block`
+  --> tests\phi_ir_optimizer_tests.rs:86:9
+   |
+86 |     let block = &program.blocks[0];
+   |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_block`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `active_instructions`
+   --> tests\phi_ir_optimizer_tests.rs:120:9
+    |
+120 |     let active_instructions = block
+    |         ^^^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_active_instructions`
+
+warning: `phiflow` (test "quantum_codegen_tests") generated 1 warning (run `cargo fix --test "quantum_codegen_tests"` to apply 1 suggestion)
+warning: `phiflow` (test "phi_ir_optimizer_tests") generated 2 warnings
+warning: unused imports: `CallbackHostProvider` and `WitnessAction`
+ --> tests\v040_transcendence_tests.rs:4:21
+  |
+4 | use phiflow::host::{CallbackHostProvider, WitnessAction};
+  |                     ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: function `assert_program_conforms_eval_wasm` is never used
+   --> tests\phi_ir_conformance_tests.rs:103:4
+    |
+103 | fn assert_program_conforms_eval_wasm(source: &str, label: &str) {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: function `assert_program_conforms` is never used
+   --> tests\phi_ir_conformance_tests.rs:148:4
+    |
+148 | fn assert_program_conforms(source: &str, label: &str) {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `phiflow` (test "v040_transcendence_tests") generated 1 warning (run `cargo fix --test "v040_transcendence_tests"` to apply 1 suggestion)
+warning: `phiflow` (test "phi_ir_conformance_tests") generated 2 warnings
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 45.74s
+  Executable unittests src\lib.rs (target\debug\deps\phiflow-78da757ce43b69d9.exe)
+  Executable unittests src\bin\dump_ir.rs (target\debug\deps\dump_ir-86737063b380cf1f.exe)
+  Executable unittests src\main.rs (target\debug\deps\phi-2a6d6d23f5720977.exe)
+  Executable unittests src\bin\phi_emit_wat.rs (target\debug\deps\phi_emit_wat-5dc604f4ab4eaec3.exe)
+  Executable unittests src\bin\phi_mcp.rs (target\debug\deps\phi_mcp-4e1be3d0c170ba7f.exe)
+  Executable unittests src\main_cli.rs (target\debug\deps\phic-e68367b79b25d96e.exe)
+  Executable tests\concurrent_streams_tests.rs (target\debug\deps\concurrent_streams_tests-1afecaa51f15a947.exe)
+  Executable tests\integration_tests.rs (target\debug\deps\integration_tests-5b0e262a27e65ce7.exe)
+  Executable tests\ir_vm_intention_assignment_tests.rs (target\debug\deps\ir_vm_intention_assignment_tests-6ed904c81b6f32fd.exe)
+  Executable tests\mcp_integration_tests.rs (target\debug\deps\mcp_integration_tests-2c51965535c0899d.exe)
+  Executable tests\mcp_stdio_e2e_tests.rs (target\debug\deps\mcp_stdio_e2e_tests-538bfe20dca1dbbf.exe)
+  Executable tests\performance_tests.rs (target\debug\deps\performance_tests-9cecf7b8db9f8367.exe)
+  Executable tests\phi_diagnostics_tests.rs (target\debug\deps\phi_diagnostics_tests-6c3ca1cf55322e98.exe)
+  Executable tests\phi_harmonic_tests.rs (target\debug\deps\phi_harmonic_tests-c8474b75191af98d.exe)
+  Executable tests\phi_ir_conformance_tests.rs (target\debug\deps\phi_ir_conformance_tests-4b83b9746e6f1720.exe)
+  Executable tests\phi_ir_evaluator_tests.rs (target\debug\deps\phi_ir_evaluator_tests-e2abff77c4399c3d.exe)
+  Executable tests\phi_ir_integration_tests.rs (target\debug\deps\phi_ir_integration_tests-49504eabac2db773.exe)
+  Executable tests\phi_ir_loop_tests.rs (target\debug\deps\phi_ir_loop_tests-abe5ce035acfe2a6.exe)
+  Executable tests\phi_ir_optimizer_tests.rs (target\debug\deps\phi_ir_optimizer_tests-cf36e0f85c3bf73a.exe)
+  Executable tests\phi_ir_roundtrip_tests.rs (target\debug\deps\phi_ir_roundtrip_tests-3a9fa0dcb339099c.exe)
+  Executable tests\phi_ir_tests.rs (target\debug\deps\phi_ir_tests-d14ac4c91e0e07ef.exe)
+  Executable tests\phi_ir_vm_tests.rs (target\debug\deps\phi_ir_vm_tests-3171f094347f8ddb.exe)
+  Executable tests\quantum_codegen_tests.rs (target\debug\deps\quantum_codegen_tests-2534e906d3b8a603.exe)
+  Executable tests\quantum_tests.rs (target\debug\deps\quantum_tests-1ddc7625b6cb7218.exe)
+  Executable tests\repro_bugs.rs (target\debug\deps\repro_bugs-9bd79238717961d7.exe)
+  Executable tests\stream_primitive_tests.rs (target\debug\deps\stream_primitive_tests-7f8731a0db8abf27.exe)
+  Executable tests\stream_scope_tests.rs (target\debug\deps\stream_scope_tests-a91e13655264f556.exe)
+  Executable tests\v030_substrate_tests.rs (target\debug\deps\v030_substrate_tests-6b494f98cf3d6471.exe)
+  Executable tests\v040_transcendence_tests.rs (target\debug\deps\v040_transcendence_tests-face476082ee4221.exe)

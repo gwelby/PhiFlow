@@ -1,0 +1,9 @@
+# Simple PhiFlow test script
+frequency: 528
+compression: 1.618
+
+quantum HelloQuantum {
+    state: superposition
+    qubits: 3
+    transition: phi_harmonic
+}

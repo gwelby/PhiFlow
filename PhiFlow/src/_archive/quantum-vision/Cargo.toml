@@ -1,0 +1,21 @@
+[package]
+name = "quantum-vision"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+tokio = { workspace = true }
+num-complex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+ndarray = { workspace = true }
+image = { workspace = true }
+rayon = { workspace = true }
+parking_lot = { workspace = true }
+chrono = { workspace = true }
+plotters = "0.3"
+plotters-svg = "0.3"
+quantum-utils = { workspace = true }
+quantum-sacred = { workspace = true }
+quantum-dimension = { workspace = true }

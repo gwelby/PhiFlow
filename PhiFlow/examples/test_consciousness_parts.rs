@@ -98,12 +98,15 @@ if current_level > 0.8 {
             Err(e) => println!("❌ Failed: {}\n", e),
         }
     }
-    
+
     // Test all together
     let full_program = format!("{}{}{}{}{}", part1, part2, part3, part4, part5);
     println!("Testing Full Program");
     match parse_phi_program(&full_program) {
-        Ok(ast) => println!("✅ Full program parsed successfully - {} expressions", ast.len()),
+        Ok(ast) => println!(
+            "✅ Full program parsed successfully - {} expressions",
+            ast.len()
+        ),
         Err(e) => println!("❌ Full program failed: {}", e),
     }
 }

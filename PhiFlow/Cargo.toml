@@ -1,6 +1,6 @@
 [package]
 name = "phiflow"
-version = "0.1.0"
+version = "0.4.0"
 edition = "2021"
 authors = ["PhiFlow Team <team@phiflow.dev>"]
 description = "PhiFlow - Quantum consciousness programming language"
@@ -38,23 +38,26 @@ chrono = { version = "0.4", features = ["serde"] }
 # Consciousness monitoring (EEG) - placeholder for future implementation  
 # eeg-rs = { version = "0.1", optional = true }
 
-# Audio/Frequency processing
-cpal = "0.15"
+# Audio/Frequency processing (cpal requires libasound2-dev; optional until system dep resolved)
+cpal = { version = "0.15", optional = true }
 hound = "3.5"
 rustfft = "6.1"
 
 # Mathematical operations
 nalgebra = "0.32"
 rand = "0.8"
+sysinfo = "0.30"
+wasmtime = "25.0"
+wat = "1.0"
 
 [features]
-default = ["audio"]
-audio = []
+default = []
+audio = ["dep:cpal"]
 
 [dev-dependencies]
 criterion = "0.5"
 
 [profile.release]
-lto = true
-codegen-units = 1
+lto = "thin"        # fat LTO + wasmtime-fiber = OOM on Windows; thin LTO ships and optimizes
+codegen-units = 4   # 1 unit exhausted paging file; 4 units fit in RAM
 panic = "abort"

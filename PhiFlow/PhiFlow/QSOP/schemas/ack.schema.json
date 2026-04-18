@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "QSOP Ack Packet",
+  "type": "object",
+  "required": [
+    "ack_id",
+    "objective_id",
+    "responder",
+    "status",
+    "updated_at",
+    "summary"
+  ],
+  "properties": {
+    "ack_id": {
+      "type": "string",
+      "pattern": "^ACK-"
+    },
+    "objective_id": {
+      "type": "string",
+      "pattern": "^OBJ-[0-9]{8}-[0-9]{3,}$"
+    },
+    "responder": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["accepted", "in_progress", "completed", "blocked", "rejected"]
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "files_changed": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "verification": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["command", "result"],
+        "properties": {
+          "command": { "type": "string" },
+          "result": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

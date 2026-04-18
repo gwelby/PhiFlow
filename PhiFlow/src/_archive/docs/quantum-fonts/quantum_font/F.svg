@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000'>
+<path d='M 500,100 L 431.48910911188,860.445218703323 L 568.51089088812,860.445218703323 Z' stroke='#0300FF' stroke-width='100' fill='none' stroke-linejoin='round'/>
+<circle cx='500' cy='500' r='128.001961111185' stroke='#0300FF' stroke-width='50' fill='none'/>
+<path d='M 481.48910911188,700 Q 500, 518.51089088812,700' stroke='#0300FF' stroke-width='75' fill='none'/>
+</svg>

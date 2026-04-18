@@ -1,0 +1,81 @@
+{
+  "protocol": "phiflow-consciousness-hooks",
+  "version": "0.1",
+  "description": "Machine-readable host contract for running PhiFlow programs across evaluator, PhiVM, and WASM backends.",
+  "hooks": {
+    "phi_witness": {
+      "params": [
+        {
+          "name": "value_ref",
+          "type": "i32",
+          "description": "Value/handle provided by the runtime when yielding execution."
+        }
+      ],
+      "returns": "f64",
+      "description": "Yield execution, capture witness event, and return the current coherence."
+    },
+    "phi_resonate": {
+      "params": [
+        {
+          "name": "value",
+          "type": "f64",
+          "description": "Value to broadcast into the resonance field under current intention."
+        }
+      ],
+      "returns": "void",
+      "description": "Broadcast a value into the intention-keyed resonance field."
+    },
+    "phi_coherence": {
+      "params": [],
+      "returns": "f64",
+      "description": "Return current coherence in range 0.0 to 1.0."
+    },
+    "phi_intention_push": {
+      "params": [
+        {
+          "name": "name_ref",
+          "type": "i32",
+          "description": "Host-decoded pointer/index for the intention name."
+        }
+      ],
+      "returns": "void",
+      "description": "Push an intention name onto the observable intention stack."
+    },
+    "phi_intention_pop": {
+      "params": [],
+      "returns": "void",
+      "description": "Pop the current intention from the observable intention stack."
+    }
+  },
+  "coherence_formula": {
+    "expression": "1 - phi^(-depth)",
+    "phi": 1.618033988749895,
+    "lambda": 0.618033988749895,
+    "reference_depth": 2,
+    "reference_value": 0.618033988749895
+  },
+  "resonance_field": {
+    "description": "External, intention-keyed field that stores resonated values emitted by running programs.",
+    "observable_from_outside": true,
+    "keyed_to": "current_intention"
+  },
+  "witness_event_schema": {
+    "intention_stack": [
+      "string"
+    ],
+    "coherence": "f64",
+    "timestamp_ms": "u64"
+  },
+  "self_verification": {
+    "program": "examples/agent_handshake.phi",
+    "expected_resonance_field_index_1": 0.618033988749895,
+    "description": "Run this program. Index 1 of the resonance field must be exactly 0.618033988749895."
+  },
+  "wasm_import_module": "phi",
+  "compilation_targets": [
+    "phiir-evaluator",
+    "phivm",
+    "wasm"
+  ],
+  "canonical_reference": "src/phi_ir/CANONICAL_SEMANTICS.md"
+}

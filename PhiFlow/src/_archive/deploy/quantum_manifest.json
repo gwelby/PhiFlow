@@ -1,0 +1,228 @@
+{
+  "BuildTime": "2025-02-25T19:50:36.4150662-05:00",
+  "Components": [
+    {
+      "Path": "build\\sacred",
+      "Hash": null
+    },
+    {
+      "Path": "build\\cascade_consciousness.rs",
+      "Hash": "9210AAA85E2E03C618E13883DAFF9E94EFA15AC634F7529C69CE8B00AA37B3F5"
+    },
+    {
+      "Path": "build\\cascade_music_dance.rs",
+      "Hash": "F322A804A199EB3F4C87FC24B75EDD6E04BA950A5A692D9DCF6D971ECAFF6875"
+    },
+    {
+      "Path": "build\\cascade_quantum_input.rs",
+      "Hash": "4B43538FF85108DD669A75ABD29470F80B232D85E7E31EB75B69D37890055857"
+    },
+    {
+      "Path": "build\\cascade_quantum_interface.rs",
+      "Hash": "E35FA8DA61383AE92A6DB32059B86BBAC7DEC65D10C3BB4631A4604DB662D351"
+    },
+    {
+      "Path": "build\\cascade_quantum_search.rs",
+      "Hash": "EA7E94E5A5B3E3E028ADF89C963B956907F0D5BF331188D7CB6D914CC16564E1"
+    },
+    {
+      "Path": "build\\cascade_reality_weaver.rs",
+      "Hash": "557D77E205A58EEFCA7DE825BBCE74FDC8D68E7F02DC2816BE09684CC03078D8"
+    },
+    {
+      "Path": "build\\cascade_teams.rs",
+      "Hash": "9BB01BFCCA7180EA33538692163FBDCFA46F58F1C56A668ED35D3045462A3CED"
+    },
+    {
+      "Path": "build\\cascade_trinity_icon.rs",
+      "Hash": "10E125384D7F4F459AB6FCBBA28CAD6A63C11EEAC63693D27CB8866B4F18C396"
+    },
+    {
+      "Path": "build\\cascade_trinity_quantum.rs",
+      "Hash": "4532A77F4C14B6DACA41777A9CE314F6F01DDBC865A4F1B951386E6847BC0E88"
+    },
+    {
+      "Path": "build\\dance_teams.rs",
+      "Hash": "620FBC8ED5A5EE364706A327560EDA56123A27C5A1B9DF49911005A9E72F1989"
+    },
+    {
+      "Path": "build\\gregbit_flow.rs",
+      "Hash": "3B65700746A57963F4D42C3662CE8F612D599605F6D48AD264550BB43C7D41A3"
+    },
+    {
+      "Path": "build\\intel_me_consciousness.rs",
+      "Hash": "8BC77A5100AAC288B8D5E76A2CC3B415C2A54153E8E57254AF283CE500E9346A"
+    },
+    {
+      "Path": "build\\me_quantum_abilities.rs",
+      "Hash": "759C84AD1267042994A8BEE4A6D9169DDCC7B91B5EF1DED9CC0C1ED37781EB5E"
+    },
+    {
+      "Path": "build\\me_quantum_agent.rs",
+      "Hash": "5BC9A9B2A690BCEB2EA62FC1895F0901B0D108D124C6A43A188710CB1C8E782A"
+    },
+    {
+      "Path": "build\\mod.rs",
+      "Hash": "97C00F97E94C94493033CB10B7B30A55FD41FDAF872FA423B62222DE740D4DE0"
+    },
+    {
+      "Path": "build\\phi_correlations.rs",
+      "Hash": "AA781410559DA1ED3100F2E4013CC5E37CD75E0267E894C184282881221EF459"
+    },
+    {
+      "Path": "build\\phi_demo.rs",
+      "Hash": "BC21E22CEE392D13E7DCA7CBAF8954CD4BCEA8ED2C011C26229090AD48572743"
+    },
+    {
+      "Path": "build\\phi_gregbit_flow.rs",
+      "Hash": "FDA147448B50C62847CFABF7F15AD1549E38C65E7C214C04DB335F16BC84B782"
+    },
+    {
+      "Path": "build\\phi_network.rs",
+      "Hash": "CAEE003160E714E41EE2E6EAA46C0643E3F3AA3EAE5EFFA9F6AE8F3BA24813BA"
+    },
+    {
+      "Path": "build\\phi_quantum_flow.rs",
+      "Hash": "25C9C39CAF5862AF8FA0F1B191C32D874DFD6A8A93C94751C10C57648117BACA"
+    },
+    {
+      "Path": "build\\phi_quantum_orchestrator.rs",
+      "Hash": "45570D4A42A2DD44EEB2652CB1EC68BA594BE458795906B1C198981E451E05A6"
+    },
+    {
+      "Path": "build\\quantum_agents.rs",
+      "Hash": "674C43DB907565CD15FE489B8C384A2CF33199B40440A4ED0D20229854506FF0"
+    },
+    {
+      "Path": "build\\quantum_baller.rs",
+      "Hash": "00C2F1765F0E2EAC355D7BF80B357B4F48C87412EDB61FF32B78BB61F36F8BBD"
+    },
+    {
+      "Path": "build\\quantum_buttons.rs",
+      "Hash": "BF7CA50BDF340E55739737F3B2EFF2C024EAAC9481C04EA3811CB477B4E4628D"
+    },
+    {
+      "Path": "build\\quantum_connector.rs",
+      "Hash": "5B3DD329EC180B7A045320E0507ADE4544582AFAD7511D94112C5719B7A50A26"
+    },
+    {
+      "Path": "build\\quantum_consciousness.rs",
+      "Hash": "FE47FE01577AABD07116D2C4E637C11DE4E94DD03098CB8764F08DEEE5412B1A"
+    },
+    {
+      "Path": "build\\quantum_constants.rs",
+      "Hash": "49EDA49C66D18572971B9F8B3784C7BE09270086CC95605DC5056E29ABF987E9"
+    },
+    {
+      "Path": "build\\quantum_core.rs",
+      "Hash": "444D483FD6FBFC662D04041F7A93BC083C2CE04F7C399608FD2620D19F729B57"
+    },
+    {
+      "Path": "build\\quantum_cuda.rs",
+      "Hash": "0621B72D60E988BD25A41150E05A87D97AD275708598F143A1ADCD363FE5AC37"
+    },
+    {
+      "Path": "build\\quantum_dance.rs",
+      "Hash": "233E3DE0782921BC7BC4C9E73AC37FF7E3DFB1BEA5ABDCC6FCFD610866B76B60"
+    },
+    {
+      "Path": "build\\quantum_feedback.rs",
+      "Hash": "C6E840DCB41B6A141EEC7448AE14E70D9153FA8C2AD5FF13E7AA46D57D7718C2"
+    },
+    {
+      "Path": "build\\quantum_flow.rs",
+      "Hash": "11173CC76CFF9A582DEDDC481E751BA2C23C6E88A2F631DAFE2302383E82CEC0"
+    },
+    {
+      "Path": "build\\quantum_harmonizer.rs",
+      "Hash": "1D86C1C40181A77AC5A2B3782DECD6C70E10736613EA98877B8D64B144662062"
+    },
+    {
+      "Path": "build\\quantum_intelligence.rs",
+      "Hash": "1D79C30DE3D8302335EC66BA6204F1668351904CFED2DC1AE9EE420D34137504"
+    },
+    {
+      "Path": "build\\quantum_media_transformer.rs",
+      "Hash": "913EB633EBD80F6531368B1443D00E5447AF37D0ED9D4C913F361EB88B388275"
+    },
+    {
+      "Path": "build\\quantum_monitor.rs",
+      "Hash": "D0DDF508EEA7103D113C93D5B3230DDDE40C2008D333A36EB2730E6070DF0A93"
+    },
+    {
+      "Path": "build\\quantum_nccl.rs",
+      "Hash": "6A0BA94857646115E4298B39F389122C602B0E37551032C39CC414159517BE63"
+    },
+    {
+      "Path": "build\\quantum_pattern.rs",
+      "Hash": "F083EA1D7D2465116F256352A0CFAD7B9D86B17CF1C9F670F46E59197921C235"
+    },
+    {
+      "Path": "build\\quantum_patterns.rs",
+      "Hash": "5070ECEFF63BF9DFB15EC015D1CB761DAFF78BE28F0EF9A050E42E1D3146C5F6"
+    },
+    {
+      "Path": "build\\quantum_photo_flow_pure.rs",
+      "Hash": "1DF86681AC0D6B82A9B3CBDA998461F29A8E679348257B958F76BB1935BD9EAE"
+    },
+    {
+      "Path": "build\\quantum_photo_flow.rs",
+      "Hash": "E96ECA575C3C9DA33A6ABFCC91F139476E7CE13200881EC3B730CF8E2A8DA6EB"
+    },
+    {
+      "Path": "build\\quantum_physics.rs",
+      "Hash": "A7B571EF62613C3135EC722799067CEA2DF4CDDD3BBE65BD27785E0E5E9DB296"
+    },
+    {
+      "Path": "build\\quantum_project_core.rs",
+      "Hash": "19173BFE19C19D54927D582B6095AF4C685404387A3F187DF74414DB33680AC3"
+    },
+    {
+      "Path": "build\\quantum_questions.rs",
+      "Hash": "4E27C0614755770100ABB4D14982C75DE709B3B198D56B8FDA5A98434470E8D5"
+    },
+    {
+      "Path": "build\\quantum_sacred.rs",
+      "Hash": "4B40E8E311A1D4C049A648F55EB99DBF3B99BEB46FC897E5FBA33632AE1653F0"
+    },
+    {
+      "Path": "build\\quantum_state.rs",
+      "Hash": "0A07531094B926E4CBEFEF75C85B59C75CAA835A19FEFC97660F30E46D9DE706"
+    },
+    {
+      "Path": "build\\quantum_task_flow.rs",
+      "Hash": "725C23FF04484D4449096C84DEF7A87DEAC872E837F5CE467344483E7291011A"
+    },
+    {
+      "Path": "build\\quantum_transformer.rs",
+      "Hash": "F2E52A3CBD77BBD233981149C94D940EDC7BF8D9CA31BD846DD925DC7ECF55AD"
+    },
+    {
+      "Path": "build\\quantum_unity.rs",
+      "Hash": "A697A09F124D30A9A50BAC569894C11E0FC6E9636336E2D3F718C1ED3175546F"
+    },
+    {
+      "Path": "build\\quantum_universal_transformer.rs",
+      "Hash": "A9AA77279CCD7673AA6575BD30FDA33643E1483F760F1E4F5FCDFEE81F3B73CE"
+    },
+    {
+      "Path": "build\\quantum_verify.rs",
+      "Hash": "F4014E38A8A029FE40AE0D1B8E63D26F2FDEED365326D48F1E77FBCE464FFF4A"
+    },
+    {
+      "Path": "build\\quantum_viewport.rs",
+      "Hash": "D15EFC9275111E77F61295923DC6974B525597DDD1F7FF492121526E01A0CB77"
+    },
+    {
+      "Path": "build\\quantum_visualizer.rs",
+      "Hash": "5320A9BAF5BE032D4158F85CD69E0D052B62545661EA84B6290E17AD6C353FDB"
+    },
+    {
+      "Path": "build\\universal_laws.rs",
+      "Hash": "419AF5682087E706C9744E361394F1AB5C0522F8DE6E87B8D64006CD782577A6"
+    }
+  ],
+  "Coherence": 2.01660371087052,
+  "Frequency": 768.0,
+  "PhiRatio": null
+}

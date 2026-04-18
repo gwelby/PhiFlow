@@ -1,0 +1,18 @@
+{
+  "objective_id": "OBJ-20260221-003",
+  "origin": "antigravity",
+  "target": "codex",
+  "intent": "weaver_seed_activation_dry_run",
+  "status": "completed",
+  "created_at": "2026-02-21T04:40:00Z",
+  "payload_path": "QSOP/mail/payloads/OBJ-20260221-003.md",
+  "checksum": "sha256:e05bc3ac3311077584dbf7f5817042eab6ba92a7ad0a36f67b30291e92e0a08e",
+  "ownership": [
+    "QSOP/weaver",
+    "QSOP/mail",
+    "QSOP/metrics"
+  ],
+  "verification_required": true,
+  "priority": "high",
+  "updated_at": "2026-02-21T20:05:00Z"
+}

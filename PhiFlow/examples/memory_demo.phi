@@ -1,0 +1,23 @@
+// memory_demo.phi
+// v0.3.0 Persistence Demonstration
+
+stream "persistence_test" {
+    intention "remember_state" {
+        let count = recall "cycle_count"
+        
+        if count == void {
+            remember "cycle_count" 1.0
+            resonate 1.0
+        } else {
+            let next_count = count + 1.0
+            remember "cycle_count" next_count
+            resonate next_count
+        }
+        
+        witness count
+        
+        if count >= 3.0 {
+            break stream
+        }
+    }
+}

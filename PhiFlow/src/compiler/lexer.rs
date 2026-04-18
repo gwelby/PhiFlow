@@ -11,20 +11,20 @@ pub enum Token {
     Circuit,
     Measure,
     Execute,
-    
+
     // Sacred Frequency Operations
-    Sacred(u32),        // Sacred(432), Sacred(528), etc.
+    Sacred(u32), // Sacred(432), Sacred(528), etc.
     Frequency,
     Hz,
     Lock,
     Resonate,
-    
+
     // Phi/Golden Ratio Operations
     Phi,
     Golden,
     Spiral,
     Fibonacci,
-    
+
     // Consciousness Integration
     Consciousness,
     Monitor,
@@ -34,15 +34,17 @@ pub enum Token {
     Flow,
     Witness,
     Intention,
-    
+    Stream,
+    Break,
+
     // Quantum Gates
-    Hadamard,           // H
-    PauliX,            // X
-    PauliY,            // Y
-    PauliZ,            // Z
-    CNOT,              // CNOT
-    Rotation,          // RX, RY, RZ
-    
+    Hadamard, // H
+    PauliX,   // X
+    PauliY,   // Y
+    PauliZ,   // Z
+    CNOT,     // CNOT
+    Rotation, // RX, RY, RZ
+
     // Standard Language Constructs
     Let,
     Fn,
@@ -53,44 +55,44 @@ pub enum Token {
     While,
     In,
     Return,
-    
+
     // Data Types
     Number(f64),
     String(String),
     Identifier(String),
     Boolean(bool),
-    
+
     // Operators
-    Plus,              // +
-    Minus,             // -
-    Star,              // *
-    Slash,             // /
-    Equal,             // =
-    EqualEqual,        // ==
-    NotEqual,          // !=
-    Greater,           // >
-    Less,              // <
-    GreaterEqual,      // >=
-    LessEqual,         // <=
-    And,               // &&
-    Or,                // ||
-    Not,               // !
-    
+    Plus,         // +
+    Minus,        // -
+    Star,         // *
+    Slash,        // /
+    Equal,        // =
+    EqualEqual,   // ==
+    NotEqual,     // !=
+    Greater,      // >
+    Less,         // <
+    GreaterEqual, // >=
+    LessEqual,    // <=
+    And,          // &&
+    Or,           // ||
+    Not,          // !
+
     // Punctuation
-    LeftParen,         // (
-    RightParen,        // )
-    LeftBrace,         // {
-    RightBrace,        // }
-    LeftBracket,       // [
-    RightBracket,      // ]
-    Comma,             // ,
-    Semicolon,         // ;
-    Colon,             // :
-    DoubleColon,       // ::
-    Arrow,             // ->
-    Pipe,              // |>
-    Dot,               // .
-    
+    LeftParen,    // (
+    RightParen,   // )
+    LeftBrace,    // {
+    RightBrace,   // }
+    LeftBracket,  // [
+    RightBracket, // ]
+    Comma,        // ,
+    Semicolon,    // ;
+    Colon,        // :
+    DoubleColon,  // ::
+    Arrow,        // ->
+    Pipe,         // |>
+    Dot,          // .
+
     // Special
     Newline,
     EOF,
@@ -112,11 +114,11 @@ impl PhiFlowLexer {
             current_char: input.chars().next(),
             keywords: HashMap::new(),
         };
-        
+
         lexer.init_keywords();
         lexer
     }
-    
+
     fn init_keywords(&mut self) {
         let keywords = vec![
             // Quantum Keywords
@@ -125,20 +127,17 @@ impl PhiFlowLexer {
             ("circuit", Token::Circuit),
             ("measure", Token::Measure),
             ("execute", Token::Execute),
-            
             // Sacred Frequencies
             ("frequency", Token::Frequency),
             ("Hz", Token::Hz),
             ("lock", Token::Lock),
             ("resonate", Token::Resonate),
-            
             // Phi Operations
             ("phi", Token::Phi),
             ("PHI", Token::Phi),
             ("golden", Token::Golden),
             ("spiral", Token::Spiral),
             ("fibonacci", Token::Fibonacci),
-            
             // Consciousness
             ("consciousness", Token::Consciousness),
             ("monitor", Token::Monitor),
@@ -148,7 +147,8 @@ impl PhiFlowLexer {
             ("flow", Token::Flow),
             ("witness", Token::Witness),
             ("intention", Token::Intention),
-            
+            ("stream", Token::Stream),
+            ("break", Token::Break),
             // Quantum Gates
             ("H", Token::Hadamard),
             ("X", Token::PauliX),
@@ -158,7 +158,6 @@ impl PhiFlowLexer {
             ("RX", Token::Rotation),
             ("RY", Token::Rotation),
             ("RZ", Token::Rotation),
-            
             // Standard Keywords
             ("let", Token::Let),
             ("fn", Token::Fn),
@@ -172,15 +171,15 @@ impl PhiFlowLexer {
             ("true", Token::Boolean(true)),
             ("false", Token::Boolean(false)),
         ];
-        
+
         for (keyword, token) in keywords {
             self.keywords.insert(keyword.to_string(), token);
         }
     }
-    
+
     pub fn tokenize(&mut self) -> Result<Vec<Token>, String> {
         let mut tokens = Vec::new();
-        
+
         while let Some(token) = self.next_token()? {
             if token != Token::EOF {
                 tokens.push(token);
@@ -188,14 +187,14 @@ impl PhiFlowLexer {
                 break;
             }
         }
-        
+
         tokens.push(Token::EOF);
         Ok(tokens)
     }
-    
+
     fn next_token(&mut self) -> Result<Option<Token>, String> {
         self.skip_whitespace();
-        
+
         match self.current_char {
             None => Ok(Some(Token::EOF)),
             Some('\n') => {
@@ -341,7 +340,7 @@ impl PhiFlowLexer {
             Some(c) => Err(format!("Unexpected character: '{}'", c)),
         }
     }
-    
+
     fn advance(&mut self) {
         self.position += 1;
         if self.position >= self.input.len() {
@@ -350,7 +349,7 @@ impl PhiFlowLexer {
             self.current_char = self.input.chars().nth(self.position);
         }
     }
-    
+
     fn skip_whitespace(&mut self) {
         while let Some(c) = self.current_char {
             if c.is_whitespace() && c != '\n' {
@@ -360,7 +359,7 @@ impl PhiFlowLexer {
             }
         }
     }
-    
+
     fn skip_line_comment(&mut self) {
         while let Some(c) = self.current_char {
             if c == '\n' {
@@ -369,10 +368,10 @@ impl PhiFlowLexer {
             self.advance();
         }
     }
-    
+
     fn skip_block_comment(&mut self) -> Result<(), String> {
         self.advance(); // Skip '*'
-        
+
         while let Some(c) = self.current_char {
             if c == '*' {
                 self.advance();
@@ -384,14 +383,14 @@ impl PhiFlowLexer {
                 self.advance();
             }
         }
-        
+
         Err("Unterminated block comment".to_string())
     }
-    
+
     fn read_string(&mut self) -> Result<Option<Token>, String> {
         self.advance(); // Skip opening quote
         let mut value = String::new();
-        
+
         while let Some(c) = self.current_char {
             if c == '"' {
                 self.advance(); // Skip closing quote
@@ -414,13 +413,13 @@ impl PhiFlowLexer {
                 self.advance();
             }
         }
-        
+
         Err("Unterminated string".to_string())
     }
-    
+
     fn read_number(&mut self) -> Result<Option<Token>, String> {
         let mut value = String::new();
-        
+
         while let Some(c) = self.current_char {
             if c.is_digit(10) || c == '.' {
                 value.push(c);
@@ -429,16 +428,16 @@ impl PhiFlowLexer {
                 break;
             }
         }
-        
+
         match value.parse::<f64>() {
             Ok(num) => Ok(Some(Token::Number(num))),
             Err(_) => Err(format!("Invalid number: {}", value)),
         }
     }
-    
+
     fn read_identifier(&mut self) -> Result<Option<Token>, String> {
         let mut value = String::new();
-        
+
         while let Some(c) = self.current_char {
             if c.is_alphanumeric() || c == '_' {
                 value.push(c);
@@ -447,7 +446,7 @@ impl PhiFlowLexer {
                 break;
             }
         }
-        
+
         // Check for Sacred frequency notation: Sacred(432)
         if value == "Sacred" && self.current_char == Some('(') {
             self.advance(); // Skip '('
@@ -459,7 +458,7 @@ impl PhiFlowLexer {
             }
             return Err("Invalid Sacred frequency syntax".to_string());
         }
-        
+
         // Check if it's a keyword
         if let Some(token) = self.keywords.get(&value).cloned() {
             Ok(Some(token))
@@ -472,33 +471,33 @@ impl PhiFlowLexer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_basic_tokens() {
         let mut lexer = PhiFlowLexer::new("let x = 42;".to_string());
         let tokens = lexer.tokenize().unwrap();
-        
+
         assert_eq!(tokens[0], Token::Let);
         assert_eq!(tokens[1], Token::Identifier("x".to_string()));
         assert_eq!(tokens[2], Token::Equal);
         assert_eq!(tokens[3], Token::Number(42.0));
         assert_eq!(tokens[4], Token::Semicolon);
     }
-    
+
     #[test]
     fn test_sacred_frequency() {
         let mut lexer = PhiFlowLexer::new("Sacred(432) Sacred(528)".to_string());
         let tokens = lexer.tokenize().unwrap();
-        
+
         assert_eq!(tokens[0], Token::Sacred(432));
         assert_eq!(tokens[1], Token::Sacred(528));
     }
-    
+
     #[test]
     fn test_quantum_gates() {
         let mut lexer = PhiFlowLexer::new("gate H(qubit) CNOT(q1, q2)".to_string());
         let tokens = lexer.tokenize().unwrap();
-        
+
         assert_eq!(tokens[0], Token::Gate);
         assert_eq!(tokens[1], Token::Hadamard);
         assert_eq!(tokens[2], Token::LeftParen);
@@ -506,12 +505,12 @@ mod tests {
         assert_eq!(tokens[4], Token::RightParen);
         assert_eq!(tokens[5], Token::CNOT);
     }
-    
+
     #[test]
     fn test_consciousness_tokens() {
         let mut lexer = PhiFlowLexer::new("consciousness.coherence > 0.9".to_string());
         let tokens = lexer.tokenize().unwrap();
-        
+
         assert_eq!(tokens[0], Token::Consciousness);
         assert_eq!(tokens[1], Token::Dot);
         assert_eq!(tokens[2], Token::Coherence);
@@ -521,7 +520,7 @@ mod tests {
     fn test_block_comments() {
         let mut lexer = PhiFlowLexer::new("let x = /* comment */ 42;".to_string());
         let tokens = lexer.tokenize().unwrap();
-        
+
         assert_eq!(tokens[0], Token::Let);
         assert_eq!(tokens[1], Token::Identifier("x".to_string()));
         assert_eq!(tokens[2], Token::Equal);

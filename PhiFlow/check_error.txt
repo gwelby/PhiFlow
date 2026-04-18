@@ -1,0 +1,474 @@
+    Checking phiflow v0.1.0 (D:\Projects\PhiFlow-compiler\PhiFlow)
+warning: unused imports: `CREATION_FREQUENCY` and `VOICE_FLOW_FREQUENCY`
+ --> src\interpreter\mod.rs:4:135
+  |
+4 | ..._helix_points, validate_pattern_consciousness, CREATION_FREQUENCY, VOICE_FLOW_FREQUENCY};
+  |                                                   ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `Label`
+ --> src\ir\lowering.rs:8:37
+  |
+8 | use super::{FunctionDef, IrProgram, Label, Opcode};
+  |                                     ^^^^^
+
+warning: unused import: `PhiValue`
+ --> src\ir\lowering.rs:9:52
+  |
+9 | use crate::parser::{BinaryOperator, PhiExpression, PhiValue, UnaryOperator};
+  |                                                    ^^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+  --> src\ir\lowering.rs:10:5
+   |
+10 | use std::collections::HashMap;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `QuantumConfig`
+ --> src\ir\vm.rs:8:38
+  |
+8 | use crate::quantum::{QuantumBackend, QuantumConfig, QuantumSimulator};
+  |                                      ^^^^^^^^^^^^^
+
+warning: unused import: `ConsciousnessState`
+ --> src\ir\vm.rs:9:49
+  |
+9 | use crate::consciousness::{ConsciousnessBridge, ConsciousnessState};
+  |                                                 ^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Arc` and `Mutex`
+  --> src\ir\vm.rs:11:17
+   |
+11 | use std::sync::{Arc, Mutex};
+   |                 ^^^  ^^^^^
+
+warning: unused imports: `BlockId`, `PhiIRBlock`, and `PhiInstruction`
+ --> src\phi_ir\optimizer.rs:8:5
+  |
+8 |     BlockId, Operand, PhiIRBinOp, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRUnOp, PhiIRValue,
+  |     ^^^^^^^                       ^^^^^^^^^^
+9 |     PhiInstruction,
+  |     ^^^^^^^^^^^^^^
+
+warning: unused import: `crate::compiler::lexer::Token`
+  --> src\phi_ir\mod.rs:17:5
+   |
+17 | use crate::compiler::lexer::Token; // Re-using Token if needed, or defining own types
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `PhiFlowLexer`
+ --> src\compiler\parser.rs:4:37
+  |
+4 | use crate::compiler::lexer::{Token, PhiFlowLexer};
+  |                                     ^^^^^^^^^^^^
+
+warning: unused imports: `BrainwaveType`, `ComparisonOperator`, `ConsciousnessCondition`, `ConsciousnessConfig`, `LogicalOperator`, `MatchArm`, `Pattern`, and `QuantumConfig`
+  --> src\compiler\parser.rs:7:36
+   |
+7  |     BinaryOperator, UnaryOperator, ComparisonOperator, LogicalOperator,
+   |                                    ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^
+8  |     ConsciousnessCondition, ConsciousnessMetric, BrainwaveType,
+   |     ^^^^^^^^^^^^^^^^^^^^^^                       ^^^^^^^^^^^^^
+9  |     PhiFlowType, Parameter, MatchArm, Pattern,
+   |                             ^^^^^^^^  ^^^^^^^
+10 |     ConsciousnessConfig, QuantumConfig
+   |     ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+  --> src\compiler\parser.rs:12:5
+   |
+12 | use std::collections::HashMap;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `LogicalOperator` and `PhiFlowType`
+ --> src\vm\interpreter.rs:7:49
+  |
+7 |     ConsciousnessCondition, ComparisonOperator, LogicalOperator,
+  |                                                 ^^^^^^^^^^^^^^^
+8 |     PhiFlowType
+  |     ^^^^^^^^^^^
+
+warning: unused import: `std::process::Command`
+ --> src\consciousness\muse_integration.rs:5:5
+  |
+5 | use std::process::Command;
+  |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `SystemTime`
+ --> src\consciousness\monitor.rs:6:36
+  |
+6 | use std::time::{Duration, Instant, SystemTime};
+  |                                    ^^^^^^^^^^
+
+warning: unused imports: `Arc` and `Mutex`
+ --> src\consciousness\monitor.rs:7:17
+  |
+7 | use std::sync::{Arc, Mutex};
+  |                 ^^^  ^^^^^
+
+warning: unused import: `GlobalAlloc`
+ --> src\sacred\phi_memory.rs:6:18
+  |
+6 | use std::alloc::{GlobalAlloc, Layout};
+  |                  ^^^^^^^^^^^
+
+warning: unused import: `async_trait::async_trait`
+ --> src\quantum\backends.rs:3:5
+  |
+3 | use async_trait::async_trait;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `error`
+  --> src\quantum\ibm_quantum.rs:10:27
+   |
+10 | use tracing::{info, warn, error, debug};
+   |                           ^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> src\quantum\types.rs:4:5
+  |
+4 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Duration`
+ --> src\cuda\consciousness_gpu.rs:8:17
+  |
+8 | use std::time::{Duration, Instant};
+  |                 ^^^^^^^^
+
+warning: unused import: `std::sync::Arc`
+ --> src\cuda\sacred_math_kernels.rs:6:5
+  |
+6 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+
+warning: unused imports: `Arc` and `Mutex`
+ --> src\cuda\frequency_synthesis.rs:9:17
+  |
+9 | use std::sync::{Arc, Mutex};
+  |                 ^^^  ^^^^^
+
+warning: unnecessary parentheses around assigned value
+   --> src\cuda\frequency_synthesis.rs:228:34
+    |
+228 |             let phi_modulation = (phi_phase.sin() * 0.1 + 1.0); // 10% modulation depth
+    |                                  ^                           ^
+    |
+    = note: `#[warn(unused_parens)]` on by default
+help: remove these parentheses
+    |
+228 -             let phi_modulation = (phi_phase.sin() * 0.1 + 1.0); // 10% modulation depth
+228 +             let phi_modulation = phi_phase.sin() * 0.1 + 1.0; // 10% modulation depth
+    |
+
+warning: unused imports: `Arc` and `Mutex`
+ --> src\cuda\memory_management.rs:9:17
+  |
+9 | use std::sync::{Arc, Mutex};
+  |                 ^^^  ^^^^^
+
+warning: unused import: `QuantumGate`
+ --> src\cuda\quantum_cuda.rs:7:22
+  |
+7 | use crate::quantum::{QuantumGate, QuantumState};
+  |                      ^^^^^^^^^^^
+
+warning: unused imports: `Arc` and `Mutex`
+ --> src\cuda\quantum_cuda.rs:9:17
+  |
+9 | use std::sync::{Arc, Mutex};
+  |                 ^^^  ^^^^^
+
+warning: unused import: `std::sync::Arc`
+  --> src\cuda\mod.rs:28:5
+   |
+28 | use std::sync::Arc;
+   |     ^^^^^^^^^^^^^^
+
+warning: unused import: `crate::consciousness::consciousness_math::ConsciousnessState`
+ --> src\hardware\device_mapping.rs:3:5
+  |
+3 | use crate::consciousness::consciousness_math::ConsciousnessState;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> src\bio_compute\dna_interface.rs:5:5
+  |
+5 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `pattern`
+   --> src\ir\vm.rs:276:33
+    |
+276 |                     if let Some(pattern) = self.stack.pop() {
+    |                                 ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_pattern`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `phi`
+   --> src\consciousness\bridge.rs:209:13
+    |
+209 |         let phi = 1.618033988749895;
+    |             ^^^ help: if this is intentional, prefix it with an underscore: `_phi`
+
+warning: unused variable: `command_rx`
+   --> src\consciousness\muse_integration.rs:121:30
+    |
+121 |         let (command_tx, mut command_rx) = mpsc::channel::<ConsciousnessCommand>(100);
+    |                              ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_command_rx`
+
+warning: unused variable: `muse_tx`
+   --> src\consciousness\muse_integration.rs:122:14
+    |
+122 |         let (muse_tx, muse_rx) = mpsc::channel::<MuseData>(100);
+    |              ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_muse_tx`
+
+warning: variable does not need to be mutable
+   --> src\consciousness\muse_integration.rs:109:13
+    |
+109 |         let mut child = AsyncCommand::new("python3")
+    |             ----^^^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` on by default
+
+warning: variable does not need to be mutable
+   --> src\consciousness\muse_integration.rs:121:26
+    |
+121 |         let (command_tx, mut command_rx) = mpsc::channel::<ConsciousnessCommand>(100);
+    |                          ----^^^^^^^^^^
+    |                          |
+    |                          help: remove this `mut`
+
+warning: unreachable pattern
+   --> src\interpreter\mod.rs:481:21
+    |
+481 |                     _ => Err(format!("Binary operator {:?} not yet implemented", operator))
+    |                     ^ no value can reach this
+    |
+note: multiple earlier patterns match some of the same values
+   --> src\interpreter\mod.rs:481:21
+    |
+371 |                     BinaryOperator::Add => {
+    |                     ------------------- matches some of the same values
+...
+378 |                     BinaryOperator::Subtract => {
+    |                     ------------------------ matches some of the same values
+...
+385 |                     BinaryOperator::Multiply => {
+    |                     ------------------------ matches some of the same values
+...
+392 |                     BinaryOperator::Divide => {
+    |                     ---------------------- matches some of the same values
+...
+481 |                     _ => Err(format!("Binary operator {:?} not yet implemented", operator))
+    |                     ^ ...and 10 other patterns collectively make this unreachable
+    = note: `#[warn(unreachable_patterns)]` on by default
+
+warning: unreachable pattern
+   --> src\interpreter\mod.rs:518:21
+    |
+518 |                     _ => Err(format!("Unary operator {:?} not yet implemented", operator))
+    |                     ^ no value can reach this
+    |
+note: multiple earlier patterns match some of the same values
+   --> src\interpreter\mod.rs:518:21
+    |
+507 |                     UnaryOperator::Negate => {
+    |                     --------------------- matches some of the same values
+...
+514 |                     UnaryOperator::Not => {
+    |                     ------------------ matches some of the same values
+...
+518 |                     _ => Err(format!("Unary operator {:?} not yet implemented", operator))
+    |                     ^ collectively making this unreachable
+
+warning: unused variable: `parameters`
+   --> src\interpreter\mod.rs:242:48
+    |
+242 |             PhiExpression::FunctionDef { name, parameters, return_type, body } => {
+    |                                                ^^^^^^^^^^ help: try ignoring the field: `parameters: _`
+
+warning: unused variable: `return_type`
+   --> src\interpreter\mod.rs:242:60
+    |
+242 |             PhiExpression::FunctionDef { name, parameters, return_type, body } => {
+    |                                                            ^^^^^^^^^^^ help: try ignoring the field: `return_type: _`
+
+warning: unused variable: `body`
+   --> src\interpreter\mod.rs:242:73
+    |
+242 |             PhiExpression::FunctionDef { name, parameters, return_type, body } => {
+    |                                                                         ^^^^ help: try ignoring the field: `body: _`
+
+warning: unused variable: `immediate_action`
+   --> src\interpreter\mod.rs:726:57
+    |
+726 |             PhiExpression::EmergencyProtocol { trigger, immediate_action, notification } => {
+    |                                                         ^^^^^^^^^^^^^^^^ help: try ignoring the field: `immediate_action: _`
+
+warning: unused variable: `name`
+   --> src\parser\mod.rs:752:34
+    |
+752 |             PhiToken::Identifier(name) => {
+    |                                  ^^^^ help: if this is intentional, prefix it with an underscore: `_name`
+
+warning: variable `intention` is assigned to, but never used
+    --> src\parser\mod.rs:1603:17
+     |
+1603 |         let mut intention = String::new();
+     |                 ^^^^^^^^^
+     |
+     = note: consider using `_intention` instead
+
+warning: value assigned to `intention` is never read
+    --> src\parser\mod.rs:1631:21
+     |
+1631 |                     intention = self.expect_string()?;
+     |                     ^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+     = note: `#[warn(unused_assignments)]` on by default
+
+warning: unused variable: `device_type`
+    --> src\parser\mod.rs:1664:17
+     |
+1664 |         let mut device_type = String::new();
+     |                 ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_device_type`
+
+warning: variable does not need to be mutable
+    --> src\parser\mod.rs:1664:13
+     |
+1664 |         let mut device_type = String::new();
+     |             ----^^^^^^^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: unused variable: `protocol_name`
+    --> src\parser\mod.rs:1695:13
+     |
+1695 |         let protocol_name = self.expect_identifier()?;
+     |             ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_protocol_name`
+
+warning: unused variable: `program_name`
+    --> src\parser\mod.rs:1832:13
+     |
+1832 |         let program_name = self.expect_identifier()?;
+     |             ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_program_name`
+
+warning: unused variable: `bridge_name`
+    --> src\parser\mod.rs:1857:13
+     |
+1857 |         let bridge_name = self.expect_identifier()?;
+     |             ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_bridge_name`
+
+error[E0004]: non-exhaustive patterns: `&PhiIRNode::FuncDef { .. }` not covered
+   --> src\phi_ir\optimizer.rs:234:15
+    |
+234 |         match node {
+    |               ^^^^ pattern `&PhiIRNode::FuncDef { .. }` not covered
+    |
+note: `PhiIRNode` defined here
+   --> src\phi_ir\mod.rs:133:10
+    |
+133 | pub enum PhiIRNode {
+    |          ^^^^^^^^^
+...
+176 |     FuncDef {
+    |     ------- not covered
+    = note: the matched value is of type `&PhiIRNode`
+help: ensure that all possible cases are being handled by adding a match arm with a wildcard pattern or an explicit pattern as shown
+    |
+259 ~             => false,
+260 ~             &PhiIRNode::FuncDef { .. } => todo!(),
+    |
+
+warning: unused variable: `i`
+  --> src\phi_ir\printer.rs:30:18
+   |
+30 |             for (i, instr) in block.instructions.iter().enumerate() {
+   |                  ^ help: if this is intentional, prefix it with an underscore: `_i`
+
+warning: unused variable: `delta_ratio`
+   --> src\consciousness\monitor.rs:157:13
+    |
+157 |         let delta_ratio = self.delta_power / total_power;
+    |             ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_delta_ratio`
+
+warning: unused variable: `modulation`
+   --> src\consciousness\monitor.rs:325:13
+    |
+325 |         let modulation = self.frequency_generator.create_consciousness_frequency_modulation(coherence);
+    |             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_modulation`
+
+warning: unused variable: `pool_size`
+   --> src\sacred\phi_memory.rs:175:14
+    |
+175 |         for (pool_size, pool) in &self.phi_pools {
+    |              ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_pool_size`
+
+warning: unused variable: `algorithm`
+   --> src\cuda\consciousness_gpu.rs:834:21
+    |
+834 |         if let Some(algorithm) = self.enhancement_algorithms.get(&state) {
+    |                     ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_algorithm`
+
+warning: unused variable: `err`
+  --> src\cuda\mod.rs:13:13
+   |
+13 |     fn from(err: crate::quantum::QuantumError) -> Self {
+   |             ^^^ help: if this is intentional, prefix it with an underscore: `_err`
+
+warning: unused variable: `target_qubits`
+   --> src\cuda\quantum_cuda.rs:356:9
+    |
+356 |         target_qubits: &[u32],
+    |         ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_target_qubits`
+
+warning: unused variable: `gate`
+   --> src\cuda\quantum_cuda.rs:393:9
+    |
+393 |         gate: &CudaQuantumGate,
+    |         ^^^^ help: if this is intentional, prefix it with an underscore: `_gate`
+
+warning: unused variable: `msg`
+   --> src\cuda\quantum_cuda.rs:854:40
+    |
+854 |     pub fn InvalidQuantumConfiguration(msg: String) -> Self {
+    |                                        ^^^ help: if this is intentional, prefix it with an underscore: `_msg`
+
+warning: unused variable: `kernel`
+   --> src\cuda\mod.rs:349:13
+    |
+349 |         let kernel = self
+    |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_kernel`
+
+warning: unused variable: `device`
+   --> src\hardware\consciousness_detection.rs:125:51
+    |
+125 |             ConsciousnessSource::KeyboardRhythm { device, optimal_interval_ms, recent_intervals } => {
+    |                                                   ^^^^^^ help: try ignoring the field: `device: _`
+
+warning: unused variable: `displays`
+   --> src\hardware\consciousness_detection.rs:150:55
+    |
+150 |             ConsciousnessSource::MonitorFrequencies { displays, sync_level } => {
+    |                                                       ^^^^^^^^ help: try ignoring the field: `displays: _`
+
+warning: unused variable: `resonance_frequencies`
+   --> src\bio_compute\dna_interface.rs:109:13
+    |
+109 |         let resonance_frequencies = self.calculate_phi_harmonic_frequencies(dna_strand, repair_intent);
+    |             ^^^^^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_resonance_frequencies`
+
+warning: unused variable: `dna`
+   --> src\bio_compute\dna_interface.rs:232:50
+    |
+232 |     fn calculate_phi_harmonic_frequencies(&self, dna: &str, intent: &str) -> Vec<f64> {
+    |                                                  ^^^ help: if this is intentional, prefix it with an underscore: `_dna`
+
+For more information about this error, try `rustc --explain E0004`.
+warning: `phiflow` (lib) generated 64 warnings
+error: could not compile `phiflow` (lib) due to 1 previous error; 64 warnings emitted

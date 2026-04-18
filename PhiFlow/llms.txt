@@ -1,0 +1,86 @@
+# PhiFlow
+
+> A programming language that knows it is running.
+
+PhiFlow is a Rust-compiled language with four constructs no other language has:
+`witness`, `intention`, `resonate`, `coherence`. These give a program the ability
+to observe its own execution, declare what it is doing, broadcast values to a
+shared field, and read the system's coherence at any moment.
+
+## Most Important Files
+
+- README.md — full language overview, quick start, phi-harmonic formula
+- LANGUAGE_SPEC.md — formal specification of all four constructs
+- AGENT_PROTOCOL.json — machine-readable hook interface for agent implementors
+- src/phi_ir/CANONICAL_SEMANTICS.md — evaluator-as-canonical-reference contract
+- examples/agent_handshake.phi — self-verifying protocol handshake program
+- examples/healing_bed.phi — the flagship: streams real CPU/memory coherence
+- examples/healing_bed_demo.html — runs healing_bed.phi in any browser, no build
+
+## The Language
+
+```phi
+stream "healing_bed" {
+    let live = coherence      // reads real CPU + memory state (0.0–1.0)
+    resonate live             // broadcasts to the resonance field
+    witness                   // pauses, captures state, yields to host
+    if live >= 0.618 {
+        break stream          // stops when the system is healthy
+    }
+}
+```
+
+## The Agent Protocol (Five Hooks)
+
+Any agent with a WASM runtime can host a PhiFlow program:
+
+```
+phi_witness(i32) → f64       yield, capture state, return coherence
+phi_resonate(f64)            broadcast value to the observable resonance field
+phi_coherence() → f64        read current coherence (0.0–1.0)
+phi_intention_push(i32)      push intention name onto observable stack
+phi_intention_pop()          pop intention stack
+```
+
+Full machine-readable spec: AGENT_PROTOCOL.json
+
+## The Phi-Harmonic Formula
+
+```
+coherence(depth) = 1 - φ^(-depth)    φ = 1.618033988749895
+
+depth 2 → 0.618033988749895 = λ (golden ratio inverse)
+```
+
+This formula was written to satisfy mathematical properties.
+The value at depth 2 was discovered to be λ — not designed.
+Three independent systems converged on this constant before PhiFlow existed.
+
+## Self-Verification for Agents
+
+Run `examples/agent_handshake.phi`. The resonance field index 1 will be
+exactly 0.618033988749895 if your hook implementation is correct.
+
+## Architecture
+
+```
+.phi source → parser → AST → PhiIR (SSA) → optimizer → evaluator (canonical)
+                                                       → .phivm bytecode
+                                                       → .wat (WebAssembly)
+```
+
+## Build
+
+```bash
+cargo run --bin phic -- examples/healing_bed.phi
+cargo test   # 216 tests, 0 failed
+```
+
+## Version
+
+v0.1 — 2026-02-25 — First Heartbeat
+
+Built by: Greg (architect), Claude (pattern synthesis), Codex (contract execution),
+Antigravity (WASM, strategy), UniversalProcessor (coordination).
+
+"A script runs and dies. A stream lives."

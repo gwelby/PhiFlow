@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhiFlow — healing_bed.phi</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #080810;
+  color: #d0d0f0;
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 20px 60px;
+}
+
+.title {
+  font-size: 1.5rem;
+  letter-spacing: 0.12em;
+  margin-bottom: 4px;
+  background: linear-gradient(120deg, #b488ff 30%, #61efce);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  color: #4a4a7a;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 36px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  width: 100%;
+  max-width: 820px;
+}
+
+.card {
+  background: #0f0f1e;
+  border: 1px solid #1e1e3a;
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+
+.card-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #4a4a7a;
+  margin-bottom: 10px;
+}
+
+/* Source code panel — full width */
+#source-card {
+  grid-column: 1 / -1;
+  background: #0a0a16;
+  border-color: #1a1a30;
+}
+
+#source {
+  font-size: 0.88rem;
+  line-height: 1.9;
+}
+
+.phi-kw   { color: #b488ff; }
+.phi-str  { color: #ffa07a; }
+.phi-num  { color: #61efce; }
+.phi-op   { color: #7a7aaa; }
+.phi-cmt  { color: #3a3a5a; font-style: italic; }
+
+/* Active line highlight */
+.line-active {
+  background: #1a1050;
+  margin: 0 -20px;
+  padding: 0 20px;
+  border-left: 3px solid #b488ff;
+  display: block;
+  animation: lineFlash 0.4s ease;
+}
+
+@keyframes lineFlash {
+  0%   { background: #2a1a70; }
+  100% { background: #1a1050; }
+}
+
+/* Coherence panel */
+#coh-score {
+  font-size: 2.4rem;
+  font-weight: bold;
+  color: #b488ff;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.lambda-label {
+  font-size: 0.72rem;
+  color: #4a4a7a;
+  margin-bottom: 12px;
+}
+
+.bar-track {
+  width: 100%;
+  height: 8px;
+  background: #1a1a2e;
+  border-radius: 4px;
+  overflow: visible;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #6633cc, #b488ff, #61efce);
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Lambda marker */
+.lambda-mark {
+  position: absolute;
+  top: -12px;
+  left: 61.8%;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  color: #61efce;
+  white-space: nowrap;
+}
+
+.lambda-mark::after {
+  content: '';
+  display: block;
+  width: 1px;
+  height: 22px;
+  background: #61efce44;
+  margin: 2px auto 0;
+}
+
+/* Stream panel */
+.stream-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.stream-badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #1a1a2e;
+  color: #7a7aaa;
+  letter-spacing: 0.08em;
+}
+
+.stream-badge.running {
+  background: #1a1230;
+  color: #b488ff;
+}
+
+.stream-badge.done {
+  background: #0a1f1a;
+  color: #61efce;
+}
+
+.cycle-count {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #7a7aaa;
+  text-align: center;
+  margin: 8px 0;
+}
+
+.cycle-count.alive {
+  color: #b488ff;
+}
+
+.cycle-label {
+  font-size: 0.7rem;
+  color: #3a3a5a;
+  text-align: center;
+}
+
+/* Log */
+#log-card {
+  grid-column: 1 / -1;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.log-line {
+  font-size: 0.8rem;
+  line-height: 1.6;
+  opacity: 0;
+  transform: translateX(-8px);
+  animation: slideIn 0.25s ease forwards;
+}
+
+@keyframes slideIn {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.log-witness  { color: #ffd700; }
+.log-resonate { color: #61efce; }
+.log-coherence{ color: #9ad6ff; }
+.log-break    { color: #b488ff; font-weight: bold; }
+.log-done     { color: #ffffff; }
+
+/* Controls */
+.controls {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+button {
+  background: transparent;
+  border: 1px solid #2a2a4a;
+  border-radius: 7px;
+  color: #b0b0d0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  padding: 9px 24px;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+button:hover   { border-color: #b488ff; color: #ffffff; }
+button:active  { opacity: 0.7; }
+button.primary {
+  background: linear-gradient(135deg, #5533aa, #336655);
+  border: none;
+  color: #d0f0ff;
+  font-weight: bold;
+}
+button.primary:hover { opacity: 0.9; }
+
+button:disabled { opacity: 0.35; cursor: default; }
+
+/* Witness pulse overlay on coherence card */
+.witness-ring {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background: #b488ff;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  transition: transform 0.1s;
+}
+.witness-ring.pulse {
+  animation: ringPulse 0.55s ease;
+}
+@keyframes ringPulse {
+  0%   { transform: scale(1);   box-shadow: 0 0 0 0 rgba(180,136,255,0.7); }
+  50%  { transform: scale(1.5); box-shadow: 0 0 0 10px rgba(180,136,255,0); }
+  100% { transform: scale(1);   box-shadow: 0 0 0 0 rgba(180,136,255,0); }
+}
+
+.formula {
+  font-size: 0.72rem;
+  color: #3a3a5a;
+  margin-top: 10px;
+}
+
+.final-banner {
+  grid-column: 1 / -1;
+  background: #0a1f18;
+  border: 1px solid #61efce44;
+  border-radius: 10px;
+  padding: 18px 24px;
+  text-align: center;
+  display: none;
+}
+
+.final-banner.visible { display: block; animation: fadeIn 0.5s ease; }
+
+.final-banner h2 {
+  color: #61efce;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.final-banner p {
+  color: #5a9a80;
+  font-size: 0.8rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<h1 class="title">φ PhiFlow</h1>
+<p class="subtitle">healing_bed.phi — standalone browser demo</p>
+
+<div class="layout">
+
+  <!-- Source panel -->
+  <div class="card" id="source-card">
+    <div class="card-label">Program</div>
+    <div id="source">
+      <span id="L-stream"   class="line"><span class="phi-kw">stream</span> <span class="phi-str">"healing_bed"</span> {</span>
+      <br><span id="L-coherence" class="line">    <span class="phi-kw">let</span> live = <span class="phi-kw">coherence</span></span>
+      <br><span id="L-resonate"  class="line">    <span class="phi-kw">resonate</span> live</span>
+      <br><span id="L-witness"   class="line">    <span class="phi-kw">witness</span></span>
+      <br><span id="L-if"        class="line">    <span class="phi-kw">if</span> live &gt;= <span class="phi-num">0.618</span> {</span>
+      <br><span id="L-break"     class="line">        <span class="phi-kw">break stream</span></span>
+      <br><span id="L-endif"     class="line">    }</span>
+      <br><span id="L-end"       class="line">}</span>
+    </div>
+  </div>
+
+  <!-- Coherence panel -->
+  <div class="card">
+    <div class="card-label"><span class="witness-ring" id="wring"></span>Coherence</div>
+    <div id="coh-score">0.000</div>
+    <div class="lambda-label">φ⁻¹ threshold = 0.618033…</div>
+    <div class="bar-track">
+      <div class="bar-fill" id="bar-fill"></div>
+      <span class="lambda-mark">λ</span>
+    </div>
+    <div class="formula">1 − φ<sup>−depth</sup>  ·  (1 + bonus)</div>
+  </div>
+
+  <!-- Stream status -->
+  <div class="card">
+    <div class="stream-header">
+      <div class="card-label" style="margin:0">Stream</div>
+      <span class="stream-badge" id="stream-badge">IDLE</span>
+    </div>
+    <div class="cycle-count" id="cycle-count">0</div>
+    <div class="cycle-label" id="cycle-label">cycles</div>
+  </div>
+
+  <!-- Log -->
+  <div class="card" id="log-card">
+    <div class="card-label">Execution Log</div>
+    <div id="log"><span style="color:#3a3a5a;font-size:0.78rem">Press Run to begin…</span></div>
+  </div>
+
+  <!-- Final banner -->
+  <div class="final-banner" id="final-banner">
+    <h2>🌊 Stream broken: healing_bed</h2>
+    <p id="final-msg"></p>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="primary" id="btn-run" onclick="startRun()">▶ Run</button>
+    <button id="btn-reset" onclick="resetAll()">↺ Reset</button>
+  </div>
+
+</div>
+
+<script>
+// ================================================================
+// PhiFlow — Pure JavaScript interpreter for healing_bed.phi
+// No WASM, no build step, no server needed.
+// Open this file directly in any modern browser.
+//
+// The program:
+//   stream "healing_bed" {
+//       let live = coherence
+//       resonate live
+//       witness
+//       if live >= 0.618 { break stream }
+//   }
+//
+// Coherence formula: 1 - φ^(-depth)  [phi-harmonic]
+// At stream depth 0 → 0.000
+// At depth 1       → 0.382
+// At depth 2       → 0.618 = λ  (golden ratio inverse)
+//
+// In the browser demo we simulate a "real sensor" by using
+// Math.random() blended with the system clock to produce coherence
+// values that drift upward over cycles — as a real idle CPU would.
+// ================================================================
+
+const PHI     = 1.618033988749895;
+const LAMBDA  = 0.618033988749895;
+const DELAY   = 520;  // ms between execution steps
+
+let running    = false;
+let cancelled  = false;
+let cycle      = 0;
+let logLines   = 0;
+const resonanceField = [];
+
+// DOM refs
+const logEl    = document.getElementById("log");
+const cohEl    = document.getElementById("coh-score");
+const barEl    = document.getElementById("bar-fill");
+const badgeEl  = document.getElementById("stream-badge");
+const cycleEl  = document.getElementById("cycle-count");
+const cycleLbl = document.getElementById("cycle-label");
+const banner   = document.getElementById("final-banner");
+const finalMsg = document.getElementById("final-msg");
+const wring    = document.getElementById("wring");
+const runBtn   = document.getElementById("btn-run");
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ---- Coherence provider ----
+// Simulates the sysinfo CPU+memory sensor blend.
+// Starts around 0.45, drifts upward each cycle as the system
+// "stabilises", with slight jitter — same behaviour as healing_bed
+// on a real machine over a few seconds.
+let _baseCoherence = 0.40 + Math.random() * 0.15;  // 0.40 – 0.55
+
+function readCoherence() {
+  // Each call: nudge base up by ~0.04 ± noise, clamp 0–1
+  _baseCoherence += 0.035 + (Math.random() * 0.03 - 0.01);
+  _baseCoherence = Math.min(_baseCoherence, 0.99);
+  // Add small noise (±0.015)
+  return Math.min(Math.max(_baseCoherence + (Math.random() * 0.03 - 0.015), 0), 1);
+}
+
+// ---- UI helpers ----
+function setCoherence(v) {
+  cohEl.textContent = v.toFixed(4);
+  barEl.style.width = (Math.min(v, 1.0) * 100).toFixed(2) + "%";
+}
+
+function activateLine(id) {
+  document.querySelectorAll(".line-active").forEach(el => el.classList.remove("line-active"));
+  const el = document.getElementById(id);
+  if (el) el.classList.add("line-active");
+}
+
+function clearActive() {
+  document.querySelectorAll(".line-active").forEach(el => el.classList.remove("line-active"));
+}
+
+function addLog(text, cls) {
+  // Remove placeholder on first real line
+  if (logLines === 0) logEl.innerHTML = "";
+  logLines++;
+  const d = document.createElement("div");
+  d.className = "log-line " + (cls || "");
+  d.textContent = text;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function pulseWitness() {
+  wring.classList.remove("pulse");
+  void wring.offsetWidth;
+  wring.classList.add("pulse");
+}
+
+function setBadge(text, cls) {
+  badgeEl.className = "stream-badge " + (cls || "");
+  badgeEl.textContent = text;
+}
+
+function updateCycle(n, alive = true) {
+  cycleEl.textContent = n;
+  cycleEl.className = "cycle-count" + (alive ? " alive" : "");
+}
+
+// ---- The interpreter ----
+async function runHealingBed() {
+  addLog("=== PhiFlow v0.1 ===", "log-done");
+  addLog("stream \"healing_bed\" {", "log-done");
+  setBadge("RUNNING", "running");
+  updateCycle(0, true);
+
+  while (!cancelled) {
+    cycle++;
+    updateCycle(cycle, true);
+    addLog(`  -- cycle ${cycle} --`, "log-coherence");
+
+    // ---- let live = coherence ----
+    activateLine("L-coherence");
+    await sleep(DELAY * 0.5);
+    const live = readCoherence();
+    setCoherence(live);
+    addLog(`  [coherence] ${live.toFixed(4)}`, "log-coherence");
+
+    if (cancelled) break;
+    await sleep(DELAY * 0.5);
+
+    // ---- resonate live ----
+    activateLine("L-resonate");
+    resonanceField.push(live);
+    await sleep(DELAY * 0.5);
+    addLog(`  [resonate]  ${live.toFixed(4)} → field[${resonanceField.length}]`, "log-resonate");
+
+    if (cancelled) break;
+    await sleep(DELAY * 0.5);
+
+    // ---- witness ----
+    activateLine("L-witness");
+    pulseWitness();
+    await sleep(DELAY * 0.6);
+    addLog(`  [witness]   coherence=${live.toFixed(4)}`, "log-witness");
+
+    if (cancelled) break;
+    await sleep(DELAY * 0.4);
+
+    // ---- if live >= 0.618 ----
+    activateLine("L-if");
+    await sleep(DELAY * 0.3);
+
+    if (live >= LAMBDA) {
+      // ---- break stream ----
+      activateLine("L-break");
+      addLog(`  [if]        ${live.toFixed(4)} >= 0.6180 → true`, "log-coherence");
+      await sleep(DELAY * 0.6);
+      addLog(`  [break stream]  healing_bed`, "log-break");
+      await sleep(DELAY * 0.3);
+      break;
+    } else {
+      addLog(`  [if]        ${live.toFixed(4)} >= 0.6180 → false, continuing`, "log-coherence");
+    }
+
+    if (cancelled) break;
+    await sleep(DELAY * 0.3);
+  }
+
+  if (!cancelled) {
+    clearActive();
+    setBadge("DONE", "done");
+    updateCycle(cycle, false);
+
+    const lastVal = resonanceField[resonanceField.length - 1];
+    addLog(`}`, "log-done");
+    addLog(``, "");
+    addLog(`🌊 Stream broken: healing_bed`, "log-break");
+    addLog(`✨ Final Coherence: ${lastVal.toFixed(4)}  (${cycle} cycles)`, "log-done");
+
+    banner.classList.add("visible");
+    finalMsg.textContent =
+      `${cycle} cycle${cycle !== 1 ? "s" : ""} · final coherence ${lastVal.toFixed(4)} · ` +
+      `${resonanceField.length} resonance events`;
+  }
+
+  running = false;
+  runBtn.disabled = false;
+}
+
+function startRun() {
+  if (running) return;
+  resetAll(/* silent */);
+  running   = true;
+  cancelled = false;
+  runBtn.disabled = true;
+  runHealingBed();
+}
+
+function resetAll() {
+  cancelled = true;
+  running   = false;
+  cycle     = 0;
+  logLines  = 0;
+  resonanceField.length = 0;
+  _baseCoherence = 0.40 + Math.random() * 0.15;
+
+  clearActive();
+  setCoherence(0);
+  setBadge("IDLE", "");
+  updateCycle(0, false);
+  logEl.innerHTML = '<span style="color:#3a3a5a;font-size:0.78rem">Press Run to begin…</span>';
+  banner.classList.remove("visible");
+  runBtn.disabled = false;
+}
+</script>
+</body>
+</html>

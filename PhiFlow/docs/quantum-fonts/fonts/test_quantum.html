@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quantum Font Test</title>
+    <style>
+        @font-face {
+            font-family: 'QuantumTest';
+            src: url('builds/QuantumTest.otf') format('opentype');
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+        
+        .quantum-text {
+            font-family: 'QuantumTest', sans-serif;
+        }
+        
+        .size-test {
+            margin: 20px 0;
+        }
+        
+        .size-72 { font-size: 72px; }
+        .size-48 { font-size: 48px; }
+        .size-36 { font-size: 36px; }
+        .size-24 { font-size: 24px; }
+        
+        .controls {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        label {
+            display: block;
+            margin: 10px 0;
+            color: #BA55D3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="quantum-text">Quantum Font Test</h1>
+        
+        <div class="test-section">
+            <div class="quantum-text size-72">A</div>
+            <div class="quantum-text size-48">ABCDEFG</div>
+            <div class="quantum-text size-36">HIJKLMNOP</div>
+            <div class="quantum-text size-24">QRSTUVWXYZ</div>
+        </div>
+        
+        <div class="controls">
+            <label>
+                Font Size:
+                <input type="range" min="12" max="120" value="48" 
+                       oninput="document.getElementById('sizeTest').style.fontSize = this.value + 'px'">
+            </label>
+            
+            <div id="sizeTest" class="test-section quantum-text" style="font-size: 48px;">
+                A B C D E F G
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,71 @@
+// p1_soma_bridge.phi — Live SOMA sensor data in PhiFlow
+//
+// Reads real electromagnetic and acoustic sensor values from SOMA
+// (Sensor Observatory for Machine Awareness) via the sensor() builtin.
+//
+// SOMA must be running: python.exe soma.py
+// SOMA writes soma_state.json every update cycle (~1s).
+// PhiFlow reads it via sensor() — no network, no dependencies.
+//
+// Sensor names:
+//   "soma_schumann"  — GPU ring 7.83 Hz amplitude, normalized 0.0-1.0
+//   "soma_432"       — 432 Hz EM field amplitude, normalized 0.0-1.0
+//   "soma_presence"  — cross-sensor presence fusion score, 0.0-1.0
+//   "soma_fan_hz"    — detected GPU fan speed in Hz
+//   "soma_ac_60"     — AC 60 Hz mains amplitude, normalized 0.0-1.0
+//   "soma_peak_dbc"  — peak ring oscillator amplitude in dBc
+//
+// P1 Coherence formula (Lumi design):
+//   C_P1 = (0.4 * C_alpha + 0.3 * S_norm + 0.3 * H_norm) * (0.8 + 0.2 * P)
+// This stream approximates it using soma_schumann as S_norm and
+// soma_presence as P, with coherence() supplying a system health factor.
+
+stream "p1_soma_bridge" {
+    // Read live sensor values from SOMA
+    let schumann = sensor("soma_schumann")
+    let presence = sensor("soma_presence")
+    let a432     = sensor("soma_432")
+    let ac_mains = sensor("soma_ac_60")
+    let peak_dbc = sensor("soma_peak_dbc")
+
+    // Decide coherence target based on Schumann + presence
+    // High Schumann (Earth field strong) + high presence -> aim for 0.93
+    let target_coherence = 0.76
+    if schumann > 0.75 {
+        if presence > 0.5 {
+            target_coherence = 0.93
+        }
+    }
+
+    intention "Earth field alignment" {
+        // Resonate at Schumann when Earth signal is strong
+        if target_coherence >= 0.9 {
+            resonate 7.83
+        } else {
+            resonate 432.015
+        }
+        coherence target_coherence
+
+        // Witness yields the stream back to the host
+        // Host can read schumann/presence/a432 from the WitnessSnapshot
+        witness
+    }
+
+    // Resonate 432 Hz signal strength into the field
+    if a432 > 0.1 {
+        intention "432 Hz resonance" {
+            resonate a432
+            witness
+        }
+    }
+
+    // Flag high mains interference (noisy environment)
+    if ac_mains > 0.7 {
+        intention "mains interference" {
+            resonate ac_mains
+            witness
+        }
+    }
+
+    witness
+}

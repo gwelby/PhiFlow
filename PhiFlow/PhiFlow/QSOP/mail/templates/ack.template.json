@@ -1,0 +1,11 @@
+{
+  "ack_id": "ACK-OBJ-YYYYMMDD-001-codex",
+  "objective_id": "OBJ-YYYYMMDD-001",
+  "responder": "codex",
+  "status": "in_progress",
+  "updated_at": "2026-02-21T00:15:00Z",
+  "summary": "Objective accepted and in progress.",
+  "files_changed": [],
+  "verification": [],
+  "risks": []
+}

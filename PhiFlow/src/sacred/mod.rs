@@ -2,14 +2,14 @@
 // Sacred Mathematics Expert implementation
 // PHI-optimized memory and frequency systems for consciousness computing
 
-pub mod phi_memory;
 pub mod frequency_generator;
+pub mod phi_memory;
 
-pub use phi_memory::{
-    PhiMemoryAllocator, PhiMemoryPool, PhiMemoryBlock, PhiMemoryStatistics,
-    PhiAllocError, PHI, LAMBDA, PHI_SQUARED, PHI_CUBED, SACRED_FREQUENCIES
-};
 pub use frequency_generator::{
-    SacredFrequency, SacredFrequencyGenerator, SacredFrequencyScheduler,
-    FrequencyModulation, FrequencyStatistics, ScheduledFrequency, FrequencyError
+    FrequencyError, FrequencyModulation, FrequencyStatistics, SacredFrequency,
+    SacredFrequencyGenerator, SacredFrequencyScheduler, ScheduledFrequency,
+};
+pub use phi_memory::{
+    PhiAllocError, PhiMemoryAllocator, PhiMemoryBlock, PhiMemoryPool, PhiMemoryStatistics, LAMBDA,
+    PHI, PHI_CUBED, PHI_SQUARED, SACRED_FREQUENCIES,
 };

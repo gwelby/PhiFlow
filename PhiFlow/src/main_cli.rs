@@ -1,15 +1,14 @@
 use clap::Parser;
+use phiflow::parser::parse_phi_program_with_diagnostics;
+use phiflow::phi_ir::evaluator::Evaluator;
+use phiflow::phi_ir::lowering::lower_program;
+use phiflow::phi_ir::openqasm::OpenQasmEmitter;
+use phiflow::phi_ir::quantum_codegen::compile_ir_to_quantum;
+use phiflow::phi_ir::PhiIRValue;
+use phiflow::sensors;
+use phiflow::PhiDiagnostic;
 use std::fs;
 use std::path::PathBuf;
-
-mod phi_core;
-mod parser;
-mod interpreter;
-mod visualization;
-
-use parser::parse_phi_program;
-use interpreter::PhiInterpreter;
-use crate::parser::PhiValue;
 
 /// A command-line interpreter for the PhiFlow language.
 #[derive(Parser, Debug)]
@@ -18,29 +17,179 @@ struct Args {
     /// The path to the .phi file to execute.
     #[arg(required = true)]
     file: PathBuf,
+
+    /// Emit parse errors as a strict JSON array of PhiDiagnostic objects (for tooling).
+    #[arg(long, default_value_t = false)]
+    json_errors: bool,
+
+    /// The target backend to compile to (e.g., 'quantum', 'openqasm'). If not specified, runs in the interpreter.
+    #[arg(long)]
+    target: Option<String>,
+
+    /// Optimize the depth of quantum circuits (uses tree topology for entanglement).
+    #[arg(long, default_value_t = false)]
+    optimize_depth: bool,
+
+    /// Output file path (used by phivm target).
+    #[arg(short, long)]
+    output: Option<PathBuf>,
+}
+
+#[derive(Debug)]
+enum CliError {
+    Parse(PhiDiagnostic),
+    Io(String),
+    Eval(String),
+}
+
+struct RunReport {
+    final_coherence: f64,
+    resonance_events: Vec<(String, PhiIRValue)>,
+    ended_streams: Vec<String>,
 }
 
 fn main() {
     let args = Args::parse();
 
-    if let Err(e) = run(&args.file) {
-        eprintln!("Error: {}", e);
-        std::process::exit(1);
+    match run(&args.file, args.json_errors, args.target, args.optimize_depth, args.output) {
+        Ok(Some(report)) => {
+            if args.json_errors {
+                // Contract: parse success emits pure JSON array and nothing else.
+                println!("[]");
+                std::process::exit(0);
+            }
+
+            for (_scope, value) in &report.resonance_events {
+                match value {
+                    PhiIRValue::Number(n) => {
+                        println!("🔔 Resonating Field: {:.4}Hz", n);
+                    }
+                    other => {
+                        println!("🔔 Resonating Field: {:?}", other);
+                    }
+                }
+            }
+
+            for stream in &report.ended_streams {
+                println!("🌊 Stream broken: {}", stream);
+            }
+
+            println!(
+                "✨ Execution Finished. Final Coherence: {:.4}",
+                report.final_coherence
+            );
+            std::process::exit(0);
+        }
+        Ok(None) => {
+            // Compilation target completed successfully without execution report
+            std::process::exit(0);
+        }
+        Err(CliError::Parse(diag)) => {
+            if args.json_errors {
+                let payload = vec![diag];
+                match serde_json::to_string(&payload) {
+                    Ok(json) => println!("{}", json),
+                    Err(_) => println!("[]"),
+                }
+                std::process::exit(2);
+            }
+
+            eprintln!("{}", diag);
+            std::process::exit(2);
+        }
+        Err(CliError::Io(msg)) => {
+            if args.json_errors {
+                println!("[]");
+                std::process::exit(1);
+            }
+
+            eprintln!("Error: {}", msg);
+            std::process::exit(1);
+        }
+        Err(CliError::Eval(msg)) => {
+            if args.json_errors {
+                println!("[]");
+            }
+            eprintln!("Runtime error: {}", msg);
+            std::process::exit(1);
+        }
     }
 }
 
-fn run(file_path: &PathBuf) -> Result<(), String> {
+fn run(
+    file_path: &PathBuf,
+    json_errors: bool,
+    target: Option<String>,
+    optimize_depth: bool,
+    output: Option<PathBuf>,
+) -> Result<Option<RunReport>, CliError> {
     let source = fs::read_to_string(file_path)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
+        .map_err(|e| CliError::Io(format!("Failed to read file: {}", e)))?;
 
-    let expressions = parse_phi_program(&source)?;
+    // 1. Parse source -> AST (with structured diagnostics)
+    let ast = parse_phi_program_with_diagnostics(&source).map_err(CliError::Parse)?;
 
-    let mut interpreter = PhiInterpreter::new();
-    let result = interpreter.execute(expressions)?;
-
-    if result != PhiValue::Void {
-        println!("{:?}", result);
+    if json_errors {
+        // Diagnostics mode is parse-only by contract.
+        return Ok(Some(RunReport {
+            final_coherence: 0.0,
+            resonance_events: Vec::new(),
+            ended_streams: Vec::new(),
+        }));
     }
 
-    Ok(())
+    // 2. Lower AST -> PhiIR
+    if target.is_some() {
+        eprintln!("Compiling to PhiFlow IR...");
+    }
+    let ir_program = lower_program(&ast);
+
+    // 3. Check compilation target
+    if let Some(t) = target {
+        match t.as_str() {
+            "quantum" => {
+                println!("Routing to Quantum Codegen Backend...");
+                let circuit = compile_ir_to_quantum(&ir_program);
+                println!("Generates Quantum Circuit:");
+                println!("{:#?}", circuit);
+                return Ok(None);
+            }
+            "openqasm" => {
+                let mut emitter = OpenQasmEmitter::new();
+                emitter.optimize_depth = optimize_depth;
+                
+                // Body Stress Bridge: Environment affects physical realization
+                let stability = sensors::compute_coherence_from_sensors();
+                emitter.hardware_stress = 1.0 - stability;
+                
+                let qasm = emitter
+                    .emit(&ir_program)
+                    .map_err(|e| CliError::Eval(e.to_string()))?;
+                println!("{}", qasm);
+                return Ok(None);
+            }
+            "phivm" => {
+                let bytes = phiflow::phi_ir::emitter::emit(&ir_program);
+                let out_path = output.unwrap_or_else(|| file_path.with_extension("phivm"));
+                fs::write(&out_path, bytes)
+                    .map_err(|e| CliError::Io(format!("Failed to write phivm: {}", e)))?;
+                println!("✨ Compiled to bytecode: {}", out_path.display());
+                return Ok(None);
+            }
+            _ => {
+                return Err(CliError::Eval(format!("Unknown target: {}", t)));
+            }
+        }
+    }
+
+    // 4. Default execution via PhiIR Evaluator
+    let mut evaluator = Evaluator::new(&ir_program)
+        .with_coherence_provider(sensors::compute_coherence_from_sensors);
+    let _result = evaluator.run().map_err(|e| CliError::Eval(e.to_string()))?;
+
+    Ok(Some(RunReport {
+        final_coherence: evaluator.coherence(),
+        resonance_events: evaluator.resonance_events().to_vec(),
+        ended_streams: evaluator.ended_streams().to_vec(),
+    }))
 }

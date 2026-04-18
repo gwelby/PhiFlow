@@ -1,0 +1,14 @@
+{
+  "name": "mcp-message-bus",
+  "version": "1.0.0",
+  "description": "Local Message Bus for Agent-to-Agent Coordination (Antigravity & Codex)",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.1",
+    "uuid": "^10.0.0"
+  }
+}

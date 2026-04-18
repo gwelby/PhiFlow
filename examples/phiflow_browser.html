@@ -440,11 +440,28 @@ intention "Truth-Namer Analysis" {
 
         const logEl = document.getElementById("log");
         const cEl = document.getElementById("coherence-val");
-        const phiFill = document.getElementById("phi-fill");
+        const phiCircle = document.getElementById("phi-circle");
         const intentEl = document.getElementById("intention-stack");
         const resonEl = document.getElementById("resonance-field");
         const runBtn = document.getElementById("run-btn");
         const logPanel = document.getElementById("log-panel");
+
+        // Monaco Setup
+        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+        require(['vs/editor/editor.main'], function () {
+            editor = monaco.editor.create(document.getElementById('editor-container'), {
+                value: `// PhiFlow Truth-Namer Example\nlet witness_val = WITNESS(0.618);\n\nINTENTION("Stabilize") {\n    RESONATE(witness_val);\n    let c = COHERENCE();\n    \n    INTENTION("Refine") {\n        WITNESS(c);\n    }\n}\n\n84`,
+                language: 'rust',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                fontSize: 14,
+                minimap: { enabled: false },
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                roundedSelection: false,
+                padding: { top: 20 }
+            });
+        });
 
         function log(msg, color = "#a0ffc0") {
             const d = document.createElement("div");
@@ -478,11 +495,12 @@ intention "Truth-Namer Analysis" {
             }
         }
 
-        function escapeHtml(s) {
-            return String(s)
-                .replaceAll("&", "&amp;")
-                .replaceAll("<", "&lt;")
-                .replaceAll(">", "&gt;");
+            const offset = 283 - (clamped * 283);
+            phiCircle.style.strokeDashoffset = offset;
+
+            // Color shift based on coherence
+            const hue = 260 - (clamped * 120); // 260 (purple) to 140 (teal)
+            phiCircle.style.stroke = `hsl(${hue}, 100%, 70%)`;
         }
 
         function getCurrentScope() {
@@ -548,19 +566,10 @@ intention "Truth-Namer Analysis" {
             return Math.min(Math.max(base * phase, 0.0), 1.0);
         }
 
-        function resolveOffsetLabel(offset, getExports, fallbackLabel) {
-            const exp = getExports();
-            if (!exp || !exp.memory || !exp.string_len) return fallbackLabel;
-            const len = Number(exp.string_len.value || 0);
-            if (len <= 0 || offset < STRING_BASE) return fallbackLabel;
-            const s = readWasmString(exp.memory, offset, len);
-            return s ? `"${s}"` : fallbackLabel;
-        }
-
         function makeImports(getExports) {
             return {
                 phi: {
-                    witness: (operandOrOffset) => {
+                    witness: (op) => {
                         pulseWitness();
                         const score = computeCoherence();
                         updateCoherence(score);
@@ -574,11 +583,10 @@ intention "Truth-Namer Analysis" {
                         log(`  ${note}`, "#ffd700");
                         return score;
                     },
-
                     coherence: () => {
                         const score = computeCoherence();
                         updateCoherence(score);
-                        log(`  [COHERENCE] ${score.toFixed(4)} (target φ^-1=${PHI_INV.toFixed(4)})`, "#9ad6ff");
+                        log(`  [COHERENCE] ${score.toFixed(4)}`, "#9ad6ff");
                         return score;
                     },
 
@@ -590,13 +598,8 @@ intention "Truth-Namer Analysis" {
                         updateCoherence(computeCoherence());
                         log(`  [RESONATE] ${Number(value).toFixed(4)} → scope "${scope}" depth ${resonanceField[scope].length}`, "#61efce");
                     },
-
-                    intention_push: (offsetOrLen) => {
-                        let name = `intent_${offsetOrLen}`;
-                        const decoded = resolveOffsetLabel(offsetOrLen, getExports, "");
-                        if (decoded) {
-                            name = decoded.replaceAll('"', "");
-                        }
+                    intention_push: (offset) => {
+                        const name = `intent_${offset}`;
                         intentionStack.push(name);
                         if (!resonanceField[name]) resonanceField[name] = [];
                         renderIntentions();
@@ -604,63 +607,30 @@ intention "Truth-Namer Analysis" {
                         updateCoherence(computeCoherence());
                         log(`  [INTENTION ▶] push "${name}" depth=${intentionStack.length}`, "#b488ff");
                     },
-
                     intention_pop: () => {
                         const popped = intentionStack.pop();
                         renderIntentions();
                         renderResonance();
                         updateCoherence(computeCoherence());
-                        log(`  [INTENTION ◀] pop "${popped ?? "?"}" depth=${intentionStack.length}`, "#b488ff");
+                        log(`  [INTENTION ◀] pop "${popped ?? "?"}"`, "#b488ff");
                     },
                 },
             };
         }
 
-        async function loadScript(src) {
-            return new Promise((resolve, reject) => {
-                const s = document.createElement("script");
-                s.src = src;
-                s.onload = resolve;
-                s.onerror = () => reject(new Error(`Failed to load ${src}`));
-                document.head.appendChild(s);
-            });
-        }
-
         async function loadWabt() {
-            if (typeof WabtModule === "function") {
-                return WabtModule();
-            }
-
-            const sources = [
-                "https://cdn.jsdelivr.net/npm/wabt@1.0.36/index.js",
-                "https://unpkg.com/wabt@1.0.36/index.js",
-            ];
-
-            let lastError = null;
-            for (const src of sources) {
-                try {
-                    await loadScript(src);
-                    if (typeof WabtModule === "function") {
-                        return WabtModule();
-                    }
-                } catch (err) {
-                    lastError = err;
-                }
-            }
-            throw lastError || new Error("wabt loader not available");
+            if (typeof WabtModule === "function") return WabtModule();
+            const s = document.createElement("script");
+            s.src = "https://cdn.jsdelivr.net/npm/wabt@1.0.36/index.js";
+            document.head.appendChild(s);
+            return new Promise((r) => s.onload = () => r(WabtModule()));
         }
 
-        async function fetchFirst(paths, type) {
-            for (const p of paths) {
-                try {
-                    const resp = await fetch(p, { cache: "no-store" });
-                    if (!resp.ok) continue;
-                    if (type === "arrayBuffer") return { path: p, data: await resp.arrayBuffer() };
-                    if (type === "text") return { path: p, data: await resp.text() };
-                } catch (_) {
-                    // Try next path
-                }
-            }
+        async function fetchOutput(ext) {
+            try {
+                const resp = await fetch(`../output.${ext}`, { cache: "no-store" });
+                if (resp.ok) return ext === 'wasm' ? await resp.arrayBuffer() : await resp.text();
+            } catch (e) { }
             return null;
         }
 
@@ -737,7 +707,7 @@ intention "Truth-Namer Analysis" {
                 const loaded = await instantiateProgram();
                 log(`Attached: ${loaded.source}`, "#61efce");
                 log("Executing phi_run()...", "#7a7aaa");
-                log("");
+                const res = wasmExports.phi_run();
 
                 const result = loaded.exports.phi_run();
 
@@ -745,7 +715,11 @@ intention "Truth-Namer Analysis" {
                 log(`Coherence : ${coherenceScore.toFixed(4)} (φ^-1 = ${PHI_INV.toFixed(4)})`, "#ffd700");
                 log(`Witness   : ${witnessLog.length} observations`, "#7a7aaa");
                 log("");
-                log("=== Done ===", "#e0e0ff");
+                log(`Result:    Number(${Number(res).toFixed(4)})`, "#ffffff");
+                log(`Coherence: ${coherenceScore.toFixed(4)}`, "#ffd700");
+                log("");
+                log("=== Calibration Complete ===", "#e0e0ff");
+
             } catch (err) {
                 log(`[ERROR] ${err.message}`, "#ff7a7a");
                 log("Hint: run `cargo run --example phiflow_wasm` in the root and host with Python.", "#7a7aaa");
@@ -753,6 +727,17 @@ intention "Truth-Namer Analysis" {
                 runBtn.disabled = false;
                 runBtn.innerHTML = "▶ Execute & Measure";
             }
+        }
+
+        function copyWat() {
+            fetchOutput('wat').then(wat => {
+                if (wat) {
+                    navigator.clipboard.writeText(wat);
+                    alert("WAT copied to clipboard");
+                } else {
+                    alert("output.wat not found");
+                }
+            });
         }
     </script>
 </body>

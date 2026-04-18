@@ -1,0 +1,103 @@
+// supply_chain_node.phi
+// A logistics network node implemented as a living PhiFlow stream.
+// Written for PhiFlow v0.4.0 — with two new opcodes marked below.
+//
+// The central reframe:
+//   A node does not ask "what is the shortest route."
+//   It asks: "is the medium I am operating in coherent enough to act?"
+//   That is the physically correct question.
+//   It follows from the Propagation Framework — nodes are patterns in a medium,
+//   not discrete objects connected by routes.
+//
+// ------------------------------------------------------------------
+// NEW OPCODES REQUIRED (language extension proposal):
+//
+//   field
+//     Reads aggregate coherence across ALL active streams on the MCP bus.
+//     Unlike `coherence`, which reads THIS stream's depth via the phi-harmonic
+//     formula, `field` reduces the shared resonance field.
+//     Implementation: phi-weighted sum of all resonated values visible on the
+//     MCP bus. Recent resonations weight φ, prior cycle φ⁻¹, etc.
+//     Returns 0.0–1.0.  Opcode: OP_FIELD.
+//     No new VmState fields needed — MCP bus already tracks resonance values.
+//
+//   dissonance
+//     Reads the rate of coherence change over the last N witness cycles.
+//     Returns -1.0 (rapid decline) → 0.0 (stable) → +1.0 (rapid improvement).
+//     Implementation: add coherence_history: Vec<(SystemTime, f64)> to VmState.
+//     On each OP_COHERENCE read, append the value and timestamp.
+//     OP_DISSONANCE computes the slope of the last N entries, normalized.
+//     Opcode: OP_DISSONANCE.
+//
+// Both are pure reads — no new block syntax required.
+// They slot into the compiler exactly as `coherence` does today.
+// ------------------------------------------------------------------
+
+function phi_threshold() -> Number {
+    // 1 - φ^(-2) = 0.618  — the stability threshold the Propagation Framework
+    // identifies as the coherence floor for a stable pattern in the medium.
+    let phi = 1.618033988749895
+    return 1.0 - (1.0 / (phi * phi))
+}
+
+function phi_floor() -> Number {
+    // 1 - φ^(-1) = 0.382  — depth-1 coherence, the minimum intentional presence.
+    let phi = 1.618033988749895
+    return 1.0 - (1.0 / phi)
+}
+
+let cycles = 0.0
+let threshold = phi_threshold()
+let floor = phi_floor()
+
+stream "node_heartbeat" {
+    cycles = cycles + 1.0
+
+    intention "sense_network" {
+        // Read this node's own coherence at intention depth 2.
+        let my_coherence = coherence
+
+        // NEW OP_FIELD: Read the health of the entire propagation medium —
+        // the aggregate of all streams currently resonating on the MCP bus.
+        // This is not the same as my_coherence.
+        // my_coherence = am I aligned with myself?
+        // field = is the medium I'm operating in healthy?
+        // Both questions matter. Only the second one tells you when to stop.
+        let network_health = field
+
+        // NEW OP_DISSONANCE: Read whether our coherence is rising or falling.
+        // A node at 0.65 coherence but declining fast is a different situation
+        // than a node at 0.65 coherence holding steady.
+        // dissonance < -0.3 means "decline is accelerating" — signal before collapse.
+        let trajectory = dissonance
+
+        // Broadcast our state into the medium so other nodes and the FieldGuardian
+        // can read us. Directional resonate toward monitoring agents.
+        resonate my_coherence toward MONITOR
+        witness sensor("cpu_usage")
+
+        // If the network medium itself is incoherent, step back.
+        // This is not a timeout. This is a node recognizing the medium it
+        // propagates through is below the stability threshold.
+        // Do not route through a broken field.
+        if network_health < threshold {
+            resonate "degraded" toward MONITOR
+            break stream
+        }
+
+        // If our own coherence is declining rapidly, signal distress while still
+        // above threshold — so other nodes can reroute before we fail.
+        // This is the value of watching trajectory, not just current value.
+        if trajectory < -0.3 {
+            resonate "distress" toward MONITOR
+            witness
+        }
+    }
+
+    // Nodes do not run forever on a flat signal.
+    // 144 = 12 × 12 — Fibonacci-adjacent breathing rhythm.
+    if cycles >= 144.0 {
+        break stream
+    }
+}
+

@@ -334,6 +334,7 @@ impl QuantumSimulator {
         }
 
         // Simulate measurements
+        // Simulate measurements
         let mut counts = HashMap::new();
         let shots = self.shots; // Use configured number of shots instead of hardcoded 1024
 

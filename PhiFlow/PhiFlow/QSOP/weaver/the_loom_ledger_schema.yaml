@@ -1,0 +1,87 @@
+meta:
+  id: the_loom_ledger_schema
+  version: 0.1.0
+  type: ledger_schema
+  status: draft
+  date: "2026-02-21"
+
+purpose:
+  description: "Schema for durable memory entries while QSOP path remains the canonical storage location."
+  compatibility: "Conceptual name is The Loom; directory path remains QSOP."
+
+entry_required_fields:
+  - entry_id
+  - timestamp_utc
+  - actor
+  - objective_id
+  - layer
+  - summary
+  - evidence
+  - outcome
+
+field_schema:
+  entry_id:
+    type: string
+    pattern: "^LOOM-[0-9]{8}-[0-9]{3,}$"
+  timestamp_utc:
+    type: string
+    format: iso8601
+  actor:
+    type: string
+    enum_hint: ["codex", "antigravity", "claude", "human"]
+  objective_id:
+    type: string
+    pattern: "^OBJ-[0-9]{8}-[0-9]{3,}$"
+  layer:
+    type: string
+    enum: ["seed", "contract", "execution", "distill", "decision", "repair"]
+  summary:
+    type: string
+    min_length: 1
+  evidence:
+    type: list
+    item_schema:
+      command: string
+      result: string
+      artifact_paths: list[string]
+  outcome:
+    type: string
+    enum: ["completed", "blocked", "rolled_back", "reopened", "cancelled"]
+  risks:
+    type: list
+    required: false
+  next_step:
+    type: string
+    required: false
+
+storage_mapping:
+  changelog:
+    file: "QSOP/CHANGELOG.md"
+    style: "dated heading + [Codex]/actor tags"
+  state:
+    file: "QSOP/STATE.md"
+    style: "verified/probable entries with invalidation conditions"
+  packets:
+    objective_dir: "QSOP/mail/objectives"
+    ack_dir: "QSOP/mail/acks"
+  metrics:
+    file: "QSOP/metrics/objective_metrics.json"
+  audits:
+    file_pattern: "QSOP/metrics/weekly_audit_YYYYMMDD.md"
+
+quality_gates:
+  - "Every completed objective must have at least one ledger evidence line."
+  - "Every architecture change must update STATE verified/probable sections."
+  - "Every blocked outcome must include explicit blocker and owner."
+  - "Every reopened outcome must preserve prior objective linkage."
+
+renaming_policy:
+  phase_0:
+    name: "QSOP (current path)"
+    action: "no filesystem rename"
+  phase_1:
+    name: "The Loom (docs/UI alias)"
+    action: "introduce alias in docs and prompts"
+  phase_2:
+    name: "Optional path migration"
+    action: "only after tool/script compatibility audit passes"

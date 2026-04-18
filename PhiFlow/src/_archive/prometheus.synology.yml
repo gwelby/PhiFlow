@@ -1,0 +1,29 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+rule_files:
+  - "prometheus_rules.yml"
+
+scrape_configs:
+  - job_name: "quantum-multimedia"
+    static_configs:
+      - targets: ["quantum-multimedia-superllm:4321"]
+        labels:
+          service: "superllm-gui"
+          frequency: "432"
+
+  - job_name: "quantum-media-processor"
+    static_configs:
+      - targets: ["quantum-media-processor:4322"]
+        labels:
+          service: "media-processor"
+          frequency: "528"
+
+  - job_name: "traefik"
+    static_configs:
+      - targets: ["traefik:8080"]
+        labels:
+          service: "proxy"
+          frequency: "768"

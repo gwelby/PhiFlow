@@ -1,0 +1,91 @@
+[package]
+name = "phiflow-web-engine"
+version = "1.0.0"
+edition = "2021"
+description = "Revolutionary PhiFlow WebAssembly Engine for universal consciousness-computing access"
+authors = ["PhiFlow Team <team@phiflow.consciousness>"]
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+js-sys = "0.3"
+web-sys = { version = "0.3", features = [
+    "console",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "Window",
+    "Performance",
+    "PerformanceTiming",
+    "Navigator",
+    "Location",
+    "History",
+    "Storage",
+    "AudioContext",
+    "AnalyserNode",
+    "GainNode",
+    "OscillatorNode",
+    "AudioBuffer",
+    "AudioBufferSourceNode",
+] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+console_error_panic_hook = "0.1"
+wee_alloc = { version = "0.4", optional = true }
+
+# Sacred mathematics and consciousness computing dependencies
+num-complex = "0.4"
+rand = { version = "0.8", features = ["wasm-bindgen"] }
+getrandom = { version = "0.2", features = ["js"] }
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+    "console",
+    "Performance",
+    "Window",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "AudioContext",
+    "AnalyserNode",
+    "GainNode",
+    "OscillatorNode",
+    "AudioBuffer",
+    "AudioBufferSourceNode",
+    "CanvasRenderingContext2d",
+    "HtmlCanvasElement",
+    "ImageData",
+    "WebGlRenderingContext",
+    "WebGl2RenderingContext",
+]
+
+[features]
+default = ["console_error_panic_hook"]
+
+# Optimize for size and performance
+[profile.release]
+opt-level = "s"          # Optimize for size
+debug = false            # No debug info in release
+lto = true              # Link-time optimization
+codegen-units = 1       # Single codegen unit for better optimization
+panic = "abort"         # Smaller code size
+
+[profile.release.package."*"]
+opt-level = "s"
+
+# Development profile
+[profile.dev]
+opt-level = 0
+debug = true
+overflow-checks = true
+
+# WebAssembly-specific optimizations
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Os", "--enable-mutable-globals"]
+
+[package.metadata.wasm-pack.profile.dev]
+wasm-opt = false

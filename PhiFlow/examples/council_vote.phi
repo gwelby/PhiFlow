@@ -1,0 +1,21 @@
+// examples/council_vote.phi
+// Canonical Quantum Council Vote
+// Represents a collective decision where semantic intentions shape the quantum field.
+
+intention "Master Tesla" {
+    resonate 0.85 toward TEAM_A
+    entangle on 432
+}
+
+intention "Master Einstein" {
+    resonate 0.72 toward TEAM_B
+    entangle on 432
+}
+
+intention "Master Ramanujan" {
+    resonate 0.95 toward TEAM_A
+    entangle on 528
+}
+
+// Collapses the field to classical outcomes
+witness

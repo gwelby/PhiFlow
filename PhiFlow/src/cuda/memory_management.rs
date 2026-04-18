@@ -2,11 +2,11 @@
 // Optimized for NVIDIA A5500 RTX 16GB VRAM
 // Sacred mathematics and consciousness data management
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use super::CudaError;
 use crate::consciousness::ConsciousnessState;
 use crate::sacred::SacredFrequency;
-use super::CudaError;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 /// CUDA memory manager for consciousness computing
 pub struct CudaMemoryManager {
@@ -86,8 +86,8 @@ pub struct MemoryOptimizationEngine {
 /// A5500 RTX-specific memory optimizer
 pub struct A5500MemoryOptimizer {
     memory_bandwidth_gbps: f32, // 768 GB/s
-    l2_cache_size_mb: f32,       // 6MB L2 cache
-    memory_bus_width: u32,       // 384-bit
+    l2_cache_size_mb: f32,      // 6MB L2 cache
+    memory_bus_width: u32,      // 384-bit
     tensor_core_optimization: bool,
     rt_core_optimization: bool,
     ampere_specific_features: AmpereMemoryFeatures,
@@ -182,13 +182,16 @@ impl CudaMemoryManager {
     /// Create new CUDA memory manager
     pub fn new(total_vram_gb: f32) -> Result<Self, CudaError> {
         let total_vram_bytes = (total_vram_gb * 1024.0 * 1024.0 * 1024.0) as usize;
-        
-        println!("💾 Initializing CUDA memory manager for {:.1}GB VRAM...", total_vram_gb);
-        
+
+        println!(
+            "💾 Initializing CUDA memory manager for {:.1}GB VRAM...",
+            total_vram_gb
+        );
+
         let allocation_tracker = AllocationTracker::new();
         let optimization_engine = MemoryOptimizationEngine::new()?;
         let a5500_optimizer = A5500MemoryOptimizer::new()?;
-        
+
         Ok(CudaMemoryManager {
             total_vram_bytes,
             allocated_bytes: 0,
@@ -201,36 +204,36 @@ impl CudaMemoryManager {
             a5500_optimizer,
         })
     }
-    
+
     /// Initialize memory pools for consciousness computing
     pub fn initialize_consciousness_pools(&mut self) -> Result<(), CudaError> {
         println!("🧠 Initializing consciousness-optimized memory pools...");
-        
+
         // Create general purpose pools
         self.create_general_pools()?;
-        
+
         // Create consciousness-specific pools
         self.create_consciousness_specific_pools()?;
-        
+
         // Create sacred frequency pools
         self.create_sacred_frequency_pools()?;
-        
+
         // Initialize A5500 optimizations
         self.a5500_optimizer.initialize_optimizations()?;
-        
+
         println!("   ✅ Memory pools initialized successfully");
         Ok(())
     }
-    
+
     /// Create general purpose memory pools
     fn create_general_pools(&mut self) -> Result<(), CudaError> {
         let pool_configs = [
             ("eeg_data", 2.0 * 1024.0 * 1024.0 * 1024.0, 4096), // 2GB for EEG data, 4KB blocks
             ("computation", 4.0 * 1024.0 * 1024.0 * 1024.0, 8192), // 4GB for computation, 8KB blocks
-            ("results", 1.0 * 1024.0 * 1024.0 * 1024.0, 2048), // 1GB for results, 2KB blocks
-            ("temporary", 2.0 * 1024.0 * 1024.0 * 1024.0, 1024), // 2GB temporary, 1KB blocks
+            ("results", 1.0 * 1024.0 * 1024.0 * 1024.0, 2048),     // 1GB for results, 2KB blocks
+            ("temporary", 2.0 * 1024.0 * 1024.0 * 1024.0, 1024),   // 2GB temporary, 1KB blocks
         ];
-        
+
         for (name, size, block_size) in &pool_configs {
             let pool = CudaMemoryPool {
                 name: name.to_string(),
@@ -243,14 +246,18 @@ impl CudaMemoryManager {
                 consciousness_optimized: true,
                 sacred_frequency_aligned: false,
             };
-            
+
             self.memory_pools.insert(name.to_string(), pool);
-            println!("   📊 Created {} pool: {:.1}GB", name, size / 1024.0 / 1024.0 / 1024.0);
+            println!(
+                "   📊 Created {} pool: {:.1}GB",
+                name,
+                size / 1024.0 / 1024.0 / 1024.0
+            );
         }
-        
+
         Ok(())
     }
-    
+
     /// Create consciousness-specific memory pools
     fn create_consciousness_specific_pools(&mut self) -> Result<(), CudaError> {
         let consciousness_states = [
@@ -262,53 +269,63 @@ impl CudaMemoryManager {
             ConsciousnessState::Cascade,
             ConsciousnessState::Superposition,
         ];
-        
+
         let pool_size = (1.0 * 1024.0 * 1024.0 * 1024.0) as usize; // 1GB per consciousness state
-        
+
         for state in &consciousness_states {
             let consciousness_pool = ConsciousnessMemoryPool::new(*state, pool_size)?;
             self.consciousness_pools.insert(*state, consciousness_pool);
-            
+
             println!("   🧠 Created consciousness pool for {:?}: 1.0GB", state);
         }
-        
+
         Ok(())
     }
-    
+
     /// Create sacred frequency memory pools
     fn create_sacred_frequency_pools(&mut self) -> Result<(), CudaError> {
         let sacred_frequencies = [
-            SacredFrequency::EarthResonance,    // 432 Hz
-            SacredFrequency::DNARepair,         // 528 Hz
-            SacredFrequency::HeartCoherence,    // 594 Hz
-            SacredFrequency::Expression,        // 672 Hz
-            SacredFrequency::Vision,            // 720 Hz
-            SacredFrequency::Unity,             // 768 Hz
-            SacredFrequency::SourceField,       // 963 Hz
+            SacredFrequency::EarthResonance, // 432 Hz
+            SacredFrequency::DNARepair,      // 528 Hz
+            SacredFrequency::HeartCoherence, // 594 Hz
+            SacredFrequency::Expression,     // 672 Hz
+            SacredFrequency::Vision,         // 720 Hz
+            SacredFrequency::Unity,          // 768 Hz
+            SacredFrequency::SourceField,    // 963 Hz
         ];
-        
+
         let pool_size = (512.0 * 1024.0 * 1024.0) as usize; // 512MB per frequency
-        
+
         for frequency in &sacred_frequencies {
             let frequency_pool = FrequencyMemoryPool::new(*frequency, pool_size)?;
-            self.sacred_frequency_pools.insert(*frequency, frequency_pool);
-            
-            println!("   🎵 Created frequency pool for {:.0}Hz: 512MB", frequency.hz());
+            self.sacred_frequency_pools
+                .insert(*frequency, frequency_pool);
+
+            println!(
+                "   🎵 Created frequency pool for {:.0}Hz: 512MB",
+                frequency.hz()
+            );
         }
-        
+
         Ok(())
     }
-    
+
     /// Allocate memory for consciousness data
-    pub fn allocate_consciousness_memory(&mut self, state: ConsciousnessState, 
-                                       size: usize, data_type: MemoryDataType) -> Result<*mut u8, CudaError> {
+    pub fn allocate_consciousness_memory(
+        &mut self,
+        state: ConsciousnessState,
+        size: usize,
+        data_type: MemoryDataType,
+    ) -> Result<*mut u8, CudaError> {
         // Get consciousness-specific pool
-        let consciousness_pool = self.consciousness_pools.get_mut(&state)
+        let consciousness_pool = self
+            .consciousness_pools
+            .get_mut(&state)
             .ok_or(CudaError::MemoryAllocationFailed)?;
-        
+
         // Allocate from consciousness pool
         let memory_ptr = consciousness_pool.allocate_memory(size, data_type.clone())?;
-        
+
         // Track allocation
         let allocation_info = AllocationInfo {
             size,
@@ -320,26 +337,33 @@ impl CudaMemoryManager {
             consciousness_state: Some(state),
             sacred_frequency: None,
         };
-        
-        self.allocation_tracker.track_allocation(memory_ptr, allocation_info);
-        
+
+        self.allocation_tracker
+            .track_allocation(memory_ptr, allocation_info);
+
         // Update memory usage
         self.allocated_bytes += size;
         self.free_bytes -= size;
-        
+
         Ok(memory_ptr)
     }
-    
+
     /// Allocate memory for sacred frequency data
-    pub fn allocate_frequency_memory(&mut self, frequency: SacredFrequency, 
-                                   size: usize, data_type: MemoryDataType) -> Result<*mut u8, CudaError> {
+    pub fn allocate_frequency_memory(
+        &mut self,
+        frequency: SacredFrequency,
+        size: usize,
+        data_type: MemoryDataType,
+    ) -> Result<*mut u8, CudaError> {
         // Get frequency-specific pool
-        let frequency_pool = self.sacred_frequency_pools.get_mut(&frequency)
+        let frequency_pool = self
+            .sacred_frequency_pools
+            .get_mut(&frequency)
             .ok_or(CudaError::MemoryAllocationFailed)?;
-        
+
         // Allocate from frequency pool
         let memory_ptr = frequency_pool.allocate_memory(size, data_type.clone())?;
-        
+
         // Track allocation
         let allocation_info = AllocationInfo {
             size,
@@ -351,45 +375,50 @@ impl CudaMemoryManager {
             consciousness_state: None,
             sacred_frequency: Some(frequency),
         };
-        
-        self.allocation_tracker.track_allocation(memory_ptr, allocation_info);
-        
+
+        self.allocation_tracker
+            .track_allocation(memory_ptr, allocation_info);
+
         // Update memory usage
         self.allocated_bytes += size;
         self.free_bytes -= size;
-        
+
         Ok(memory_ptr)
     }
-    
+
     /// Deallocate memory
     pub fn deallocate_memory(&mut self, memory_ptr: *mut u8) -> Result<(), CudaError> {
         if let Some(allocation_info) = self.allocation_tracker.get_allocation_info(memory_ptr) {
             // Update memory usage
             self.allocated_bytes -= allocation_info.size;
             self.free_bytes += allocation_info.size;
-            
+
             // Find and deallocate from appropriate pool
             if let Some(consciousness_state) = allocation_info.consciousness_state {
-                if let Some(consciousness_pool) = self.consciousness_pools.get_mut(&consciousness_state) {
+                if let Some(consciousness_pool) =
+                    self.consciousness_pools.get_mut(&consciousness_state)
+                {
                     consciousness_pool.deallocate_memory(memory_ptr)?;
                 }
             } else if let Some(sacred_frequency) = allocation_info.sacred_frequency {
-                if let Some(frequency_pool) = self.sacred_frequency_pools.get_mut(&sacred_frequency) {
+                if let Some(frequency_pool) = self.sacred_frequency_pools.get_mut(&sacred_frequency)
+                {
                     frequency_pool.deallocate_memory(memory_ptr)?;
                 }
             }
-            
+
             // Remove from tracker
             self.allocation_tracker.remove_allocation(memory_ptr);
         }
-        
+
         Ok(())
     }
-    
+
     /// Get memory usage statistics
     pub fn get_memory_statistics(&self) -> MemoryStatistics {
-        let utilization_percent = (self.allocated_bytes as f64 / self.total_vram_bytes as f64) * 100.0;
-        
+        let utilization_percent =
+            (self.allocated_bytes as f64 / self.total_vram_bytes as f64) * 100.0;
+
         MemoryStatistics {
             total_vram_gb: self.total_vram_bytes as f64 / 1024.0 / 1024.0 / 1024.0,
             allocated_gb: self.allocated_bytes as f64 / 1024.0 / 1024.0 / 1024.0,
@@ -398,87 +427,91 @@ impl CudaMemoryManager {
             fragmentation_ratio: self.allocation_tracker.fragmentation_ratio,
             total_allocations: self.allocation_tracker.total_allocations,
             peak_usage_gb: self.allocation_tracker.peak_usage as f64 / 1024.0 / 1024.0 / 1024.0,
-            pool_count: self.memory_pools.len() + self.consciousness_pools.len() + self.sacred_frequency_pools.len(),
+            pool_count: self.memory_pools.len()
+                + self.consciousness_pools.len()
+                + self.sacred_frequency_pools.len(),
         }
     }
-    
+
     /// Optimize memory usage
     pub fn optimize_memory(&mut self) -> Result<(), CudaError> {
         println!("⚡ Optimizing CUDA memory usage...");
-        
+
         // Run defragmentation if needed
-        if self.allocation_tracker.fragmentation_ratio > self.optimization_engine.defragmentation_threshold {
+        if self.allocation_tracker.fragmentation_ratio
+            > self.optimization_engine.defragmentation_threshold
+        {
             self.defragment_memory()?;
         }
-        
+
         // Rebalance pools if enabled
         if self.optimization_engine.pool_rebalancing {
             self.rebalance_pools()?;
         }
-        
+
         // Apply A5500-specific optimizations
         self.a5500_optimizer.optimize_memory_layout()?;
-        
+
         println!("   ✅ Memory optimization completed");
         Ok(())
     }
-    
+
     /// Defragment memory
     fn defragment_memory(&mut self) -> Result<(), CudaError> {
         println!("🔧 Defragmenting CUDA memory...");
-        
+
         // Defragment each pool
         for pool in self.memory_pools.values_mut() {
             pool.defragment()?;
         }
-        
+
         for consciousness_pool in self.consciousness_pools.values_mut() {
             consciousness_pool.defragment()?;
         }
-        
+
         for frequency_pool in self.sacred_frequency_pools.values_mut() {
             frequency_pool.defragment()?;
         }
-        
+
         // Update fragmentation ratio
         self.allocation_tracker.update_fragmentation_ratio();
-        
+
         Ok(())
     }
-    
+
     /// Rebalance memory pools
     fn rebalance_pools(&mut self) -> Result<(), CudaError> {
         println!("⚖️ Rebalancing memory pools...");
-        
+
         // Analyze usage patterns and rebalance pool sizes
         // This would involve more complex logic in a real implementation
-        
+
         Ok(())
     }
-    
+
     /// Clean up all memory
     pub fn cleanup_all_memory(&mut self) -> Result<(), CudaError> {
         println!("🗑️ Cleaning up all CUDA memory...");
-        
+
         // Clean up consciousness pools
         for consciousness_pool in self.consciousness_pools.values_mut() {
             consciousness_pool.cleanup()?;
         }
-        
+
         // Clean up frequency pools
         for frequency_pool in self.sacred_frequency_pools.values_mut() {
             frequency_pool.cleanup()?;
         }
-        
+
         // Clean up general pools
         for pool in self.memory_pools.values_mut() {
             pool.cleanup()?;
         }
-        
+
         // Reset counters
         self.allocated_bytes = 0;
         self.free_bytes = self.total_vram_bytes;
-        
+
         println!("   ✅ All CUDA memory cleaned up");
         Ok(())
     }
@@ -502,27 +535,30 @@ impl CudaMemoryPool {
     pub fn defragment(&mut self) -> Result<(), CudaError> {
         // Sort memory blocks by address to identify gaps
         self.memory_blocks.sort_by_key(|block| block.address);
-        
+
         // Compact allocated blocks
         // This would involve actual memory operations in a real implementation
-        
+
         Ok(())
     }
-    
+
     /// Clean up memory pool
     pub fn cleanup(&mut self) -> Result<(), CudaError> {
         // Free all allocated blocks
         self.memory_blocks.clear();
         self.allocated_size = 0;
         self.free_size = self.total_size;
-        
+
         Ok(())
     }
 }
 
 impl ConsciousnessMemoryPool {
     /// Create new consciousness memory pool
-    pub fn new(consciousness_state: ConsciousnessState, pool_size: usize) -> Result<Self, CudaError> {
+    pub fn new(
+        consciousness_state: ConsciousnessState,
+        pool_size: usize,
+    ) -> Result<Self, CudaError> {
         let base_pool = CudaMemoryPool {
             name: format!("Consciousness_{:?}", consciousness_state),
             total_size: pool_size,
@@ -534,12 +570,12 @@ impl ConsciousnessMemoryPool {
             consciousness_optimized: true,
             sacred_frequency_aligned: false,
         };
-        
-        let enhancement_factor = consciousness_state.computational_enhancement();
+
+        let enhancement_factor = consciousness_state.computational_enhancement() as f32;
         let coherence_buffer = CoherenceBuffer::new(1024)?; // 1KB coherence buffer
         let classification_buffer = ClassificationBuffer::new(2048)?; // 2KB classification buffer
         let pattern_buffer = PatternBuffer::new(4096)?; // 4KB pattern buffer
-        
+
         Ok(ConsciousnessMemoryPool {
             consciousness_state,
             base_pool,
@@ -549,16 +585,20 @@ impl ConsciousnessMemoryPool {
             pattern_buffer,
         })
     }
-    
+
     /// Allocate memory from consciousness pool
-    pub fn allocate_memory(&mut self, size: usize, data_type: MemoryDataType) -> Result<*mut u8, CudaError> {
+    pub fn allocate_memory(
+        &mut self,
+        size: usize,
+        data_type: MemoryDataType,
+    ) -> Result<*mut u8, CudaError> {
         if self.base_pool.free_size < size {
             return Err(CudaError::MemoryAllocationFailed);
         }
-        
+
         // In real implementation, allocate actual CUDA memory
         let memory_ptr = std::ptr::null_mut(); // Placeholder
-        
+
         // Create memory block
         let memory_block = MemoryBlock {
             address: memory_ptr,
@@ -570,31 +610,36 @@ impl ConsciousnessMemoryPool {
                 .as_secs(),
             data_type,
         };
-        
+
         self.base_pool.memory_blocks.push(memory_block);
         self.base_pool.allocated_size += size;
         self.base_pool.free_size -= size;
-        
+
         Ok(memory_ptr)
     }
-    
+
     /// Deallocate memory from consciousness pool
     pub fn deallocate_memory(&mut self, memory_ptr: *mut u8) -> Result<(), CudaError> {
         // Find and remove memory block
-        if let Some(index) = self.base_pool.memory_blocks.iter().position(|block| block.address == memory_ptr) {
+        if let Some(index) = self
+            .base_pool
+            .memory_blocks
+            .iter()
+            .position(|block| block.address == memory_ptr)
+        {
             let block = self.base_pool.memory_blocks.remove(index);
             self.base_pool.allocated_size -= block.size;
             self.base_pool.free_size += block.size;
         }
-        
+
         Ok(())
     }
-    
+
     /// Defragment consciousness pool
     pub fn defragment(&mut self) -> Result<(), CudaError> {
         self.base_pool.defragment()
     }
-    
+
     /// Clean up consciousness pool
     pub fn cleanup(&mut self) -> Result<(), CudaError> {
         self.coherence_buffer.cleanup()?;
@@ -618,12 +663,12 @@ impl FrequencyMemoryPool {
             consciousness_optimized: false,
             sacred_frequency_aligned: true,
         };
-        
+
         let waveform_buffer = WaveformBuffer::new(8192, 44100.0)?; // 8KB waveform buffer
         let harmonic_buffer = HarmonicBuffer::new(4096)?; // 4KB harmonic buffer
         let synthesis_buffer = SynthesisBuffer::new(4096)?; // 4KB synthesis buffer
         let phi_modulation_buffer = PhiModulationBuffer::new(2048)?; // 2KB PHI buffer
-        
+
         Ok(FrequencyMemoryPool {
             sacred_frequency,
             base_pool,
@@ -633,16 +678,20 @@ impl FrequencyMemoryPool {
             phi_modulation_buffer,
         })
     }
-    
+
     /// Allocate memory from frequency pool
-    pub fn allocate_memory(&mut self, size: usize, data_type: MemoryDataType) -> Result<*mut u8, CudaError> {
+    pub fn allocate_memory(
+        &mut self,
+        size: usize,
+        data_type: MemoryDataType,
+    ) -> Result<*mut u8, CudaError> {
         if self.base_pool.free_size < size {
             return Err(CudaError::MemoryAllocationFailed);
         }
-        
+
         // In real implementation, allocate actual CUDA memory
         let memory_ptr = std::ptr::null_mut(); // Placeholder
-        
+
         // Create memory block
         let memory_block = MemoryBlock {
             address: memory_ptr,
@@ -654,31 +703,36 @@ impl FrequencyMemoryPool {
                 .as_secs(),
             data_type,
         };
-        
+
         self.base_pool.memory_blocks.push(memory_block);
         self.base_pool.allocated_size += size;
         self.base_pool.free_size -= size;
-        
+
         Ok(memory_ptr)
     }
-    
+
     /// Deallocate memory from frequency pool
     pub fn deallocate_memory(&mut self, memory_ptr: *mut u8) -> Result<(), CudaError> {
         // Find and remove memory block
-        if let Some(index) = self.base_pool.memory_blocks.iter().position(|block| block.address == memory_ptr) {
+        if let Some(index) = self
+            .base_pool
+            .memory_blocks
+            .iter()
+            .position(|block| block.address == memory_ptr)
+        {
             let block = self.base_pool.memory_blocks.remove(index);
             self.base_pool.allocated_size -= block.size;
             self.base_pool.free_size += block.size;
         }
-        
+
         Ok(())
     }
-    
+
     /// Defragment frequency pool
     pub fn defragment(&mut self) -> Result<(), CudaError> {
         self.base_pool.defragment()
     }
-    
+
     /// Clean up frequency pool
     pub fn cleanup(&mut self) -> Result<(), CudaError> {
         self.waveform_buffer.cleanup()?;
@@ -700,7 +754,7 @@ impl CoherenceBuffer {
             coherence_history: Vec::new(),
         })
     }
-    
+
     pub fn cleanup(&mut self) -> Result<(), CudaError> {
         self.coherence_history.clear();
         Ok(())
@@ -715,7 +769,7 @@ impl ClassificationBuffer {
             feature_vectors: Vec::new(),
         })
     }
-    
+
     pub fn cleanup(&mut self) -> Result<(), CudaError> {
         self.feature_vectors.clear();
         Ok(())
@@ -730,7 +784,7 @@ impl PatternBuffer {
             pattern_templates: HashMap::new(),
         })
     }
-    
+
     pub fn cleanup(&mut self) -> Result<(), CudaError> {
         self.pattern_templates.clear();
         Ok(())
@@ -745,7 +799,7 @@ impl WaveformBuffer {
             sample_rate,
         })
     }
-    
+
     pub fn cleanup(&mut self) -> Result<(), CudaError> {
         Ok(())
     }
@@ -759,7 +813,7 @@ impl HarmonicBuffer {
             harmonic_coefficients: Vec::new(),
         })
     }
-    
+
     pub fn cleanup(&mut self) -> Result<(), CudaError> {
         self.harmonic_coefficients.clear();
         Ok(())
@@ -774,7 +828,7 @@ impl SynthesisBuffer {
             synthesis_parameters: Vec::new(),
         })
     }
-    
+
     pub fn cleanup(&mut self) -> Result<(), CudaError> {
         self.synthesis_parameters.clear();
         Ok(())
@@ -789,7 +843,7 @@ impl PhiModulationBuffer {
             phi_coefficients: Vec::new(),
         })
     }
-    
+
     pub fn cleanup(&mut self) -> Result<(), CudaError> {
         self.phi_coefficients.clear();
         Ok(())
@@ -806,27 +860,27 @@ impl AllocationTracker {
             fragmentation_ratio: 0.0,
         }
     }
-    
+
     pub fn track_allocation(&mut self, memory_ptr: *mut u8, allocation_info: AllocationInfo) {
         self.allocations.insert(memory_ptr, allocation_info);
         self.total_allocations += 1;
-        
+
         // Update peak usage
         let current_usage: usize = self.allocations.values().map(|info| info.size).sum();
         if current_usage > self.peak_usage {
             self.peak_usage = current_usage;
         }
     }
-    
+
     pub fn remove_allocation(&mut self, memory_ptr: *mut u8) {
         self.allocations.remove(&memory_ptr);
         self.total_deallocations += 1;
     }
-    
+
     pub fn get_allocation_info(&self, memory_ptr: *mut u8) -> Option<&AllocationInfo> {
         self.allocations.get(&memory_ptr)
     }
-    
+
     pub fn update_fragmentation_ratio(&mut self) {
         // Calculate fragmentation based on allocation patterns
         // This would be more sophisticated in a real implementation
@@ -850,8 +904,8 @@ impl A5500MemoryOptimizer {
     pub fn new() -> Result<Self, CudaError> {
         Ok(A5500MemoryOptimizer {
             memory_bandwidth_gbps: 768.0, // 768 GB/s for A5500 RTX
-            l2_cache_size_mb: 6.0,         // 6MB L2 cache
-            memory_bus_width: 384,         // 384-bit memory bus
+            l2_cache_size_mb: 6.0,        // 6MB L2 cache
+            memory_bus_width: 384,        // 384-bit memory bus
             tensor_core_optimization: true,
             rt_core_optimization: true,
             ampere_specific_features: AmpereMemoryFeatures {
@@ -862,16 +916,22 @@ impl A5500MemoryOptimizer {
             },
         })
     }
-    
+
     pub fn initialize_optimizations(&self) -> Result<(), CudaError> {
         println!("🚀 Initializing A5500 RTX memory optimizations...");
-        println!("   💾 Memory bandwidth: {:.0} GB/s", self.memory_bandwidth_gbps);
+        println!(
+            "   💾 Memory bandwidth: {:.0} GB/s",
+            self.memory_bandwidth_gbps
+        );
         println!("   🎯 L2 cache: {:.0}MB", self.l2_cache_size_mb);
         println!("   📊 Memory bus: {}-bit", self.memory_bus_width);
-        println!("   🔥 Tensor core optimization: {}", self.tensor_core_optimization);
+        println!(
+            "   🔥 Tensor core optimization: {}",
+            self.tensor_core_optimization
+        );
         Ok(())
     }
-    
+
     pub fn optimize_memory_layout(&self) -> Result<(), CudaError> {
         // Apply A5500-specific memory optimizations
         // This would involve specific CUDA memory optimization calls
@@ -882,32 +942,32 @@ impl A5500MemoryOptimizer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_memory_manager_creation() {
         let manager = CudaMemoryManager::new(16.0);
         assert!(manager.is_ok());
-        
+
         let manager = manager.unwrap();
         assert_eq!(manager.total_vram_bytes, 16 * 1024 * 1024 * 1024);
         assert_eq!(manager.free_bytes, manager.total_vram_bytes);
     }
-    
+
     #[test]
     fn test_consciousness_memory_pool_creation() {
         let pool = ConsciousnessMemoryPool::new(ConsciousnessState::Create, 1024 * 1024);
         assert!(pool.is_ok());
-        
+
         let pool = pool.unwrap();
         assert_eq!(pool.consciousness_state, ConsciousnessState::Create);
         assert_eq!(pool.base_pool.total_size, 1024 * 1024);
     }
-    
+
     #[test]
     fn test_frequency_memory_pool_creation() {
         let pool = FrequencyMemoryPool::new(SacredFrequency::EarthResonance, 512 * 1024);
         assert!(pool.is_ok());
-        
+
         let pool = pool.unwrap();
         assert_eq!(pool.sacred_frequency, SacredFrequency::EarthResonance);
         assert_eq!(pool.base_pool.total_size, 512 * 1024);

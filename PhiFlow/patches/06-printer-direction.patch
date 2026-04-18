@@ -1,0 +1,11 @@
+--- a/src/phi_ir/printer.rs
++++ b/src/phi_ir/printer.rs
+@@ -81,7 +81,7 @@ fn fmt_node(node: &PhiIRNode) -> String {
+         }
+         PhiIRNode::IntentionPush { name, .. } => format!("IntentionPush \"{}\"", name),
+         PhiIRNode::IntentionPop => "IntentionPop".to_string(),
+-        PhiIRNode::Resonate { value, .. } => {
++        PhiIRNode::Resonate { value, direction: _, .. } => {
+             let v_str = value
+                 .map(|v| format!("%{}", v))
+                 .unwrap_or("Self".to_string());

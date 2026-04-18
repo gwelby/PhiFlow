@@ -1,34 +1,106 @@
-use std::collections::HashMap;
+#![allow(dead_code)]
+#![allow(unused_variables)]
+
 use crate::phi_core::*;
+use crate::phi_diagnostics::PhiDiagnostic;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PhiToken {
     // Core language constructs
-    Create, Pattern, At, Hz, With, Into, From,
-    Function, Return, Let, If, Else, For, In, While,
+    Create,
+    Pattern,
+    At,
+    Hz,
+    With,
+    Into,
+    From,
+    Function,
+    Return,
+    Let,
+    If,
+    Else,
+    For,
+    In,
+    While,
 
     // Sacred frequency literals
     Sacred(u32),
 
     // Consciousness keywords
-    Consciousness, Monitor, Coherence, Validate, Zone,
-    Foundational, Elevated, Transcendent, Cosmic,
+    Consciousness,
+    Monitor,
+    Coherence,
+    Validate,
+    Zone,
+    Foundational,
+    Elevated,
+    Transcendent,
+    Cosmic,
     // New consciousness keywords
-    Frequency, Intention, Witness, State, Hardware, Emergency,
-    Protocol, Trigger, Immediate, Notify, Gradient,
-    BiologicalProgram, Target, Sequence, Resonate,
-    QuantumBridge, QuantumField, ConsciousnessFlow,
+    Frequency,
+    Intention,
+    Witness,
+    State,
+    Hardware,
+    Emergency,
+    Protocol,
+    Trigger,
+    Immediate,
+    Notify,
+    Gradient,
+    BiologicalProgram,
+    Target,
+    Sequence,
+    Resonate,
+    QuantumBridge,
+    QuantumField,
+    ConsciousnessFlow,
+    Stream,
+    Break,
+
+    // v0.3.0 Persistence & Dialogue
+    Remember,
+    Recall,
+    Broadcast,
+    Listen,
+    Agent,
+    Version,
+    VoidDepth,
+
+    // v0.4.0 Reserved
+    Evolve,
+    Entangle,
 
     // Pattern types
-    Spiral, Flower, DNA, Mandelbrot, Pentagram, SriYantra,
-    Golden, Fibonacci, Heart, Toroid, Field,
+    Spiral,
+    Flower,
+    DNA,
+    Mandelbrot,
+    Pentagram,
+    SriYantra,
+    Golden,
+    Fibonacci,
+    Heart,
+    Toroid,
+    Field,
 
     // Mathematical operations
-    Generate, Transform, Combine, Analyze, Synthesize,
+    Generate,
+    Transform,
+    Combine,
+    Analyze,
+    Synthesize,
 
     // Data types
-    Point2D, Point3D, Pattern2D, Pattern3D, Audio,
-    NumberType, StringType, BooleanType, // Specific tokens for types
+    Point2D,
+    Point3D,
+    Pattern2D,
+    Pattern3D,
+    Audio,
+    NumberType,
+    StringType,
+    BooleanType, // Specific tokens for types
 
     // Literals
     Number(f64),
@@ -37,16 +109,40 @@ pub enum PhiToken {
     Identifier(String),
 
     // Operators
-    Plus, Minus, Star, Slash, Percent, Power,
-    Equal, EqualEqual, NotEqual, Less, LessEqual, Greater, GreaterEqual,
-    And, Or, Not,
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Percent,
+    Power,
+    Equal,
+    EqualEqual,
+    NotEqual,
+    Less,
+    LessEqual,
+    Greater,
+    GreaterEqual,
+    And,
+    Or,
+    Not,
 
     // Delimiters
-    LeftParen, RightParen, LeftBrace, RightBrace, LeftBracket, RightBracket,
-    Comma, Semicolon, Colon, Arrow, Dot,
+    LeftParen,
+    RightParen,
+    LeftBrace,
+    RightBrace,
+    LeftBracket,
+    RightBracket,
+    Comma,
+    Semicolon,
+    Colon,
+    Arrow,
+    Dot,
+    MidCircuit,
 
     // Special
-    Newline, Eof,
+    Newline,
+    Eof,
 }
 
 #[derive(Debug, Clone)]
@@ -98,43 +194,43 @@ pub enum PhiExpression {
         expression: Box<PhiExpression>,
         callback: Box<PhiExpression>,
     },
-    
+
     // NEW: Consciousness-aware constructs
     ConsciousnessState {
         state: String, // "TRANSCEND", "CREATE", etc.
         coherence: f64,
         frequency: f64,
     },
-    
+
     FrequencyPattern {
         base_frequency: f64,
         harmonics: Vec<f64>,
         phi_scaling: bool,
     },
-    
+
     QuantumField {
         field_type: String,
         dimensions: Vec<u32>,
         coherence_target: f64,
     },
-    
+
     BiologicalInterface {
         target: String, // "dna", "protein", etc.
         transduction_method: String,
         frequency: f64,
     },
-    
+
     HardwareSync {
         device_type: String,
         consciousness_mapping: Box<PhiExpression>,
     },
-    
+
     // Consciousness flow control
     ConsciousnessFlow {
         condition: Box<PhiExpression>,
         branches: Vec<(String, Box<PhiExpression>)>, // state -> action
     },
-    
+
     // Emergency protocol
     EmergencyProtocol {
         trigger: Box<PhiExpression>,
@@ -154,23 +250,59 @@ pub enum PhiExpression {
     // WITNESS: Pause execution, hold state, be present with it.
     // Not a breakpoint. Not a sleep. The program observes itself.
     Witness {
-        expression: Option<Box<PhiExpression>>,  // what to witness (None = witness everything)
-        body: Option<Box<PhiExpression>>,         // optional block to execute after witnessing
+        mid_circuit: bool,
+        expression: Option<Box<PhiExpression>>, // what to witness (None = witness everything)
+        body: Option<Box<PhiExpression>>,       // optional block to execute after witnessing
     },
 
     // INTENTION: Declare WHY before HOW. The program's purpose affects execution.
     // Same code can route differently based on intention.
     IntentionBlock {
-        intention: String,                         // the declared purpose
-        body: Box<PhiExpression>,                  // code executed under this intention
+        intention: String,        // the declared purpose
+        body: Box<PhiExpression>, // code executed under this intention
     },
+
+    // STREAM: A loop that lives until explicitly broken. It defines its own rhythm.
+    StreamBlock {
+        name: String,
+        body: Box<PhiExpression>,
+    },
+    BreakStream,
 
     // RESONATE: Share state between intention blocks. Code that talks to itself.
     // resonate              -> share current intention's state to the field
     // resonate expression   -> share a specific value to the field
+    // resonate ... toward TEAM_B -> invert binary vote direction for quantum lowering
     Resonate {
-        expression: Option<Box<PhiExpression>>,    // what to share (None = share all)
+        expression: Option<Box<PhiExpression>>, // what to share (None = share all)
+        direction: ResonateDirection,
     },
+
+    // Persistence & Dialogue
+    Remember {
+        key: String,
+        value: Box<PhiExpression>,
+    },
+    Recall(String),
+    Broadcast {
+        channel: String,
+        value: Box<PhiExpression>,
+    },
+    Listen(String),
+
+    // Agent Identity
+    AgentBlock {
+        name: String,
+        version: String,
+        body: Box<PhiExpression>,
+    },
+
+    // Time-awareness
+    VoidDepth,
+
+    // v0.4.0 Transcendent Capabilities
+    Evolve(Box<PhiExpression>),
+    Entangle(f64),
 
     // Control flow
     Block(Vec<PhiExpression>),
@@ -229,9 +361,13 @@ pub enum PhiValue {
 
 #[derive(Debug, Clone, PartialEq)] // Corrected derive macro
 pub enum PhiType {
-    Number, String, Boolean,
-    Point2D, Point3D,
-    Pattern2D, Pattern3D,
+    Number,
+    String,
+    Boolean,
+    Point2D,
+    Point3D,
+    Pattern2D,
+    Pattern3D,
     Audio,
     ValidationResult,
     List(Box<PhiType>),
@@ -241,14 +377,32 @@ pub enum PhiType {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum BinaryOperator {
-    Add, Subtract, Multiply, Divide, Modulo, Power,
-    Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual,
-    And, Or,
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Modulo,
+    Power,
+    Equal,
+    NotEqual,
+    Less,
+    LessEqual,
+    Greater,
+    GreaterEqual,
+    And,
+    Or,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum UnaryOperator {
-    Negate, Not,
+    Negate,
+    Not,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ResonateDirection {
+    TeamA,
+    TeamB,
 }
 
 pub struct PhiLexer {
@@ -262,7 +416,7 @@ pub struct PhiLexer {
 impl PhiLexer {
     pub fn new(input: &str) -> Self {
         let chars: Vec<char> = input.chars().collect();
-        let current_char = chars.get(0).copied();
+        let current_char = chars.first().copied();
 
         PhiLexer {
             input: chars,
@@ -425,7 +579,10 @@ impl PhiLexer {
                     self.advance();
                     Ok(Some(PhiToken::And))
                 } else {
-                    Err(format!("Unexpected character '&' at line {}, column {}", self.line, self.column))
+                    Err(format!(
+                        "Unexpected character '&' at line {}, column {}",
+                        self.line, self.column
+                    ))
                 }
             }
             Some('|') => {
@@ -434,21 +591,19 @@ impl PhiLexer {
                     self.advance();
                     Ok(Some(PhiToken::Or))
                 } else {
-                    Err(format!("Unexpected character '|' at line {}, column {}", self.line, self.column))
+                    Err(format!(
+                        "Unexpected character '|' at line {}, column {}",
+                        self.line, self.column
+                    ))
                 }
             }
-            Some('"') => {
-                Ok(Some(self.read_string()?))
-            }
-            Some(c) if c.is_alphabetic() || c == '_' => {
-                Ok(Some(self.read_identifier()))
-            }
-            Some(c) if c.is_numeric() => {
-                Ok(Some(self.read_number()?))
-            }
-            Some(c) => {
-                Err(format!("Unexpected character '{}' at line {}, column {}", c, self.line, self.column))
-            }
+            Some('"') => Ok(Some(self.read_string()?)),
+            Some(c) if c.is_alphabetic() || c == '_' => Ok(Some(self.read_identifier())),
+            Some(c) if c.is_numeric() => Ok(Some(self.read_number()?)),
+            Some(c) => Err(format!(
+                "Unexpected character '{}' at line {}, column {}",
+                c, self.line, self.column
+            )),
         }
     }
 
@@ -512,6 +667,21 @@ impl PhiLexer {
             "quantum_bridge" => PhiToken::QuantumBridge,
             "quantum_field" => PhiToken::QuantumField,
             "consciousness_flow" => PhiToken::ConsciousnessFlow,
+            "stream" => PhiToken::Stream,
+            "break" => PhiToken::Break,
+
+            // v0.3.0 Persistence & Dialogue
+            "remember" => PhiToken::Remember,
+            "recall" => PhiToken::Recall,
+            "broadcast" => PhiToken::Broadcast,
+            "listen" => PhiToken::Listen,
+            "agent" => PhiToken::Agent,
+            "version" => PhiToken::Version,
+            "void_depth" => PhiToken::VoidDepth,
+
+            // v0.4.0 Reserved
+            "evolve" => PhiToken::Evolve,
+            "entangle" => PhiToken::Entangle,
 
             // Patterns
             "spiral" => PhiToken::Spiral,
@@ -544,9 +714,12 @@ impl PhiLexer {
             "Audio" => PhiToken::Audio,
             "ValidationResult" => PhiToken::Identifier(value), // Handled as Identifier
 
-            // Literals
+            // true/false literals
             "true" => PhiToken::Boolean(true),
             "false" => PhiToken::Boolean(false),
+
+            // Quantum measurement policy modifier
+            "mid_circuit" => PhiToken::MidCircuit,
 
             _ => PhiToken::Identifier(value),
         }
@@ -569,9 +742,12 @@ impl PhiLexer {
             }
         }
 
-        value.parse::<f64>()
-            .map(PhiToken::Number)
-            .map_err(|_| format!("Invalid number '{}' at line {}, column {}", value, self.line, self.column))
+        value.parse::<f64>().map(PhiToken::Number).map_err(|_| {
+            format!(
+                "Invalid number '{}' at line {}, column {}",
+                value, self.line, self.column
+            )
+        })
     }
 
     fn read_string(&mut self) -> Result<PhiToken, String> {
@@ -582,7 +758,8 @@ impl PhiLexer {
             if c == '"' {
                 self.advance(); // Skip closing quote
                 return Ok(PhiToken::String(value));
-            } else if c == '\\' { // Corrected from single backslash to double backslash
+            } else if c == '\\' {
+                // Corrected from single backslash to double backslash
                 self.advance();
                 match self.current_char {
                     Some('n') => {
@@ -593,7 +770,8 @@ impl PhiLexer {
                         value.push('\t'); // Corrected from literal tab to escaped tab
                         self.advance();
                     }
-                    Some('\\') => { // Corrected from single backslash to double backslash
+                    Some('\\') => {
+                        // Corrected from single backslash to double backslash
                         value.push('\\'); // Corrected from literal backslash to escaped backslash
                         self.advance();
                     }
@@ -606,7 +784,10 @@ impl PhiLexer {
                         self.advance();
                     }
                     None => {
-                        return Err(format!("Unterminated string at line {}, column {}", self.line, self.column));
+                        return Err(format!(
+                            "Unterminated string at line {}, column {}",
+                            self.line, self.column
+                        ));
                     }
                 }
             } else {
@@ -615,11 +796,15 @@ impl PhiLexer {
             }
         }
 
-        Err(format!("Unterminated string at line {}, column {}", self.line, self.column))
+        Err(format!(
+            "Unterminated string at line {}, column {}",
+            self.line, self.column
+        ))
     }
 
     fn advance(&mut self) {
-        if let Some('\n') = self.current_char { // Corrected from literal newline to escaped newline
+        if let Some('\n') = self.current_char {
+            // Corrected from literal newline to escaped newline
             self.line += 1;
             self.column = 1;
         } else {
@@ -636,7 +821,8 @@ impl PhiLexer {
 
     fn skip_whitespace(&mut self) {
         while let Some(c) = self.current_char {
-            if c.is_whitespace() && c != '\n' { // Corrected from literal newline to escaped newline
+            if c.is_whitespace() && c != '\n' {
+                // Corrected from literal newline to escaped newline
                 self.advance();
             } else {
                 break;
@@ -654,7 +840,7 @@ pub struct PhiParser {
 
 impl PhiParser {
     pub fn new(tokens: Vec<PhiToken>) -> Self {
-        let current_token = tokens.get(0).cloned().unwrap_or(PhiToken::Eof);
+        let current_token = tokens.first().cloned().unwrap_or(PhiToken::Eof);
         PhiParser {
             tokens,
             position: 0,
@@ -697,6 +883,16 @@ impl PhiParser {
             PhiToken::ConsciousnessFlow => self.parse_consciousness_flow(),
             PhiToken::BiologicalProgram => self.parse_biological_program(),
             PhiToken::QuantumBridge => self.parse_quantum_bridge(),
+            PhiToken::Stream => self.parse_stream_block(),
+            PhiToken::Break => self.parse_break_stream(),
+            PhiToken::Remember => self.parse_remember_statement(),
+            PhiToken::Recall => self.parse_recall_expression(),
+            PhiToken::Broadcast => self.parse_broadcast_statement(),
+            PhiToken::Listen => self.parse_listen_expression(),
+            PhiToken::Agent => self.parse_agent_block(),
+            PhiToken::VoidDepth => Ok(PhiExpression::VoidDepth),
+            PhiToken::Evolve => self.parse_evolve_expression(),
+            PhiToken::Entangle => self.parse_entangle_expression(),
             // Handle pattern tokens as variable names in statement context
             PhiToken::Pattern => {
                 let var_name = "pattern".to_string();
@@ -749,25 +945,29 @@ impl PhiParser {
                 self.expect(PhiToken::RightBrace)?;
                 Ok(PhiExpression::Block(expressions))
             }
-            PhiToken::Identifier(name) => {
+            PhiToken::Identifier(_name) => {
                 // If it's an identifier, it could be a variable or a function call
                 // We'll try to parse it as an expression statement
                 self.parse_expression_statement()
-            },
+            }
             // Bare expressions as statements (numbers, strings, booleans, parens)
-            PhiToken::Number(_) | PhiToken::String(_) | PhiToken::Boolean(_)
-            | PhiToken::LeftParen | PhiToken::Minus | PhiToken::Not => {
-                self.parse_expression_statement()
-            }
-            _ => {
-                Err(format!("Unexpected token in statement: {:?}", self.current_token))
-            }
+            PhiToken::Number(_)
+            | PhiToken::String(_)
+            | PhiToken::Boolean(_)
+            | PhiToken::LeftParen
+            | PhiToken::Minus
+            | PhiToken::Not
+            | PhiToken::Coherence => self.parse_expression_statement(),
+            _ => Err(format!(
+                "Unexpected token in statement: {:?}",
+                self.current_token
+            )),
         }
     }
 
     fn parse_create_statement(&mut self) -> Result<PhiExpression, String> {
         self.expect(PhiToken::Create)?;
-        
+
         // Handle optional "pattern" keyword
         if self.current_token == PhiToken::Pattern {
             self.advance();
@@ -786,7 +986,12 @@ impl PhiParser {
             PhiToken::Heart => "heart".to_string(),
             PhiToken::Toroid => "toroid".to_string(),
             PhiToken::Field => "field".to_string(),
-            _ => return Err(format!("Expected pattern type, found {:?}", pattern_type_token)),
+            _ => {
+                return Err(format!(
+                    "Expected pattern type, found {:?}",
+                    pattern_type_token
+                ))
+            }
         };
         self.advance();
 
@@ -802,15 +1007,28 @@ impl PhiParser {
                 self.advance();
                 (-1.0, Some(var_name))
             }
-            PhiToken::Frequency | PhiToken::State | PhiToken::Coherence
-            | PhiToken::Monitor | PhiToken::Pattern | PhiToken::Target
-            | PhiToken::Field | PhiToken::Zone | PhiToken::Intention
-            | PhiToken::Witness | PhiToken::Resonate | PhiToken::Sequence => {
+            PhiToken::Frequency
+            | PhiToken::State
+            | PhiToken::Coherence
+            | PhiToken::Monitor
+            | PhiToken::Pattern
+            | PhiToken::Target
+            | PhiToken::Field
+            | PhiToken::Zone
+            | PhiToken::Intention
+            | PhiToken::Witness
+            | PhiToken::Resonate
+            | PhiToken::Sequence => {
                 let var_name = format!("{:?}", self.current_token).to_lowercase();
                 self.advance();
                 (-1.0, Some(var_name))
             }
-            _ => return Err(format!("Expected frequency (number or variable), found {:?}", self.current_token))
+            _ => {
+                return Err(format!(
+                    "Expected frequency (number or variable), found {:?}",
+                    self.current_token
+                ))
+            }
         };
         if self.current_token == PhiToken::Hz {
             self.advance();
@@ -820,7 +1038,10 @@ impl PhiParser {
 
         // If frequency is a variable, store it in parameters for interpreter resolution
         if let Some(var_name) = frequency_var {
-            parameters.insert("__frequency_var".to_string(), PhiValue::String(format!("${}", var_name)));
+            parameters.insert(
+                "__frequency_var".to_string(),
+                PhiValue::String(format!("${}", var_name)),
+            );
         }
 
         if self.current_token == PhiToken::With {
@@ -832,12 +1053,12 @@ impl PhiParser {
                 while self.current_token == PhiToken::Newline {
                     self.advance();
                 }
-                
+
                 // Check for closing brace after skipping newlines
                 if self.current_token == PhiToken::RightBrace {
                     break;
                 }
-                
+
                 let param_name = self.expect_identifier()?;
                 self.expect(PhiToken::Colon)?;
                 let param_value = self.parse_phi_value()?;
@@ -846,7 +1067,7 @@ impl PhiParser {
                 if self.current_token == PhiToken::Comma {
                     self.advance();
                 }
-                
+
                 // Skip any trailing newlines
                 while self.current_token == PhiToken::Newline {
                     self.advance();
@@ -865,7 +1086,7 @@ impl PhiParser {
 
     fn parse_validation_statement(&mut self) -> Result<PhiExpression, String> {
         self.expect(PhiToken::Validate)?;
-        
+
         // Handle pattern tokens as identifiers for validation
         let pattern_expr = match &self.current_token {
             PhiToken::Spiral => {
@@ -889,9 +1110,9 @@ impl PhiParser {
                 self.advance();
                 PhiExpression::Variable(var_name)
             }
-            _ => self.parse_expression()?
+            _ => self.parse_expression()?,
         };
-        
+
         let pattern = Box::new(pattern_expr);
 
         let mut metrics = Vec::new();
@@ -916,7 +1137,10 @@ impl PhiParser {
                         metric
                     }
                     _ => {
-                        return Err(format!("Expected metric name, found {:?}", self.current_token));
+                        return Err(format!(
+                            "Expected metric name, found {:?}",
+                            self.current_token
+                        ));
                     }
                 };
                 metrics.push(metric_name);
@@ -929,6 +1153,90 @@ impl PhiParser {
         }
 
         Ok(PhiExpression::ConsciousnessValidation { pattern, metrics })
+    }
+
+    fn parse_stream_block(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Stream)?;
+        let name = self.expect_string()?;
+        let body = Box::new(self.parse_statement()?);
+        Ok(PhiExpression::StreamBlock { name, body })
+    }
+
+    fn parse_break_stream(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Break)?;
+        self.expect(PhiToken::Stream)?;
+        Ok(PhiExpression::BreakStream)
+    }
+
+    fn parse_remember_statement(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Remember)?;
+        let key = self.expect_string()?;
+        let value = Box::new(self.parse_expression()?);
+        Ok(PhiExpression::Remember { key, value })
+    }
+
+    fn parse_recall_expression(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Recall)?;
+        let key = self.expect_string()?;
+        Ok(PhiExpression::Recall(key))
+    }
+
+    fn parse_broadcast_statement(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Broadcast)?;
+        let channel = self.expect_string()?;
+        let value = Box::new(self.parse_expression()?);
+        Ok(PhiExpression::Broadcast { channel, value })
+    }
+
+    fn parse_listen_expression(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Listen)?;
+        let channel = self.expect_string()?;
+        Ok(PhiExpression::Listen(channel))
+    }
+
+    fn parse_agent_block(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Agent)?;
+        let name = self.expect_string()?;
+        self.expect(PhiToken::Version)?;
+        let version = self.expect_string()?;
+        let body = Box::new(self.parse_statement()?);
+        Ok(PhiExpression::AgentBlock {
+            name,
+            version,
+            body,
+        })
+    }
+
+    fn parse_evolve_expression(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Evolve)?;
+        let expr = self.parse_expression()?;
+        Ok(PhiExpression::Evolve(Box::new(expr)))
+    }
+
+    fn parse_entangle_expression(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Entangle)?;
+
+        // Handle both "in" (mapped to In token) and "on" (mapped to Identifier)
+        match &self.current_token {
+            PhiToken::In => {
+                self.advance();
+            }
+            PhiToken::Identifier(s) if s == "on" => {
+                self.advance();
+            }
+            _ => {
+                return Err(format!(
+                    "Expected 'on' or 'in' after entangle, found {:?}",
+                    self.current_token
+                ))
+            }
+        }
+
+        let freq = self.expect_number()?;
+        if self.current_token == PhiToken::Hz {
+            self.advance();
+        }
+        Ok(PhiExpression::Entangle(freq))
     }
 
     fn parse_phi_value(&mut self) -> Result<PhiValue, String> {
@@ -1032,7 +1340,10 @@ impl PhiParser {
     fn parse_equality(&mut self) -> Result<PhiExpression, String> {
         let mut expr = self.parse_comparison()?;
 
-        while matches!(self.current_token, PhiToken::EqualEqual | PhiToken::NotEqual) {
+        while matches!(
+            self.current_token,
+            PhiToken::EqualEqual | PhiToken::NotEqual
+        ) {
             let op = match self.current_token {
                 PhiToken::EqualEqual => BinaryOperator::Equal,
                 PhiToken::NotEqual => BinaryOperator::NotEqual,
@@ -1112,7 +1423,10 @@ impl PhiParser {
     fn parse_factor(&mut self) -> Result<PhiExpression, String> {
         let mut expr = self.parse_unary()?;
 
-        while matches!(self.current_token, PhiToken::Star | PhiToken::Slash | PhiToken::Percent | PhiToken::Power) {
+        while matches!(
+            self.current_token,
+            PhiToken::Star | PhiToken::Slash | PhiToken::Percent | PhiToken::Power
+        ) {
             let op = match self.current_token {
                 PhiToken::Star => BinaryOperator::Multiply,
                 PhiToken::Slash => BinaryOperator::Divide,
@@ -1172,62 +1486,41 @@ impl PhiParser {
                 self.advance();
                 PhiExpression::Boolean(b)
             }
+            PhiToken::Coherence => {
+                self.advance();
+                PhiExpression::Variable("coherence".to_string())
+            }
+            PhiToken::VoidDepth => {
+                self.advance();
+                PhiExpression::VoidDepth
+            }
+            PhiToken::Recall => self.parse_recall_expression()?,
+            PhiToken::Listen => self.parse_listen_expression()?,
+            PhiToken::Evolve => self.parse_evolve_expression()?,
+            PhiToken::Entangle => self.parse_entangle_expression()?,
             PhiToken::Create => {
                 // Handle create statements as expressions
                 self.parse_create_statement()?
             }
             PhiToken::Validate => {
-                // Handle validate statements as expressions  
+                // Handle validate statements as expressions
                 self.parse_validation_statement()?
-            }
-            PhiToken::Identifier(name) => {
-                let var_name = name.clone();
-                self.advance();
-
-                // Check for assignment
-                if self.current_token == PhiToken::Equal {
-                    self.advance();
-                    let value = Box::new(self.parse_expression()?);
-                    return Ok(PhiExpression::LetBinding { name: var_name, value, phi_type: None });
-                }
-
-                // Check for function call
-                if self.current_token == PhiToken::LeftParen {
-                    self.advance();
-                    let mut arguments = Vec::new();
-
-                    while self.current_token != PhiToken::RightParen {
-                        arguments.push(self.parse_expression()?);
-                        if self.current_token == PhiToken::Comma {
-                            self.advance();
-                        }
-                    }
-
-                    self.expect(PhiToken::RightParen)?;
-
-                    PhiExpression::FunctionCall {
-                        name: var_name,
-                        arguments,
-                    }
-                } else {
-                    PhiExpression::Variable(var_name)
-                }
             }
             PhiToken::LeftParen => {
                 self.advance();
-                
+
                 // Skip any newlines after opening paren
                 while self.current_token == PhiToken::Newline {
                     self.advance();
                 }
-                
+
                 let expr = self.parse_expression()?;
-                
+
                 // Skip any newlines before closing paren
                 while self.current_token == PhiToken::Newline {
                     self.advance();
                 }
-                
+
                 self.expect(PhiToken::RightParen)?;
                 expr
             }
@@ -1247,17 +1540,16 @@ impl PhiParser {
                 PhiExpression::Block(expressions)
             }
             PhiToken::LeftBracket => {
-                // Parse list literals directly as expressions (not through parse_phi_value)
+                // Parse list literals directly as expressions
                 self.advance(); // Consume '['
                 let mut elements = Vec::new();
-                
+
                 // Check for empty list
                 if self.current_token == PhiToken::RightBracket {
                     self.advance();
                     PhiExpression::List(elements)
                 } else {
                     loop {
-                        // Parse each element as a full expression (not just simple values)
                         elements.push(self.parse_expression()?);
                         if self.current_token == PhiToken::Comma {
                             self.advance();
@@ -1269,7 +1561,46 @@ impl PhiParser {
                     PhiExpression::List(elements)
                 }
             }
-            _ => return Err(format!("Unexpected token: {:?}", self.current_token)),
+            _ => {
+                // If it's not a recognized expression-starter like Number or String,
+                // try to parse it as an identifier (this allows keywords as variables - P-1 fix)
+                if let Ok(var_name) = self.expect_identifier() {
+                    // Check for assignment
+                    if self.current_token == PhiToken::Equal {
+                        self.advance();
+                        let value = Box::new(self.parse_expression()?);
+                        return Ok(PhiExpression::LetBinding {
+                            name: var_name,
+                            value,
+                            phi_type: None,
+                        });
+                    }
+
+                    // Check for function call
+                    if self.current_token == PhiToken::LeftParen {
+                        self.advance();
+                        let mut arguments = Vec::new();
+
+                        while self.current_token != PhiToken::RightParen {
+                            arguments.push(self.parse_expression()?);
+                            if self.current_token == PhiToken::Comma {
+                                self.advance();
+                            }
+                        }
+
+                        self.expect(PhiToken::RightParen)?;
+
+                        PhiExpression::FunctionCall {
+                            name: var_name,
+                            arguments,
+                        }
+                    } else {
+                        PhiExpression::Variable(var_name)
+                    }
+                } else {
+                    return Err(format!("Unexpected token: {:?}", self.current_token));
+                }
+            }
         }; // Note the '?' here to propagate errors
 
         // Handle list access
@@ -1301,7 +1632,11 @@ impl PhiParser {
         self.expect(PhiToken::Equal)?;
         let value = Box::new(self.parse_expression()?);
 
-        Ok(PhiExpression::LetBinding { name, value, phi_type })
+        Ok(PhiExpression::LetBinding {
+            name,
+            value,
+            phi_type,
+        })
     }
 
     fn parse_function_definition(&mut self) -> Result<PhiExpression, String> {
@@ -1404,8 +1739,12 @@ impl PhiParser {
     fn parse_witness_statement(&mut self) -> Result<PhiExpression, String> {
         self.expect(PhiToken::Witness)?;
 
-        // Check what IMMEDIATELY follows witness (before consuming newlines)
-        // This determines: bare witness, witness with expression, or witness with block
+        let mut mid_circuit = false;
+        if self.current_token == PhiToken::MidCircuit {
+            mid_circuit = true;
+            self.advance();
+        }
+
         let (expression, body) = if self.current_token == PhiToken::Newline
             || self.current_token == PhiToken::Eof
             || self.current_token == PhiToken::RightBrace
@@ -1434,7 +1773,11 @@ impl PhiParser {
             (expr, None)
         };
 
-        Ok(PhiExpression::Witness { expression, body })
+        Ok(PhiExpression::Witness {
+            mid_circuit,
+            expression,
+            body,
+        })
     }
 
     /// Parse resonate statement:
@@ -1446,13 +1789,23 @@ impl PhiParser {
         let expression = if self.current_token == PhiToken::Newline
             || self.current_token == PhiToken::Eof
             || self.current_token == PhiToken::RightBrace
+            || self.is_resonate_direction_marker()
         {
             None
         } else {
             Some(Box::new(self.parse_expression()?))
         };
 
-        Ok(PhiExpression::Resonate { expression })
+        let direction = if self.is_resonate_direction_marker() {
+            self.parse_resonate_direction()?
+        } else {
+            ResonateDirection::TeamA
+        };
+
+        Ok(PhiExpression::Resonate {
+            expression,
+            direction,
+        })
     }
 
     /// Parse intention block:
@@ -1472,7 +1825,12 @@ impl PhiParser {
                 self.advance();
                 name
             }
-            _ => return Err(format!("Expected intention name (string or identifier), found {:?}", self.current_token)),
+            _ => {
+                return Err(format!(
+                    "Expected intention name (string or identifier), found {:?}",
+                    self.current_token
+                ))
+            }
         };
 
         // Skip newlines
@@ -1521,7 +1879,7 @@ impl PhiParser {
                 let inner_type = self.parse_type()?;
                 self.expect(PhiToken::Greater)?; // Expect '>'
                 Ok(PhiType::List(Box::new(inner_type)))
-            },
+            }
             _ => Err(format!("Unknown type: {:?}", type_token)),
         }
     }
@@ -1539,7 +1897,46 @@ impl PhiParser {
             self.advance();
             Ok(())
         } else {
-            Err(format!("Expected {:?}, found {:?}", expected, self.current_token))
+            Err(format!(
+                "Expected {:?}, found {:?}",
+                expected, self.current_token
+            ))
+        }
+    }
+
+    fn is_resonate_direction_marker(&self) -> bool {
+        matches!(
+            &self.current_token,
+            PhiToken::Identifier(name) if name.eq_ignore_ascii_case("toward")
+        )
+    }
+
+    fn parse_resonate_direction(&mut self) -> Result<ResonateDirection, String> {
+        if !self.is_resonate_direction_marker() {
+            return Err(format!(
+                "Expected resonate direction marker `toward`, found {:?}",
+                self.current_token
+            ));
+        }
+        self.advance();
+
+        match &self.current_token {
+            PhiToken::Identifier(name) | PhiToken::String(name)
+                if name.eq_ignore_ascii_case("TEAM_A") =>
+            {
+                self.advance();
+                Ok(ResonateDirection::TeamA)
+            }
+            PhiToken::Identifier(name) | PhiToken::String(name)
+                if name.eq_ignore_ascii_case("TEAM_B") =>
+            {
+                self.advance();
+                Ok(ResonateDirection::TeamB)
+            }
+            _ => Err(format!(
+                "Expected TEAM_A or TEAM_B after `toward`, found {:?}",
+                self.current_token
+            )),
         }
     }
 
@@ -1552,19 +1949,76 @@ impl PhiParser {
         // Accept actual identifiers and keywords that could be used as variable names
         let result = match &self.current_token {
             PhiToken::Identifier(name) => Ok(name.clone()),
+            PhiToken::Create => Ok("create".to_string()),
+            PhiToken::Pattern => Ok("pattern".to_string()),
+            PhiToken::At => Ok("at".to_string()),
+            PhiToken::Hz => Ok("hz".to_string()),
+            PhiToken::With => Ok("with".to_string()),
+            PhiToken::Into => Ok("into".to_string()),
+            PhiToken::From => Ok("from".to_string()),
+            PhiToken::Function => Ok("function".to_string()),
+            PhiToken::Return => Ok("return".to_string()),
+            PhiToken::Let => Ok("let".to_string()),
+            PhiToken::If => Ok("if".to_string()),
+            PhiToken::Else => Ok("else".to_string()),
+            PhiToken::For => Ok("for".to_string()),
+            PhiToken::In => Ok("in".to_string()),
+            PhiToken::While => Ok("while".to_string()),
+            PhiToken::Consciousness => Ok("consciousness".to_string()),
             PhiToken::Frequency => Ok("frequency".to_string()),
             PhiToken::Witness => Ok("witness".to_string()),
             PhiToken::Resonate => Ok("resonate".to_string()),
             PhiToken::State => Ok("state".to_string()),
             PhiToken::Coherence => Ok("coherence".to_string()),
             PhiToken::Monitor => Ok("monitor".to_string()),
-            PhiToken::Pattern => Ok("pattern".to_string()),
+            PhiToken::Validate => Ok("validate".to_string()),
             PhiToken::Target => Ok("target".to_string()),
             PhiToken::Field => Ok("field".to_string()),
             PhiToken::Zone => Ok("zone".to_string()),
+            PhiToken::Foundational => Ok("foundational".to_string()),
+            PhiToken::Elevated => Ok("elevated".to_string()),
+            PhiToken::Transcendent => Ok("transcendent".to_string()),
+            PhiToken::Cosmic => Ok("cosmic".to_string()),
             PhiToken::Intention => Ok("intention".to_string()),
+            PhiToken::Hardware => Ok("hardware".to_string()),
+            PhiToken::Emergency => Ok("emergency".to_string()),
+            PhiToken::Protocol => Ok("protocol".to_string()),
+            PhiToken::Trigger => Ok("trigger".to_string()),
+            PhiToken::Immediate => Ok("immediate".to_string()),
+            PhiToken::Notify => Ok("notify".to_string()),
+            PhiToken::Gradient => Ok("gradient".to_string()),
+            PhiToken::BiologicalProgram => Ok("biological_program".to_string()),
             PhiToken::Sequence => Ok("sequence".to_string()),
-            _ => Err(format!("Expected identifier, found {:?}", self.current_token)),
+            PhiToken::QuantumBridge => Ok("quantum_bridge".to_string()),
+            PhiToken::QuantumField => Ok("quantum_field".to_string()),
+            PhiToken::ConsciousnessFlow => Ok("consciousness_flow".to_string()),
+            PhiToken::Stream => Ok("stream".to_string()),
+            PhiToken::Break => Ok("break".to_string()),
+            PhiToken::Spiral => Ok("spiral".to_string()),
+            PhiToken::Flower => Ok("flower".to_string()),
+            PhiToken::DNA => Ok("dna".to_string()),
+            PhiToken::Mandelbrot => Ok("mandelbrot".to_string()),
+            PhiToken::Pentagram => Ok("pentagram".to_string()),
+            PhiToken::SriYantra => Ok("sri_yantra".to_string()),
+            PhiToken::Golden => Ok("golden".to_string()),
+            PhiToken::Fibonacci => Ok("fibonacci".to_string()),
+            PhiToken::Heart => Ok("heart".to_string()),
+            PhiToken::Toroid => Ok("toroid".to_string()),
+            PhiToken::Generate => Ok("generate".to_string()),
+            PhiToken::Transform => Ok("transform".to_string()),
+            PhiToken::Combine => Ok("combine".to_string()),
+            PhiToken::Analyze => Ok("analyze".to_string()),
+            PhiToken::Synthesize => Ok("synthesize".to_string()),
+            PhiToken::Point2D => Ok("point2d".to_string()),
+            PhiToken::Point3D => Ok("point3d".to_string()),
+            PhiToken::Pattern2D => Ok("pattern2d".to_string()),
+            PhiToken::Pattern3D => Ok("pattern3d".to_string()),
+            PhiToken::Audio => Ok("audio".to_string()),
+            PhiToken::MidCircuit => Ok("mid_circuit".to_string()),
+            _ => Err(format!(
+                "Expected identifier, found {:?}",
+                self.current_token
+            )),
         };
         if result.is_ok() {
             self.advance();
@@ -1587,36 +2041,34 @@ impl PhiParser {
     /// Parse consciousness declaration: consciousness STATE { frequency: 720Hz, coherence: 0.867, intention: "..." }
     fn parse_consciousness_declaration(&mut self) -> Result<PhiExpression, String> {
         self.expect(PhiToken::Consciousness)?;
-        
+
         // Skip any newlines
         while self.current_token == PhiToken::Newline {
             self.advance();
         }
-        
+
         // Get the state name (e.g., TRANSCEND)
         let state = self.expect_identifier()?;
-        
+
         self.expect(PhiToken::LeftBrace)?;
-        
+
         let mut frequency = 432.0; // Default ground frequency
         let mut coherence = 1.0;
-        let mut intention = String::new();
-        
         // Parse consciousness properties
         while self.current_token != PhiToken::RightBrace {
             // Skip any newlines
             while self.current_token == PhiToken::Newline {
                 self.advance();
             }
-            
+
             // Check for closing brace after skipping newlines
             if self.current_token == PhiToken::RightBrace {
                 break;
             }
-            
+
             let prop_name = self.expect_identifier()?;
             self.expect(PhiToken::Colon)?;
-            
+
             match prop_name.as_str() {
                 "frequency" => {
                     frequency = self.expect_number()?;
@@ -1628,23 +2080,23 @@ impl PhiParser {
                     coherence = self.expect_number()?;
                 }
                 "intention" => {
-                    intention = self.expect_string()?;
+                    let _intention = self.expect_string()?;
                 }
-                _ => return Err(format!("Unknown consciousness property: {}", prop_name))
+                _ => return Err(format!("Unknown consciousness property: {}", prop_name)),
             }
-            
+
             if self.current_token == PhiToken::Comma {
                 self.advance();
             }
-            
+
             // Skip any trailing newlines
             while self.current_token == PhiToken::Newline {
                 self.advance();
             }
         }
-        
+
         self.expect(PhiToken::RightBrace)?;
-        
+
         Ok(PhiExpression::ConsciousnessState {
             state,
             coherence,
@@ -1655,21 +2107,18 @@ impl PhiParser {
     /// Parse hardware declaration: hardware NAME { device: "...", map consciousness_level to ... }
     fn parse_hardware_declaration(&mut self) -> Result<PhiExpression, String> {
         self.expect(PhiToken::Hardware)?;
-        
+
         let device_name = self.expect_identifier()?;
-        
+
         self.expect(PhiToken::LeftBrace)?;
-        
-        // For now, simplified hardware parsing
-        let mut device_type = String::new();
-        
+
         while self.current_token != PhiToken::RightBrace {
             // Skip content for now - would parse device mapping
             self.advance();
         }
-        
+
         self.expect(PhiToken::RightBrace)?;
-        
+
         Ok(PhiExpression::HardwareSync {
             device_type: device_name,
             consciousness_mapping: Box::new(PhiExpression::Number(0.0)), // Placeholder
@@ -1679,40 +2128,40 @@ impl PhiParser {
     /// Parse emergency protocol: emergency_protocol NAME { trigger: ..., immediate { ... }, notify: [...] }
     fn parse_emergency_protocol(&mut self) -> Result<PhiExpression, String> {
         self.expect(PhiToken::Emergency)?;
-        
+
         // Skip any newlines
         while self.current_token == PhiToken::Newline {
             self.advance();
         }
-        
+
         self.expect(PhiToken::Protocol)?;
-        
+
         // Skip any newlines
         while self.current_token == PhiToken::Newline {
             self.advance();
         }
-        
-        let protocol_name = self.expect_identifier()?;
-        
+
+        let _protocol_name = self.expect_identifier()?;
+
         self.expect(PhiToken::LeftBrace)?;
-        
+
         let mut trigger = Box::new(PhiExpression::Boolean(false));
         let mut immediate_action = Box::new(PhiExpression::Block(vec![]));
         let mut notifications = vec![];
-        
+
         while self.current_token != PhiToken::RightBrace {
             // Skip any newlines
             while self.current_token == PhiToken::Newline {
                 self.advance();
             }
-            
+
             // Check for closing brace after skipping newlines
             if self.current_token == PhiToken::RightBrace {
                 break;
             }
-            
+
             let prop = self.expect_identifier()?;
-            
+
             match prop.as_str() {
                 "trigger" => {
                     self.expect(PhiToken::Colon)?;
@@ -1722,15 +2171,15 @@ impl PhiParser {
                     // No colon for immediate - it directly has a block
                     self.expect(PhiToken::LeftBrace)?;
                     let mut actions = vec![];
-                    
+
                     // Skip any newlines after opening brace
                     while self.current_token == PhiToken::Newline {
                         self.advance();
                     }
-                    
+
                     while self.current_token != PhiToken::RightBrace {
                         actions.push(self.parse_statement()?);
-                        
+
                         // Skip any newlines between statements
                         while self.current_token == PhiToken::Newline {
                             self.advance();
@@ -1750,21 +2199,21 @@ impl PhiParser {
                     }
                     self.expect(PhiToken::RightBracket)?;
                 }
-                _ => return Err(format!("Unknown emergency protocol property: {}", prop))
+                _ => return Err(format!("Unknown emergency protocol property: {}", prop)),
             }
-            
+
             if self.current_token == PhiToken::Comma {
                 self.advance();
             }
-            
+
             // Skip any trailing newlines
             while self.current_token == PhiToken::Newline {
                 self.advance();
             }
         }
-        
+
         self.expect(PhiToken::RightBrace)?;
-        
+
         Ok(PhiExpression::EmergencyProtocol {
             trigger,
             immediate_action,
@@ -1776,26 +2225,28 @@ impl PhiParser {
     fn parse_consciousness_flow(&mut self) -> Result<PhiExpression, String> {
         self.expect(PhiToken::ConsciousnessFlow)?;
         self.expect(PhiToken::LeftBrace)?;
-        
+
         // Skip any newlines
         while self.current_token == PhiToken::Newline {
             self.advance();
         }
-        
+
         // For now, simplified parsing - skip the gradient block
         if self.current_token == PhiToken::Gradient {
             self.advance(); // Skip 'gradient'
-            
+
             // Skip the condition expression (consciousness.level)
-            while self.current_token != PhiToken::LeftBrace && self.current_token != PhiToken::RightBrace {
+            while self.current_token != PhiToken::LeftBrace
+                && self.current_token != PhiToken::RightBrace
+            {
                 self.advance();
             }
-            
+
             // If we have a left brace, skip the gradient block
             if self.current_token == PhiToken::LeftBrace {
                 self.advance(); // Skip '{'
                 let mut brace_count = 1;
-                
+
                 // Skip until we find the matching right brace
                 while brace_count > 0 && self.current_token != PhiToken::Eof {
                     if self.current_token == PhiToken::LeftBrace {
@@ -1807,18 +2258,18 @@ impl PhiParser {
                 }
             }
         }
-        
+
         // Skip any trailing newlines
         while self.current_token == PhiToken::Newline {
             self.advance();
         }
-        
+
         self.expect(PhiToken::RightBrace)?;
-        
+
         // For now, return a simplified structure
         let condition = Box::new(PhiExpression::Variable("consciousness.level".to_string()));
         let branches = vec![];
-        
+
         Ok(PhiExpression::ConsciousnessFlow {
             condition,
             branches,
@@ -1828,21 +2279,21 @@ impl PhiParser {
     /// Parse biological program: biological_program NAME { target: ..., frequency: ..., sequence ... }
     fn parse_biological_program(&mut self) -> Result<PhiExpression, String> {
         self.expect(PhiToken::BiologicalProgram)?;
-        
-        let program_name = self.expect_identifier()?;
-        
+
+        let _program_name = self.expect_identifier()?;
+
         self.expect(PhiToken::LeftBrace)?;
-        
+
         // For now, simplified parsing
         let target = "human_biology".to_string();
         let frequency = 528.0;
-        
+
         while self.current_token != PhiToken::RightBrace {
             self.advance(); // Skip content for now
         }
-        
+
         self.expect(PhiToken::RightBrace)?;
-        
+
         Ok(PhiExpression::BiologicalInterface {
             target,
             transduction_method: "phi_harmonic".to_string(),
@@ -1853,22 +2304,22 @@ impl PhiParser {
     /// Parse quantum bridge: quantum_bridge NAME { source: ..., target: ..., ... }
     fn parse_quantum_bridge(&mut self) -> Result<PhiExpression, String> {
         self.expect(PhiToken::QuantumBridge)?;
-        
-        let bridge_name = self.expect_identifier()?;
-        
+
+        let _bridge_name = self.expect_identifier()?;
+
         self.expect(PhiToken::LeftBrace)?;
-        
+
         // For now, simplified parsing
         let field_type = "consciousness_bridge".to_string();
         let dimensions = vec![3, 4, 5, 6, 7];
         let coherence_target = 1.0;
-        
+
         while self.current_token != PhiToken::RightBrace {
             self.advance(); // Skip content for now
         }
-        
+
         self.expect(PhiToken::RightBrace)?;
-        
+
         Ok(PhiExpression::QuantumField {
             field_type,
             dimensions,
@@ -1884,11 +2335,12 @@ impl PhiParser {
                 self.advance();
                 Ok(value)
             }
-            _ => Err(format!("Expected string literal, found {:?}", self.current_token))
+            _ => Err(format!(
+                "Expected string literal, found {:?}",
+                self.current_token
+            )),
         }
     }
-
-    
 
     /// Parse frequency pattern: frequency_pattern { base_frequency: ..., harmonics: [...], phi_scaling: ... }
     fn parse_frequency_pattern(&mut self) -> Result<PhiExpression, String> {
@@ -1931,10 +2383,15 @@ impl PhiParser {
                             self.advance();
                             value
                         }
-                        _ => return Err(format!("Expected boolean literal, found {:?}", self.current_token))
+                        _ => {
+                            return Err(format!(
+                                "Expected boolean literal, found {:?}",
+                                self.current_token
+                            ))
+                        }
                     };
                 }
-                _ => return Err(format!("Unknown frequency pattern property: {}", prop_name))
+                _ => return Err(format!("Unknown frequency pattern property: {}", prop_name)),
             }
 
             if self.current_token == PhiToken::Comma {
@@ -1952,33 +2409,6 @@ impl PhiParser {
             phi_scaling,
         })
     }
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-    
-
-
-
 }
 
 // PhiFlow program parsing entry point
@@ -1987,4 +2417,170 @@ pub fn parse_phi_program(source: &str) -> Result<Vec<PhiExpression>, String> {
     let tokens = lexer.tokenize()?;
     let mut parser = PhiParser::new(tokens);
     parser.parse()
+}
+
+/// Parse source and return a rich PhiDiagnostic on error.
+/// The existing `parse_phi_program` signature is unchanged.
+pub fn parse_phi_program_with_diagnostics(
+    source: &str,
+) -> Result<Vec<PhiExpression>, PhiDiagnostic> {
+    parse_phi_program(source).map_err(|err_str| string_to_diagnostic(&err_str, source))
+}
+
+/// Convert a raw parser/runtime error string into a PhiDiagnostic.
+/// Parses location from the string when present; falls back to line=0, col=0.
+fn string_to_diagnostic(err: &str, _source: &str) -> PhiDiagnostic {
+    let (line, column) = extract_line_column(err).unwrap_or((0, 0));
+    let lower = err.to_ascii_lowercase();
+
+    if err.contains("Unexpected character") {
+        let found = extract_between(err, "Unexpected character '", "' at line")
+            .unwrap_or_else(|| "unknown_char".to_string());
+        return make_diagnostic("E004_UNEXPECTED_CHAR", line, column, found, None);
+    }
+
+    if err.contains("Unexpected end of file") || err.contains("Unexpected token in statement: Eof")
+    {
+        return make_diagnostic("E002_UNEXPECTED_EOF", line, column, "Eof".to_string(), None);
+    }
+
+    if lower.contains("undeclared variable")
+        || lower.contains("undefined variable")
+        || lower.contains("variable used before it was declared")
+    {
+        return make_diagnostic(
+            "E005_UNDECLARED_VARIABLE",
+            line,
+            column,
+            "identifier".to_string(),
+            None,
+        );
+    }
+
+    if let Some(rest) = err.strip_prefix("Expected ") {
+        if let Some((expected, found)) = rest.split_once(", found ") {
+            return make_diagnostic(
+                "E003_EXPECTED_TOKEN",
+                line,
+                column,
+                normalize_token(found),
+                Some(normalize_token(expected)),
+            );
+        }
+        return make_diagnostic("E003_EXPECTED_TOKEN", line, column, err.to_string(), None);
+    }
+
+    if let Some(found) = err
+        .strip_prefix("Unexpected token in statement: ")
+        .or_else(|| err.strip_prefix("Unexpected token: "))
+    {
+        return make_diagnostic(
+            "E001_UNEXPECTED_TOKEN",
+            line,
+            column,
+            normalize_token(found),
+            None,
+        );
+    }
+
+    if err.contains("Unexpected token") {
+        return make_diagnostic("E001_UNEXPECTED_TOKEN", line, column, err.to_string(), None);
+    }
+
+    make_diagnostic("E001_UNEXPECTED_TOKEN", line, column, err.to_string(), None)
+}
+
+fn make_diagnostic(
+    code: &str,
+    line: usize,
+    column: usize,
+    found: String,
+    expected: Option<String>,
+) -> PhiDiagnostic {
+    match code {
+        "E001_UNEXPECTED_TOKEN" => PhiDiagnostic {
+            error_code: code.to_string(),
+            line,
+            column,
+            found,
+            expected: None,
+            hint: "This keyword is not valid at the start of an expression. Did you mean to use `let`, `resonate`, or a function call?".to_string(),
+            example_fix: "let value = some_function()\nresonate value".to_string(),
+        },
+        "E002_UNEXPECTED_EOF" => PhiDiagnostic {
+            error_code: code.to_string(),
+            line,
+            column,
+            found,
+            expected: None,
+            hint: "Block was opened but never closed. Add a matching `}` to close the block.".to_string(),
+            example_fix: "intention \"name\" {\n    resonate 1.0\n}".to_string(),
+        },
+        "E003_EXPECTED_TOKEN" => PhiDiagnostic {
+            error_code: code.to_string(),
+            line,
+            column,
+            found,
+            expected,
+            hint: "A required symbol is missing. Check the syntax around the reported position.".to_string(),
+            example_fix: "function f(x: Number) -> Number {\n    return x\n}".to_string(),
+        },
+        "E004_UNEXPECTED_CHAR" => PhiDiagnostic {
+            error_code: code.to_string(),
+            line,
+            column,
+            found,
+            expected: None,
+            hint: "This character is not part of the PhiFlow language. Remove it or replace with a valid operator.".to_string(),
+            example_fix: "let x = 5.0 + 3.0".to_string(),
+        },
+        "E005_UNDECLARED_VARIABLE" => PhiDiagnostic {
+            error_code: code.to_string(),
+            line,
+            column,
+            found,
+            expected: None,
+            hint: "Variable used before it was declared. Add a `let` binding above this line.".to_string(),
+            example_fix: "let y = 1.618\nresonate y".to_string(),
+        },
+        _ => PhiDiagnostic {
+            error_code: "E001_UNEXPECTED_TOKEN".to_string(),
+            line,
+            column,
+            found,
+            expected: None,
+            hint: "This keyword is not valid at the start of an expression. Did you mean to use `let`, `resonate`, or a function call?".to_string(),
+            example_fix: "let value = some_function()\nresonate value".to_string(),
+        },
+    }
+}
+
+fn extract_line_column(err: &str) -> Option<(usize, usize)> {
+    let marker = "at line ";
+    let start = err.find(marker)?;
+    let after_line = &err[start + marker.len()..];
+    let (line_part, after_col_marker) = after_line.split_once(", column ")?;
+    let line = parse_leading_usize(line_part)?;
+    let column = parse_leading_usize(after_col_marker)?;
+    Some((line, column))
+}
+
+fn parse_leading_usize(s: &str) -> Option<usize> {
+    let digits: String = s.chars().take_while(|c| c.is_ascii_digit()).collect();
+    if digits.is_empty() {
+        None
+    } else {
+        digits.parse::<usize>().ok()
+    }
+}
+
+fn extract_between(s: &str, start: &str, end: &str) -> Option<String> {
+    let begin = s.find(start)? + start.len();
+    let tail = &s[begin..];
+    let rel_end = tail.find(end)?;
+    Some(tail[..rel_end].to_string())
+}
+
+fn normalize_token(s: &str) -> String {
+    s.trim().trim_matches('`').to_string()
 }

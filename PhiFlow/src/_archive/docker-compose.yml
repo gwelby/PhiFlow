@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  quantum-core:
+    build: .
+    container_name: quantum-core
+    environment:
+      - GROUND_FREQ=432
+      - CREATE_FREQ=528
+      - UNITY_FREQ=768
+      - SYNOLOGY_VIRTUAL=//192.168.100.32
+      - SYNOLOGY_PHYSICAL=//192.168.103.30
+    volumes:
+      - ./quantum-data:/quantum-data
+      - type: bind
+        source: //192.168.100.32/Music
+        target: /quantum-data/music
+        read_only: true
+      - type: bind
+        source: //192.168.100.32/Photos
+        target: /quantum-data/photos
+        read_only: true
+    ports:
+      - "432:432"  # Ground frequency
+      - "528:528"  # Creation frequency
+      - "768:768"  # Unity frequency
+    restart: unless-stopped
+    networks:
+      - quantum-net
+
+  quantum-media:
+    build: 
+      context: .
+      dockerfile: docker/synology/Dockerfile
+    container_name: quantum-media
+    environment:
+      - QUANTUM_GROUND=432.0
+      - QUANTUM_CREATE=528.0
+      - QUANTUM_UNITY=768.0
+      - AUDIO_CHANNELS=3  # φ + 1
+      - AUDIO_SAMPLE_RATE=432000  # 432 kHz
+      - AUDIO_BIT_DEPTH=26  # φ * 16
+      - VIDEO_FPS=60
+      - VIDEO_RESOLUTION=3840x2160  # 4K
+    volumes:
+      - ./quantum-data:/quantum-data
+      - type: bind
+        source: //192.168.100.32/Video
+        target: /quantum-data/video
+      - type: bind
+        source: //192.168.100.32/Music
+        target: /quantum-data/music
+    ports:
+      - "5280:5280"  # RTSP streaming
+      - "4320:4320"  # Audio streaming
+      - "7680:7680"  # WebRTC
+    devices:
+      - /dev/snd:/dev/snd  # Audio devices
+      - /dev/video0:/dev/video0  # Video devices
+    restart: unless-stopped
+    networks:
+      - quantum-net
+
+  p1-quantum:
+    build:
+      context: .
+      dockerfile: Dockerfile.cuda
+    container_name: p1-quantum
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=all
+      - QUANTUM_GROUND=432.0
+      - QUANTUM_CREATE=528.0
+      - QUANTUM_UNITY=768.0
+    volumes:
+      - ./quantum-data:/quantum-data
+      - type: bind
+        source: //192.168.100.32/QuantumPatterns
+        target: /quantum-data/patterns
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    ports:
+      - "4321:4321"  # P1 quantum bridge
+      - "5281:5281"  # P1 pattern streaming
+      - "7681:7681"  # P1 visualization
+    restart: unless-stopped
+    networks:
+      - quantum-net
+
+  quantum-monitor:
+    build: 
+      context: .
+      dockerfile: Dockerfile.monitor
+    container_name: quantum-monitor
+    depends_on:
+      - quantum-core
+      - quantum-media
+      - p1-quantum
+    ports:
+      - "8528:8528"  # Monitor web interface
+    volumes:
+      - ./quantum-data:/quantum-data:ro
+    environment:
+      - QUANTUM_CORE_HOST=quantum-core
+      - QUANTUM_MEDIA_HOST=quantum-media
+      - P1_QUANTUM_HOST=p1-quantum
+    restart: unless-stopped
+    networks:
+      - quantum-net
+
+networks:
+  quantum-net:
+    driver: bridge
