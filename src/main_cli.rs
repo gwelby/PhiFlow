@@ -140,8 +140,7 @@ async fn main() {
                     PhiIRValue::Number(n) => {
                         println!("🔔 Resonating Field: {:.4}Hz", n);
                     }
-                    PhiIRValue::String(idx) => {
-                        let s = report.program.string_table.get(*idx as usize).cloned().unwrap_or_else(|| format!("_str_{}", idx));
+                    PhiIRValue::String(s) => {
                         println!("🔔 Resonating Field: \"{}\"", s);
                     }
                     other => {

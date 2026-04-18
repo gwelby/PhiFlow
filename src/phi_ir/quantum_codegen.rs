@@ -19,9 +19,11 @@ pub fn compile_ir_to_quantum(ir: &PhiIRProgram) -> QuantumCircuit {
         for instruction in &block.instructions {
             match &instruction.node {
                 PhiIRNode::Resonate {
+                    value: _,
                     frequency_relationship,
                     ..
                 } => {
+
                     // In tests, "resonate 0.618" could pass the ratio here.
                     // We map this into a PhiHarmonic gate on qubit 0.
                     let freq = frequency_relationship.unwrap_or(0.0);

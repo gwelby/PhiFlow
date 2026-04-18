@@ -56,14 +56,11 @@ fn run(args: Args) -> Result<(), String> {
     Ok(())
 }
 
-fn render_value(value: &PhiIRValue, string_table: &[String]) -> Result<String, String> {
+fn render_value(value: &PhiIRValue, _string_table: &[String]) -> Result<String, String> {
     match value {
         PhiIRValue::Number(n) => Ok(n.to_string()),
-        PhiIRValue::String(index) => {
-            let resolved = string_table
-                .get(*index as usize)
-                .ok_or_else(|| format!("VM produced invalid string index {}", index))?;
-            serde_json::to_string(resolved)
+        PhiIRValue::String(s) => {
+            serde_json::to_string(s)
                 .map_err(|e| format!("Failed to render string value: {}", e))
         }
         PhiIRValue::Boolean(value) => Ok(value.to_string()),

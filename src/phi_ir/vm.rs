@@ -712,8 +712,8 @@ impl PhiVm {
                     } else {
                         // Store returned string in the string table
                         let idx = self.program.string_table.len() as u32;
-                        self.program.string_table.push(val_str);
-                        Some(PhiIRValue::String(idx))
+                        self.program.string_table.push(val_str.clone());
+                        Some(PhiIRValue::String(val_str))
                     }
                 } else {
                     Some(PhiIRValue::Void)
@@ -741,8 +741,8 @@ impl PhiVm {
                         Some(PhiIRValue::Boolean(false))
                     } else {
                         let idx = self.program.string_table.len() as u32;
-                        self.program.string_table.push(val_str);
-                        Some(PhiIRValue::String(idx))
+                        self.program.string_table.push(val_str.clone());
+                        Some(PhiIRValue::String(val_str))
                     }
                 } else {
                     Some(PhiIRValue::Void)
@@ -1010,7 +1010,7 @@ fn parse_node(reader: &mut ByteReader<'_>, string_table: &[String]) -> VmResult<
             if index as usize >= string_table.len() {
                 return Err(VmError::InvalidStringIndex(index));
             }
-            BytecodeNode::Const(PhiIRValue::String(index))
+            BytecodeNode::Const(PhiIRValue::String(string_table[index as usize].clone()))
         }
         OP_CONST_BOOL => {
             let flag = reader.read_u8()?;
@@ -1806,16 +1806,5 @@ mod tests {
         let result = PhiVm::run_bytes(&bytes).expect("VM should execute dissonance opcode");
 
         assert_eq!(result, PhiIRValue::Number(1.0));
-    }
-}
-  );
-
-        let bytes = emitter::emit(&program);
-        let result = PhiVm::run_bytes(&bytes).expect("VM should execute dissonance opcode");
-
-        assert_eq!(result, PhiIRValue::Number(1.0));
-    }
-}
-0));
     }
 }

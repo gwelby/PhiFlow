@@ -313,15 +313,10 @@ impl<'a> WatEmitter<'a> {
                 PhiIRValue::Void => {
                     format!("i64.const {}\nf64.reinterpret_i64", TAG_VOID)
                 }
-                PhiIRValue::String(idx) => {
-                    let idx = *idx as usize;
+                PhiIRValue::String(s) => {
+                    let idx = self.program.string_table.iter().position(|x| x == s).unwrap_or(0);
                     if let Some(&offset) = self.string_offsets.get(idx) {
-                        let len = self
-                            .program
-                            .string_table
-                            .get(idx)
-                            .map(|s| s.len() as u32)
-                            .unwrap_or(0);
+                        let len = s.len() as u32;
                         let bits = TAG_STRING | (offset as u64);
                         format!(
                             ";; string[{}] = {:?} offset={} len={}\n\
@@ -329,22 +324,10 @@ impl<'a> WatEmitter<'a> {
                              global.set $string_len\n\
                              i64.const {}\n\
                              f64.reinterpret_i64",
-                            idx,
-                            self.program
-                                .string_table
-                                .get(idx)
-                                .map(|s| s.as_str())
-                                .unwrap_or(""),
-                            offset,
-                            len,
-                            len,
-                            bits
+                            idx, s, offset, len, len, bits
                         )
                     } else {
-                        format!(
-                            "i64.const {}\nf64.reinterpret_i64 ;; string index {} out of range",
-                            TAG_VOID, idx
-                        )
+                        format!("f64.const 0.0 ;; unresolved string {:?}", s)
                     }
                 }
             },
