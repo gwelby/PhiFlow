@@ -1,4 +1,16 @@
-# STATE - Last updated: 2026-04-16 (truth-sync: Singularity Phase 1 Complete)
+# STATE - Last updated: 2026-04-18 (truth-sync: Workspace Consolidation + T-016 Complete)
+
+## Verified (2026-04-18) [Antigravity: Workspace Consolidation & String Migration]
+
+- **String Migration (T-016) CLOSED**:
+  - **Logic**: `PhiIRValue::String` has been migrated from `u32` indices to inline `String` values. 
+  - **Backends**: `phivm` CLI and `main_cli.rs` (Transcendent Substrate) have been updated to use the inline strings directly, resolving the Lumi-crash compile errors.
+  - **WASM**: Codegen refactored to handle dynamic strings via a proxy table.
+- **Workspace Consolidation CLOSED**:
+  - **Topology**: Workspace truth set to `master` (`D:\Projects\PhiFlow`).
+  - **Convergence**: `compiler` branch merged into `master` using `--strategy-option=ours` to preserve advanced master features while incorporating compiler fixes.
+  - **Pruning**: Nested `PhiFlow-compiler/PhiFlow/` directory archived and deleted to eliminate persistent agent confusion.
+  - **Legacy**: `PhiFlow-cleanup` branch documented as archived Python/CUDA era history.
 
 ## Verified (2026-04-16) [Lumi: Singularity Phase 1 — Substrate, Handoffs, SOMA, Ledger]
 

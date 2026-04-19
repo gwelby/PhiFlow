@@ -17,18 +17,27 @@ When files conflict, lower level wins:
 5. `TASKS.md` — work queue
 6. `README.md`, `VISION.md`, narrative docs — aspirational context
 
+## Workspace Topology
+| Path | Branch | Purpose | Status |
+|------|--------|---------|--------|
+| `D:\Projects\PhiFlow` | `master` | **The Forge (Primary)** | ✅ CLEAN (Transcendent Substrate) |
+| `D:\Projects\PhiFlow-compiler` | `compiler` | Legacy Pipeline | ✅ MERGED into master |
+| `D:\Projects\PhiFlow-cleanup` | `cleanup` | Python/CUDA Era | 📦 ARCHIVED |
+
+> [!IMPORTANT]
+> **The nested `PhiFlow-compiler/PhiFlow/` directory has been deleted.** It was a confusion magnet. Its contents are archived in `D:\Projects\Archive\`.
+
 ## Current State
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Parser | ✅ | Handles five core constructs + block comments + imports |
-| PhiIR + Lowering | ✅ | SSA IR with consciousness nodes |
-| Evaluator / VM | ✅ | Backends synchronized; shared coherence math |
-| WASM Codegen | ✅ | Native WASM path covered by conformance tests |
-| OpenQASM 3.0 | ✅ | Native Heron-ISA [rz, sx] transposition verified |
-| SOMA Bridge | ✅ | Live telemetry from `soma_state.json` verified |
-| IBM Live Run | ✅ | Job `d7euddh5a5qc73drdosg` completed on `ibm_fez` 2026-04-14 |
-| Browser Host | ⚠️ | Experimental; requires manual artifact hosting |
-| Singularity Daemon | ✅ | T-009/T-010 complete. Daemon self-hosts with SOMA and MQTT bus |
+| Parser | ✅ | Handles 0.4.0 constructs + imports |
+| PhiIR + Lowering | ✅ | `PhiIRValue::String(String)` migration complete |
+| Evaluator / VM | ✅ | Backends unified on String-backed IR |
+| WASM Codegen | ✅ | Handles dynamic strings via table-proxy |
+| OpenQASM 3.0 | ✅ | Native Heron-ISA verified |
+| SOMA Bridge | ✅ | Live telemetry verified |
+| IBM Live Run | ✅ | Job `d7euddh5a5qc73drdosg` verified |
+| Singularity Daemon | ✅ | T-009/T-010 complete |
 
 ## Income State
 - Income tier: 1-3 months (Pilot-Ready)
@@ -47,7 +56,8 @@ When files conflict, lower level wins:
 
 ## Open Questions
 - Can the PhiVM daemon sustain indefinite coherence without manual reset?
-- What is the specific error-cost functional for SOMA-driven quantum circuits?
+- What's the optimal cost function for SOMA-driven quantum circuits?
+- **String Migration**: Are all legacy tests that assumed `u32` indices updated?
 
 ## Key Commands
 ```powershell

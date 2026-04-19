@@ -1506,7 +1506,7 @@ mod tests {
                 instructions: vec![
                     PhiInstruction {
                         result: Some(0),
-                        node: PhiIRNode::Const(PhiIRValue::String(1)),
+                        node: PhiIRNode::Const(PhiIRValue::String("hello".to_string())),
                     },
                     PhiInstruction {
                         result: None,
@@ -1523,7 +1523,7 @@ mod tests {
                 terminator: PhiIRNode::Return(1),
             }],
             entry: 0,
-            string_table: vec!["hello".to_string(), "hello".to_string()],
+            string_table: vec!["hello".to_string()],
             frequencies_declared: Vec::new(),
             intentions_declared: Vec::new(),
         };
