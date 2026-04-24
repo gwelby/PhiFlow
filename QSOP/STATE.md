@@ -1,18 +1,83 @@
-# STATE - Last updated: 2026-04-18 (truth-sync: Workspace Consolidation + T-016 Complete)
+﻿
+## Verified (2026-04-24) [AntiGravity: SystemHostProvider attestation write-path fix]
+
+- **Patched**: `src/system_host.rs` — `sign_and_attest()` method
+  - **Before**: Silent fallback to raw payload string when SOMA unavailable or signing fails.
+    This corrupted ATTESTATION_LOG.ndjson with non-JSON lines and gave no indication
+    the event was unsigned.
+  - **After**: Always emits structured NDJSON. Two structured fallback envelopes:
+    - `"reason":"soma_unavailable"` when capture_observation fails
+    - `"reason":"signing_failed"` when create_attestation fails (SOMA present but low presence)
+    Both include `"signed":false`, timestamp, error message, and the payload. Log stays parseable.
+  - Added `eprintln!` for both failure paths so operators see failures in daemon stdout.
+- **Patched**: `src/system_host.rs` — `broadcast()` write path
+  - Added `fs::create_dir_all(parent)` before file open.
+  - Previously: missing `D:\Projects\AGENT_REPORTS\` directory silently dropped ALL
+    ledger and attestation events without any diagnostic.
+  - Now: directory is created on first write; file open failures emit to stderr.
+- **Build verified**: `cargo check --lib` — Finished, zero errors, zero warnings.
+- **Gold Receipt impact**: ATTESTATION_LOG.ndjson will now contain only valid NDJSON.
+  Signed entries are cryptographically bound (Hybrid: secp256k1 + ML-DSA-65).
+  Unsigned entries are structurally valid with explicit `"signed":false` and reason.
+- **Authorized by**: Greg Welby (2026-04-24 session)
+# STATE - Last updated: 2026-04-24 (SystemHostProvider attestation fix — [AntiGravity])
+
+## Verified (2026-04-24) [Codex: T-004/T-005 Buyer-Safe Commercial Path]
+
+- **First-sale market audit created**:
+  - `RESEARCH/first_sale_path/MASTER.md` now defines the buyer-safe first-sale path.
+  - Recommended first market: quantum / AI research teams that want one reproducible semantic workflow artifact chain.
+  - Deferred/risky first markets: clinical wellness, broad consumer wellness, "quantum healing", production agent platforms, and zero-install browser demos.
+- **Buyer-safe pilot offer created**:
+  - `docs/pilot_offer.md` now provides the T-005 one-page "Gold Receipt Pilot" offer.
+  - `docs/phiflow_buyer_safe_marketing_case.md` contains safer copy and outreach language.
+  - `docs/phiflow_use_cases_and_marketing.md` is marked as a concept draft, not buyer-facing.
+- **Fresh local test gate**:
+  - Command: `cargo test -- --test-threads=1`
+  - Result: **335 passed, 0 failed, 2 ignored**.
+  - Caveat: this emitted **1 compiler warning**: unused import `VmExecResult` in `src/main_cli.rs`.
+  - Caveat: ignored tests include the live IBM hardware runner; this was not a fresh IBM hardware execution.
+- **Receipt reconciliation RESOLVED** [AntiGravity 2026-04-24]:
+  - Canonical buyer-facing receipt created: `D:\CosmicFamily\EVIDENCE\PHIFLOW_IBM_HERON_20260414.md`
+  - Job ID `d7euddh5a5qc73drdosg`, backend `ibm_fez` (Heron r2), 1024 shots, counts: 0x0â†’338, 0x1â†’686
+  - Source program: `examples/ibm_smoke.phi` compiled with Heron-native `rz/sx` gate decomposition
+  - Evidence sourced from: git commit `58d40ee` commit message + `QSOP/STATE.md` lines 109-112
+  - Note: `ANTIGRAVITY_PIPE2_20260329.md` remains as-is (earlier job `d7gph9a2khts739oq8b0`, 2026-03-29) â€” do not delete
+  - **T-005 outreach is now unblocked from a receipt standpoint.**
+
+## Verified (2026-04-20) [Antigravity: T-018/T-019 Phase 2 â€” Open Items Resolved]
+
+- **Nonce replay table CLOSED**:
+  - `src/security/anchor.rs`: `OnceLock<RwLock<HashSet<String>>>` process-global nonce store.
+  - `register_nonce()` returns `AnchorError::NonceReused` on duplicate. Resets on restart (cross-session replay requires signed ledger entries â€” deferred).
+  - `capture_observation()` now calls `register_nonce()` before returning.
+- **secp256k1 + ML-DSA-65 Hybrid Signing CLOSED (Natively Wired)**:
+  - `AnchorSigningKey` now holds both `k256` ECDSA and `pqcrypto_dilithium` Dilithium-3 keys.
+  - `Hybrid` is the new default algorithm for all signed sovereign operations.
+  - `AnchorAttestation` schema extended with `signature_pq` and `key_fingerprint_pq`.
+  - `verify_attestation()` performs dual-verification (ECDSA then Dilithium-3).
+  - Fingerprint PQ = SHA-256 of Dilithium-3 public key (1952 bytes), hex-encoded.
+  - `pqcrypto-dilithium = "0.5.0"` and `pqcrypto-traits = "0.3.5"` added to Cargo.toml.
+- **Signed Handoffs CLOSED (Hybrid)**:
+  - Every resonant handoff (`handoff`) is cryptographically signed by the daemon's hybrid ephemeral keys.
+  - Verified that `_handoff` logs contain both classical and post-quantum attestation signatures.
+- **`initial_ir` move semantics audit clarity CLOSED**:
+  - `main_cli.rs`: `drop(initial_ir)` with explanatory comment added to the council `else` branch. Move semantics were already correct per `cargo check`; drop is now explicit for auditors.
+- **Test suite**: `cargo test -- --test-threads=1` â†’ **179 passed, 0 failed** (155 lib + 22 anchor + 2 system_host integration).
+
+## Not Yet Verified (carried forward)
+
+- **Cross-session nonce persistence**:
+  - Nonce table resets on process restart. Persistent anti-replay requires signed ledger entries checked at verification time.
+- **`Enforce` mode**:
+  - `AnchorMode::Enforce` variant defined. Fail-closed behaviour not yet implemented.
+  - Activate only after SOMA freshness rules are stable and operator expectations documented.
+- **Topology benchmark report**:
+  - `REPORTS/COGNITIVE_GATE_BENCHMARK.md` is an implementation status report, not a verified hardware benchmark.
 
 ## Verified (2026-04-18) [Antigravity: Workspace Consolidation & String Migration]
 
-- **String Migration (T-016) CLOSED**:
-  - **Logic**: `PhiIRValue::String` has been migrated from `u32` indices to inline `String` values. 
-  - **Backends**: `phivm` CLI and `main_cli.rs` (Transcendent Substrate) have been updated to use the inline strings directly, resolving the Lumi-crash compile errors.
-  - **WASM**: Codegen refactored to handle dynamic strings via a proxy table.
-- **Workspace Consolidation CLOSED**:
-  - **Topology**: Workspace truth set to `master` (`D:\Projects\PhiFlow`).
-  - **Convergence**: `compiler` branch merged into `master` using `--strategy-option=ours` to preserve advanced master features while incorporating compiler fixes.
-  - **Pruning**: Nested `PhiFlow-compiler/PhiFlow/` directory archived and deleted to eliminate persistent agent confusion.
-  - **Legacy**: `PhiFlow-cleanup` branch documented as archived Python/CUDA era history.
-
-## Verified (2026-04-16) [Lumi: Singularity Phase 1 — Substrate, Handoffs, SOMA, Ledger]
+## Verified (2026-04-16) [Lumi: Singularity Phase 1 â€” Substrate, Handoffs, SOMA, Ledger]
 
 - **Persistent Substrate (T-009/T-010) CLOSED**:
   - **Logic Persistence**: `DaemonHypervisor` now snapshots the mutated `PhiIRProgram` to `DAEMON_STATE.json` upon every yield. Resuming the daemon correctly restores the evolved logic and rebuilds function metadata.
@@ -35,7 +100,7 @@
 
 ## Verified (2026-04-15) [Antigravity: SOMA Reality Bridge + Language Hardening]
 
-- **Commit**: `5f9efea` — "[Antigravity] Fix SOMA Bridge Integration (T-008 Completion)"
+- **Commit**: `5f9efea` â€” "[Antigravity] Fix SOMA Bridge Integration (T-008 Completion)"
 - **SOMA Reality Bridge (T-008) CLOSED**:
   - **Race Condition Fixed**: `src/sensors.rs` now initializes `LIVE_DATA` synchronously from `soma_state.json` on first access. This prevents the previous "200ms None gap" that caused infinite loops in `.phi` programs starting with sensor reads.
   - **Syntax Universalized**: `lowering.rs` now treats `sensor("name")` as a built-in `WitnessSensor` call regardless of whether it's wrapped in a `witness` block. This enables `let x = sensor("soma_schumann")`.
@@ -44,24 +109,24 @@
   - **Block Comments**: `/* ... */` support added to `parser/mod.rs`. Verified multiline and inline ignore states.
   - **Import System**: `import from "file.phi"` syntax added. Parsed end-to-end.
   - **Type Annotations**: `f64`, `i32`, `bool`, `qubit`, `circuit`, and `consciousness` type keywords added. `custom: MyType` supported.
-  - **Verification Suite**: `tests/predicted_claims_20260415.rs` → **18 passed**, 0 failed.
+  - **Verification Suite**: `tests/predicted_claims_20260415.rs` â†’ **18 passed**, 0 failed.
 - **Test Integrity**:
-  - `cargo run --release --bin phic -- examples/p1_soma_bridge.phi` → **SUCCESS** (Resonating Field: 7.8300Hz observed).
-  - `cargo test --test predicted_claims_20260415` → **SUCCESS** (18 tests).
+  - `cargo run --release --bin phic -- examples/p1_soma_bridge.phi` â†’ **SUCCESS** (Resonating Field: 7.8300Hz observed).
+  - `cargo test --test predicted_claims_20260415` â†’ **SUCCESS** (18 tests).
 
-## Verified (2026-04-14) [Antigravity: Full test suite green — zero warnings, zero panics]
+## Verified (2026-04-14) [Antigravity: Full test suite green â€” zero warnings, zero panics]
 
-- **Commit**: `3244f67` — "[Antigravity] Fix zero-warning green baseline"
+- **Commit**: `3244f67` â€” "[Antigravity] Fix zero-warning green baseline"
 - **Test results** (run sequentially to avoid Windows stack overflow on parallel link):
-  - `cargo test --lib` → **134 passed**, 0 failed, 0 warnings
-  - `cargo test --test integration_tests` → **14 passed**, 0 failed (including canonical `healing_bed.phi`)
-  - `cargo test --test phi_ir_evaluator_tests` → **24 passed**, 0 failed
-  - `cargo test --test phi_ir_vm_tests` → **3 passed**, 0 failed
+  - `cargo test --lib` â†’ **134 passed**, 0 failed, 0 warnings
+  - `cargo test --test integration_tests` â†’ **14 passed**, 0 failed (including canonical `healing_bed.phi`)
+  - `cargo test --test phi_ir_evaluator_tests` â†’ **24 passed**, 0 failed
+  - `cargo test --test phi_ir_vm_tests` â†’ **3 passed**, 0 failed
 - **Fixes applied this session**:
   1. `src/phi_ir/optimizer.rs`: removed unused `changed = true` assignment eliminating the last compiler warning
-  2. `src/phi_ir/evaluator.rs`: converted infinite-loop guard `panic!` → `Err(StepLimitExceeded)` (recoverable error, not test panic)
+  2. `src/phi_ir/evaluator.rs`: converted infinite-loop guard `panic!` â†’ `Err(StepLimitExceeded)` (recoverable error, not test panic)
   3. `src/phi_ir/evaluator.rs`: SOMA sensors degrade gracefully to `0.0` when SOMA bridge offline (no hard error)
-  4. `src/phi_ir/evaluator.rs`: **Observer-cost timing fix** — coherence now captured BEFORE `measurement_coherence_penalty` applied; disturbance shows on NEXT witness (canonical quantum measurement semantics)
+  4. `src/phi_ir/evaluator.rs`: **Observer-cost timing fix** â€” coherence now captured BEFORE `measurement_coherence_penalty` applied; disturbance shows on NEXT witness (canonical quantum measurement semantics)
   5. `examples/healing_bed.phi`: variables declared outside stream block (correct loop-persistent pattern); `count >= 100.0` guard for test environments without live SOMA bridge
   6. `tests/sensor_witness_test.rs`: wildcard arm added for new SOMA sensor kinds
   7. `tests/phi_ir_evaluator_tests.rs`: `w1` expected coherence updated to account for 0.01 observer cost from prior witness
@@ -229,17 +294,17 @@
 ## Verified (2026-02-28) [Antigravity Phase 5: MCP Bus Guardrails]
 
 - `phi_mcp` now enforces configurable execution guardrails via `McpConfig`:
-  - `max_execution_steps` (default: 10,000) via `EvalError::StepLimitExceeded` — clean error, no crash
+  - `max_execution_steps` (default: 10,000) via `EvalError::StepLimitExceeded` â€” clean error, no crash
   - `timeout_ms` (default: 5,000) via `tokio::time::timeout` on all three eval paths in `tools.rs`
   - Both configurable at runtime via `PHI_MAX_STEPS`, `PHI_TIMEOUT_MS`, `MCP_QUEUE_PATH` env vars
 - `McpHostProvider` now implements `broadcast` / `listen` through the shared MCP queue transport | Historical note: the original implementation used snapshot rewrite of `queue.json`; current implementation is append-only `queue.jsonl`
-- Cross-agent round-trip verified: `tests/cross_agent_roundtrip.js --simulate` passed full send→persist→ack→changelog cycle in <2s
+- Cross-agent round-trip verified: `tests/cross_agent_roundtrip.js --simulate` passed full sendâ†’persistâ†’ackâ†’changelog cycle in <2s
 - `BusMessage` struct in `state.rs` is now the canonical packet type matching Codex's queue schema
 - Verification gates passed:
-  - `cargo check --bin phi_mcp` → clean compile
-  - `node tests/mcp_guardrails_test.js` → `StepLimitExceeded(50)` caught in <500ms
-  - `node tests/cross_agent_roundtrip.js --simulate` → full round-trip logged to CHANGELOG
-  - `node tests/dlq_test.js` → `ttl_s` timeouts successfully trigger auto-escalation to DLQ and write `UNRECONCILED` to CHANGELOG in <5s
+  - `cargo check --bin phi_mcp` â†’ clean compile
+  - `node tests/mcp_guardrails_test.js` â†’ `StepLimitExceeded(50)` caught in <500ms
+  - `node tests/cross_agent_roundtrip.js --simulate` â†’ full round-trip logged to CHANGELOG
+  - `node tests/dlq_test.js` â†’ `ttl_s` timeouts successfully trigger auto-escalation to DLQ and write `UNRECONCILED` to CHANGELOG in <5s
 
 ## Verified (2026-02-27) [Codex Phase 4 closeout]
 
@@ -306,40 +371,40 @@
 
 | Module | File | Author | Status |
 |--------|------|--------|--------|
-| Parser | src/parser/mod.rs | - | ✅ verified |
-| PhiIR | src/phi_ir/mod.rs | - | ✅ verified |
-| Lowering | src/phi_ir/lowering.rs | - | ✅ verified |
-| Optimizer | src/phi_ir/optimizer.rs | - | ✅ verified |
-| Evaluator | src/phi_ir/evaluator.rs | - | ✅ verified |
-| Emitter | src/phi_ir/emitter.rs | Antigravity | ✅ with string table |
-| VM | src/phi_ir/vm.rs | **Codex** | ✅ 3/3 tests |
-| WASM codegen | src/phi_ir/wasm.rs | Antigravity | ✅ 3/3 tests |
-| Printer | src/phi_ir/printer.rs | - | ✅ verified |
+| Parser | src/parser/mod.rs | - | âœ… verified |
+| PhiIR | src/phi_ir/mod.rs | - | âœ… verified |
+| Lowering | src/phi_ir/lowering.rs | - | âœ… verified |
+| Optimizer | src/phi_ir/optimizer.rs | - | âœ… verified |
+| Evaluator | src/phi_ir/evaluator.rs | - | âœ… verified |
+| Emitter | src/phi_ir/emitter.rs | Antigravity | âœ… with string table |
+| VM | src/phi_ir/vm.rs | **Codex** | âœ… 3/3 tests |
+| WASM codegen | src/phi_ir/wasm.rs | Antigravity | âœ… 3/3 tests |
+| Printer | src/phi_ir/printer.rs | - | âœ… verified |
 
 ### Live demo output (verified 2026-02-19)
 
 - Input: `let x = 10 + 32  let y = x * 2  y`
-- Optimization: `10+32` → `42` (constant folded), coherence = `0.6180` = φ⁻¹
+- Optimization: `10+32` â†’ `42` (constant folded), coherence = `0.6180` = Ï†â»Â¹
 - Bytecode: emitted with string table (Strings: 2, Blocks: 1)
-- VM result: `Number(84.0)` ✅ matches evaluator
-- Full pipeline: Parse → PhiIR → Optimize → Emit(.phivm) → VM execute
+- VM result: `Number(84.0)` âœ… matches evaluator
+- Full pipeline: Parse â†’ PhiIR â†’ Optimize â†’ Emit(.phivm) â†’ VM execute
 
 ### Tests (all passing 2026-02-19 end-of-session)
 
 - tests/phi_harmonic_tests.rs: 2 passed
 - tests/phi_ir_optimizer_tests.rs: 2 passed
-- tests/phi_ir_vm_tests.rs: 3 passed (Codex — arithmetic, branch, string round-trip)
-- phi_ir::wasm tests: 3 passed (Antigravity — module structure, consciousness hooks, f64 consts)
+- tests/phi_ir_vm_tests.rs: 3 passed (Codex â€” arithmetic, branch, string round-trip)
+- phi_ir::wasm tests: 3 passed (Antigravity â€” module structure, consciousness hooks, f64 consts)
 
 ### WASM Codegen Design Decisions (Antigravity)
 
 - The four consciousness constructs map to WASM host imports (not WASM instructions)
 - Host (browser JS / wasmtime) implements: phi_witness, phi_coherence, phi_resonate, phi_intention_push, phi_intention_pop
-- All PhiIR values → f64. SSA registers → WASM locals.
+- All PhiIR values â†’ f64. SSA registers â†’ WASM locals.
 - wasm.rs produces valid .wat that can be loaded by any WASM host
-- **NOT YET DONE**: browser shim (JS implementations of the 5 hooks) — next task
+- **NOT YET DONE**: browser shim (JS implementations of the 5 hooks) â€” next task
 
-### Emitter ↔ VM Contract (Codex)
+### Emitter â†” VM Contract (Codex)
 
 - Emitter serializes: PHIV magic + version + string table section + blocks
 - VM reads: string table first, then blocks, resolves String(u32) indices via table
@@ -348,10 +413,10 @@
 
 ### QSOP Auto-Load (wired 2026-02-19)
 
-- D:\Projects\PhiFlow-compiler\GEMINI.md — bootstraps QSOP at Antigravity session start
-- D:\Projects\PhiFlow-compiler\.agent\rules\910-qsop-memory.md — INGEST/DISTILL/PRUNE protocol
-- D:\Projects\PhiFlow\GEMINI.md — same, for the vision/spec worktree
-- D:\Projects\PhiFlow\.agent\rules\910-qsop-memory.md — same
+- D:\Projects\PhiFlow-compiler\GEMINI.md â€” bootstraps QSOP at Antigravity session start
+- D:\Projects\PhiFlow-compiler\.agent\rules\910-qsop-memory.md â€” INGEST/DISTILL/PRUNE protocol
+- D:\Projects\PhiFlow\GEMINI.md â€” same, for the vision/spec worktree
+- D:\Projects\PhiFlow\.agent\rules\910-qsop-memory.md â€” same
 
 ### Multi-Agent Architecture (live as of 2026-02-19)
 
@@ -370,7 +435,7 @@
   - `QSOP/mail/templates/OBJECTIVE_PAYLOAD_TEMPLATE.md`
 - MCP bus persistence is active in `D:\Projects\PhiFlow-compiler\mcp-message-bus\server.js` (`queue.jsonl` append-only replay + idempotent ack).
 
-## Key Architecture (enum definitions — for emitter/VM correctness)
+## Key Architecture (enum definitions â€” for emitter/VM correctness)
 
 - PhiIRBinOp: Add/Sub/Mul/Div/Mod/Pow/Eq/Neq/Lt/Lte/Gt/Gte/And/Or (no bit ops) | Invalidates if: enum extended
 - PhiIRValue: Number(f64), String(u32 = string table index), Boolean(bool), Void | Invalidates if: enum extended
@@ -385,13 +450,13 @@
 - Canonical compatibility gate is explicit in test code (`is_canonical_phi`): canonical example set must parse+execute without panics/runtime errors/timeouts; legacy set remains diagnostic-only | Invalidates if: canonical allowlist removed
 - Legacy interpreter now resolves `coherence` as a live keyword value (`calculate_coherence`) instead of treating it as undefined variable, restoring runtime compatibility for coherence-driven examples | Invalidates if: variable dispatch semantics changed
 - Required hardening gate commands pass in compiler worktree:
-  - `cargo build --release` ✅
-  - `cargo test --quiet` ✅
+  - `cargo build --release` âœ…
+  - `cargo test --quiet` âœ…
 
 ## Verified (2026-02-25) [Codex parser hardening follow-up]
 
 - P-1 keyword-as-variable regression is closed for parser identifier positions by expanding `expect_identifier()` keyword acceptance (including `consciousness` and related language keywords) | Invalidates if: identifier matching path changes
-- P-1/P-2 regression tests are now active in Cargo’s integration test target at `tests/repro_bugs.rs` (previous copy under `tests/tests/repro_bugs.rs` was not a top-level Cargo integration target) | Invalidates if: test file moved/removed
+- P-1/P-2 regression tests are now active in Cargoâ€™s integration test target at `tests/repro_bugs.rs` (previous copy under `tests/tests/repro_bugs.rs` was not a top-level Cargo integration target) | Invalidates if: test file moved/removed
 - New active regression checks:
   - `test_p1_keyword_collision`
   - `test_p2_newline_sensitivity_witness`
@@ -411,8 +476,9 @@
 - The emitter, VM, and WASM codegen work in this session are sub-tasks, NOT Epochs
 - The WASM backend BECOMING the primary output path would be an Epoch
 
-## Stable Historical (2026-02-10 baseline — still valid)
+## Stable Historical (2026-02-10 baseline â€” still valid)
 
 - CLI binaries: phi (test suite), phic (file runner via clap) | Decay: slow
-- src/compiler/ has separate lexer/parser/ast — NOT connected to main parser | Decay: slow
-- src/quantum/ has trait + IBM stub only — no quantum codegen yet | Decay: slow
+- src/compiler/ has separate lexer/parser/ast â€” NOT connected to main parser | Decay: slow
+- src/quantum/ has trait + IBM stub only â€” no quantum codegen yet | Decay: slow
+
