@@ -86,7 +86,7 @@ fn phivm_resolves_string_results() {
             label: "entry".to_string(),
             instructions: vec![PhiInstruction {
                 result: Some(0),
-                node: PhiIRNode::Const(PhiIRValue::String(0)),
+                node: PhiIRNode::Const(PhiIRValue::String("resonance".to_string())),
             }],
             terminator: PhiIRNode::Return(0),
         }],

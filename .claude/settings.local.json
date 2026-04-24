@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(cargo check:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(cargo:*)",
+      "Bash(./target/debug/phi --help)",
+      "Bash(./target/debug/phi info)",
+      "Bash(./target/debug/phi test_simple.phi:*)",
+      "Bash(./target/debug/phi test_phi.phi:*)",
+      "Bash(timeout:*)",
+      "Bash(./target/debug/phi:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(chmod:*)",
+      "Bash(grep:*)",
+      "Bash(sed:*)",
+      "Bash(./target/release/phic:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(rustc:*)",
+      "Bash(./test_demo)",
+      "Bash(./consciousness_demo)",
+      "Bash(mkdir:*)",
+      "WebFetch(domain:www.anthropic.com)"
+    ],
+    "deny": []
+  }
+}

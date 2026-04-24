@@ -9,6 +9,10 @@ use std::time::{Duration, Instant};
 use tokio::time::sleep;
 use tracing::{debug, info, warn};
 
+use super::backend_topology::{
+    normalize_edge, BackendTopologyProfile, EdgeCalibration, NativeTwoQGate, ProcessorFamily,
+    QubitCalibration,
+};
 use super::types::*;
 
 const LEGACY_BASE_URL: &str = "https://api.quantum-computing.ibm.com";
@@ -206,9 +210,14 @@ impl IBMQuantumBackend {
             let status = self
                 .get_runtime_backend_resource(access_token, "status")
                 .await?;
+            let properties = self
+                .get_runtime_backend_resource(access_token, "properties")
+                .await
+                .unwrap_or_else(|_| json!({}));
             Ok(json!({
                 "configuration": configuration,
-                "status": status
+                "status": status,
+                "properties": properties
             }))
         } else {
             let response = self
@@ -274,6 +283,186 @@ impl IBMQuantumBackend {
         }
 
         vec!["h".to_string(), "x".to_string(), "cx".to_string()]
+    }
+
+    fn extract_coupling_map(&self, backend_info: &Value) -> Vec<(usize, usize)> {
+        let config = self.capability_payload(backend_info);
+        for key in ["coupling_map", "couplingMap"] {
+            if let Some(entries) = config[key].as_array() {
+                let mut map = Vec::new();
+                for entry in entries {
+                    if let Some(pair) = entry.as_array() {
+                        if pair.len() == 2 {
+                            if let (Some(a), Some(b)) = (pair[0].as_u64(), pair[1].as_u64()) {
+                                map.push(normalize_edge(a as usize, b as usize));
+                            }
+                        }
+                    } else if let Some(obj) = entry.as_object() {
+                        let control = obj
+                            .get("control")
+                            .and_then(Value::as_u64)
+                            .or_else(|| obj.get("from").and_then(Value::as_u64));
+                        let target = obj
+                            .get("target")
+                            .and_then(Value::as_u64)
+                            .or_else(|| obj.get("to").and_then(Value::as_u64));
+                        if let (Some(a), Some(b)) = (control, target) {
+                            map.push(normalize_edge(a as usize, b as usize));
+                        }
+                    }
+                }
+                if !map.is_empty() {
+                    map.sort_unstable();
+                    map.dedup();
+                    return map;
+                }
+            }
+        }
+
+        if let Some(connectivity) = config.get("connectivity").and_then(Value::as_object) {
+            let mut map = Vec::new();
+            for (source, targets) in connectivity {
+                let Ok(source) = source.parse::<usize>() else {
+                    continue;
+                };
+                for target in targets.as_array().into_iter().flatten() {
+                    if let Some(target) = target.as_u64() {
+                        map.push(normalize_edge(source, target as usize));
+                    }
+                }
+            }
+            if !map.is_empty() {
+                map.sort_unstable();
+                map.dedup();
+                return map;
+            }
+        }
+
+        Vec::new()
+    }
+
+    fn infer_processor_family(&self, backend_info: &Value) -> ProcessorFamily {
+        let config = self.capability_payload(backend_info);
+        let mut hints = Vec::new();
+        for value in [
+            config
+                .get("processor_type")
+                .and_then(|v| v.get("family"))
+                .and_then(Value::as_str),
+            config
+                .get("processorFamily")
+                .and_then(Value::as_str),
+            config.get("family").and_then(Value::as_str),
+            config.get("processor").and_then(Value::as_str),
+            Some(self.backend_name.as_str()),
+        ]
+        .into_iter()
+        .flatten()
+        {
+            hints.push(value.to_ascii_lowercase());
+        }
+
+        if hints.iter().any(|hint| hint.contains("heron") || hint.contains("fez")) {
+            ProcessorFamily::Heron
+        } else if hints.iter().any(|hint| hint.contains("eagle")) {
+            ProcessorFamily::Eagle
+        } else {
+            ProcessorFamily::Unknown
+        }
+    }
+
+    fn infer_native_two_qubit_gate(&self, backend_info: &Value) -> NativeTwoQGate {
+        let basis = self.extract_basis_gates(backend_info);
+        if basis.iter().any(|gate| gate.eq_ignore_ascii_case("cz")) {
+            NativeTwoQGate::Cz
+        } else if basis.iter().any(|gate| gate.eq_ignore_ascii_case("ecr")) {
+            NativeTwoQGate::Ecr
+        } else {
+            match self.infer_processor_family(backend_info) {
+                ProcessorFamily::Heron => NativeTwoQGate::Cz,
+                _ => NativeTwoQGate::Ecr,
+            }
+        }
+    }
+
+    fn extract_qubit_calibrations(&self, backend_info: &Value) -> HashMap<usize, QubitCalibration> {
+        let mut qubits = HashMap::new();
+        let Some(entries) = backend_info
+            .get("properties")
+            .and_then(|v| v.get("qubits"))
+            .and_then(Value::as_array)
+        else {
+            return qubits;
+        };
+
+        for (index, entry) in entries.iter().enumerate() {
+            let mut calibration = QubitCalibration::default();
+            for prop in entry.as_array().into_iter().flatten() {
+                let Some(name) = prop.get("name").and_then(Value::as_str) else {
+                    continue;
+                };
+                let value = prop
+                    .get("value")
+                    .and_then(Value::as_f64)
+                    .or_else(|| prop.get("value").and_then(Value::as_str)?.parse().ok());
+                match name.to_ascii_lowercase().as_str() {
+                    "t1" => calibration.t1_s = value,
+                    "t2" => calibration.t2_s = value,
+                    "readout_error" | "prob_meas1_prep0" | "prob_meas0_prep1" => {
+                        calibration.readout_error = value
+                    }
+                    _ => {}
+                }
+            }
+            if calibration != QubitCalibration::default() {
+                qubits.insert(index, calibration);
+            }
+        }
+
+        qubits
+    }
+
+    fn extract_edge_calibrations(&self, backend_info: &Value) -> HashMap<(usize, usize), EdgeCalibration> {
+        let mut edges = HashMap::new();
+        let Some(entries) = backend_info
+            .get("properties")
+            .and_then(|v| v.get("gates"))
+            .and_then(Value::as_array)
+        else {
+            return edges;
+        };
+
+        for entry in entries {
+            let Some(qubits) = entry.get("qubits").and_then(Value::as_array) else {
+                continue;
+            };
+            if qubits.len() != 2 {
+                continue;
+            }
+            let (Some(a), Some(b)) = (qubits[0].as_u64(), qubits[1].as_u64()) else {
+                continue;
+            };
+            let key = normalize_edge(a as usize, b as usize);
+            let calibration = edges.entry(key).or_insert_with(EdgeCalibration::default);
+
+            for parameter in entry.get("parameters").and_then(Value::as_array).into_iter().flatten()
+            {
+                let Some(name) = parameter.get("name").and_then(Value::as_str) else {
+                    continue;
+                };
+                let value = parameter
+                    .get("value")
+                    .and_then(Value::as_f64)
+                    .or_else(|| parameter.get("value").and_then(Value::as_str)?.parse().ok());
+                match name.to_ascii_lowercase().as_str() {
+                    "gate_error" | "error" => calibration.error = value,
+                    "gate_length" | "duration" => calibration.duration_s = value,
+                    _ => {}
+                }
+            }
+        }
+
+        edges
     }
 
     fn extract_backend_status(&self, backend_info: &Value) -> BackendStatus {
@@ -601,6 +790,27 @@ impl IBMQuantumBackend {
 
         self.parse_job_result(job_result)
     }
+
+    pub async fn fetch_topology_profile(&self) -> QuantumResult2<BackendTopologyProfile> {
+        let access_token = self.authenticate().await?;
+        let backend_info = self.get_backend_info(&access_token).await?;
+        let coupling_map = self.extract_coupling_map(&backend_info);
+        let family = self.infer_processor_family(&backend_info);
+        let native_two_qubit_gate = self.infer_native_two_qubit_gate(&backend_info);
+        let num_qubits = self.extract_max_qubits(&backend_info) as usize;
+        let qubits = self.extract_qubit_calibrations(&backend_info);
+        let edges = self.extract_edge_calibrations(&backend_info);
+
+        Ok(BackendTopologyProfile {
+            backend_name: self.backend_name.clone(),
+            family,
+            num_qubits,
+            coupling_map,
+            native_two_qubit_gate,
+            qubits,
+            edges,
+        })
+    }
 }
 
 #[async_trait]
@@ -634,13 +844,23 @@ impl QuantumBackend for IBMQuantumBackend {
 
         let max_qubits = self.extract_max_qubits(&backend_info);
         let basis_gates = self.extract_basis_gates(&backend_info);
+        let coupling_map = self.extract_coupling_map(&backend_info);
 
         self.capabilities = Some(QuantumCapabilities {
             max_qubits,
             gate_set: basis_gates.clone(),
             supports_sacred_frequencies: true, // Through rotation gates
             supports_phi_harmonic: true,       // Through rotation gates
-            coupling_map: None,                // Would parse from backend_info
+            coupling_map: if coupling_map.is_empty() {
+                None
+            } else {
+                Some(
+                    coupling_map
+                        .iter()
+                        .map(|&(a, b)| (a as u32, b as u32))
+                        .collect(),
+                )
+            },
             basis_gates,
         });
 
@@ -745,6 +965,55 @@ impl QuantumBackend for IBMQuantumBackend {
         };
 
         self.execute_circuit(circuit).await
+    }
+}
+
+#[cfg(test)]
+mod runtime_fixture_tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_coupling_map_from_ibm_backend_fixture() {
+        let backend = IBMQuantumBackend::new();
+        let backend_info = json!({
+            "coupling_map": [[0, 1], [1, 2], [2, 3]],
+            "processor_type": { "family": "Heron" },
+            "basis_gates": ["rz", "sx", "x", "cz"],
+            "properties": {
+                "qubits": [
+                    [{"name": "readout_error", "value": 0.12}],
+                    [{"name": "readout_error", "value": 0.05}]
+                ],
+                "gates": [
+                    {
+                        "qubits": [0, 1],
+                        "parameters": [
+                            {"name": "gate_error", "value": 0.01},
+                            {"name": "gate_length", "value": 2.5e-7}
+                        ]
+                    }
+                ]
+            }
+        });
+
+        println!("TEST CONFIG: {:?}", backend.capability_payload(&backend_info));
+        let coupling_map = backend.extract_coupling_map(&backend_info);
+        println!("EXTRACTED: {:?}", coupling_map);
+        assert_eq!(coupling_map, vec![(0, 1), (1, 2), (2, 3)]);
+        assert_eq!(
+            backend.infer_processor_family(&backend_info),
+            ProcessorFamily::Heron
+        );
+        assert_eq!(
+            backend.infer_native_two_qubit_gate(&backend_info),
+            NativeTwoQGate::Cz
+        );
+
+        let qubits = backend.extract_qubit_calibrations(&backend_info);
+        assert_eq!(qubits.get(&1).and_then(|q| q.readout_error), Some(0.05));
+
+        let edges = backend.extract_edge_calibrations(&backend_info);
+        assert_eq!(edges.get(&(0, 1)).and_then(|edge| edge.error), Some(0.01));
     }
 }
 

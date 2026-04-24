@@ -29,6 +29,7 @@ pub mod quantum_feedback;
 pub mod resonance_bus;
 pub mod sensors;
 pub mod system_host;
+pub mod security;
 pub mod vm;
 pub mod wasm_host;
 
@@ -64,6 +65,13 @@ pub const VERSION: &str = "1.0.0";
 pub const PHI: f64 = 1.618033988749895;
 pub const LAMBDA: f64 = 0.618033988749895;
 
+#[derive(Debug, Clone, Default)]
+pub struct OpenQasmCompileOptions {
+    pub optimize_depth: bool,
+    pub topology: Option<phi_ir::topology_transpiler::TopologyTranspileConfig>,
+    pub live_backend_profile: Option<quantum::backend_topology::BackendTopologyProfile>,
+}
+
 /// Compile and run PhiFlow source code using the new PhiIR pipeline.
 /// Returns the final result of the program.
 pub fn compile_and_run_phi_ir(source: &str) -> Result<phi_ir::PhiIRValue, String> {
@@ -91,10 +99,25 @@ pub fn compile_and_run_phi_ir(source: &str) -> Result<phi_ir::PhiIRValue, String
 
 /// Compile PhiFlow source to OpenQASM 3.0 using the canonical PhiIR path.
 pub fn compile_to_openqasm(source: &str, optimize_depth: bool) -> Result<String, String> {
+    compile_to_openqasm_with_options(
+        source,
+        &OpenQasmCompileOptions {
+            optimize_depth,
+            ..OpenQasmCompileOptions::default()
+        },
+    )
+}
+
+/// Compile PhiFlow source to OpenQASM 3.0 with optional topology-aware routing.
+pub fn compile_to_openqasm_with_options(
+    source: &str,
+    options: &OpenQasmCompileOptions,
+) -> Result<String, String> {
     use parser::parse_phi_program;
     use phi_ir::lowering::lower_program_checked;
     use phi_ir::openqasm::OpenQasmEmitter;
     use phi_ir::optimizer::{OptimizationLevel, Optimizer};
+    use phi_ir::quantum_interaction::analyze_quantum_overlay;
 
     let expressions = parse_phi_program(source).map_err(|e| format!("Parse error: {}", e))?;
     let mut program =
@@ -104,6 +127,22 @@ pub fn compile_to_openqasm(source: &str, optimize_depth: bool) -> Result<String,
     optimizer.optimize(&mut program);
 
     let mut emitter = OpenQasmEmitter::new();
-    emitter.optimize_depth = optimize_depth;
-    emitter.emit(&program).map_err(|e| e.to_string())
+    emitter.optimize_depth = options.optimize_depth;
+
+    if let Some(topology) = &options.topology {
+        let profile = options
+            .live_backend_profile
+            .as_ref()
+            .ok_or_else(|| {
+                "Topology-aware OpenQASM compilation requires a backend topology profile"
+                    .to_string()
+            })?;
+        let overlay = analyze_quantum_overlay(&program)
+            .map_err(|e| format!("Quantum overlay analysis error: {}", e))?;
+        emitter
+            .emit_with_topology(&program, &overlay, profile, topology)
+            .map_err(|e| e.to_string())
+    } else {
+        emitter.emit(&program).map_err(|e| e.to_string())
+    }
 }

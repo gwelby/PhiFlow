@@ -47,9 +47,14 @@ rustfft = "6.1"
 nalgebra = "0.32"
 rand = "0.8"
 sysinfo = "0.30"
+pqcrypto-dilithium = { version = "0.5.0", features = ["serialization"] }
+pqcrypto-traits = "0.3.5"
 wasmtime = "25.0"
 wat = "1.0"
 rumqttc = "0.24"
+sha2 = "0.10"
+k256 = { version = "0.13", features = ["ecdsa"] }
+hex = "0.4"
 
 [features]
 default = []
@@ -57,6 +62,7 @@ audio = ["dep:cpal"]
 
 [dev-dependencies]
 criterion = "0.5"
+tempfile = "3.8"
 
 [profile.release]
 lto = "thin"        # fat LTO + wasmtime-fiber = OOM on Windows; thin LTO ships and optimizes

@@ -387,9 +387,10 @@ impl<'a> Evaluator<'a> {
             intention_stack: self.intention_stack.clone(),
             active_streams: self.active_streams.clone(),
             resonance_field: self.resonance_field.clone(),
-            resonance_events: self.resonance_events.clone(),
+            // Cap history to prevent state-file bloat (Singularity Hardening)
+            resonance_events: self.resonance_events.iter().skip(self.resonance_events.len().saturating_sub(100)).cloned().collect(),
             ended_streams: self.ended_streams.clone(),
-            witness_log: self.witness_log.clone(),
+            witness_log: self.witness_log.iter().skip(self.witness_log.len().saturating_sub(100)).cloned().collect(),
             current_block: self.current_block,
             instruction_ptr: self.instruction_ptr,
             yield_timestamp: Some(now),
@@ -429,6 +430,11 @@ impl<'a> Evaluator<'a> {
 
     pub fn resonance_field(&self) -> &HashMap<String, Vec<PhiIRValue>> {
         &self.resonance_field
+    }
+
+    /// Extends the evaluator's runtime state by injecting a classical outcome or variable.
+    pub fn inject_variable(&mut self, name: &str, value: PhiIRValue) {
+        self.variables.insert(name.to_string(), value);
     }
 
     // -----------------------------------------------------------------------
@@ -780,8 +786,8 @@ impl<'a> Evaluator<'a> {
                     "dissonance": dissonance,
                 });
 
-                // Emit to cosmic bus
-                let _ = crate::resonance_bus::emit_resonance(handoff_payload, "_handoff", "phiflow");
+                // Route through host (allows signing in SystemHostProvider)
+                self.host.broadcast("_handoff", &handoff_payload.to_string());
 
                 // Log locally
                 self.resonance_events.push(("_handoff".to_string(), context_val.clone()));

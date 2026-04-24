@@ -97,3 +97,32 @@ p1_host/
 
 # IBM Quantum credentials (never commit live keys)
 apikey.json
+
+# Internal workspace files (keep local, not on GitHub)
+BUSINESS.md
+SOUL.md
+AGENTS.md
+TASKS.md
+TEAM.md
+CLAUDE.md
+CLAUDE_*.md
+GEMINI.md
+GEMINI_*.md
+CODEX_*.md
+CLAUDE_*.md
+PHIFLOW_*_PLAN.md
+PHIFLOW_*_ROADMAP.md
+PROMPT_*.md
+*_COMPLETION_REPORT.md
+*_COMPLETION_SUMMARY.md
+AGENTS.md.backup
+
+# Internal QSOP coordination (keep STATE.md and public docs)
+QSOP/CHANGELOG.md
+QSOP/PATTERNS.md
+QSOP/WINS.md
+QSOP/ACTIVE_PLAN.md
+QSOP/ARCHITECTURE.md
+QSOP/TEAM_*.md
+QSOP/CODEX_*.md
+QSOP/mail/

@@ -42,4 +42,6 @@ sounddevice>=0.4.0          # Audio output for frequency generation
 librosa>=0.8.0              # Audio analysis and processing 
 # Network / Bus Integration
 paho-mqtt>=2.1.0          # Resonance bus bridging to MQTT
-
+# Quantum Integration
+qiskit>=1.0.0             # Core quantum circuit manipulation
+qiskit-ibm-runtime>=0.21.0 # IBM Quantum hardware execution

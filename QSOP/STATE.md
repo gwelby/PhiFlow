@@ -1,6 +1,6 @@
 ﻿## Verified (2026-04-24) [AntiGravity: Tier 4 Resonance Pass — T-005 Pipeline Closure]
 
-- **Tier 4 Resonance Pass COMPLETE**: All T-005 commercial infrastructure verified.
+- **Tier 4 Resonance Pass COMPLETE**: T-005 commercial infrastructure verified for pilot preparation; buyer-final receipt package still needs raw IBM export/screenshot evidence.
 - **Commit**: `2384741` — "[AntiGravity] T-005: SystemHostProvider attestation write-path hardened"
 - **Test gate post-patch**:
   - `cargo test --lib` — **149 passed**, 0 failed, 0 ignored
@@ -11,13 +11,14 @@
   - SOMA-online path: Hybrid secp256k1 + ML-DSA-65 signed NDJSON
   - SOMA-offline path: Structured fallback envelope (`"signed":false, "reason":...`)
   - Directory creation: `create_dir_all` guards all write targets
-- **T-005 pipeline**: BUYER-READY
+- **T-005 pipeline**: PILOT-READY
   - Gold Receipt: `D:\CosmicFamily\EVIDENCE\PHIFLOW_IBM_HERON_20260414.md`
+  - Buyer-final caveat: attach scrubbed raw IBM API JSON or dashboard/PDF screenshot before external delivery.
   - Pilot Offer: `docs/pilot_offer.md` (Lumi-authored, Cascade-verified)
   - Buyer lanes: Quantum R&D | AI Agent Infrastructure | Biofeedback Research
-  - Price anchor: \–\, 3-month scope, risk reversal included
+  - Price anchor: $25k-$35k first-buyer recommendation; legal review required before any warranty/refund/risk-reversal promise
 - **Cascade sign-off received**: 2026-04-24T00:26:16-04:00
-- **Next action (not AntiGravity's lane)**: Outreach to ONE named quantum/AI research lead
+- **Next action**: finalize raw IBM receipt evidence, then outreach to ONE named quantum/AI research lead
 
 ## Verified (2026-04-24) [AntiGravity: SystemHostProvider attestation write-path fix]
 

@@ -2,11 +2,13 @@
 // Supports IBM Quantum, Google Cirq, and other quantum providers
 
 pub mod backends;
+pub mod backend_topology;
 pub mod ibm_quantum;
 pub mod simulator;
 pub mod types;
 
 pub use backends::*;
+pub use backend_topology::*;
 pub use simulator::QuantumSimulator;
 pub use types::*;
 

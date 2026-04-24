@@ -49,8 +49,8 @@ fn test_mid_circuit_ordering() {
         .find("measure q[0]")
         .expect("Should contain 'measure q[0]'");
     let resonate_idx = qasm
-        .find("rz(0.5 * pi + pi)")
-        .expect("Should contain Heron-native resonate decomposition");
+        .find("ry(0.5 * pi)")
+        .expect("Should contain logical resonate gate");
     assert!(
         measure_idx < resonate_idx,
         "mid_circuit witness must measure before the later resonate gate\ngot:\n{qasm}"
@@ -101,8 +101,8 @@ fn test_deferred_witness_no_collision() {
     let qasm = compile_to_qasm(source);
     // resonate should be emitted before the deferred measure (Heron-native decomposition)
     let resonate_idx = qasm
-        .find("rz(0.1 * pi + pi)")
-        .expect("resonate gate (Heron-native) should be present");
+        .find("ry(0.1 * pi)")
+        .expect("logical resonate gate should be present");
     let measure_idx = qasm
         .find("measure q[0]")
         .expect("final measure should be present");

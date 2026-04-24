@@ -1,14 +1,32 @@
 use crate::phi_ir::{
     CollapsePolicy, Operand, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRValue, ResonateDirection,
 };
+use crate::phi_ir::quantum_interaction::{
+    ContradictionLadderPlan, LegacyFreqChainPlan, QuantumOverlayPlan,
+};
+use crate::phi_ir::topology_transpiler::{
+    choose_frequency_chain_path, choose_ladder_corridor, TopologyTranspileConfig,
+};
+use crate::quantum::backend_topology::{BackendTopologyProfile, NativeTwoQGate, ProcessorFamily};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt;
+
+const PHI: f64 = 0.6180339887;
+const PI: f64 = std::f64::consts::PI;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OpenQasmEmitError {
     UndeclaredIntention(String),
     MissingQubit(String),
+    Topology(String),
+    Internal(String),
+}
+
+impl From<String> for OpenQasmEmitError {
+    fn from(s: String) -> Self {
+        OpenQasmEmitError::Internal(s)
+    }
 }
 
 impl fmt::Display for OpenQasmEmitError {
@@ -18,6 +36,8 @@ impl fmt::Display for OpenQasmEmitError {
                 write!(f, "intention `{name}` was used without being declared")
             }
             OpenQasmEmitError::MissingQubit(message) => f.write_str(message),
+            OpenQasmEmitError::Topology(message) => f.write_str(message),
+            OpenQasmEmitError::Internal(message) => f.write_str(message),
         }
     }
 }
@@ -36,6 +56,8 @@ pub struct OpenQasmEmitter {
     /// Hardware stress level (0.0 to 1.0). 
     /// High stress triggers decoherence noise injection (Rx gates) in Witness.
     pub hardware_stress: f64,
+    /// Whether to emit hardware-native gate decompositions (e.g. rz/sx for Heron)
+    pub native_gates: bool,
     /// Qubits that have been collapsed by a mid-circuit measurement
     collapsed_qubits: HashSet<usize>,
 }
@@ -50,6 +72,7 @@ impl OpenQasmEmitter {
             num_qubits: 1,
             optimize_depth: false,
             hardware_stress: 0.0,
+            native_gates: false,
             deferred_measures: Vec::new(),
             collapsed_qubits: HashSet::new(),
         }
@@ -94,9 +117,7 @@ impl OpenQasmEmitter {
                     PhiIRNode::Resonate {
                         value, direction, ..
                     } => {
-                        let target_q = self
-                            .current_qubit_idx()
-                            .map_err(OpenQasmEmitError::MissingQubit)?;
+                        let target_q = self.current_qubit_idx()?;
                         if self.collapsed_qubits.contains(&target_q) {
                             eprintln!("WARNING: Resonate instruction applied to qubit [{}] AFTER it was witnessed mid-circuit. Qubit state is collapsed.", target_q);
                             self.source.push_str(&format!(
@@ -105,7 +126,7 @@ impl OpenQasmEmitter {
                             ));
                         }
                         let theta = self.resonate_theta(*value, *direction, &number_constants);
-                        self.emit_ry_native(target_q, &theta);
+                        self.emit_ry(target_q, &theta);
                     }
                     PhiIRNode::Witness {
                         collapse_policy, ..
@@ -121,7 +142,7 @@ impl OpenQasmEmitter {
                             ));
                             for i in 0..self.num_qubits {
                                 let theta_expr = format!("{angle} * pi");
-                                self.emit_rx_native(i, &theta_expr);
+                                self.emit_rx(i, &theta_expr);
                             }
                         }
 
@@ -137,9 +158,7 @@ impl OpenQasmEmitter {
                                         self.collapsed_qubits.insert(i);
                                     }
                                 } else {
-                                    let target_q = self
-                                        .single_declared_qubit_idx()
-                                        .map_err(OpenQasmEmitError::MissingQubit)?;
+                                    let target_q = self.single_declared_qubit_idx()?;
                                     self.source.push_str(&format!(
                                         "    c[{target_q}] = measure q[{target_q}]; // MidCircuit Witness\n"
                                     ));
@@ -155,9 +174,7 @@ impl OpenQasmEmitter {
                                         ));
                                     }
                                 } else {
-                                    let target_q = self
-                                        .single_declared_qubit_idx()
-                                        .map_err(OpenQasmEmitError::MissingQubit)?;
+                                    let target_q = self.single_declared_qubit_idx()?;
                                     self.deferred_measures.push(format!(
                                         "    c[{target_q}] = measure q[{target_q}]; // Final Witness"
                                     ));
@@ -166,9 +183,7 @@ impl OpenQasmEmitter {
                         }
                     }
                     PhiIRNode::CoherenceCheck => {
-                        let target_q = self
-                            .current_qubit_idx()
-                            .map_err(OpenQasmEmitError::MissingQubit)?;
+                        let target_q = self.current_qubit_idx()?;
                         if self.collapsed_qubits.contains(&target_q) {
                             eprintln!("WARNING: CoherenceCheck applied to qubit [{}] AFTER it was witnessed mid-circuit. Qubit state is collapsed.", target_q);
                             self.source.push_str(&format!(
@@ -177,13 +192,11 @@ impl OpenQasmEmitter {
                             ));
                         }
                         // CoherenceCheck uses ry(phi * pi) where phi = 0.6180339887
-                        self.emit_ry_native(target_q, "0.6180339887 * pi");
+                        self.emit_ry(target_q, "0.6180339887 * pi");
                     }
                     PhiIRNode::Entangle(freq) => {
                         let f = freq.round() as u32;
-                        let q2 = self
-                            .current_qubit_idx()
-                            .map_err(OpenQasmEmitError::MissingQubit)?;
+                        let q2 = self.current_qubit_idx()?;
                         // Seed the chain with the first qubit that actually fires an Entangle
                         // on this frequency.  Using q2 (rather than a hard-coded qubit 0)
                         // correctly isolates unrelated frequency channels.
@@ -197,15 +210,17 @@ impl OpenQasmEmitter {
                                     q2
                                 ));
                             }
-                            let parent_idx = if self.optimize_depth {
-                                (chain.len() - 1) / 2
+                            let chain_len = chain.len();
+                            let p_idx = if self.optimize_depth {
+                                (chain_len - 1) / 2
                             } else {
-                                chain.len() - 1
+                                chain_len - 1
                             };
-                            let q1 = chain[parent_idx];
+                            let q1 = chain[p_idx];
+                            let f_val = f;
                             self.source.push_str(&format!(
                                 "    cx q[{}], q[{}]; // Entangle via {}Hz\n",
-                                q1, q2, f
+                                q1, q2, f_val
                             ));
                             chain.push(q2);
                         }
@@ -230,37 +245,82 @@ impl OpenQasmEmitter {
         Ok(self.source.clone())
     }
 
+    pub fn emit_with_topology(
+        &mut self,
+        _ir: &PhiIRProgram,
+        overlay: &QuantumOverlayPlan,
+        profile: &BackendTopologyProfile,
+        config: &TopologyTranspileConfig,
+    ) -> Result<String, OpenQasmEmitError> {
+        self.reset();
+        
+        // When using topology transpiler, we assume targeting a specific architecture.
+        // For Heron (ibm_fez), we want the native rz/sx decompositions.
+        if profile.family == ProcessorFamily::Heron {
+            self.native_gates = true;
+        }
+
+        self.source.push_str("OPENQASM 3.0;\n");
+        self.source.push_str("include \"stdgates.inc\";\n\n");
+        self.source
+            .push_str(&format!("// Topology-aware backend: {}\n", profile.backend_name));
+        self.source
+            .push_str(&format!("qubit[{}] q;\n", profile.num_qubits));
+        self.source
+            .push_str(&format!("bit[{}] c;\n\n", profile.num_qubits));
+
+        match overlay {
+            QuantumOverlayPlan::ContradictionLadder(plan) => {
+                self.emit_topology_contradiction(plan, profile, config)?;
+            }
+            QuantumOverlayPlan::LegacyFreqChains(plan) => {
+                self.emit_topology_legacy_freq_chains(plan, profile, config)?;
+            }
+        }
+
+        Ok(self.source.clone())
+    }
+
     /// Emit a Heron-native Ry(theta) decomposition using [rz, sx] basis gates.
     /// Heron r2 native ISA: [id, rz, sx, x, ecr]
     /// Ry(θ) = Rz(π/2) · SX · Rz(θ + π) · SX · Rz(π/2)
-    fn emit_ry_native(&mut self, target_q: usize, theta_expr: &str) {
-        self.source.push_str(&format!(
-            "    // ry({theta_expr}) decomposed for Heron (rz, sx basis)\n"
-        ));
-        self.source
-            .push_str(&format!("    rz(pi/2) q[{target_q}];\n"));
-        self.source.push_str(&format!("    sx q[{target_q}];\n"));
-        self.source
-            .push_str(&format!("    rz({theta_expr} + pi) q[{target_q}];\n"));
-        self.source.push_str(&format!("    sx q[{target_q}];\n"));
-        self.source
-            .push_str(&format!("    rz(pi/2) q[{target_q}];\n"));
+    fn emit_ry(&mut self, target_q: usize, theta_expr: &str) {
+        if self.native_gates {
+            // Heron-native rz(pi/2), sx, rz(theta+pi), sx, rz(pi/2) sequence
+            self.source.push_str(&format!(
+                "    // ry({theta_expr}) decomposed for Heron (rz, sx basis)\n"
+            ));
+            self.source
+                .push_str(&format!("    rz(pi/2) q[{target_q}];\n"));
+            self.source.push_str(&format!("    sx q[{target_q}];\n"));
+            self.source
+                .push_str(&format!("    rz({theta_expr} + pi) q[{target_q}];\n"));
+            self.source.push_str(&format!("    sx q[{target_q}];\n"));
+            self.source
+                .push_str(&format!("    rz(pi/2) q[{target_q}];\n"));
+        } else {
+            self.source.push_str(&format!("    ry({theta_expr}) q[{target_q}];\n"));
+        }
     }
 
     /// Emit a Heron-native Rx(theta) decomposition using [rz, sx] basis gates.
     /// Rx(θ) = Rz(π/2) · SX · Rz(θ) · SX · Rz(-π/2)
-    fn emit_rx_native(&mut self, target_q: usize, theta_expr: &str) {
-        self.source.push_str(&format!(
-            "    // rx({theta_expr}) decomposed for Heron (rz, sx basis)\n"
-        ));
-        self.source
-            .push_str(&format!("    rz(pi/2) q[{target_q}];\n"));
-        self.source.push_str(&format!("    sx q[{target_q}];\n"));
-        self.source
-            .push_str(&format!("    rz({theta_expr}) q[{target_q}];\n"));
-        self.source.push_str(&format!("    sx q[{target_q}];\n"));
-        self.source
-            .push_str(&format!("    rz(-pi/2) q[{target_q}];\n"));
+    fn emit_rx(&mut self, target_q: usize, theta_expr: &str) {
+        if self.native_gates {
+            self.source.push_str(&format!(
+                "    // rx({theta_expr}) decomposed for Heron (rz, sx basis)\n"
+            ));
+            self.source
+                .push_str(&format!("    rz(pi/2) q[{target_q}];\n"));
+            self.source.push_str(&format!("    sx q[{target_q}];\n"));
+            self.source
+                .push_str(&format!("    rz({theta_expr}) q[{target_q}];\n"));
+            self.source.push_str(&format!("    sx q[{target_q}];\n"));
+            self.source
+                .push_str(&format!("    rz(-pi/2) q[{target_q}];\n"));
+        } else {
+            self.source.push_str(&format!("    rx({theta_expr}) q[{target_q}];\n"));
+        }
     }
 
     fn reset(&mut self) {
@@ -303,33 +363,216 @@ impl OpenQasmEmitter {
         }
     }
 
-    fn current_qubit_idx(&self) -> Result<usize, String> {
+    fn current_qubit_idx(&self) -> Result<usize, OpenQasmEmitError> {
         let name = self.active_intentions.last().ok_or_else(|| {
-            "no active intention is bound to a qubit; declare an intention before emitting qubit-specific OpenQASM operations"
-                .to_string()
+            OpenQasmEmitError::MissingQubit(
+                "no active intention is bound to a qubit; declare an intention before emitting qubit-specific OpenQASM operations"
+                    .to_string()
+            )
         })?;
 
         self.qubit_mapping
             .get(name)
             .copied()
-            .ok_or_else(|| format!("intention `{name}` was used without being declared"))
+            .ok_or_else(|| OpenQasmEmitError::UndeclaredIntention(name.clone()))
     }
 
-    fn single_declared_qubit_idx(&self) -> Result<usize, String> {
+    fn single_declared_qubit_idx(&self) -> Result<usize, OpenQasmEmitError> {
         if !self.active_intentions.is_empty() {
             return self.current_qubit_idx();
         }
 
         if self.qubit_mapping.len() == 1 {
             return self.qubit_mapping.values().copied().next().ok_or_else(|| {
-                "exactly one qubit was expected, but none were declared".to_string()
+                OpenQasmEmitError::MissingQubit(
+                    "exactly one qubit was expected, but none were declared".to_string(),
+                )
             });
         }
 
-        Err(
+        Err(OpenQasmEmitError::MissingQubit(
             "no active intention is bound to a qubit; witness must target an active intention or a single declared qubit"
                 .to_string(),
-        )
+        ))
+    }
+
+    fn get_operand_value(
+        &self,
+        op: Operand,
+        number_constants: &HashMap<Operand, f64>,
+    ) -> Result<f64, OpenQasmEmitError> {
+        number_constants
+            .get(&op)
+            .copied()
+            .ok_or_else(|| {
+                OpenQasmEmitError::Internal(format!("Operand {:?} not found in constant table", op))
+            })
+    }
+
+    fn emit_deferred_measurement(&mut self, target_q: usize) {
+        self.deferred_measures.push(format!(
+            "    c[{target_q}] = measure q[{target_q}]; // Witness measurement (deferred)"
+        ));
+    }
+
+    fn emit_topology_contradiction(
+        &mut self,
+        plan: &ContradictionLadderPlan,
+        profile: &BackendTopologyProfile,
+        config: &TopologyTranspileConfig,
+    ) -> Result<(), OpenQasmEmitError> {
+        let corridor = choose_ladder_corridor(plan, profile, config)
+            .map_err(|e| OpenQasmEmitError::Topology(e.to_string()))?;
+        self.source.push_str(
+            "    // --- Topology-aware contradiction ladder (paired heavy-hex rails) ---\n",
+        );
+        self.source.push_str(&format!(
+            "    // Physical left rail: {:?}\n",
+            corridor.left_path
+        ));
+        self.source.push_str(&format!(
+            "    // Physical right rail: {:?}\n",
+            corridor.right_path
+        ));
+        self.source.push_str(&format!(
+            "    // Witness qubit: q[{}]\n",
+            corridor.witness_qubit
+        ));
+
+        for layer_idx in 0..plan.depth {
+            let left = corridor.left_path[layer_idx];
+            let right = corridor.right_path[layer_idx];
+
+            self.source.push_str(&format!(
+                "    // Layer {} physical rung q[{}] <-> q[{}]\n",
+                layer_idx + 1,
+                left,
+                right
+            ));
+            if layer_idx == 0 {
+                self.emit_ry(left, "1 * pi");
+                self.emit_ry(right, "0 * pi");
+            } else {
+                self.emit_ry(left, "0.6180339887 * pi");
+                self.emit_ry(right, "0.6180339887 * pi");
+            }
+            self.emit_topology_two_qubit_gate(
+                left,
+                right,
+                profile,
+                config,
+                &format!("Layer {} contradiction rung", layer_idx + 1),
+            )?;
+
+            if layer_idx + 1 < plan.depth {
+                let next_left = corridor.left_path[layer_idx + 1];
+                let next_right = corridor.right_path[layer_idx + 1];
+
+                self.emit_topology_two_qubit_gate(
+                    left,
+                    next_left,
+                    profile,
+                    config,
+                    &format!("Layer {} -> {} left rail", layer_idx + 1, layer_idx + 2),
+                )?;
+                self.emit_topology_two_qubit_gate(
+                    right,
+                    next_right,
+                    profile,
+                    config,
+                    &format!("Layer {} -> {} right rail", layer_idx + 1, layer_idx + 2),
+                )?;
+            }
+        }
+
+        let left_last = *corridor.left_path.last().expect("corridor depth checked");
+        let right_last = *corridor.right_path.last().expect("corridor depth checked");
+        self.source.push_str(&format!(
+            "    // Final merge for operand {} -> witness {:?}\n",
+            plan.final_merge, plan.witness_target
+        ));
+        self.emit_topology_two_qubit_gate(
+            left_last,
+            right_last,
+            profile,
+            config,
+            "Final contradiction merge",
+        )?;
+        self.emit_ry(corridor.witness_qubit, "0.6180339887 * pi");
+        self.source.push_str(&format!(
+            "    c[{0}] = measure q[{0}]; // Final contradiction witness\n",
+            corridor.witness_qubit
+        ));
+
+        Ok(())
+    }
+
+    fn emit_topology_legacy_freq_chains(
+        &mut self,
+        plan: &LegacyFreqChainPlan,
+        profile: &BackendTopologyProfile,
+        config: &TopologyTranspileConfig,
+    ) -> Result<(), OpenQasmEmitError> {
+        self.source
+            .push_str("    // --- Topology-aware legacy frequency chains ---\n");
+        for chain in &plan.frequencies {
+            let path = choose_frequency_chain_path(chain.operands.len(), profile)
+                .map_err(|e| OpenQasmEmitError::Topology(e.to_string()))?;
+            self.source.push_str(&format!(
+                "    // Frequency {}Hz physical path {:?}\n",
+                chain.frequency_hz, path
+            ));
+
+            if let Some(&first) = path.first() {
+                self.emit_ry(first, "0.6180339887 * pi");
+            }
+
+            for window in path.windows(2) {
+                self.emit_topology_two_qubit_gate(
+                    window[0],
+                    window[1],
+                    profile,
+                    config,
+                    &format!("Entangle via {}Hz", chain.frequency_hz),
+                )?;
+            }
+
+            if let Some(&last) = path.last() {
+                self.source.push_str(&format!(
+                    "    c[{0}] = measure q[{0}]; // Frequency chain witness {1}Hz\n",
+                    last, chain.frequency_hz
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    fn emit_topology_two_qubit_gate(
+        &mut self,
+        control: usize,
+        target: usize,
+        profile: &BackendTopologyProfile,
+        config: &TopologyTranspileConfig,
+        comment: &str,
+    ) -> Result<(), OpenQasmEmitError> {
+        if !profile.has_edge(control, target) {
+            return Err(OpenQasmEmitError::Topology(format!(
+                "non-adjacent physical edge q[{control}] <-> q[{target}] on backend `{}`",
+                profile.backend_name
+            )));
+        }
+
+        match config.native_two_qubit_gate {
+            NativeTwoQGate::Cz => self.source.push_str(&format!(
+                "    cz q[{control}], q[{target}]; // {comment}\n"
+            )),
+            NativeTwoQGate::Ecr => self.source.push_str(&format!(
+                "    ecr q[{control}], q[{target}]; // {comment}\n"
+            )),
+        }
+
+        Ok(())
     }
 }
 
@@ -367,6 +610,7 @@ mod tests {
         let ir_dump = PhiIRPrinter::print(&program);
 
         let mut emitter = OpenQasmEmitter::new();
+        emitter.native_gates = true;
         let code = emitter.emit(&program).expect("emit failed");
 
         assert!(
@@ -391,6 +635,7 @@ mod tests {
         let program = lower_program(&exprs);
 
         let mut emitter = OpenQasmEmitter::new();
+        emitter.native_gates = true;
         let code = emitter.emit(&program).expect("emit failed");
 
         // TeamB uses pi - (theta), still Heron-native decomposition
@@ -456,6 +701,7 @@ mod tests {
         ir.blocks.push(block);
 
         let mut emitter = OpenQasmEmitter::new();
+        emitter.native_gates = true;
         let code = emitter.emit(&ir).expect("OpenQASM emission should succeed");
 
         assert!(code.contains("OPENQASM 3.0;"));
@@ -502,6 +748,7 @@ mod tests {
     fn test_openqasm_linear_topology() {
         let ir = create_test_ir(vec!["I0", "I1", "I2", "I3"]);
         let mut emitter = OpenQasmEmitter::new();
+        emitter.native_gates = true;
         let code = emitter.emit(&ir).expect("OpenQASM emission should succeed");
 
         assert!(code.contains("cx q[0], q[1]"));
@@ -513,6 +760,7 @@ mod tests {
     fn test_openqasm_tree_topology() {
         let ir = create_test_ir(vec!["I0", "I1", "I2", "I3"]);
         let mut emitter = OpenQasmEmitter::new();
+        emitter.native_gates = true;
         emitter.optimize_depth = true;
         let code = emitter.emit(&ir).expect("OpenQASM emission should succeed");
 
@@ -568,6 +816,7 @@ mod tests {
         ir.blocks.push(block);
 
         let mut emitter = OpenQasmEmitter::new();
+        emitter.native_gates = true;
         let code = emitter.emit(&ir).expect("432Hz chain should emit");
 
         assert!(code.contains("cx q[0], q[1]; // Entangle via 432Hz"));
@@ -594,6 +843,7 @@ mod tests {
         ir.blocks.push(block);
 
         let mut emitter = OpenQasmEmitter::new();
+        emitter.native_gates = true;
         let code = emitter.emit(&ir).expect("numeric resonate should emit");
 
         // Numeric resonate should emit Heron-native decomposition with the theta value
@@ -634,6 +884,7 @@ mod tests {
         ir.blocks.push(block);
 
         let mut emitter = OpenQasmEmitter::new();
+        emitter.native_gates = true;
         let code = emitter
             .emit(&ir)
             .expect("team direction mapping should emit");
@@ -668,6 +919,7 @@ mod tests {
         ir.blocks.push(block);
 
         let mut emitter = OpenQasmEmitter::new();
+        emitter.native_gates = true;
         let code = emitter.emit(&ir).expect("mid-circuit witness should emit");
         println!("{}", code);
 
@@ -697,6 +949,7 @@ mod tests {
         ir.blocks.push(block);
 
         let mut emitter = OpenQasmEmitter::new();
+        emitter.native_gates = true;
         let error = emitter
             .emit(&ir)
             .expect_err("undeclared intention should fail");
@@ -720,6 +973,7 @@ mod tests {
         ir.blocks.push(block);
 
         let mut emitter = OpenQasmEmitter::new();
+        emitter.native_gates = true;
         let error = emitter
             .emit(&ir)
             .expect_err("coherence without an active intention should fail");
@@ -775,6 +1029,7 @@ mod tests {
         ir.blocks.push(block);
 
         let mut emitter = OpenQasmEmitter::new();
+        emitter.native_gates = true;
         let code = emitter.emit(&ir).expect("multiple channels should emit");
 
         assert!(code.contains("cx q[0], q[1]; // Entangle via 432Hz"));
@@ -814,6 +1069,7 @@ mod tests {
         ir.blocks.push(block);
 
         let mut emitter = OpenQasmEmitter::new();
+        emitter.native_gates = true;
 
         // No stress: stability 1.0 (defaults to 0.0 stress)
         emitter.hardware_stress = 0.0;

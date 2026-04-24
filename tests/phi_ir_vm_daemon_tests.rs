@@ -33,7 +33,7 @@ fn test_vm_daemon_yield_resume_cycle() {
     let yield_count_clone = Arc::clone(&yield_count);
     
     let host = Arc::new(CallbackHostProvider::new()
-        .with_witness(move |snapshot| {
+        .with_witness(move |_snapshot| {
             let mut count = yield_count_clone.lock().unwrap();
             *count += 1;
             WitnessAction::Yield

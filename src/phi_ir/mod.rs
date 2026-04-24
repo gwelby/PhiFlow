@@ -17,7 +17,9 @@ pub mod lowering;
 pub mod openqasm;
 pub mod optimizer;
 pub mod printer;
+pub mod quantum_interaction;
 pub mod quantum_codegen;
+pub mod topology_transpiler;
 pub mod vm;
 pub mod vm_state;
 pub mod wasm;
@@ -94,7 +96,10 @@ pub enum SensorKind {
     RingJitterNs,
     RingCoherence432,
     RingCoherence528,
-    RingPhaseDelta,
+        RingPhaseDelta,
+    QuantumT1,
+    QuantumT2,
+    QuantumReadoutError,
 }
 
 impl SensorKind {
@@ -114,6 +119,9 @@ impl SensorKind {
             "ring_coherence_432" => Some(Self::RingCoherence432),
             "ring_coherence_528" => Some(Self::RingCoherence528),
             "ring_phase_delta" => Some(Self::RingPhaseDelta),
+            "quantum_t1" => Some(Self::QuantumT1),
+            "quantum_t2" => Some(Self::QuantumT2),
+            "quantum_readout_error" => Some(Self::QuantumReadoutError),
             _ => None,
         }
     }
@@ -134,6 +142,9 @@ impl SensorKind {
             Self::RingCoherence432 => "ring_coherence_432",
             Self::RingCoherence528 => "ring_coherence_528",
             Self::RingPhaseDelta => "ring_phase_delta",
+            Self::QuantumT1 => "quantum_t1",
+            Self::QuantumT2 => "quantum_t2",
+            Self::QuantumReadoutError => "quantum_readout_error",
         }
     }
 
@@ -153,6 +164,9 @@ impl SensorKind {
             Self::RingCoherence432 => 11,
             Self::RingCoherence528 => 12,
             Self::RingPhaseDelta => 13,
+            Self::QuantumT1 => 100,
+            Self::QuantumT2 => 101,
+            Self::QuantumReadoutError => 102,
         }
     }
 
@@ -172,6 +186,9 @@ impl SensorKind {
             11 => Some(Self::RingCoherence432),
             12 => Some(Self::RingCoherence528),
             13 => Some(Self::RingPhaseDelta),
+            100 => Some(Self::QuantumT1),
+            101 => Some(Self::QuantumT2),
+            102 => Some(Self::QuantumReadoutError),
             _ => None,
         }
     }

@@ -1577,10 +1577,6 @@ impl PhiParser {
                 self.advance();
                 PhiExpression::Boolean(b)
             }
-            PhiToken::Coherence => {
-                self.advance();
-                PhiExpression::Variable("coherence".to_string())
-            }
             PhiToken::VoidDepth => {
                 self.advance();
                 PhiExpression::VoidDepth
@@ -1893,6 +1889,28 @@ impl PhiParser {
         } else {
             ResonateDirection::TeamA
         };
+
+        // Accept optional channel annotations like:
+        //   resonate 1.0 as "logic/truth"
+        // The current IR does not preserve the channel label, so we consume and discard it
+        // to keep example scripts parseable without changing evaluator / VM semantics.
+        if matches!(
+            &self.current_token,
+            PhiToken::Identifier(name) if name.eq_ignore_ascii_case("as")
+        ) {
+            self.advance();
+            match &self.current_token {
+                PhiToken::String(_) | PhiToken::Identifier(_) => {
+                    self.advance();
+                }
+                _ => {
+                    return Err(format!(
+                        "Expected resonance channel name after `as`, found {:?}",
+                        self.current_token
+                    ));
+                }
+            }
+        }
 
         Ok(PhiExpression::Resonate {
             expression,

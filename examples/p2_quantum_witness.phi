@@ -1,0 +1,22 @@
+intention "quantum_witness_verification" {
+    stream "collapse_test" {
+        let _s1 = witness sensor("cpu_usage")
+        
+        // Coherence is now < 0.99
+        resonate "Coherence depleted. Triggering macroscopic quantum measurement..."
+        witness 0
+        
+        // Resumption: The Hypervisor has injected the macroscopic result into our environment
+        resonate "Quantum Collapse Complete."
+        
+        // Test the injected variable
+        if quantum_collapse == 1.0 {
+            resonate "Hardware measured: |1> (Excited State)"
+        } else {
+            resonate "Hardware measured: |0> (Ground State)"
+        }
+        
+        // Wait before next cycle
+        witness 1
+    }
+}

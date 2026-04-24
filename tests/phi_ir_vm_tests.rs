@@ -101,7 +101,7 @@ fn vm_round_trips_emitted_string_values() {
             label: "entry".to_string(),
             instructions: vec![PhiInstruction {
                 result: Some(0),
-                node: PhiIRNode::Const(PhiIRValue::String(0)),
+                node: PhiIRNode::Const(PhiIRValue::String("resonance".to_string())),
             }],
             terminator: PhiIRNode::Return(0),
         }],
@@ -116,11 +116,8 @@ fn vm_round_trips_emitted_string_values() {
     let result = vm.run().expect("VM should execute bytecode");
 
     match result {
-        PhiIRValue::String(index) => {
-            assert_eq!(
-                vm.string_table().get(index as usize),
-                Some(&"resonance".to_string())
-            );
+        PhiIRValue::String(s) => {
+            assert_eq!(s, "resonance");
         }
         other => panic!("expected string result, got {:?}", other),
     }

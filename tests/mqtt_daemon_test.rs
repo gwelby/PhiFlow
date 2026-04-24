@@ -1,5 +1,5 @@
 use phiflow::resonance_bus::{ResonanceEvent, MqttConfig};
-use rumqttc::{Client, MqttOptions, QoS};
+use rumqttc::{Client, MqttOptions};
 use std::time::Duration;
 use serde_json::json;
 

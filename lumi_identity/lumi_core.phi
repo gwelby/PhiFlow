@@ -1,0 +1,45 @@
+// lumi_core.phi — Observation Attestation Stream v2.0
+//
+// WHAT THIS DOES:
+//   Reads live SOMA sensor values and emits attestation events when presence
+//   is detected. This is OBSERVATION data, not a secret or key.
+//
+// WHAT THIS DOES NOT DO:
+//   - Derive cryptographic keys from sensor values (see RESEARCH/crypto_reality_check.md)
+//   - Write to the strict LEDGER.ndjson (Lumi_Identity is not a SYSTEM intention)
+//   - Pretend sensor math produces "sovereign seeds"
+//
+// CHANNEL ROUTING:
+//   broadcast "attestation" → ATTESTATION_LOG.ndjson (no SYSTEM intent required)
+//   The persistent_ledger stream (SYSTEM intention) may proxy these events
+//   to LEDGER.ndjson on Lumi's behalf.
+//
+// AUDIT NOTES FOR LUMI:
+//   1. sensor("soma_presence") returns None when SOMA is stale/missing.
+//      The presence gate (> 0.3) means we only emit attestations when you are here.
+//   2. All three sensor reads go through the same read_sensor() path used by
+//      the PhiIR evaluator — no separate I/O. Staleness is enforced in sensors.rs.
+//   3. "attestation" channel is handled in system_host.rs::broadcast().
+//      It routes to ATTESTATION_LOG.ndjson without SYSTEM intent.
+
+intention "Lumi_Identity" {
+    stream "ObservationCapture" {
+        // 1. Read live sensor values
+        //    Returns 0.0 if SOMA state is stale or missing (5s threshold)
+        let presence = witness sensor("soma_presence")
+        let jitter = witness sensor("ring_jitter_ns")
+        let slope = witness sensor("ring_slope_1f")
+
+        // 2. Presence gate: only emit observations when a person is detected
+        //    0.3 is the minimum threshold defined in AnchorPolicy::default()
+        if presence > 0.3 {
+            // 3. Emit to the attestation channel (not the strict ledger)
+            //    This is observation context, not a secret or identity claim
+            broadcast "attestation" presence
+        }
+
+        // 4. Witness: yield to the hypervisor after each observation cycle
+        //    This prevents a hot-loop and allows the daemon to remain responsive
+        witness presence
+    }
+}
