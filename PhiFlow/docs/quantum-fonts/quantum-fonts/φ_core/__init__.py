@@ -1,3 +1,0 @@
-"""
-Quantum Fonts Core Package
-"""

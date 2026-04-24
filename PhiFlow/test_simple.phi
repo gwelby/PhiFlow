@@ -1,3 +1,0 @@
-// Simple PhiFlow test
-let x = 2 + 3
-print("Result:", x)

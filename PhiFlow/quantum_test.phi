@@ -1,3 +1,0 @@
-// Test quantum gate functionality
-print("Testing quantum gates");
-42

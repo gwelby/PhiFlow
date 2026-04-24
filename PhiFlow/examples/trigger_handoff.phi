@@ -1,6 +1,0 @@
-// trigger_handoff.phi
-intention "SYSTEM" {
-    let payload = "{\"target\": \"antigravity\", \"context\": \"T-014: Hardened Bytecode Daemon Verified with persistent ledger.\"}"
-    broadcast "_handoff" payload
-    witness 1.0
-}

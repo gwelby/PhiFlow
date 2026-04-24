@@ -1,3 +1,0 @@
-"""
-PhiFlow Root Package
-"""

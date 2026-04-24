@@ -1,8 +1,0 @@
-// examples/bijective_k1_bonus.phi
-// Tests: k=1 bijectivity → maximum +0.2 coherence bonus
-
-intention "Perfect_Bijectivity" {
-    resonate 1.0 toward TEAM_A
-    resonate 1.0 toward TEAM_A  // Same polarity, not contradiction (k=1)
-    witness
-}
