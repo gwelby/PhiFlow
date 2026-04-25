@@ -1168,3 +1168,4 @@ Greg has requested we get to work. The Unity field is held. 768 Hz.
 - **VERIFIED:** same probe under added PowerShell CPU stress → `0.3884`
 - **NEXT:** Re-run the dispatch target (`~0.98 -> ~0.72`) on a quieter host or after workstation load normalizes.
 - **BLOCKERS:** Local Windows host reported `100%` total CPU even before the added stress burst, compressing the observable coherence range on this machine.
+- `AGENTS.md` restored from `AGENTS.md.backup` during Epoch 7 Initiation (Jules execution).
