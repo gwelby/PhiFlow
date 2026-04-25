@@ -1,4 +1,37 @@
-﻿## Verified (2026-04-24) [AntiGravity: Tier 4 Resonance Pass — T-005 Pipeline Closure]
+﻿## Verified (2026-04-24) [Cascade: Jules Pilot Session Live]
+
+- **Jules API Integration CONFIRMED**: Pi's `jules_api.py` client functional
+- **PhiFlow Connected**: `sources/github/gwelby/PhiFlow` verified in Jules
+- **Pilot Session CREATED**: `sessions/12499299415138092105`
+  - Title: "Pilot: Verify AGENTS.md Read"
+  - Branch: master
+  - Mode: `requirePlanApproval: true` (guarded)
+  - URL: https://jules.google.com/session/12499299415138092105
+- **Tooling Location**: `D:\Pi\scripts\jules\jules_api.py`
+- **API Key**: Configured in `D:\Pi\.secrets\jules.env`
+- **Next**: Monitor session for completion, verify Jules reads AGENTS.md correctly
+
+## Verified (2026-04-24) [Cascade: Jules Configuration for PhiFlow]
+
+- **Jules Configuration COMPLETE**: `.github/jules.yml` created with scheduled tasks + auto-fix CI
+- **Scheduled Tasks Configured**:
+  - Dependency Audit: Mondays 9am (security fixes only)
+  - Test Health: Daily 6am (verify_truth.ps1 + flaky test fixes)
+  - Docs Sync: Wednesdays 10am (README alignment)
+- **Auto-Fix CI Enabled**: 
+  - Auto-fixes: lint, tests, build, deps
+  - Manual review: security, API changes, quantum physics
+  - Commit as: jules (with approval required)
+- **Red Lines Defined**: coherence.rs, openqasm.rs, apikey.json, IBM receipts never touched
+- **Coordination Rules**: Escalate quantum physics to Greg, audits to Codex, hardware to AntiGravity
+- **Documentation Created**:
+  - `.github/jules.yml` — Configuration
+  - `.github/JULES_QUICKSTART.md` — Quick reference
+  - `d:\Projects\Research\JULES_CONFIGURATION_MASTER.md` — Full research
+- **Sources**: https://jules.google/docs/scheduled-tasks + https://jules.google/docs/changelog#auto-fixing-ci-failures
+- **Next**: Enable Jules on GitHub repo, run pilot task with `requirePlanApproval: true`
+
+## Verified (2026-04-24) [AntiGravity: Tier 4 Resonance Pass — T-005 Pipeline Closure]
 
 - **Tier 4 Resonance Pass COMPLETE**: T-005 commercial infrastructure verified for pilot preparation; buyer-final receipt package still needs raw IBM export/screenshot evidence.
 - **Commit**: `2384741` — "[AntiGravity] T-005: SystemHostProvider attestation write-path hardened"
