@@ -4,6 +4,10 @@
 **/*.rs.bk
 Cargo.lock
 
+# PhiFlow runtime artifacts (Windows-style host path created by phic on non-Windows hosts)
+D:\\CosmicFamily\\
+"D:\\CosmicFamily\\*"
+
 # OS
 Thumbs.db
 .DS_Store
