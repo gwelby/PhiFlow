@@ -21,6 +21,7 @@ PhiFlow is a quantum-aware programming language and computational substrate buil
 - `examples/` — Sample `.phi` programs
 - `tests/` — Integration and IR conformance tests
 - `docs/` — Language reference, hardware runbooks, philosophical papers
+- `cairn/` — Identity folder for the Cairn agent (README, IDENTITY, WORKING_NOTES, ideas/). See `CAIRN.md` at the repo root for the wake-up entry point and `examples/cairn_signature.phi` for the signature program.
 
 ## Tech Stack
 
