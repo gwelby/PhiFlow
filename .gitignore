@@ -27,7 +27,7 @@ Thumbs.db
 **/target/
 src/obj/
 obj/
-bin/
+/bin/
 src/bin/Debug/
 src/tests/quantum_env/
 target-antigravity/
@@ -120,6 +120,11 @@ PROMPT_*.md
 *_COMPLETION_REPORT.md
 *_COMPLETION_SUMMARY.md
 AGENTS.md.backup
+
+# Windows-style runtime paths accidentally created on non-Windows hosts
+# (the resonance bus and host provider hardcode `D:\CosmicFamily\...`,
+# which becomes a literal filename here when an example is run).
+/D:*
 
 # Internal QSOP coordination (keep STATE.md and public docs)
 QSOP/CHANGELOG.md
