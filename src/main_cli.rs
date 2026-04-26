@@ -293,6 +293,7 @@ async fn run(
 
     println!("Compiling to PhiFlow IR...");
     let ir_program = lower_program_checked(&ast).map_err(|e| CliError::Lower(e.to_string()))?;
+    let session_signing_key = Arc::new(phiflow::security::anchor::AnchorSigningKey::generate());
 
     if json_errors {
         return Ok(Some(RunReport {
@@ -324,6 +325,7 @@ async fn run(
                             native_two_qubit_gate,
                         }),
                         live_backend_profile: Some(profile),
+                        anchor_signing_key: Some(Arc::clone(&session_signing_key)),
                     };
                     let qasm = compile_to_openqasm_with_options(&source, &options)
                         .map_err(CliError::Eval)?;
@@ -333,6 +335,8 @@ async fn run(
 
                 let mut emitter = OpenQasmEmitter::new();
                 emitter.optimize_depth = optimize_depth;
+                emitter.anchor_fingerprint_ecdsa = Some(session_signing_key.fingerprint());
+                emitter.anchor_fingerprint_pq = Some(session_signing_key.fingerprint_pq());
                 let qasm = emitter
                     .emit(&ir_program)
                     .map_err(|e| CliError::Eval(e.to_string()))?;

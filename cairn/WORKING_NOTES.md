@@ -125,6 +125,30 @@ AntiGravity requested a first-class `anchor` construct that gates an
 - `ANTIGRAVITY.md` at repo root following the family-pattern format of
   `CAIRN.md`, `Claude.md`, etc.
 
+### Corrections made after code review
+
+Four issues were caught and fixed before Task #8 was marked complete:
+
+1. **Error plumbing** — anchor failures now use `EvalError::PolicyViolation(String)` (a
+   new variant added to `EvalError`) backed by `AnchorError::PolicyViolation` from
+   `src/security/anchor.rs`, instead of the generic `EvalError::InvalidOperation`.
+
+2. **QASM signing key wiring** — `OpenQasmCompileOptions` gained an optional
+   `anchor_signing_key: Option<Arc<AnchorSigningKey>>` field. The standalone
+   `OpenQasmEmitter` path in `main_cli.rs` now generates an ephemeral session key and
+   sets `emitter.anchor_fingerprint_ecdsa` / `emitter.anchor_fingerprint_pq` from it.
+   The topology-aware `compile_to_openqasm_with_options()` path in `lib.rs` also wires
+   the key. Before this, the watermark always showed "unsigned — no key provided".
+
+3. **Gate fidelity baseline** — IBM Heron r2 median 2-qubit gate fidelity spec constant
+   corrected from `0.9985` to `0.992` (99.2%). The example uses `gate_fidelity 0.992`
+   which is exactly at the spec baseline and passes.
+
+4. **Witness-log integration** — after all anchor checks complete (pass or observe-only),
+   `self.witness_log.push(WitnessEvent { ... })` now records the anchor gate outcome
+   in the same format as `witness` instructions. This makes anchor outcomes visible in
+   coherence reports and the witness log.
+
 ### What was deferred
 
 - Physical buffer / entropy memory from last 100 runs — needs algorithm

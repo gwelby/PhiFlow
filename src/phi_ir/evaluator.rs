@@ -40,6 +40,7 @@ pub enum EvalError {
     Unimplemented(String),
     SynthesisError(String),
     StepLimitExceeded(usize),
+    PolicyViolation(String),
 }
 
 impl std::fmt::Display for EvalError {
@@ -54,6 +55,7 @@ impl std::fmt::Display for EvalError {
             EvalError::StepLimitExceeded(limit) => {
                 write!(f, "Execution step limit exceeded: {} steps", limit)
             }
+            EvalError::PolicyViolation(s) => write!(f, "Policy violation: {}", s),
         }
     }
 }
@@ -505,7 +507,8 @@ impl<'a> Evaluator<'a> {
                 gate_fidelity,
             } => {
                 use crate::phi_ir::SensorKind;
-                const IBM_HERON_R2_GATE_FIDELITY_SPEC: f64 = 0.9985;
+                use crate::security::anchor::AnchorError;
+                const IBM_HERON_R2_GATE_FIDELITY_SPEC: f64 = 0.992;
 
                 let soma_presence_raw = if let Some(ref prov) = self.sensor_provider {
                     prov(SensorKind::SomaPresence)
@@ -528,10 +531,11 @@ impl<'a> Evaluator<'a> {
                     }
                     Some(presence) => {
                         if presence < *min_presence {
-                            return Err(EvalError::InvalidOperation(format!(
-                                "anchor '{}': PolicyViolation — soma_presence {:.3} < required {:.3}",
+                            let err = AnchorError::PolicyViolation(format!(
+                                "anchor '{}': soma_presence {:.3} < required {:.3}",
                                 target, presence, min_presence
-                            )));
+                            ));
+                            return Err(EvalError::PolicyViolation(err.to_string()));
                         }
                         println!(
                             "[anchor: {}] presence check PASS ({:.3} >= {:.3})",
@@ -550,10 +554,11 @@ impl<'a> Evaluator<'a> {
                     Some(freq_val) => {
                         let freq_diff = (freq_val - frequency).abs();
                         if freq_diff > 5.0 {
-                            return Err(EvalError::InvalidOperation(format!(
-                                "anchor '{}': PolicyViolation — soma_432 {:.2} Hz is {:.2} Hz away from required {:.2} Hz (tolerance ±5.0 Hz)",
+                            let err = AnchorError::PolicyViolation(format!(
+                                "anchor '{}': soma_432 {:.2} Hz is {:.2} Hz away from required {:.2} Hz (tolerance ±5.0 Hz)",
                                 target, freq_val, freq_diff, frequency
-                            )));
+                            ));
+                            return Err(EvalError::PolicyViolation(err.to_string()));
                         }
                         println!(
                             "[anchor: {}] frequency check PASS (soma_432={:.2} Hz, target={:.2} Hz)",
@@ -563,15 +568,25 @@ impl<'a> Evaluator<'a> {
                 }
 
                 if *gate_fidelity > IBM_HERON_R2_GATE_FIDELITY_SPEC {
-                    return Err(EvalError::InvalidOperation(format!(
+                    let err = AnchorError::PolicyViolation(format!(
                         "anchor '{}': gate_fidelity threshold {:.4} exceeds IBM Heron r2 spec baseline {:.4} [spec-based, not live-calibrated]",
                         target, gate_fidelity, IBM_HERON_R2_GATE_FIDELITY_SPEC
-                    )));
+                    ));
+                    return Err(EvalError::PolicyViolation(err.to_string()));
                 }
                 println!(
                     "[anchor: {}] gate_fidelity check PASS (threshold={:.4}, spec_baseline={:.4}) [spec-based, not live-calibrated]",
                     target, gate_fidelity, IBM_HERON_R2_GATE_FIDELITY_SPEC
                 );
+
+                let coherence = self.compute_coherence();
+                self.witness_log.push(WitnessEvent {
+                    intention_stack: self.intention_stack.clone(),
+                    coherence,
+                    register_count: self.registers.len(),
+                    resonance_count: self.resonance_count(),
+                    agent_name: self.agent_name.clone(),
+                });
 
                 None
             }

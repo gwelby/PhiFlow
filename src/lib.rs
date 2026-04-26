@@ -65,11 +65,12 @@ pub const VERSION: &str = "1.0.0";
 pub const PHI: f64 = 1.618033988749895;
 pub const LAMBDA: f64 = 0.618033988749895;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct OpenQasmCompileOptions {
     pub optimize_depth: bool,
     pub topology: Option<phi_ir::topology_transpiler::TopologyTranspileConfig>,
     pub live_backend_profile: Option<quantum::backend_topology::BackendTopologyProfile>,
+    pub anchor_signing_key: Option<std::sync::Arc<security::anchor::AnchorSigningKey>>,
 }
 
 /// Compile and run PhiFlow source code using the new PhiIR pipeline.
@@ -128,6 +129,10 @@ pub fn compile_to_openqasm_with_options(
 
     let mut emitter = OpenQasmEmitter::new();
     emitter.optimize_depth = options.optimize_depth;
+    if let Some(ref key) = options.anchor_signing_key {
+        emitter.anchor_fingerprint_ecdsa = Some(key.fingerprint());
+        emitter.anchor_fingerprint_pq = Some(key.fingerprint_pq());
+    }
 
     if let Some(topology) = &options.topology {
         let profile = options

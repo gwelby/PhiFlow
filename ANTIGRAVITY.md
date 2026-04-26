@@ -34,9 +34,9 @@ The three parameters:
 - `frequency` — required `soma_432` Hz reading ±5 Hz. Below tolerance:
   `PolicyViolation`, halts.
 - `gate_fidelity` — maximum gate fidelity threshold to declare. Checked
-  against the bundled IBM Heron r2 spec baseline (0.9985). Declaring a
-  threshold above spec fails immediately. Labelled: spec-based, not
-  live-calibrated.
+  against the bundled IBM Heron r2 median 2-qubit gate fidelity baseline
+  (0.992). Declaring a threshold above spec fails immediately with a
+  `PolicyViolation`. Labelled: spec-based, not live-calibrated.
 
 When SOMA hardware is offline or stale, all three checks run in ObserveOnly
 mode: they log the absence and continue. No silent pass. No panic.
