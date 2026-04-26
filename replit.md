@@ -45,3 +45,21 @@ cargo build --bin phi    # build main binary
 cargo build --bin phic   # build CLI binary
 cargo run --bin phi      # run with tests
 ```
+
+## Coherence Playground
+
+`coherence_report` is a small CLI that runs a `.phi` snippet through the
+existing parse → lower → evaluate pipeline and prints a plain-English
+report of how aligned the run was with its stated `intention`. It uses
+only the four core constructs the runtime already ships with — no new
+keywords or AST nodes.
+
+```bash
+cargo build --bin coherence_report
+target/debug/coherence_report examples/coherence_playground/aligned.phi
+target/debug/coherence_report examples/coherence_playground/drifts.phi
+target/debug/coherence_report examples/coherence_playground/disconnected.phi
+```
+
+The three bundled snippets in `examples/coherence_playground/` cover the
+high-coherence, drifts, and "fails the intention entirely" cases.

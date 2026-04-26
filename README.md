@@ -20,5 +20,20 @@ PhiFlow is available for fixed-scope R&D pilot engagements focusing on:
 2.  **Self-Observing Algorithms:** Implementing research routines that observe their own execution coherence.
 3.  **Experimental Daemon Integration:** Deploying persistent PhiFlow runtimes for autonomous research.
 
+### Quick Demo: Coherence Playground
+For the smallest possible legible demo of what makes PhiFlow different, try
+the coherence playground — a CLI that runs a `.phi` snippet and prints a
+plain-English report of how aligned the run was with its stated `intention`:
+
+```bash
+cargo build --bin coherence_report
+target/debug/coherence_report examples/coherence_playground/aligned.phi
+target/debug/coherence_report examples/coherence_playground/drifts.phi
+target/debug/coherence_report examples/coherence_playground/disconnected.phi
+```
+
+The three bundled snippets cover the high-coherence, drifts, and
+"fails the intention entirely" cases.
+
 ---
 *For pilot inquiries, contact the conductor at [greg.welby@example.com].*

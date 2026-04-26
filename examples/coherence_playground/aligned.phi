@@ -1,0 +1,19 @@
+// aligned.phi — the "high coherence" case for the playground.
+//
+// One focused intention with one stream inside it: a single signal is
+// resonated and witnessed once. With depth 2 (intention + stream) and
+// k = 1 (one value in the scope's resonance field), the runtime's
+// coherence formula yields φ⁻¹ ≈ 0.618. The playground reports this
+// as "strongly aligned".
+//
+// Try it:
+//   coherence_report examples/coherence_playground/aligned.phi
+
+intention "place_one_marker" {
+    stream "single_signal" {
+        let signal = 432.0
+        resonate signal
+        witness signal
+        break stream
+    }
+}

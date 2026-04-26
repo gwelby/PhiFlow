@@ -15,6 +15,25 @@ python src/phiFlow.py examples/quantum_healing.phi
 python src/phiFlow.py examples/simple_meditation.phi --verify
 ```
 
+## 🎯 Coherence Playground
+
+The `coherence_playground/` subdirectory contains the smallest legible demo
+of PhiFlow's intention-vs-result alignment. Each snippet is meant to be run
+through the `coherence_report` CLI, which prints a plain-English reading of
+how aligned the run was with its stated `intention`:
+
+```bash
+cargo build --bin coherence_report
+target/debug/coherence_report examples/coherence_playground/aligned.phi
+target/debug/coherence_report examples/coherence_playground/drifts.phi
+target/debug/coherence_report examples/coherence_playground/disconnected.phi
+```
+
+- `aligned.phi` — one focused intention + stream → strongly aligned (≈ 0.62).
+- `drifts.phi` — starts aligned, then unrelated resonances pile in and the
+  next witness sees a much lower coherence (≈ 0.62 → 0.14).
+- `disconnected.phi` — no `intention` block at all → coherence stays at 0.
+
 ## 📚 Language Syntax
 
 ### Basic Structure

@@ -1,0 +1,17 @@
+// disconnected.phi — the "fails the intention entirely" case.
+//
+// Resonates a signal and witnesses it at the top level, with no
+// `intention "..." { ... }` block wrapping the work. The intention
+// stack stays empty, so base(depth) is 0 and the whole coherence
+// product is 0 no matter how clean the rest of the code is. The
+// playground reports this as "the snippet never declared an
+// intention" — the program ran successfully, it just had no purpose
+// to align with.
+//
+// Try it:
+//   coherence_report examples/coherence_playground/disconnected.phi
+
+let signal = 432.0
+resonate signal
+witness signal
+let alignment = coherence

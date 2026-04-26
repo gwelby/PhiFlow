@@ -1,0 +1,31 @@
+// drifts.phi — the "drifts" case for the playground.
+//
+// Two nested intentions (depth 2). The first half of the inner block
+// resonates one signal and witnesses it — the runtime sees a clean,
+// strongly-aligned reading. The second half then resonates three
+// unrelated frequencies into the same scope and witnesses again, and
+// the second witness sees a much lower coherence.
+//
+// The intention itself never changed, but the program's behaviour
+// wandered off-purpose. The playground reports a high peak followed
+// by a much lower last-witness reading — i.e. the intention was
+// reached, then lost.
+//
+// Try it:
+//   coherence_report examples/coherence_playground/drifts.phi
+
+intention "stay_with_one_signal" {
+    intention "follow_one_signal" {
+        let signal = 432.0
+        resonate signal
+        witness signal
+
+        let detour_a = 528.0
+        let detour_b = 396.0
+        let detour_c = 285.0
+        resonate detour_a
+        resonate detour_b
+        resonate detour_c
+        witness signal
+    }
+}
