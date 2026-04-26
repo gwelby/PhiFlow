@@ -74,6 +74,9 @@ pub enum PhiToken {
     Entangle,
     Import,
 
+    // v0.5.0 Integrity
+    Anchor,
+
     // Type keywords
     F64,
     I32,
@@ -308,6 +311,14 @@ pub enum PhiExpression {
 
     // Time-awareness
     VoidDepth,
+
+    // v0.5.0 Integrity gate
+    AnchorBlock {
+        target: String,
+        min_presence: f64,
+        frequency: f64,
+        gate_fidelity: f64,
+    },
 
     // v0.4.0 Transcendent Capabilities
     Evolve(Box<PhiExpression>),
@@ -734,6 +745,9 @@ impl PhiLexer {
             "entangle" => PhiToken::Entangle,
             "import" => PhiToken::Import,
 
+            // v0.5.0 Integrity
+            "anchor" => PhiToken::Anchor,
+
             // Type keywords
             "f64" => PhiToken::F64,
             "i32" => PhiToken::I32,
@@ -943,6 +957,7 @@ impl PhiParser {
             PhiToken::QuantumBridge => self.parse_quantum_bridge(),
             PhiToken::Stream => self.parse_stream_block(),
             PhiToken::Break => self.parse_break_stream(),
+            PhiToken::Anchor => self.parse_anchor_block(),
             PhiToken::Handoff => self.parse_handoff_statement(),
             PhiToken::Remember => self.parse_remember_statement(),
             PhiToken::Recall => self.parse_recall_expression(),
@@ -1969,6 +1984,92 @@ impl PhiParser {
         })
     }
 
+    fn parse_anchor_block(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Anchor)?;
+
+        let target = match &self.current_token {
+            PhiToken::String(s) => {
+                let t = s.clone();
+                self.advance();
+                t
+            }
+            PhiToken::Identifier(s) => {
+                let t = s.clone();
+                self.advance();
+                t
+            }
+            _ => {
+                return Err(format!(
+                    "Expected anchor target name (string or identifier), found {:?}",
+                    self.current_token
+                ))
+            }
+        };
+
+        while self.current_token == PhiToken::Newline {
+            self.advance();
+        }
+
+        self.expect(PhiToken::LeftBrace)?;
+
+        let mut min_presence: f64 = 0.3;
+        let mut frequency: f64 = 432.0;
+        let mut gate_fidelity: f64 = 0.992;
+
+        loop {
+            while self.current_token == PhiToken::Newline {
+                self.advance();
+            }
+            if self.current_token == PhiToken::RightBrace || self.current_token == PhiToken::Eof {
+                break;
+            }
+            let key = match &self.current_token {
+                PhiToken::Identifier(s) => {
+                    let k = s.clone();
+                    self.advance();
+                    k
+                }
+                PhiToken::Frequency => {
+                    self.advance();
+                    "frequency".to_string()
+                }
+                PhiToken::Target => {
+                    self.advance();
+                    "target".to_string()
+                }
+                _ => {
+                    return Err(format!(
+                        "Expected anchor parameter name, found {:?}",
+                        self.current_token
+                    ))
+                }
+            };
+            while self.current_token == PhiToken::Newline {
+                self.advance();
+            }
+            let val = self.expect_number()?;
+            match key.as_str() {
+                "min_presence" => min_presence = val,
+                "frequency" => frequency = val,
+                "gate_fidelity" => gate_fidelity = val,
+                other => {
+                    return Err(format!(
+                        "Unknown anchor parameter `{other}`. Expected min_presence, frequency, or gate_fidelity"
+                    ))
+                }
+            }
+        }
+
+        self.expect(PhiToken::RightBrace)?;
+
+        Ok(PhiExpression::AnchorBlock {
+            target,
+            min_presence,
+            frequency,
+            gate_fidelity,
+        })
+    }
+
     fn parse_type(&mut self) -> Result<PhiType, String> {
         let type_token = self.current_token.clone(); // Clone to match against it
         self.advance();
@@ -2160,6 +2261,7 @@ impl PhiParser {
             PhiToken::Pattern3D => Ok("pattern3d".to_string()),
             PhiToken::Audio => Ok("audio".to_string()),
             PhiToken::MidCircuit => Ok("mid_circuit".to_string()),
+            PhiToken::Anchor => Ok("anchor".to_string()),
             _ => Err(format!(
                 "Expected identifier, found {:?}",
                 self.current_token

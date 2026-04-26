@@ -339,7 +339,8 @@ fn validate_sensor_witness(expr: &PhiExpression) -> Result<(), LoweringError> {
         | PhiExpression::String(_)
         | PhiExpression::Boolean(_)
         | PhiExpression::Entangle(_)
-        | PhiExpression::Import { .. } => Ok(()),
+        | PhiExpression::Import { .. }
+        | PhiExpression::AnchorBlock { .. } => Ok(()),
     }
 }
 
@@ -541,6 +542,21 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             }
 
             LowerResult::Value(op)
+        }
+
+        PhiExpression::AnchorBlock {
+            target,
+            min_presence,
+            frequency,
+            gate_fidelity,
+        } => {
+            ctx.emit(PhiIRNode::AnchorGate {
+                target: target.clone(),
+                min_presence: *min_presence,
+                frequency: *frequency,
+                gate_fidelity: *gate_fidelity,
+            });
+            LowerResult::None
         }
 
         PhiExpression::IntentionBlock { intention, body } => {

@@ -60,6 +60,10 @@ pub struct OpenQasmEmitter {
     pub native_gates: bool,
     /// Qubits that have been collapsed by a mid-circuit measurement
     collapsed_qubits: HashSet<usize>,
+    /// Optional secp256k1 fingerprint for AntiGravity-Verified watermark.
+    pub anchor_fingerprint_ecdsa: Option<String>,
+    /// Optional ML-DSA-65 (Dilithium3) fingerprint for AntiGravity-Verified watermark.
+    pub anchor_fingerprint_pq: Option<String>,
 }
 
 impl OpenQasmEmitter {
@@ -75,6 +79,8 @@ impl OpenQasmEmitter {
             native_gates: false,
             deferred_measures: Vec::new(),
             collapsed_qubits: HashSet::new(),
+            anchor_fingerprint_ecdsa: None,
+            anchor_fingerprint_pq: None,
         }
     }
 
@@ -225,6 +231,25 @@ impl OpenQasmEmitter {
                             chain.push(q2);
                         }
                     }
+                    PhiIRNode::AnchorGate {
+                        target,
+                        min_presence,
+                        frequency,
+                        gate_fidelity,
+                    } => {
+                        let ecdsa = self
+                            .anchor_fingerprint_ecdsa
+                            .as_deref()
+                            .unwrap_or("(unsigned — no key provided)");
+                        let pq = self
+                            .anchor_fingerprint_pq
+                            .as_deref()
+                            .unwrap_or("(unsigned — no key provided)");
+                        let watermark = format!(
+                            "// AntiGravity-Verified\n// secp256k1: {ecdsa}\n// ML-DSA-65: {pq}\n// anchor-target: {target}\n// anchor-policy: min_presence={min_presence} frequency={frequency} gate_fidelity={gate_fidelity}\n"
+                        );
+                        self.source.insert_str(0, &watermark);
+                    }
                     _ => {
                         // Classical math/registers are largely skipped in this pure-quantum representation
                     }
@@ -331,6 +356,9 @@ impl OpenQasmEmitter {
         self.num_qubits = 1;
         self.deferred_measures.clear();
         self.collapsed_qubits.clear();
+        // anchor_fingerprint_ecdsa / anchor_fingerprint_pq are intentionally NOT cleared —
+        // they are set by the caller before emit() and persist across reset so that the
+        // watermark is available regardless of instruction order.
     }
 
     fn collect_number_constants(&self, block: &PhiIRBlock) -> HashMap<Operand, f64> {

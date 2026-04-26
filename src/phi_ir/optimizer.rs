@@ -366,7 +366,8 @@ impl Optimizer {
             | PhiIRNode::VoidDepth
             | PhiIRNode::Evolve(_)
             | PhiIRNode::Entangle(_)
-            | PhiIRNode::Handoff { .. } => false,
+            | PhiIRNode::Handoff { .. }
+            | PhiIRNode::AnchorGate { .. } => false,
 
         }
     }

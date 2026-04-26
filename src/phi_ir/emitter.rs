@@ -551,5 +551,11 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
             emit_string_ref(out, task_id, ctx);
             emit_u32(out, *context_op);
         }
+
+        PhiIRNode::AnchorGate { .. } => {
+            // AnchorGate is a sensor-check gate evaluated by the interpreter.
+            // Binary (WASM/HAL) targets have no equivalent — skip silently.
+            out.push(OP_NOP);
+        }
     }
 }

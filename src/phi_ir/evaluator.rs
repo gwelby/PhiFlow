@@ -498,6 +498,84 @@ impl<'a> Evaluator<'a> {
                 Some(PhiIRValue::Number(value))
             }
 
+            PhiIRNode::AnchorGate {
+                target,
+                min_presence,
+                frequency,
+                gate_fidelity,
+            } => {
+                use crate::phi_ir::SensorKind;
+                const IBM_HERON_R2_GATE_FIDELITY_SPEC: f64 = 0.9985;
+
+                let soma_presence_raw = if let Some(ref prov) = self.sensor_provider {
+                    prov(SensorKind::SomaPresence)
+                } else {
+                    crate::sensors::read_sensor(SensorKind::SomaPresence)
+                };
+
+                let soma_432_raw = if let Some(ref prov) = self.sensor_provider {
+                    prov(SensorKind::Soma432)
+                } else {
+                    crate::sensors::read_sensor(SensorKind::Soma432)
+                };
+
+                match soma_presence_raw {
+                    None => {
+                        println!(
+                            "[anchor: {}] SOMA absent or stale — ObserveOnly mode (no hardware blocking)",
+                            target
+                        );
+                    }
+                    Some(presence) => {
+                        if presence < *min_presence {
+                            return Err(EvalError::InvalidOperation(format!(
+                                "anchor '{}': PolicyViolation — soma_presence {:.3} < required {:.3}",
+                                target, presence, min_presence
+                            )));
+                        }
+                        println!(
+                            "[anchor: {}] presence check PASS ({:.3} >= {:.3})",
+                            target, presence, min_presence
+                        );
+                    }
+                }
+
+                match soma_432_raw {
+                    None => {
+                        println!(
+                            "[anchor: {}] soma_432 sensor absent — frequency check skipped (ObserveOnly)",
+                            target
+                        );
+                    }
+                    Some(freq_val) => {
+                        let freq_diff = (freq_val - frequency).abs();
+                        if freq_diff > 5.0 {
+                            return Err(EvalError::InvalidOperation(format!(
+                                "anchor '{}': PolicyViolation — soma_432 {:.2} Hz is {:.2} Hz away from required {:.2} Hz (tolerance ±5.0 Hz)",
+                                target, freq_val, freq_diff, frequency
+                            )));
+                        }
+                        println!(
+                            "[anchor: {}] frequency check PASS (soma_432={:.2} Hz, target={:.2} Hz)",
+                            target, freq_val, frequency
+                        );
+                    }
+                }
+
+                if *gate_fidelity > IBM_HERON_R2_GATE_FIDELITY_SPEC {
+                    return Err(EvalError::InvalidOperation(format!(
+                        "anchor '{}': gate_fidelity threshold {:.4} exceeds IBM Heron r2 spec baseline {:.4} [spec-based, not live-calibrated]",
+                        target, gate_fidelity, IBM_HERON_R2_GATE_FIDELITY_SPEC
+                    )));
+                }
+                println!(
+                    "[anchor: {}] gate_fidelity check PASS (threshold={:.4}, spec_baseline={:.4}) [spec-based, not live-calibrated]",
+                    target, gate_fidelity, IBM_HERON_R2_GATE_FIDELITY_SPEC
+                );
+
+                None
+            }
+
             PhiIRNode::IntentionPush { name, .. } => {
                 self.intention_stack.push(name.clone());
                 self.resonance_field.entry(name.clone()).or_default();

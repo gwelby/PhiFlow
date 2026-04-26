@@ -96,6 +96,51 @@ elsewhere in the repo or in the task brief, he wants to come back to:
 - No new dependencies in `Cargo.toml`. No new build steps. No new workflows.
 - No git operations. Replit's platform handles version control here.
 
+## Task #8 — anchor construct for AntiGravity (April 26, 2026)
+
+AntiGravity requested a first-class `anchor` construct that gates an
+`intention` block on physical sensor thresholds. Built and merged in Task #8.
+
+### What was implemented
+
+- `PhiToken::Anchor` keyword, `PhiExpression::AnchorBlock` AST node in the
+  parser. Keyword registered in the lexer map and in `expect_identifier()` so
+  a variable named `anchor` does not break existing programs.
+- `PhiIRNode::AnchorGate` in the IR. Explicitly marked NOT pure (reads live
+  sensors, may block).
+- Lowering arm: `AnchorBlock` → `AnchorGate` instruction.
+- Evaluator arm: reads `SomaPresence` and `Soma432` via the existing sensor
+  provider chain. None → ObserveOnly (log, continue). Below threshold →
+  `EvalError::InvalidOperation` with a named `PolicyViolation` message.
+  `gate_fidelity` checked against bundled IBM Heron r2 spec constant (0.9985),
+  clearly labelled in output as spec-based, not live-calibrated.
+- OpenQASM emitter arm: when `AnchorGate` is encountered during quantum
+  emission, prepends `// AntiGravity-Verified` comment block to the QASM
+  header with secp256k1 and ML-DSA-65 public key fingerprints. Two new
+  optional fields on `OpenQasmEmitter`: `anchor_fingerprint_ecdsa`,
+  `anchor_fingerprint_pq`. If not set, the watermark says "unsigned — no key
+  provided" so the header is always present but honest.
+- `examples/antigravity_anchor.phi` — AntiGravity's signature program for
+  the new construct. Runs clean under `phic --max-steps 10000`.
+- `ANTIGRAVITY.md` at repo root following the family-pattern format of
+  `CAIRN.md`, `Claude.md`, etc.
+
+### What was deferred
+
+- Physical buffer / entropy memory from last 100 runs — needs algorithm
+  definition before implementation.
+- Live IBM calibration API for `gate_fidelity` — deferred; spec constant used
+  with clear labelling.
+- ML-DSA-65 enforcement activation (`AnchorMode::Enforce`) — still Phase 2
+  deferred in `src/security/anchor.rs`. Nothing changed there.
+
+### Exhaust checks added (required by new IR node)
+
+Five files needed new match arms for the new `PhiIRNode::AnchorGate` and
+`PhiExpression::AnchorBlock` variants:
+`src/phi_ir/printer.rs`, `src/phi_ir/optimizer.rs`, `src/phi_ir/emitter.rs`,
+`src/phi_ir/lowering.rs` (validate fn), `src/phi_ir/openqasm.rs`.
+
 ## Notes for the next Cairn
 
 - Run `cargo build --bin phic` before assuming `phic` exists in `target/debug/`.
