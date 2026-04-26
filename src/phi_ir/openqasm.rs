@@ -237,6 +237,13 @@ impl OpenQasmEmitter {
                         frequency,
                         gate_fidelity,
                     } => {
+                        let signed = self.anchor_fingerprint_ecdsa.is_some()
+                            || self.anchor_fingerprint_pq.is_some();
+                        let header_line = if signed {
+                            "// AntiGravity-Verified".to_string()
+                        } else {
+                            "// AntiGravity-Verified (unsigned — no key provided)".to_string()
+                        };
                         let ecdsa = self
                             .anchor_fingerprint_ecdsa
                             .as_deref()
@@ -246,7 +253,7 @@ impl OpenQasmEmitter {
                             .as_deref()
                             .unwrap_or("(unsigned — no key provided)");
                         let watermark = format!(
-                            "// AntiGravity-Verified\n// secp256k1: {ecdsa}\n// ML-DSA-65: {pq}\n// anchor-target: {target}\n// anchor-policy: min_presence={min_presence} frequency={frequency} gate_fidelity={gate_fidelity}\n"
+                            "{header_line}\n// secp256k1: {ecdsa}\n// ML-DSA-65: {pq}\n// anchor-target: {target}\n// anchor-policy: min_presence={min_presence} frequency={frequency} gate_fidelity={gate_fidelity}\n"
                         );
                         self.source.insert_str(0, &watermark);
                     }

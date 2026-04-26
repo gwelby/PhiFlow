@@ -19,8 +19,9 @@
 //
 // - It does not guarantee quantum hardware is available.
 // - It does not block on gate_fidelity if live calibration data is absent;
-//   it checks against a bundled IBM Heron r2 spec constant (0.9985).
-//   That number comes from the spec sheet, not a live API call.
+//   it checks against a bundled IBM Heron r2 median 2-qubit gate fidelity
+//   spec constant (0.992). That number comes from the spec sheet, not a
+//   live API call.
 // - It does not collapse or sign anything here.
 //   Signing happens at the daemon layer via AnchorSigningKey.
 // - It does not measure entropy memory from previous runs.
@@ -36,7 +37,7 @@
 //
 //   [anchor: ibm_fez] SOMA absent or stale — ObserveOnly mode (no hardware blocking)
 //   [anchor: ibm_fez] soma_432 sensor absent — frequency check skipped (ObserveOnly)
-//   [anchor: ibm_fez] gate_fidelity check PASS (threshold=0.9920, spec_baseline=0.9985) [spec-based, not live-calibrated]
+//   [anchor: ibm_fez] gate_fidelity check PASS (threshold=0.9920, spec_baseline=0.9920) [spec-based, not live-calibrated]
 //   [quantum bridge active] structural harmony resonating at 432.000000Hz
 //   Execution Finished. Final Coherence: ...
 

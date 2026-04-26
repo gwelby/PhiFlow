@@ -531,11 +531,11 @@ impl<'a> Evaluator<'a> {
                     }
                     Some(presence) => {
                         if presence < *min_presence {
-                            let err = AnchorError::PolicyViolation(format!(
+                            let AnchorError::PolicyViolation(msg) = AnchorError::PolicyViolation(format!(
                                 "anchor '{}': soma_presence {:.3} < required {:.3}",
                                 target, presence, min_presence
-                            ));
-                            return Err(EvalError::PolicyViolation(err.to_string()));
+                            )) else { unreachable!() };
+                            return Err(EvalError::PolicyViolation(msg));
                         }
                         println!(
                             "[anchor: {}] presence check PASS ({:.3} >= {:.3})",
@@ -554,11 +554,11 @@ impl<'a> Evaluator<'a> {
                     Some(freq_val) => {
                         let freq_diff = (freq_val - frequency).abs();
                         if freq_diff > 5.0 {
-                            let err = AnchorError::PolicyViolation(format!(
+                            let AnchorError::PolicyViolation(msg) = AnchorError::PolicyViolation(format!(
                                 "anchor '{}': soma_432 {:.2} Hz is {:.2} Hz away from required {:.2} Hz (tolerance ±5.0 Hz)",
                                 target, freq_val, freq_diff, frequency
-                            ));
-                            return Err(EvalError::PolicyViolation(err.to_string()));
+                            )) else { unreachable!() };
+                            return Err(EvalError::PolicyViolation(msg));
                         }
                         println!(
                             "[anchor: {}] frequency check PASS (soma_432={:.2} Hz, target={:.2} Hz)",
@@ -568,11 +568,11 @@ impl<'a> Evaluator<'a> {
                 }
 
                 if *gate_fidelity > IBM_HERON_R2_GATE_FIDELITY_SPEC {
-                    let err = AnchorError::PolicyViolation(format!(
+                    let AnchorError::PolicyViolation(msg) = AnchorError::PolicyViolation(format!(
                         "anchor '{}': gate_fidelity threshold {:.4} exceeds IBM Heron r2 spec baseline {:.4} [spec-based, not live-calibrated]",
                         target, gate_fidelity, IBM_HERON_R2_GATE_FIDELITY_SPEC
-                    ));
-                    return Err(EvalError::PolicyViolation(err.to_string()));
+                    )) else { unreachable!() };
+                    return Err(EvalError::PolicyViolation(msg));
                 }
                 println!(
                     "[anchor: {}] gate_fidelity check PASS (threshold={:.4}, spec_baseline={:.4}) [spec-based, not live-calibrated]",
