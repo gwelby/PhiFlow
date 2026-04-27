@@ -1460,6 +1460,20 @@ mod anchor_gate_tests {
         Evaluator::new(prog).with_sensor_provider(provider)
     }
 
+    /// Like `make_eval` but also accepts an explicit `gate_fidelity` threshold.
+    fn make_eval_with_fidelity<'a, F>(
+        min_presence: f64,
+        frequency: f64,
+        gate_fidelity: f64,
+        provider: F,
+    ) -> Evaluator<'a>
+    where
+        F: Fn(SensorKind) -> Option<f64> + Send + Sync + 'static,
+    {
+        let prog = Evaluator::anchor_gate_program("test_anchor", min_presence, frequency, gate_fidelity);
+        Evaluator::new(prog).with_sensor_provider(provider)
+    }
+
     // ------------------------------------------------------------------
     // 1. PolicyViolation — presence below threshold
     // ------------------------------------------------------------------
@@ -1596,6 +1610,67 @@ mod anchor_gate_tests {
         assert!(
             result.is_ok(),
             "Expected Ok when frequency diff == 5.0 (boundary), got: {:?}",
+            result
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // 7. PolicyViolation — gate_fidelity above IBM Heron R2 spec (0.992)
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn gate_fidelity_above_spec_raises_policy_violation() {
+        // 0.993 exceeds the IBM Heron R2 spec baseline of 0.992, so the gate
+        // must reject this configuration regardless of sensor readings.
+        let mut eval = make_eval_with_fidelity(0.3, 432.0, 0.993, |sensor| match sensor {
+            SensorKind::SomaPresence => Some(0.9),
+            SensorKind::Soma432 => Some(432.0),
+            _ => None,
+        });
+
+        let result = eval.run();
+
+        match result {
+            Err(EvalError::PolicyViolation(msg)) => {
+                assert!(
+                    msg.contains("gate_fidelity"),
+                    "Expected message mentioning gate_fidelity, got: {msg}"
+                );
+                assert!(
+                    msg.contains("test_anchor"),
+                    "Expected message mentioning anchor name, got: {msg}"
+                );
+                assert!(
+                    msg.contains("0.992") || msg.contains("spec"),
+                    "Expected message referencing the spec baseline, got: {msg}"
+                );
+            }
+            other => panic!(
+                "Expected PolicyViolation when gate_fidelity exceeds spec baseline, got: {:?}",
+                other
+            ),
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 8. gate_fidelity exactly at spec baseline (0.992) — should pass
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn gate_fidelity_at_spec_baseline_passes() {
+        // A threshold equal to the IBM Heron R2 spec baseline is not strictly
+        // greater than it, so the gate must allow execution to continue.
+        let mut eval = make_eval_with_fidelity(0.3, 432.0, 0.992, |sensor| match sensor {
+            SensorKind::SomaPresence => Some(0.9),
+            SensorKind::Soma432 => Some(432.0),
+            _ => None,
+        });
+
+        let result = eval.run();
+
+        assert!(
+            result.is_ok(),
+            "Expected Ok when gate_fidelity equals spec baseline exactly, got: {:?}",
             result
         );
     }
