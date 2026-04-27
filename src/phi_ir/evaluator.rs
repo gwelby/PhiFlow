@@ -1348,6 +1348,48 @@ impl<'a> Evaluator<'a> {
         }
     }
 
+    // -----------------------------------------------------------------------
+    // Helpers used by unit tests
+    // -----------------------------------------------------------------------
+
+    /// Build the simplest possible program whose only instruction is an
+    /// `AnchorGate` node.  The block terminates with `Fallthrough`, which
+    /// falls off the end of the program and returns `Void`.
+    #[cfg(test)]
+    pub(crate) fn anchor_gate_program(
+        target: &str,
+        min_presence: f64,
+        frequency: f64,
+        gate_fidelity: f64,
+    ) -> PhiIRProgram {
+        use crate::phi_ir::{CollapsePolicy, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiInstruction};
+
+        let instr = PhiInstruction {
+            result: None,
+            node: PhiIRNode::AnchorGate {
+                target: target.to_string(),
+                min_presence,
+                frequency,
+                gate_fidelity,
+            },
+        };
+
+        let block = PhiIRBlock {
+            id: 0,
+            label: "entry".to_string(),
+            instructions: vec![instr],
+            terminator: PhiIRNode::Fallthrough,
+        };
+
+        PhiIRProgram {
+            blocks: vec![block],
+            entry: 0,
+            string_table: vec![],
+            frequencies_declared: vec![],
+            intentions_declared: vec![],
+        }
+    }
+
     fn execute_function(&mut self, name: &str, args: Vec<PhiIRValue>) -> EvalResult<PhiIRValue> {
         let meta =
             self.functions.get(name).cloned().ok_or_else(|| {
@@ -1389,5 +1431,169 @@ impl<'a> Evaluator<'a> {
         self.instruction_ptr = saved_ip;
 
         Ok(result)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Unit tests — AnchorGate with injected mock sensor providers
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod anchor_gate_tests {
+    use super::*;
+    use crate::phi_ir::SensorKind;
+
+    /// Build an evaluator whose only instruction is an AnchorGate and whose
+    /// sensor readings are controlled entirely by the supplied closure.
+    fn make_eval<'a, F>(
+        min_presence: f64,
+        frequency: f64,
+        provider: F,
+    ) -> Evaluator<'a>
+    where
+        F: Fn(SensorKind) -> Option<f64> + Send + Sync + 'static,
+    {
+        let prog = Evaluator::anchor_gate_program("test_anchor", min_presence, frequency, 0.99);
+        Evaluator::new(prog).with_sensor_provider(provider)
+    }
+
+    // ------------------------------------------------------------------
+    // 1. PolicyViolation — presence below threshold
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn presence_below_threshold_raises_policy_violation() {
+        let mut eval = make_eval(0.5, 432.0, |sensor| match sensor {
+            SensorKind::SomaPresence => Some(0.1),
+            SensorKind::Soma432 => Some(432.0),
+            _ => None,
+        });
+
+        let result = eval.run();
+
+        match result {
+            Err(EvalError::PolicyViolation(msg)) => {
+                assert!(
+                    msg.contains("soma_presence"),
+                    "Expected message mentioning soma_presence, got: {msg}"
+                );
+                assert!(
+                    msg.contains("test_anchor"),
+                    "Expected message mentioning anchor name, got: {msg}"
+                );
+            }
+            other => panic!(
+                "Expected PolicyViolation for low presence, got: {:?}",
+                other
+            ),
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 2. PolicyViolation — frequency outside ±5 Hz tolerance
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn frequency_out_of_tolerance_raises_policy_violation() {
+        let mut eval = make_eval(0.3, 432.0, |sensor| match sensor {
+            SensorKind::SomaPresence => Some(0.9),
+            SensorKind::Soma432 => Some(445.0),
+            _ => None,
+        });
+
+        let result = eval.run();
+
+        match result {
+            Err(EvalError::PolicyViolation(msg)) => {
+                assert!(
+                    msg.contains("soma_432"),
+                    "Expected message mentioning soma_432, got: {msg}"
+                );
+            }
+            other => panic!(
+                "Expected PolicyViolation for out-of-tolerance frequency, got: {:?}",
+                other
+            ),
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 3. ObserveOnly pass-through — both sensors return None
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn sensor_absent_observe_only_passthrough() {
+        let mut eval = make_eval(0.3, 432.0, |_sensor| None);
+
+        let result = eval.run();
+
+        assert!(
+            result.is_ok(),
+            "Expected Ok when sensors are absent (ObserveOnly mode), got: {:?}",
+            result
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // 4. Success path — both sensors within acceptable range
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn valid_sensor_readings_pass_gate() {
+        let mut eval = make_eval(0.3, 432.0, |sensor| match sensor {
+            SensorKind::SomaPresence => Some(0.8),
+            SensorKind::Soma432 => Some(433.0),
+            _ => None,
+        });
+
+        let result = eval.run();
+
+        assert!(
+            result.is_ok(),
+            "Expected Ok when sensors are within threshold, got: {:?}",
+            result
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // 5. Presence exactly at threshold — boundary: should pass
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn presence_exactly_at_threshold_passes() {
+        let mut eval = make_eval(0.5, 432.0, |sensor| match sensor {
+            SensorKind::SomaPresence => Some(0.5),
+            SensorKind::Soma432 => Some(432.0),
+            _ => None,
+        });
+
+        let result = eval.run();
+
+        assert!(
+            result.is_ok(),
+            "Expected Ok when presence equals threshold exactly, got: {:?}",
+            result
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // 6. Frequency exactly at ±5 Hz boundary — should pass
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn frequency_at_tolerance_boundary_passes() {
+        let mut eval = make_eval(0.3, 432.0, |sensor| match sensor {
+            SensorKind::SomaPresence => Some(0.9),
+            SensorKind::Soma432 => Some(437.0),
+            _ => None,
+        });
+
+        let result = eval.run();
+
+        assert!(
+            result.is_ok(),
+            "Expected Ok when frequency diff == 5.0 (boundary), got: {:?}",
+            result
+        );
     }
 }
