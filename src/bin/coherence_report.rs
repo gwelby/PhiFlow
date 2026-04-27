@@ -6,7 +6,7 @@
 //! number the runtime already produces.
 //!
 //! Usage:
-//!     coherence_report [--timeline] <path-to.phi>
+//!     coherence_report [--timeline] [--json] <path-to.phi>
 //!
 //! Try the bundled snippets:
 //!     coherence_report examples/coherence_playground/aligned.phi
@@ -17,6 +17,13 @@
 //! a small sparkline of coherence over the run, which is useful when there
 //! are several `witness` calls and you want to see *when* coherence shifted
 //! rather than just the final verdict. The default report is unchanged.
+//!
+//! Pass `--json` to emit the entire witness log plus aggregate metrics as a
+//! single JSON document on stdout. `--json` and `--timeline` can be combined
+//! or used independently; the default text report is not printed when `--json`
+//! is set. When both flags are active the JSON block is written first,
+//! followed by the timeline text on the same stdout stream — parsers that
+//! only need the JSON should read up to and including the final `}` character.
 //!
 //! The tool only relies on the four core constructs the runtime already ships
 //! with — `intention`, `stream`, `witness`, `resonate`, `coherence` — and adds
@@ -35,10 +42,12 @@ use phiflow::phi_ir::PhiIRValue;
 
 fn main() -> ExitCode {
     let mut show_timeline = false;
+    let mut emit_json_flag = false;
     let mut path: Option<PathBuf> = None;
     for arg in env::args().skip(1) {
         match arg.as_str() {
             "--timeline" => show_timeline = true,
+            "--json" => emit_json_flag = true,
             "-h" | "--help" => {
                 print_usage();
                 return ExitCode::SUCCESS;
@@ -135,18 +144,30 @@ fn main() -> ExitCode {
     let first_witness = witness_log.first().map(|w| w.coherence);
     let last_witness = witness_log.last().map(|w| w.coherence);
 
-    print_header(&path, &intentions);
-    println!();
-    print_report(
-        &intentions,
-        witness_log.len(),
-        resonance_events.len(),
-        ended_streams,
-        peak_coherence,
-        first_witness,
-        last_witness,
-        post_run_coherence,
-    );
+    if emit_json_flag {
+        emit_json(
+            &intentions,
+            witness_log,
+            resonance_events,
+            peak_coherence,
+            first_witness,
+            last_witness,
+            post_run_coherence,
+        );
+    } else {
+        print_header(&path, &intentions);
+        println!();
+        print_report(
+            &intentions,
+            witness_log.len(),
+            resonance_events.len(),
+            ended_streams,
+            peak_coherence,
+            first_witness,
+            last_witness,
+            post_run_coherence,
+        );
+    }
 
     if show_timeline {
         println!();
@@ -157,16 +178,79 @@ fn main() -> ExitCode {
 }
 
 fn print_usage() {
-    eprintln!("usage: coherence_report [--timeline] <path-to.phi>");
+    eprintln!("usage: coherence_report [--timeline] [--json] <path-to.phi>");
     eprintln!();
     eprintln!("Options:");
     eprintln!("  --timeline   Also print a per-witness-checkpoint table and a");
     eprintln!("               sparkline of coherence over the run.");
+    eprintln!("  --json       Emit the full witness log and aggregate metrics as");
+    eprintln!("               a JSON document on stdout instead of the text report.");
+    eprintln!("               When combined with --timeline the JSON block appears");
+    eprintln!("               first, followed by the timeline text on the same");
+    eprintln!("               stdout stream.");
     eprintln!();
     eprintln!("Try one of the bundled snippets:");
     eprintln!("  coherence_report examples/coherence_playground/aligned.phi");
     eprintln!("  coherence_report examples/coherence_playground/drifts.phi");
     eprintln!("  coherence_report examples/coherence_playground/disconnected.phi");
+}
+
+/// Structured document emitted by `--json`.
+#[derive(serde::Serialize)]
+struct CoherenceRunJson<'a> {
+    stated_intentions: &'a [String],
+    checkpoints: Vec<CheckpointJson>,
+    peak_coherence: Option<f64>,
+    first_coherence: Option<f64>,
+    last_coherence: Option<f64>,
+    post_run_coherence: f64,
+    resonance_event_count: usize,
+}
+
+/// One entry in the `checkpoints` array.
+#[derive(serde::Serialize)]
+struct CheckpointJson {
+    index: usize,
+    intention_scope: String,
+    coherence: f64,
+    resonance_count: usize,
+}
+
+/// Serialize the run to JSON and print it to stdout.
+pub(crate) fn emit_json(
+    intentions: &[String],
+    witness_log: &[VmWitnessEvent],
+    resonance_events: &[(String, PhiIRValue)],
+    peak_coherence: Option<f64>,
+    first_witness: Option<f64>,
+    last_witness: Option<f64>,
+    post_run_coherence: f64,
+) {
+    let checkpoints: Vec<CheckpointJson> = witness_log
+        .iter()
+        .enumerate()
+        .map(|(i, w)| CheckpointJson {
+            index: i + 1,
+            intention_scope: format_intention_scope(&w.intention_stack),
+            coherence: w.coherence,
+            resonance_count: w.resonance_count,
+        })
+        .collect();
+
+    let doc = CoherenceRunJson {
+        stated_intentions: intentions,
+        checkpoints,
+        peak_coherence,
+        first_coherence: first_witness,
+        last_coherence: last_witness,
+        post_run_coherence,
+        resonance_event_count: resonance_events.len(),
+    };
+
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&doc).expect("JSON serialization is infallible here")
+    );
 }
 
 fn print_header(path: &PathBuf, intentions: &[String]) {

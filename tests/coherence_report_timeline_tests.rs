@@ -1,9 +1,32 @@
-//! End-to-end tests for the `--timeline` flag on the `coherence_report`
-//! binary. These tests shell out to the real built binary so they cover
-//! argument parsing, the existing report path, and the new timeline section
-//! together.
+//! End-to-end tests for the `--timeline` and `--json` flags on the
+//! `coherence_report` binary. These tests shell out to the real built binary
+//! so they cover argument parsing, the existing report path, and the new
+//! timeline / JSON sections together.
 
 use std::process::Command;
+
+// Used only by the JSON round-trip tests below.
+#[allow(dead_code)]
+mod json_schema {
+    #[derive(serde::Deserialize, Debug)]
+    pub struct CoherenceRunJson {
+        pub stated_intentions: Vec<String>,
+        pub checkpoints: Vec<CheckpointJson>,
+        pub peak_coherence: Option<f64>,
+        pub first_coherence: Option<f64>,
+        pub last_coherence: Option<f64>,
+        pub post_run_coherence: f64,
+        pub resonance_event_count: usize,
+    }
+
+    #[derive(serde::Deserialize, Debug)]
+    pub struct CheckpointJson {
+        pub index: usize,
+        pub intention_scope: String,
+        pub coherence: f64,
+        pub resonance_count: usize,
+    }
+}
 
 fn run(args: &[&str]) -> std::process::Output {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_coherence_report"));
@@ -162,5 +185,132 @@ fn timeline_shows_resonance_rows_between_witnesses_for_drifts() {
         resonance_between, 3,
         "expected 3 resonance rows between witness #1 and #2, found {}; output:\n{}",
         resonance_between, stdout
+    );
+}
+
+// ── JSON flag tests ──────────────────────────────────────────────────────────
+
+#[test]
+fn json_flag_produces_valid_parseable_json() {
+    let out = run(&["--json", "examples/coherence_playground/aligned.phi"]);
+    assert!(out.status.success(), "binary exited with {:?}", out.status);
+    let parsed: json_schema::CoherenceRunJson =
+        serde_json::from_slice(&out.stdout).expect("--json output must be valid JSON");
+    // aligned.phi declares exactly one intention.
+    assert_eq!(
+        parsed.stated_intentions.len(),
+        1,
+        "expected 1 stated intention, got {:?}",
+        parsed.stated_intentions
+    );
+    // There must be at least one witness checkpoint recorded.
+    assert!(
+        !parsed.checkpoints.is_empty(),
+        "expected at least one checkpoint in JSON output"
+    );
+    // Indices must be 1-based and contiguous.
+    for (i, cp) in parsed.checkpoints.iter().enumerate() {
+        assert_eq!(
+            cp.index,
+            i + 1,
+            "checkpoint index out of order: expected {}, got {}",
+            i + 1,
+            cp.index
+        );
+    }
+    // peak_coherence must be present and match the maximum checkpoint coherence.
+    let peak = parsed.peak_coherence.expect("peak_coherence must be Some for a run with witnesses");
+    let max_from_checkpoints = parsed
+        .checkpoints
+        .iter()
+        .map(|cp| cp.coherence)
+        .fold(f64::NEG_INFINITY, f64::max);
+    assert!(
+        (peak - max_from_checkpoints).abs() < 1e-9,
+        "peak_coherence {} does not match max checkpoint coherence {}",
+        peak,
+        max_from_checkpoints
+    );
+}
+
+#[test]
+fn json_output_does_not_contain_text_report() {
+    let out = run(&["--json", "examples/coherence_playground/aligned.phi"]);
+    assert!(out.status.success(), "binary exited with {:?}", out.status);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    // The human-readable sections must not appear in JSON mode.
+    assert!(
+        !stdout.contains("Plain-English reading"),
+        "--json output must not contain the text report section, got:\n{}",
+        stdout
+    );
+    assert!(
+        !stdout.contains("Coherence report for"),
+        "--json output must not contain the text report header, got:\n{}",
+        stdout
+    );
+}
+
+#[test]
+fn json_and_timeline_can_be_combined() {
+    let out = run(&[
+        "--json",
+        "--timeline",
+        "examples/coherence_playground/drifts.phi",
+    ]);
+    assert!(out.status.success(), "binary exited with {:?}", out.status);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+
+    // The JSON block precedes the Timeline section. Extract just the JSON
+    // portion (up to and including the closing `}` of the root object) so
+    // `from_str` does not trip on the trailing timeline text.
+    let json_end = stdout
+        .rfind('}')
+        .expect("stdout must contain the closing '}' of the JSON object");
+    let json_part = &stdout[..=json_end];
+    let _parsed: json_schema::CoherenceRunJson =
+        serde_json::from_str(json_part)
+            .expect("the JSON portion of combined --json --timeline output must be valid");
+
+    // Timeline section must also be present.
+    assert!(
+        stdout.contains("Timeline (per-witness checkpoint)"),
+        "expected Timeline section when both --json and --timeline are set, got:\n{}",
+        stdout
+    );
+}
+
+#[test]
+fn json_drifts_has_two_checkpoints_and_correct_scope() {
+    let out = run(&["--json", "examples/coherence_playground/drifts.phi"]);
+    assert!(out.status.success(), "binary exited with {:?}", out.status);
+    let parsed: json_schema::CoherenceRunJson =
+        serde_json::from_slice(&out.stdout).expect("--json output must be valid JSON");
+    // drifts.phi has exactly two `witness` calls.
+    assert_eq!(
+        parsed.checkpoints.len(),
+        2,
+        "drifts.phi must produce exactly 2 checkpoints, got {:?}",
+        parsed.checkpoints.len()
+    );
+    // Both checkpoints must show the nested intention scope.
+    for cp in &parsed.checkpoints {
+        assert!(
+            cp.intention_scope.contains("stay_with_one_signal"),
+            "expected intention scope to contain 'stay_with_one_signal', got '{}'",
+            cp.intention_scope
+        );
+    }
+    // first_coherence and last_coherence must be populated.
+    assert!(parsed.first_coherence.is_some(), "first_coherence must be Some");
+    assert!(parsed.last_coherence.is_some(), "last_coherence must be Some");
+    // The run drifts, so first > last.
+    let first = parsed.first_coherence.unwrap();
+    let last = parsed.last_coherence.unwrap();
+    assert!(
+        first > last,
+        "drifts.phi: expected first_coherence ({}) > last_coherence ({})",
+        first,
+        last
     );
 }
