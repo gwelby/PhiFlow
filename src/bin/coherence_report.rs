@@ -31,6 +31,7 @@ use phiflow::parser::parse_phi_program_with_diagnostics;
 use phiflow::phi_ir::evaluator::Evaluator;
 use phiflow::phi_ir::lowering::lower_program_checked;
 use phiflow::phi_ir::vm_state::VmWitnessEvent;
+use phiflow::phi_ir::PhiIRValue;
 
 fn main() -> ExitCode {
     let mut show_timeline = false;
@@ -149,7 +150,7 @@ fn main() -> ExitCode {
 
     if show_timeline {
         println!();
-        print_timeline(witness_log);
+        print_timeline(witness_log, resonance_events);
     }
 
     ExitCode::SUCCESS
@@ -390,14 +391,35 @@ fn collect_declared_intentions(source: &str) -> Vec<String> {
 /// Print the per-witness-checkpoint table and a sparkline of coherence over
 /// the run. This is the body of the `--timeline` flag.
 ///
-/// Each row corresponds to one entry in `evaluator.witness_log` (i.e. one
-/// `witness` call that the evaluator actually reached). The columns are read
-/// straight off the `VmWitnessEvent` and never invent new metrics.
-pub(crate) fn print_timeline(witness_log: &[VmWitnessEvent]) {
-    println!("Timeline (per-witness checkpoint)");
+/// Delegates to `render_timeline`, which builds the full output as a `String`
+/// so that callers (including tests) can inspect the rendered text directly.
+pub(crate) fn print_timeline(
+    witness_log: &[VmWitnessEvent],
+    resonance_events: &[(String, PhiIRValue)],
+) {
+    print!("{}", render_timeline(witness_log, resonance_events));
+}
+
+/// Build the per-witness-checkpoint table as a `String`.
+///
+/// Each numbered row corresponds to one entry in `evaluator.witness_log`.
+/// Between witness rows, resonance events that fired in that interval are
+/// shown with a `~` prefix so users can see *which* resonances caused a
+/// coherence shift.
+///
+/// The `resonances` column shows the *interval* count — how many resonance
+/// events fired since the previous witness (or since program start for the
+/// first row).  This is more actionable than a running total, which is
+/// already shown in the summary section above the timeline.
+pub(crate) fn render_timeline(
+    witness_log: &[VmWitnessEvent],
+    resonance_events: &[(String, PhiIRValue)],
+) -> String {
+    let mut out = String::new();
+    out.push_str("Timeline (per-witness checkpoint)\n");
     if witness_log.is_empty() {
-        println!("  (no witness checkpoints were reached during this run)");
-        return;
+        out.push_str("  (no witness checkpoints were reached during this run)\n");
+        return out;
     }
 
     let scope_strings: Vec<String> = witness_log
@@ -415,38 +437,83 @@ pub(crate) fn print_timeline(witness_log: &[VmWitnessEvent]) {
 
     let idx_width = witness_log.len().to_string().len().max(3);
 
-    println!(
-        "  {:>idx_w$}  {:<scope_w$}  {:>9}  {:>10}",
+    out.push_str(&format!(
+        "  {:>idx_w$}  {:<scope_w$}  {:>9}  {:>10}\n",
         "idx",
         scope_header,
         "coherence",
         "resonances",
         idx_w = idx_width,
         scope_w = scope_width,
-    );
-    println!(
-        "  {} {} {} {}",
+    ));
+    out.push_str(&format!(
+        "  {} {} {} {}\n",
         "-".repeat(idx_width),
         "-".repeat(scope_width + 1),
         "-".repeat(9),
         "-".repeat(10),
-    );
+    ));
+
+    // Resonances that fired before the first witness.
+    let first_event_idx = witness_log
+        .first()
+        .map(|w| w.resonance_event_idx)
+        .unwrap_or(0);
+    render_resonance_slice(&mut out, resonance_events, 0, first_event_idx, idx_width);
+
+    let mut prev_event_idx: usize = 0;
     for (i, (event, scope)) in witness_log.iter().zip(scope_strings.iter()).enumerate() {
-        println!(
-            "  {:>idx_w$}  {:<scope_w$}  {:>9.4}  {:>10}",
+        // Interval count: resonances that fired since the previous witness.
+        let interval_count = event.resonance_event_idx.saturating_sub(prev_event_idx);
+        out.push_str(&format!(
+            "  {:>idx_w$}  {:<scope_w$}  {:>9.4}  {:>10}\n",
             i + 1,
             scope,
             event.coherence,
-            event.resonance_count,
+            interval_count,
             idx_w = idx_width,
             scope_w = scope_width,
-        );
+        ));
+        prev_event_idx = event.resonance_event_idx;
+
+        // Resonances that fired after this witness (before the next, or to end).
+        let from = event.resonance_event_idx;
+        let to = witness_log
+            .get(i + 1)
+            .map(|next| next.resonance_event_idx)
+            .unwrap_or(resonance_events.len());
+        render_resonance_slice(&mut out, resonance_events, from, to, idx_width);
     }
 
     let coherences: Vec<f64> = witness_log.iter().map(|w| w.coherence).collect();
     let sparkline = sparkline_for(&coherences);
-    println!();
-    println!("  coherence over time: {}", sparkline);
+    out.push('\n');
+    out.push_str(&format!("  coherence over time: {}\n", sparkline));
+    out
+}
+
+/// Append resonance-event rows for `events[from..to]` into `out`.
+///
+/// Each row shows only the channel name (the key the `resonate` instruction
+/// used), which is all that is needed to answer "what fired between these two
+/// checkpoints?". Values are omitted to keep the rows narrow.
+fn render_resonance_slice(
+    out: &mut String,
+    events: &[(String, PhiIRValue)],
+    from: usize,
+    to: usize,
+    idx_width: usize,
+) {
+    let from = from.min(events.len());
+    let to = to.min(events.len());
+    for (channel, _value) in &events[from..to] {
+        out.push_str(&format!(
+            "  {:>idx_w$}  resonate: {}\n",
+            "~",
+            channel,
+            idx_w = idx_width,
+        ));
+    }
 }
 
 /// Format the active intention stack as `outer > middle > inner`.
@@ -494,13 +561,19 @@ fn sparkline_for(values: &[f64]) -> String {
 mod tests {
     use super::*;
 
-    fn ev(scope: &[&str], coherence: f64, resonances: usize) -> VmWitnessEvent {
+    fn ev_at(
+        scope: &[&str],
+        coherence: f64,
+        resonances: usize,
+        resonance_event_idx: usize,
+    ) -> VmWitnessEvent {
         VmWitnessEvent {
             intention_stack: scope.iter().map(|s| s.to_string()).collect(),
             coherence,
             register_count: 0,
             resonance_count: resonances,
             agent_name: None,
+            resonance_event_idx,
         }
     }
 
@@ -566,19 +639,120 @@ mod tests {
     }
 
     #[test]
-    fn print_timeline_runs_for_empty_log() {
-        // Smoke test: must not panic and must not divide by zero on the
-        // sparkline / column-width calculations.
-        print_timeline(&[]);
+    fn render_timeline_empty_log_contains_no_witness_message() {
+        let out = render_timeline(&[], &[]);
+        assert!(
+            out.contains("no witness checkpoints"),
+            "expected empty-log message, got: {}",
+            out
+        );
     }
 
     #[test]
-    fn print_timeline_runs_for_realistic_log() {
-        // Smoke test: matches the shape of the bundled `drifts.phi` run.
+    fn render_timeline_realistic_log_contains_expected_sections() {
+        // Mirrors the drifts.phi run: 1 resonance before witness #1,
+        // 3 resonances between witness #1 and #2.
         let log = vec![
-            ev(&["stay_with_one_signal", "follow_one_signal"], 0.618, 1),
-            ev(&["stay_with_one_signal", "follow_one_signal"], 0.309, 4),
+            ev_at(&["stay_with_one_signal", "follow_one_signal"], 0.618, 1, 1),
+            ev_at(&["stay_with_one_signal", "follow_one_signal"], 0.309, 4, 4),
         ];
-        print_timeline(&log);
+        let resonances: Vec<(String, PhiIRValue)> = vec![
+            ("follow_one_signal".to_string(), PhiIRValue::Number(432.0)),
+            ("follow_one_signal".to_string(), PhiIRValue::Number(528.0)),
+            ("follow_one_signal".to_string(), PhiIRValue::Number(396.0)),
+            ("follow_one_signal".to_string(), PhiIRValue::Number(285.0)),
+        ];
+        let out = render_timeline(&log, &resonances);
+        assert!(out.contains("Timeline (per-witness checkpoint)"));
+        assert!(out.contains("coherence over time:"));
+        assert!(out.contains("resonances"));
+    }
+
+    #[test]
+    fn render_timeline_interleaves_resonances_between_witnesses() {
+        // Resonance rows must appear between the two witness rows, not only
+        // before witness #1 or after witness #2.
+        let log = vec![
+            ev_at(&["outer", "inner"], 0.618, 1, 1),
+            ev_at(&["outer", "inner"], 0.309, 4, 4),
+        ];
+        let resonances: Vec<(String, PhiIRValue)> = vec![
+            ("inner".to_string(), PhiIRValue::Number(432.0)),
+            ("inner".to_string(), PhiIRValue::Number(528.0)),
+            ("inner".to_string(), PhiIRValue::Number(396.0)),
+            ("inner".to_string(), PhiIRValue::Number(285.0)),
+        ];
+        let out = render_timeline(&log, &resonances);
+        let lines: Vec<&str> = out.lines().collect();
+
+        let w1_pos = lines
+            .iter()
+            .position(|l| l.trim_start().starts_with("1 ") && l.contains("outer"))
+            .expect("witness #1 row not found");
+        let w2_pos = lines
+            .iter()
+            .position(|l| l.trim_start().starts_with("2 ") && l.contains("outer"))
+            .expect("witness #2 row not found");
+
+        let resonance_between = lines[w1_pos + 1..w2_pos]
+            .iter()
+            .filter(|l| l.contains("resonate:"))
+            .count();
+        assert_eq!(
+            resonance_between, 3,
+            "expected 3 resonance rows between witness #1 and #2, found {}; output:\n{}",
+            resonance_between, out
+        );
+
+        // The interval count shown on witness #2's row must be 3.
+        let w2_line = lines[w2_pos];
+        assert!(
+            w2_line.contains('3'),
+            "expected interval count '3' on witness #2 row, got: {}",
+            w2_line
+        );
+    }
+
+    #[test]
+    fn render_timeline_interval_counts_are_per_witness_not_cumulative() {
+        // witness 1: 2 resonances in its interval (indices 0..2)
+        // witness 2: 1 resonance in its interval (indices 2..3)
+        // The column must show 2 then 1, not 2 then 3.
+        let log = vec![
+            ev_at(&["scope"], 0.8, 2, 2),
+            ev_at(&["scope"], 0.5, 3, 3),
+        ];
+        let resonances: Vec<(String, PhiIRValue)> = vec![
+            ("scope".to_string(), PhiIRValue::Number(1.0)),
+            ("scope".to_string(), PhiIRValue::Number(2.0)),
+            ("scope".to_string(), PhiIRValue::Number(3.0)),
+        ];
+        let out = render_timeline(&log, &resonances);
+        let lines: Vec<&str> = out.lines().collect();
+
+        let w1_line = lines
+            .iter()
+            .find(|l| l.trim_start().starts_with("1 "))
+            .expect("witness #1 row not found");
+        let w2_line = lines
+            .iter()
+            .find(|l| l.trim_start().starts_with("2 "))
+            .expect("witness #2 row not found");
+
+        // The rightmost token on each witness row is the resonance interval count.
+        let count1: usize = w1_line
+            .split_whitespace()
+            .last()
+            .unwrap()
+            .parse()
+            .expect("w1 resonances column should be numeric");
+        let count2: usize = w2_line
+            .split_whitespace()
+            .last()
+            .unwrap()
+            .parse()
+            .expect("w2 resonances column should be numeric");
+        assert_eq!(count1, 2, "witness #1 interval count should be 2");
+        assert_eq!(count2, 1, "witness #2 interval count should be 1, not 3");
     }
 }

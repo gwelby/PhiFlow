@@ -118,3 +118,49 @@ fn unknown_flag_prints_usage_and_exits_nonzero() {
     assert!(stderr.contains("unknown flag"));
     assert!(stderr.contains("--timeline"));
 }
+
+#[test]
+fn timeline_shows_resonance_rows_between_witnesses_for_drifts() {
+    // drifts.phi fires one resonance before the first witness and three
+    // resonances between the first and second witness.  The timeline must
+    // interleave them: the first ~ row appears before witness #1 and three ~
+    // rows appear between witness #1 and witness #2.
+    let out = run(&[
+        "--timeline",
+        "examples/coherence_playground/drifts.phi",
+    ]);
+    assert!(out.status.success(), "binary exited with {:?}", out.status);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+
+    // At least one resonance row must appear.
+    assert!(
+        stdout.contains("resonate:"),
+        "expected at least one resonance row in timeline output, got:\n{}",
+        stdout
+    );
+
+    // Collect the order of significant lines: witness rows (contain a
+    // numeric index, e.g. "  1  ") and resonance rows ("resonate:").
+    let lines: Vec<&str> = stdout.lines().collect();
+
+    // Find the line indices for witness #1, witness #2, and all resonance rows.
+    let witness1_pos = lines
+        .iter()
+        .position(|l| l.trim_start().starts_with("1 ") && l.contains("stay_with_one_signal"))
+        .expect("witness #1 row not found");
+    let witness2_pos = lines
+        .iter()
+        .position(|l| l.trim_start().starts_with("2 ") && l.contains("stay_with_one_signal"))
+        .expect("witness #2 row not found");
+
+    // There must be resonance rows between witness #1 and witness #2.
+    let resonance_between = lines[witness1_pos + 1..witness2_pos]
+        .iter()
+        .filter(|l| l.contains("resonate:"))
+        .count();
+    assert_eq!(
+        resonance_between, 3,
+        "expected 3 resonance rows between witness #1 and #2, found {}; output:\n{}",
+        resonance_between, stdout
+    );
+}

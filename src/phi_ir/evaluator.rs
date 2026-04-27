@@ -586,6 +586,7 @@ impl<'a> Evaluator<'a> {
                     register_count: self.registers.len(),
                     resonance_count: self.resonance_count(),
                     agent_name: self.agent_name.clone(),
+                    resonance_event_idx: self.resonance_events.len(),
                 });
 
                 None
@@ -1052,6 +1053,7 @@ impl<'a> Evaluator<'a> {
             register_count: self.registers.len(),
             resonance_count,
             agent_name: self.agent_name.clone(),
+            resonance_event_idx: self.resonance_events.len(),
         });
 
         let snapshot = WitnessSnapshot {
@@ -1083,6 +1085,7 @@ impl<'a> Evaluator<'a> {
             register_count: self.registers.len(),
             resonance_count,
             agent_name: self.agent_name.clone(),
+            resonance_event_idx: self.resonance_events.len(),
         });
 
         let snapshot = WitnessSnapshot {

@@ -19,6 +19,11 @@ pub struct VmWitnessEvent {
     pub resonance_count: usize,
     /// The name of the agent executing the code (if declared).
     pub agent_name: Option<String>,
+    /// Index into the evaluator's `resonance_events` Vec at the moment this
+    /// witness fired.  Slicing `resonance_events[prev_idx..this_idx]` gives
+    /// exactly the resonance events that occurred since the previous witness.
+    #[serde(default)]
+    pub resonance_event_idx: usize,
 }
 
 /// Serializable evaluator state, captured when the program yields.
