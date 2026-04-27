@@ -59,6 +59,7 @@ fn topology_options(profile: BackendTopologyProfile) -> OpenQasmCompileOptions {
             native_two_qubit_gate,
         }),
         live_backend_profile: Some(profile),
+        anchor_signing_key: None,
     }
 }
 
