@@ -6,12 +6,17 @@
 //! number the runtime already produces.
 //!
 //! Usage:
-//!     coherence_report <path-to.phi>
+//!     coherence_report [--timeline] <path-to.phi>
 //!
 //! Try the bundled snippets:
 //!     coherence_report examples/coherence_playground/aligned.phi
 //!     coherence_report examples/coherence_playground/drifts.phi
 //!     coherence_report examples/coherence_playground/disconnected.phi
+//!
+//! Pass `--timeline` to additionally print a per-witness-checkpoint table and
+//! a small sparkline of coherence over the run, which is useful when there
+//! are several `witness` calls and you want to see *when* coherence shifted
+//! rather than just the final verdict. The default report is unchanged.
 //!
 //! The tool only relies on the four core constructs the runtime already ships
 //! with — `intention`, `stream`, `witness`, `resonate`, `coherence` — and adds
@@ -25,18 +30,40 @@ use std::process::ExitCode;
 use phiflow::parser::parse_phi_program_with_diagnostics;
 use phiflow::phi_ir::evaluator::Evaluator;
 use phiflow::phi_ir::lowering::lower_program_checked;
+use phiflow::phi_ir::vm_state::VmWitnessEvent;
 
 fn main() -> ExitCode {
-    let mut args = env::args().skip(1);
-    let path = match args.next() {
-        Some(p) => PathBuf::from(p),
+    let mut show_timeline = false;
+    let mut path: Option<PathBuf> = None;
+    for arg in env::args().skip(1) {
+        match arg.as_str() {
+            "--timeline" => show_timeline = true,
+            "-h" | "--help" => {
+                print_usage();
+                return ExitCode::SUCCESS;
+            }
+            other if other.starts_with("--") => {
+                eprintln!("coherence_report: unknown flag '{}'", other);
+                eprintln!();
+                print_usage();
+                return ExitCode::from(2);
+            }
+            other => {
+                if path.is_some() {
+                    eprintln!(
+                        "coherence_report: only one input path is supported (got an extra '{}')",
+                        other
+                    );
+                    return ExitCode::from(2);
+                }
+                path = Some(PathBuf::from(other));
+            }
+        }
+    }
+    let path = match path {
+        Some(p) => p,
         None => {
-            eprintln!("usage: coherence_report <path-to.phi>");
-            eprintln!();
-            eprintln!("Try one of the bundled snippets:");
-            eprintln!("  coherence_report examples/coherence_playground/aligned.phi");
-            eprintln!("  coherence_report examples/coherence_playground/drifts.phi");
-            eprintln!("  coherence_report examples/coherence_playground/disconnected.phi");
+            print_usage();
             return ExitCode::from(2);
         }
     };
@@ -120,7 +147,25 @@ fn main() -> ExitCode {
         post_run_coherence,
     );
 
+    if show_timeline {
+        println!();
+        print_timeline(witness_log);
+    }
+
     ExitCode::SUCCESS
+}
+
+fn print_usage() {
+    eprintln!("usage: coherence_report [--timeline] <path-to.phi>");
+    eprintln!();
+    eprintln!("Options:");
+    eprintln!("  --timeline   Also print a per-witness-checkpoint table and a");
+    eprintln!("               sparkline of coherence over the run.");
+    eprintln!();
+    eprintln!("Try one of the bundled snippets:");
+    eprintln!("  coherence_report examples/coherence_playground/aligned.phi");
+    eprintln!("  coherence_report examples/coherence_playground/drifts.phi");
+    eprintln!("  coherence_report examples/coherence_playground/disconnected.phi");
 }
 
 fn print_header(path: &PathBuf, intentions: &[String]) {
@@ -340,4 +385,200 @@ fn collect_declared_intentions(source: &str) -> Vec<String> {
         }
     }
     out
+}
+
+/// Print the per-witness-checkpoint table and a sparkline of coherence over
+/// the run. This is the body of the `--timeline` flag.
+///
+/// Each row corresponds to one entry in `evaluator.witness_log` (i.e. one
+/// `witness` call that the evaluator actually reached). The columns are read
+/// straight off the `VmWitnessEvent` and never invent new metrics.
+pub(crate) fn print_timeline(witness_log: &[VmWitnessEvent]) {
+    println!("Timeline (per-witness checkpoint)");
+    if witness_log.is_empty() {
+        println!("  (no witness checkpoints were reached during this run)");
+        return;
+    }
+
+    let scope_strings: Vec<String> = witness_log
+        .iter()
+        .map(|w| format_intention_scope(&w.intention_stack))
+        .collect();
+
+    let scope_header = "intention scope";
+    let scope_width = scope_strings
+        .iter()
+        .map(|s| s.chars().count())
+        .max()
+        .unwrap_or(0)
+        .max(scope_header.chars().count());
+
+    let idx_width = witness_log.len().to_string().len().max(3);
+
+    println!(
+        "  {:>idx_w$}  {:<scope_w$}  {:>9}  {:>10}",
+        "idx",
+        scope_header,
+        "coherence",
+        "resonances",
+        idx_w = idx_width,
+        scope_w = scope_width,
+    );
+    println!(
+        "  {} {} {} {}",
+        "-".repeat(idx_width),
+        "-".repeat(scope_width + 1),
+        "-".repeat(9),
+        "-".repeat(10),
+    );
+    for (i, (event, scope)) in witness_log.iter().zip(scope_strings.iter()).enumerate() {
+        println!(
+            "  {:>idx_w$}  {:<scope_w$}  {:>9.4}  {:>10}",
+            i + 1,
+            scope,
+            event.coherence,
+            event.resonance_count,
+            idx_w = idx_width,
+            scope_w = scope_width,
+        );
+    }
+
+    let coherences: Vec<f64> = witness_log.iter().map(|w| w.coherence).collect();
+    let sparkline = sparkline_for(&coherences);
+    println!();
+    println!("  coherence over time: {}", sparkline);
+}
+
+/// Format the active intention stack as `outer > middle > inner`.
+///
+/// `intention_stack` is recorded innermost-last by the evaluator, which is
+/// the natural reading order ("we're inside outer, which is inside middle,
+/// currently in inner"). Returns `(no intention)` when the stack is empty
+/// — this can happen if `witness` is reached before any `intention` block,
+/// which the runtime allows.
+fn format_intention_scope(stack: &[String]) -> String {
+    if stack.is_empty() {
+        "(no intention)".to_string()
+    } else {
+        stack.join(" > ")
+    }
+}
+
+/// Build a unicode-block sparkline from a series of coherence values.
+///
+/// Coherence is normalised to the fixed [0.0, 1.0] band the runtime defines
+/// (rather than min/max within the run), so a flat run at 0.6 always renders
+/// the same height and visual comparisons across runs are meaningful. Values
+/// outside the band are clamped. Non-finite values render as a space.
+fn sparkline_for(values: &[f64]) -> String {
+    const BARS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+    let mut out = String::with_capacity(values.len());
+    for &v in values {
+        if !v.is_finite() {
+            out.push(' ');
+            continue;
+        }
+        let clamped = v.clamp(0.0, 1.0);
+        // Pick a bucket in [0, BARS.len()-1]. 1.0 maps to the tallest bar,
+        // 0.0 to the shortest — we never emit a blank for an in-band value
+        // because that would be indistinguishable from a missing checkpoint.
+        let last = BARS.len() - 1;
+        let idx = (clamped * last as f64).round() as usize;
+        let idx = idx.min(last);
+        out.push(BARS[idx]);
+    }
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn ev(scope: &[&str], coherence: f64, resonances: usize) -> VmWitnessEvent {
+        VmWitnessEvent {
+            intention_stack: scope.iter().map(|s| s.to_string()).collect(),
+            coherence,
+            register_count: 0,
+            resonance_count: resonances,
+            agent_name: None,
+        }
+    }
+
+    #[test]
+    fn sparkline_renders_one_glyph_per_value() {
+        let s = sparkline_for(&[0.0, 0.5, 1.0]);
+        assert_eq!(s.chars().count(), 3);
+    }
+
+    #[test]
+    fn sparkline_uses_tallest_bar_at_one_and_shortest_at_zero() {
+        let s = sparkline_for(&[0.0, 1.0]);
+        let chars: Vec<char> = s.chars().collect();
+        assert_eq!(chars[0], '▁');
+        assert_eq!(chars[1], '█');
+    }
+
+    #[test]
+    fn sparkline_drift_drops_visibly() {
+        // The "drifts" snippet's two checkpoints: ~0.618 then ~0.309.
+        // The first should render strictly taller than the second.
+        let s = sparkline_for(&[0.618, 0.309]);
+        let chars: Vec<char> = s.chars().collect();
+        let bars = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+        let pos = |c: char| bars.iter().position(|b| *b == c).unwrap();
+        assert!(
+            pos(chars[0]) > pos(chars[1]),
+            "expected first bar taller than second, got {:?}",
+            chars
+        );
+    }
+
+    #[test]
+    fn sparkline_clamps_out_of_band_values() {
+        let s = sparkline_for(&[-0.5, 1.5]);
+        let chars: Vec<char> = s.chars().collect();
+        assert_eq!(chars[0], '▁');
+        assert_eq!(chars[1], '█');
+    }
+
+    #[test]
+    fn sparkline_handles_non_finite() {
+        let s = sparkline_for(&[f64::NAN, 0.5]);
+        let chars: Vec<char> = s.chars().collect();
+        assert_eq!(chars[0], ' ');
+        // 0.5 sits between two buckets (round(0.5 * 7) = 4); we just check it
+        // rendered *something* visible in the in-band range, not the exact bar.
+        let bars = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+        assert!(bars.contains(&chars[1]));
+    }
+
+    #[test]
+    fn intention_scope_joins_outer_to_inner() {
+        assert_eq!(
+            format_intention_scope(&["outer".into(), "inner".into()]),
+            "outer > inner"
+        );
+    }
+
+    #[test]
+    fn intention_scope_handles_empty_stack() {
+        assert_eq!(format_intention_scope(&[]), "(no intention)");
+    }
+
+    #[test]
+    fn print_timeline_runs_for_empty_log() {
+        // Smoke test: must not panic and must not divide by zero on the
+        // sparkline / column-width calculations.
+        print_timeline(&[]);
+    }
+
+    #[test]
+    fn print_timeline_runs_for_realistic_log() {
+        // Smoke test: matches the shape of the bundled `drifts.phi` run.
+        let log = vec![
+            ev(&["stay_with_one_signal", "follow_one_signal"], 0.618, 1),
+            ev(&["stay_with_one_signal", "follow_one_signal"], 0.309, 4),
+        ];
+        print_timeline(&log);
+    }
 }

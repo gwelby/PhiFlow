@@ -61,5 +61,14 @@ target/debug/coherence_report examples/coherence_playground/drifts.phi
 target/debug/coherence_report examples/coherence_playground/disconnected.phi
 ```
 
+Pass `--timeline` (in either position) to additionally print a per-witness
+checkpoint table (index, intention scope, coherence, resonance count) and a
+small unicode-block sparkline of coherence over the run. The default report
+is unchanged when the flag is omitted.
+
+```bash
+target/debug/coherence_report --timeline examples/coherence_playground/drifts.phi
+```
+
 The three bundled snippets in `examples/coherence_playground/` cover the
 high-coherence, drifts, and "fails the intention entirely" cases.
