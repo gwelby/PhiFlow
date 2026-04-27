@@ -10,16 +10,28 @@ use sysinfo::{Components, Networks, System, MINIMUM_CPU_UPDATE_INTERVAL};
 
 const DEFAULT_CRITICAL_TEMP_C: f64 = 90.0;
 
+/// Returns the base phiflow data directory using the XDG_DATA_HOME → HOME → /tmp fallback chain.
+/// All runtime data paths should be derived from this to ensure consistent behaviour across
+/// environments (Linux, macOS, CI, containers).
+pub fn get_phiflow_data_dir() -> std::path::PathBuf {
+    let base = std::env::var("XDG_DATA_HOME").unwrap_or_else(|_| {
+        std::env::var("HOME")
+            .map(|h| format!("{}/.local/share", h))
+            .unwrap_or_else(|_| "/tmp".to_string())
+    });
+    std::path::PathBuf::from(base).join("phiflow")
+}
+
 pub fn get_soma_state_path() -> std::path::PathBuf {
     std::env::var("SOMA_STATE_PATH")
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(|_| std::path::PathBuf::from("D:/Projects/PhiHarmonic/SOMA/soma_state.json"))
+        .unwrap_or_else(|_| get_phiflow_data_dir().join("soma_state.json"))
 }
 
 pub fn get_quantum_state_path() -> std::path::PathBuf {
     std::env::var("PHIFLOW_QUANTUM_STATE_PATH")
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(|_| std::path::PathBuf::from("D:/Projects/PhiHarmonic/SOMA/quantum_state.json"))
+        .unwrap_or_else(|_| get_phiflow_data_dir().join("quantum_state.json"))
 }
 
 const SOMA_FRESHNESS_THRESHOLD_MS: u64 = 5000;

@@ -39,8 +39,14 @@ pub fn emit_resonance(value: Value, intention: &str, source: &str) -> Result<()>
     let json_line = serde_json::to_string(&event)?;
 
     // Path to the resonance bus
-    let path_str = std::env::var("RESONANCE_BUS_PATH")
-        .unwrap_or_else(|_| "D:\\CosmicFamily\\RESONANCE.jsonl".to_string());
+    let path_str = std::env::var("RESONANCE_BUS_PATH").unwrap_or_else(|_| {
+        let base = std::env::var("XDG_DATA_HOME").unwrap_or_else(|_| {
+            std::env::var("HOME")
+                .map(|h| format!("{}/.local/share", h))
+                .unwrap_or_else(|_| "/tmp".to_string())
+        });
+        format!("{}/phiflow/RESONANCE.jsonl", base)
+    });
 
     let path = Path::new(&path_str);
 
@@ -67,8 +73,14 @@ pub fn emit_resonance(value: Value, intention: &str, source: &str) -> Result<()>
 
 /// Reads all resonance events from the JSONL bus file.
 pub fn read_resonance_events() -> Result<Vec<ResonanceEvent>> {
-    let path_str = std::env::var("RESONANCE_BUS_PATH")
-        .unwrap_or_else(|_| "D:\\CosmicFamily\\RESONANCE.jsonl".to_string());
+    let path_str = std::env::var("RESONANCE_BUS_PATH").unwrap_or_else(|_| {
+        let base = std::env::var("XDG_DATA_HOME").unwrap_or_else(|_| {
+            std::env::var("HOME")
+                .map(|h| format!("{}/.local/share", h))
+                .unwrap_or_else(|_| "/tmp".to_string())
+        });
+        format!("{}/phiflow/RESONANCE.jsonl", base)
+    });
     let path = Path::new(&path_str);
 
     if !path.exists() {

@@ -53,7 +53,7 @@ struct Args {
     daemon: bool,
 
     /// Path to persist the daemon state to.
-    #[arg(long, default_value = "D:\\CosmicFamily\\DAEMON_STATE.json")]
+    #[arg(long, env = "PHIFLOW_DAEMON_STATE_PATH", default_value = "/tmp/phiflow_daemon_state.json")]
     state_path: PathBuf,
 
     /// Trigger a resonant handoff: "TargetAgent:TaskID:Context"
@@ -85,8 +85,10 @@ impl SomaManager {
 
     fn start_soma(&mut self) {
         println!("🌀 Starting SOMA Sensor Suite (Python)...");
+        let soma_py = std::env::var("SOMA_PY_PATH")
+            .unwrap_or_else(|_| "soma.py".to_string());
         let child = std::process::Command::new("python")
-            .arg("D:/Projects/PhiHarmonic/SOMA/soma.py")
+            .arg(&soma_py)
             .arg("--phiflow")
             .arg("--headless")
             .spawn();
@@ -480,7 +482,12 @@ impl<'a> DaemonHypervisor<'a> {
                     let mut eval = Evaluator::new(state.program.clone())
                         .with_hardware_modifier(sensors::compute_coherence_from_sensors)
                         .with_shared_resonance(Arc::clone(&self.shared_resonance))
-                        .with_host(Box::new(SystemHostProvider::new(PathBuf::from("D:\\CosmicFamily"), Arc::clone(&self.signing_key))));
+                        .with_host(Box::new(SystemHostProvider::new(
+                        std::env::var("PHIFLOW_HOST_PATH")
+                            .map(PathBuf::from)
+                            .unwrap_or_else(|_| sensors::get_phiflow_data_dir()),
+                        Arc::clone(&self.signing_key),
+                    )));
                     
                     eval.max_steps = None;
                     let _ = eval.resume(state);
@@ -513,6 +520,10 @@ async fn daemon_run(
     // 1. Try to resume from disk (uses programs saved in state)
     hypervisor.load_state();
 
+    let phiflow_host_path = std::env::var("PHIFLOW_HOST_PATH")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| sensors::get_phiflow_data_dir());
+
     // --- Idempotent stream manifest reconciler ---
     // Always ensure the three canonical streams exist regardless of whether
     // this is a fresh boot or a resumed daemon. This fixes the gap documented
@@ -528,7 +539,7 @@ async fn daemon_run(
         let mut council_eval = Evaluator::new(initial_ir)
             .with_hardware_modifier(sensors::compute_coherence_from_sensors)
             .with_shared_resonance(Arc::clone(&hypervisor.shared_resonance))
-            .with_host(Box::new(SystemHostProvider::new(PathBuf::from("D:\\CosmicFamily"), Arc::clone(&hypervisor.signing_key))));
+            .with_host(Box::new(SystemHostProvider::new(phiflow_host_path.clone(), Arc::clone(&hypervisor.signing_key))));
         council_eval.max_steps = None;
         hypervisor.spawn_stream("council".to_string(), council_eval);
         println!("🚀 Council stream spawned (new).");
@@ -550,7 +561,7 @@ async fn daemon_run(
                     let mut ledger_eval = Evaluator::new(ledger_ir)
                         .with_hardware_modifier(sensors::compute_coherence_from_sensors)
                         .with_shared_resonance(Arc::clone(&hypervisor.shared_resonance))
-                        .with_host(Box::new(SystemHostProvider::new(PathBuf::from("D:\\CosmicFamily"), Arc::clone(&hypervisor.signing_key))));
+                        .with_host(Box::new(SystemHostProvider::new(phiflow_host_path.clone(), Arc::clone(&hypervisor.signing_key))));
                     ledger_eval.max_steps = None;
                     hypervisor.spawn_stream("ledger".to_string(), ledger_eval);
                     println!("🚀 Ledger stream spawned (new).");
@@ -575,7 +586,7 @@ async fn daemon_run(
                     let mut lumi_eval = Evaluator::new(lumi_ir)
                         .with_hardware_modifier(sensors::compute_coherence_from_sensors)
                         .with_shared_resonance(Arc::clone(&hypervisor.shared_resonance))
-                        .with_host(Box::new(SystemHostProvider::new(PathBuf::from("D:\\CosmicFamily"), Arc::clone(&hypervisor.signing_key))));
+                        .with_host(Box::new(SystemHostProvider::new(phiflow_host_path.clone(), Arc::clone(&hypervisor.signing_key))));
                     lumi_eval.max_steps = None;
                     hypervisor.spawn_stream("lumi_identity".to_string(), lumi_eval);
                     println!("🚀 Lumi identity stream spawned (new).");
