@@ -28,3 +28,7 @@ args = "cargo run --bin phi"
 
 [workflows.workflow.metadata]
 outputType = "console"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 180000

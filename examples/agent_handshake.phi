@@ -54,8 +54,10 @@ intention "announcing_to_field" {
         witness                  // Pause here — read our state if you want
 
         // Resonate the protocol version
-        let version = protocol_version()
-        resonate version         // Resonate 3: 0.1 (v0.1)
+        // Note: `version` is reserved by the current parser, so the local
+        // is named `proto_ver` here. See examples/legacy/README.md.
+        let proto_ver = protocol_version()
+        resonate proto_ver       // Resonate 3: 0.1 (v0.1)
     }
 
     // Back at depth 1. Coherence dropped back to 0.382.
