@@ -543,7 +543,7 @@ pub(crate) fn render_timeline(
         .first()
         .map(|w| w.resonance_event_idx)
         .unwrap_or(0);
-    render_resonance_slice(&mut out, resonance_events, 0, first_event_idx, idx_width);
+    render_resonance_slice(&mut out, resonance_events, 0, first_event_idx, idx_width, scope_width);
 
     let mut prev_event_idx: usize = 0;
     for (i, (event, scope)) in witness_log.iter().zip(scope_strings.iter()).enumerate() {
@@ -566,7 +566,7 @@ pub(crate) fn render_timeline(
             .get(i + 1)
             .map(|next| next.resonance_event_idx)
             .unwrap_or(resonance_events.len());
-        render_resonance_slice(&mut out, resonance_events, from, to, idx_width);
+        render_resonance_slice(&mut out, resonance_events, from, to, idx_width, scope_width);
     }
 
     let coherences: Vec<f64> = witness_log.iter().map(|w| w.coherence).collect();
@@ -578,25 +578,45 @@ pub(crate) fn render_timeline(
 
 /// Append resonance-event rows for `events[from..to]` into `out`.
 ///
-/// Each row shows only the channel name (the key the `resonate` instruction
-/// used), which is all that is needed to answer "what fired between these two
-/// checkpoints?". Values are omitted to keep the rows narrow.
+/// Each row shows the channel name and the resonated value. The value is
+/// right-aligned in a 9-character field at the same column as the coherence
+/// column in the witness rows, so the table stays visually consistent and
+/// within a 120-character terminal.
 fn render_resonance_slice(
     out: &mut String,
     events: &[(String, PhiIRValue)],
     from: usize,
     to: usize,
     idx_width: usize,
+    scope_width: usize,
 ) {
     let from = from.min(events.len());
     let to = to.min(events.len());
-    for (channel, _value) in &events[from..to] {
+    let prefix = "resonate: ";
+    let chan_width = scope_width.saturating_sub(prefix.len());
+    for (channel, value) in &events[from..to] {
+        let value_str = format_phi_ir_value(value);
         out.push_str(&format!(
-            "  {:>idx_w$}  resonate: {}\n",
+            "  {:>idx_w$}  {prefix}{channel:<chan_w$}  {:>9}\n",
             "~",
-            channel,
+            value_str,
+            prefix = prefix,
+            chan_w = chan_width,
             idx_w = idx_width,
         ));
+    }
+}
+
+/// Format a `PhiIRValue` for display in the timeline.
+///
+/// Numbers are rendered to four decimal places (matching the coherence column
+/// format). Strings are shown verbatim.
+fn format_phi_ir_value(v: &PhiIRValue) -> String {
+    match v {
+        PhiIRValue::Number(n) => format!("{:.4}", n),
+        PhiIRValue::String(s) => s.clone(),
+        PhiIRValue::Boolean(b) => b.to_string(),
+        PhiIRValue::Void => String::from("void"),
     }
 }
 

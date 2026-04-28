@@ -188,6 +188,131 @@ fn timeline_shows_resonance_rows_between_witnesses_for_drifts() {
     );
 }
 
+#[test]
+fn timeline_resonance_rows_show_value_for_drifts() {
+    // drifts.phi resonates four numeric values: 432.0 (signal), then 528.0,
+    // 396.0, and 285.0 (the three noisy detours). Each timeline row must
+    // include the formatted value alongside the channel name.
+    let out = run(&[
+        "--timeline",
+        "examples/coherence_playground/drifts.phi",
+    ]);
+    assert!(out.status.success(), "binary exited with {:?}", out.status);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+
+    // First resonance fires 432.0 — must appear formatted to four decimal places.
+    assert!(
+        stdout.contains("432.0000"),
+        "expected resonated value '432.0000' in timeline output, got:\n{}",
+        stdout
+    );
+    // Three noisy resonances fire 528.0, 396.0, and 285.0.
+    assert!(
+        stdout.contains("528.0000"),
+        "expected resonated value '528.0000' in timeline output, got:\n{}",
+        stdout
+    );
+    assert!(
+        stdout.contains("396.0000"),
+        "expected resonated value '396.0000' in timeline output, got:\n{}",
+        stdout
+    );
+    assert!(
+        stdout.contains("285.0000"),
+        "expected resonated value '285.0000' in timeline output, got:\n{}",
+        stdout
+    );
+
+    // The value must appear on the same line as the channel name.
+    let value_lines: Vec<&str> = stdout
+        .lines()
+        .filter(|l| l.contains("resonate:") && l.contains("432.0000"))
+        .collect();
+    assert_eq!(
+        value_lines.len(),
+        1,
+        "expected exactly one resonance row containing '432.0000', found {}; output:\n{}",
+        value_lines.len(),
+        stdout
+    );
+}
+
+#[test]
+fn timeline_resonance_rows_stay_within_120_chars() {
+    // drifts.phi is the representative fixture with resonance rows. Every line
+    // of the timeline section must fit within 120 characters so the table
+    // renders correctly on a standard terminal.
+    let out = run(&[
+        "--timeline",
+        "examples/coherence_playground/drifts.phi",
+    ]);
+    assert!(out.status.success(), "binary exited with {:?}", out.status);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+
+    let in_timeline = stdout
+        .lines()
+        .skip_while(|l| !l.contains("Timeline (per-witness checkpoint)"))
+        .skip(1);
+    for line in in_timeline {
+        let char_count = line.chars().count();
+        assert!(
+            char_count <= 120,
+            "timeline line exceeds 120 chars ({} chars): {:?}",
+            char_count,
+            line
+        );
+    }
+}
+
+#[test]
+fn timeline_resonance_value_column_aligns_with_coherence_column() {
+    // Both the resonance value field and the witness coherence field are
+    // right-aligned 9-char slots that start at the same column offset.
+    // We verify alignment by checking that the right edge of the value field
+    // (end of the resonance row, which has no trailing columns) equals the
+    // right edge of the coherence field in the witness row (which is followed
+    // by "  " and a 10-char resonances count column).
+    let out = run(&[
+        "--timeline",
+        "examples/coherence_playground/drifts.phi",
+    ]);
+    assert!(out.status.success(), "binary exited with {:?}", out.status);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+
+    // Resonance rows end exactly at the right edge of the 9-char value field
+    // (no trailing columns).
+    let resonance_row = stdout
+        .lines()
+        .find(|l| l.contains("resonate:") && l.contains("432.0000"))
+        .expect("resonance row with value '432.0000' not found");
+    let resonance_field_right_edge = resonance_row.len(); // no trailing content
+
+    // Witness rows have two more columns after coherence: "  " + 10-char
+    // resonances count.  Stripping those gives the right edge of the
+    // coherence field, which must equal resonance_field_right_edge.
+    let witness_row = stdout
+        .lines()
+        .find(|l| l.trim_start().starts_with("1 ") && l.contains("stay_with_one_signal"))
+        .expect("witness #1 row not found");
+    // Trailing: "  " (2) + resonances column width (10) = 12 chars after coherence field.
+    let coherence_field_right_edge = witness_row
+        .trim_end()
+        .len()
+        .saturating_sub(2 + 10);
+
+    assert_eq!(
+        resonance_field_right_edge, coherence_field_right_edge,
+        "right edge of resonance value field ({}) does not align with \
+        coherence column right edge ({})\n\
+        witness row:   {:?}\n\
+        resonance row: {:?}",
+        resonance_field_right_edge,
+        coherence_field_right_edge,
+        witness_row,
+        resonance_row
+    );
+}
+
 // ── JSON flag tests ──────────────────────────────────────────────────────────
 
 #[test]
