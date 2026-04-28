@@ -72,3 +72,29 @@ target/debug/coherence_report --timeline examples/coherence_playground/drifts.ph
 
 The three bundled snippets in `examples/coherence_playground/` cover the
 high-coherence, drifts, and "fails the intention entirely" cases.
+
+## Runtime Path Configuration
+
+The daemon, SOMA bridge, and resonance bus all resolve their storage locations
+through environment variables. When a variable is absent the runtime falls back
+to a platform-appropriate default. The table below is the single reference for
+operators who need to redirect any of these paths.
+
+The helper `get_phiflow_data_dir()` (defined in `src/sensors.rs`) is used by
+several variables. It tries each of the following in order and returns the
+first one that is set:
+
+1. `$XDG_DATA_HOME/phiflow`
+2. `$HOME/.local/share/phiflow`
+3. `/tmp/phiflow`
+
+| Environment Variable | Set in | Purpose | Default when unset |
+|---|---|---|---|
+| `SOMA_STATE_PATH` | `src/sensors.rs`, `src/security/anchor.rs` | Path to the SOMA sensor-suite state file (JSON) | `<phiflow_data_dir>/soma_state.json` |
+| `PHIFLOW_QUANTUM_STATE_PATH` | `src/sensors.rs` | Path to the Quantum Presence bridge state file (JSON) | `<phiflow_data_dir>/quantum_state.json` |
+| `PHIFLOW_DAEMON_STATE_PATH` | `src/main_cli.rs` | Path where the PhiFlow daemon persists its execution state (JSON) | `/tmp/phiflow_daemon_state.json` |
+| `SOMA_PY_PATH` | `src/main_cli.rs` | Path to the Python script that drives the SOMA sensor suite | `soma.py` (resolved relative to the current working directory) |
+| `PHIFLOW_HOST_PATH` | `src/main_cli.rs` | Root directory used by `SystemHostProvider` for host-level resources and anchor signing | `<phiflow_data_dir>` |
+| `RESONANCE_BUS_PATH` | `src/resonance_bus.rs` | Path to the `RESONANCE.jsonl` append-only message-bus log | `<xdg_data_home>/phiflow/RESONANCE.jsonl` (same fallback chain as above) |
+
+`<phiflow_data_dir>` in the table above refers to the value returned by `get_phiflow_data_dir()` described above.
