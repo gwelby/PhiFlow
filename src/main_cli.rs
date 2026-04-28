@@ -464,7 +464,13 @@ impl<'a> DaemonHypervisor<'a> {
         for (id, (_, eval)) in &self.streams {
             states.insert(id.clone(), eval.freeze_state());
         }
-        
+
+        if let Some(parent) = self.state_path.parent() {
+            if let Err(e) = fs::create_dir_all(parent) {
+                eprintln!("warning: could not create daemon state directory {:?}: {}", parent, e);
+            }
+        }
+
         if let Ok(json) = serde_json::to_string_pretty(&states) {
             let _ = fs::write(&self.state_path, json);
             println!("💾 Daemon state snapshotted to {:?}", self.state_path);

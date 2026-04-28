@@ -19,7 +19,11 @@ pub fn get_phiflow_data_dir() -> std::path::PathBuf {
             .map(|h| format!("{}/.local/share", h))
             .unwrap_or_else(|_| "/tmp".to_string())
     });
-    std::path::PathBuf::from(base).join("phiflow")
+    let dir = std::path::PathBuf::from(base).join("phiflow");
+    if let Err(e) = std::fs::create_dir_all(&dir) {
+        eprintln!("warning: could not create phiflow data directory {:?}: {}", dir, e);
+    }
+    dir
 }
 
 pub fn get_soma_state_path() -> std::path::PathBuf {
