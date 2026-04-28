@@ -348,7 +348,7 @@ pub fn capture_observation(session_id: &str) -> Result<AnchorObservation, Anchor
     use crate::phi_ir::SensorKind;
 
     let soma_presence = sensors::read_sensor(SensorKind::SomaPresence).ok_or_else(|| {
-        let path = std::env::var("SOMA_STATE_PATH").unwrap_or_else(|_| "D:/Projects/PhiHarmonic/SOMA/soma_state.json".to_string());
+        let path = sensors::get_soma_state_path().to_string_lossy().into_owned();
         if std::path::Path::new(&path).exists() {
             AnchorError::SomaStale
         } else {

@@ -6,8 +6,12 @@ use std::path::Path;
 use std::time::Duration;
 
 const APIKEY_PATH: &str = "apikey.json";
-const EVIDENCE_PATH: &str = "D:/CosmicFamily/EVIDENCE/ANTIGRAVITY_PIPE2_20260329.md";
 const IBM_SMOKE_PATH: &str = "examples/ibm_smoke.phi";
+
+fn evidence_path() -> String {
+    std::env::var("EVIDENCE_PATH")
+        .unwrap_or_else(|_| "target/evidence/ANTIGRAVITY_PIPE2_20260329.md".to_string())
+}
 
 #[derive(Debug, Deserialize)]
 struct IbmCredentials {
@@ -32,7 +36,8 @@ fn write_receipt(
     qasm: &str,
     result: &phiflow::quantum::QuantumResult,
 ) {
-    let parent = Path::new(EVIDENCE_PATH)
+    let path = evidence_path();
+    let parent = Path::new(&path)
         .parent()
         .expect("evidence path must have parent");
     fs::create_dir_all(parent).expect("failed to create evidence directory");
@@ -62,7 +67,7 @@ fn write_receipt(
     }
     body.push_str("```\n");
 
-    fs::write(EVIDENCE_PATH, body).expect("failed to write receipt");
+    fs::write(&path, body).expect("failed to write receipt");
 }
 
 #[test]

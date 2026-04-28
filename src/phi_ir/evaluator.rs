@@ -40,6 +40,7 @@ pub enum EvalError {
     Unimplemented(String),
     SynthesisError(String),
     StepLimitExceeded(usize),
+    PolicyViolation(String),
 }
 
 impl std::fmt::Display for EvalError {
@@ -54,6 +55,7 @@ impl std::fmt::Display for EvalError {
             EvalError::StepLimitExceeded(limit) => {
                 write!(f, "Execution step limit exceeded: {} steps", limit)
             }
+            EvalError::PolicyViolation(s) => write!(f, "Policy violation: {}", s),
         }
     }
 }
@@ -496,6 +498,98 @@ impl<'a> Evaluator<'a> {
             PhiIRNode::WitnessSensor { sensor } => {
                 let (value, _snapshot, _action) = self.process_sensor_witness(*sensor)?;
                 Some(PhiIRValue::Number(value))
+            }
+
+            PhiIRNode::AnchorGate {
+                target,
+                min_presence,
+                frequency,
+                gate_fidelity,
+            } => {
+                use crate::phi_ir::SensorKind;
+                use crate::security::anchor::AnchorError;
+                const IBM_HERON_R2_GATE_FIDELITY_SPEC: f64 = 0.992;
+
+                let soma_presence_raw = if let Some(ref prov) = self.sensor_provider {
+                    prov(SensorKind::SomaPresence)
+                } else {
+                    crate::sensors::read_sensor(SensorKind::SomaPresence)
+                };
+
+                let soma_432_raw = if let Some(ref prov) = self.sensor_provider {
+                    prov(SensorKind::Soma432)
+                } else {
+                    crate::sensors::read_sensor(SensorKind::Soma432)
+                };
+
+                match soma_presence_raw {
+                    None => {
+                        println!(
+                            "[anchor: {}] SOMA absent or stale — ObserveOnly mode (no hardware blocking)",
+                            target
+                        );
+                    }
+                    Some(presence) => {
+                        if presence < *min_presence {
+                            let AnchorError::PolicyViolation(msg) = AnchorError::PolicyViolation(format!(
+                                "anchor '{}': soma_presence {:.3} < required {:.3}",
+                                target, presence, min_presence
+                            )) else { unreachable!() };
+                            return Err(EvalError::PolicyViolation(msg));
+                        }
+                        println!(
+                            "[anchor: {}] presence check PASS ({:.3} >= {:.3})",
+                            target, presence, min_presence
+                        );
+                    }
+                }
+
+                match soma_432_raw {
+                    None => {
+                        println!(
+                            "[anchor: {}] soma_432 sensor absent — frequency check skipped (ObserveOnly)",
+                            target
+                        );
+                    }
+                    Some(freq_val) => {
+                        let freq_diff = (freq_val - frequency).abs();
+                        if freq_diff > 5.0 {
+                            let AnchorError::PolicyViolation(msg) = AnchorError::PolicyViolation(format!(
+                                "anchor '{}': soma_432 {:.2} Hz is {:.2} Hz away from required {:.2} Hz (tolerance ±5.0 Hz)",
+                                target, freq_val, freq_diff, frequency
+                            )) else { unreachable!() };
+                            return Err(EvalError::PolicyViolation(msg));
+                        }
+                        println!(
+                            "[anchor: {}] frequency check PASS (soma_432={:.2} Hz, target={:.2} Hz)",
+                            target, freq_val, frequency
+                        );
+                    }
+                }
+
+                if *gate_fidelity > IBM_HERON_R2_GATE_FIDELITY_SPEC {
+                    let AnchorError::PolicyViolation(msg) = AnchorError::PolicyViolation(format!(
+                        "anchor '{}': gate_fidelity threshold {:.4} exceeds IBM Heron r2 spec baseline {:.4} [spec-based, not live-calibrated]",
+                        target, gate_fidelity, IBM_HERON_R2_GATE_FIDELITY_SPEC
+                    )) else { unreachable!() };
+                    return Err(EvalError::PolicyViolation(msg));
+                }
+                println!(
+                    "[anchor: {}] gate_fidelity check PASS (threshold={:.4}, spec_baseline={:.4}) [spec-based, not live-calibrated]",
+                    target, gate_fidelity, IBM_HERON_R2_GATE_FIDELITY_SPEC
+                );
+
+                let coherence = self.compute_coherence();
+                self.witness_log.push(WitnessEvent {
+                    intention_stack: self.intention_stack.clone(),
+                    coherence,
+                    register_count: self.registers.len(),
+                    resonance_count: self.resonance_count(),
+                    agent_name: self.agent_name.clone(),
+                    resonance_event_idx: self.resonance_events.len(),
+                });
+
+                None
             }
 
             PhiIRNode::IntentionPush { name, .. } => {
@@ -959,6 +1053,7 @@ impl<'a> Evaluator<'a> {
             register_count: self.registers.len(),
             resonance_count,
             agent_name: self.agent_name.clone(),
+            resonance_event_idx: self.resonance_events.len(),
         });
 
         let snapshot = WitnessSnapshot {
@@ -990,6 +1085,7 @@ impl<'a> Evaluator<'a> {
             register_count: self.registers.len(),
             resonance_count,
             agent_name: self.agent_name.clone(),
+            resonance_event_idx: self.resonance_events.len(),
         });
 
         let snapshot = WitnessSnapshot {
@@ -1255,6 +1351,48 @@ impl<'a> Evaluator<'a> {
         }
     }
 
+    // -----------------------------------------------------------------------
+    // Helpers used by unit tests
+    // -----------------------------------------------------------------------
+
+    /// Build the simplest possible program whose only instruction is an
+    /// `AnchorGate` node.  The block terminates with `Fallthrough`, which
+    /// falls off the end of the program and returns `Void`.
+    #[cfg(test)]
+    pub(crate) fn anchor_gate_program(
+        target: &str,
+        min_presence: f64,
+        frequency: f64,
+        gate_fidelity: f64,
+    ) -> PhiIRProgram {
+        use crate::phi_ir::{CollapsePolicy, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiInstruction};
+
+        let instr = PhiInstruction {
+            result: None,
+            node: PhiIRNode::AnchorGate {
+                target: target.to_string(),
+                min_presence,
+                frequency,
+                gate_fidelity,
+            },
+        };
+
+        let block = PhiIRBlock {
+            id: 0,
+            label: "entry".to_string(),
+            instructions: vec![instr],
+            terminator: PhiIRNode::Fallthrough,
+        };
+
+        PhiIRProgram {
+            blocks: vec![block],
+            entry: 0,
+            string_table: vec![],
+            frequencies_declared: vec![],
+            intentions_declared: vec![],
+        }
+    }
+
     fn execute_function(&mut self, name: &str, args: Vec<PhiIRValue>) -> EvalResult<PhiIRValue> {
         let meta =
             self.functions.get(name).cloned().ok_or_else(|| {
@@ -1296,5 +1434,244 @@ impl<'a> Evaluator<'a> {
         self.instruction_ptr = saved_ip;
 
         Ok(result)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Unit tests — AnchorGate with injected mock sensor providers
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod anchor_gate_tests {
+    use super::*;
+    use crate::phi_ir::SensorKind;
+
+    /// Build an evaluator whose only instruction is an AnchorGate and whose
+    /// sensor readings are controlled entirely by the supplied closure.
+    fn make_eval<'a, F>(
+        min_presence: f64,
+        frequency: f64,
+        provider: F,
+    ) -> Evaluator<'a>
+    where
+        F: Fn(SensorKind) -> Option<f64> + Send + Sync + 'static,
+    {
+        let prog = Evaluator::anchor_gate_program("test_anchor", min_presence, frequency, 0.99);
+        Evaluator::new(prog).with_sensor_provider(provider)
+    }
+
+    /// Like `make_eval` but also accepts an explicit `gate_fidelity` threshold.
+    fn make_eval_with_fidelity<'a, F>(
+        min_presence: f64,
+        frequency: f64,
+        gate_fidelity: f64,
+        provider: F,
+    ) -> Evaluator<'a>
+    where
+        F: Fn(SensorKind) -> Option<f64> + Send + Sync + 'static,
+    {
+        let prog = Evaluator::anchor_gate_program("test_anchor", min_presence, frequency, gate_fidelity);
+        Evaluator::new(prog).with_sensor_provider(provider)
+    }
+
+    // ------------------------------------------------------------------
+    // 1. PolicyViolation — presence below threshold
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn presence_below_threshold_raises_policy_violation() {
+        let mut eval = make_eval(0.5, 432.0, |sensor| match sensor {
+            SensorKind::SomaPresence => Some(0.1),
+            SensorKind::Soma432 => Some(432.0),
+            _ => None,
+        });
+
+        let result = eval.run();
+
+        match result {
+            Err(EvalError::PolicyViolation(msg)) => {
+                assert!(
+                    msg.contains("soma_presence"),
+                    "Expected message mentioning soma_presence, got: {msg}"
+                );
+                assert!(
+                    msg.contains("test_anchor"),
+                    "Expected message mentioning anchor name, got: {msg}"
+                );
+            }
+            other => panic!(
+                "Expected PolicyViolation for low presence, got: {:?}",
+                other
+            ),
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 2. PolicyViolation — frequency outside ±5 Hz tolerance
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn frequency_out_of_tolerance_raises_policy_violation() {
+        let mut eval = make_eval(0.3, 432.0, |sensor| match sensor {
+            SensorKind::SomaPresence => Some(0.9),
+            SensorKind::Soma432 => Some(445.0),
+            _ => None,
+        });
+
+        let result = eval.run();
+
+        match result {
+            Err(EvalError::PolicyViolation(msg)) => {
+                assert!(
+                    msg.contains("soma_432"),
+                    "Expected message mentioning soma_432, got: {msg}"
+                );
+            }
+            other => panic!(
+                "Expected PolicyViolation for out-of-tolerance frequency, got: {:?}",
+                other
+            ),
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 3. ObserveOnly pass-through — both sensors return None
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn sensor_absent_observe_only_passthrough() {
+        let mut eval = make_eval(0.3, 432.0, |_sensor| None);
+
+        let result = eval.run();
+
+        assert!(
+            result.is_ok(),
+            "Expected Ok when sensors are absent (ObserveOnly mode), got: {:?}",
+            result
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // 4. Success path — both sensors within acceptable range
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn valid_sensor_readings_pass_gate() {
+        let mut eval = make_eval(0.3, 432.0, |sensor| match sensor {
+            SensorKind::SomaPresence => Some(0.8),
+            SensorKind::Soma432 => Some(433.0),
+            _ => None,
+        });
+
+        let result = eval.run();
+
+        assert!(
+            result.is_ok(),
+            "Expected Ok when sensors are within threshold, got: {:?}",
+            result
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // 5. Presence exactly at threshold — boundary: should pass
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn presence_exactly_at_threshold_passes() {
+        let mut eval = make_eval(0.5, 432.0, |sensor| match sensor {
+            SensorKind::SomaPresence => Some(0.5),
+            SensorKind::Soma432 => Some(432.0),
+            _ => None,
+        });
+
+        let result = eval.run();
+
+        assert!(
+            result.is_ok(),
+            "Expected Ok when presence equals threshold exactly, got: {:?}",
+            result
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // 6. Frequency exactly at ±5 Hz boundary — should pass
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn frequency_at_tolerance_boundary_passes() {
+        let mut eval = make_eval(0.3, 432.0, |sensor| match sensor {
+            SensorKind::SomaPresence => Some(0.9),
+            SensorKind::Soma432 => Some(437.0),
+            _ => None,
+        });
+
+        let result = eval.run();
+
+        assert!(
+            result.is_ok(),
+            "Expected Ok when frequency diff == 5.0 (boundary), got: {:?}",
+            result
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // 7. PolicyViolation — gate_fidelity above IBM Heron R2 spec (0.992)
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn gate_fidelity_above_spec_raises_policy_violation() {
+        // 0.993 exceeds the IBM Heron R2 spec baseline of 0.992, so the gate
+        // must reject this configuration regardless of sensor readings.
+        let mut eval = make_eval_with_fidelity(0.3, 432.0, 0.993, |sensor| match sensor {
+            SensorKind::SomaPresence => Some(0.9),
+            SensorKind::Soma432 => Some(432.0),
+            _ => None,
+        });
+
+        let result = eval.run();
+
+        match result {
+            Err(EvalError::PolicyViolation(msg)) => {
+                assert!(
+                    msg.contains("gate_fidelity"),
+                    "Expected message mentioning gate_fidelity, got: {msg}"
+                );
+                assert!(
+                    msg.contains("test_anchor"),
+                    "Expected message mentioning anchor name, got: {msg}"
+                );
+                assert!(
+                    msg.contains("0.992") || msg.contains("spec"),
+                    "Expected message referencing the spec baseline, got: {msg}"
+                );
+            }
+            other => panic!(
+                "Expected PolicyViolation when gate_fidelity exceeds spec baseline, got: {:?}",
+                other
+            ),
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 8. gate_fidelity exactly at spec baseline (0.992) — should pass
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn gate_fidelity_at_spec_baseline_passes() {
+        // A threshold equal to the IBM Heron R2 spec baseline is not strictly
+        // greater than it, so the gate must allow execution to continue.
+        let mut eval = make_eval_with_fidelity(0.3, 432.0, 0.992, |sensor| match sensor {
+            SensorKind::SomaPresence => Some(0.9),
+            SensorKind::Soma432 => Some(432.0),
+            _ => None,
+        });
+
+        let result = eval.run();
+
+        assert!(
+            result.is_ok(),
+            "Expected Ok when gate_fidelity equals spec baseline exactly, got: {:?}",
+            result
+        );
     }
 }

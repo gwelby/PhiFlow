@@ -427,6 +427,16 @@ pub enum PhiIRNode {
         string_args: Vec<String>, // for intention names, device types, etc.
     },
 
+    /// Physical integrity gate (AntiGravity anchor construct).
+    /// Checks SOMA sensor thresholds before allowing an intention to proceed.
+    /// NOT pure — reads live sensors and may block execution.
+    AnchorGate {
+        target: String,
+        min_presence: f64,
+        frequency: f64,
+        gate_fidelity: f64,
+    },
+
     // --- Control Flow (block terminators) ---
     /// Conditional branch
     Branch {

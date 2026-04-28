@@ -53,7 +53,7 @@ struct Args {
     daemon: bool,
 
     /// Path to persist the daemon state to.
-    #[arg(long, default_value = "D:\\CosmicFamily\\DAEMON_STATE.json")]
+    #[arg(long, env = "PHIFLOW_DAEMON_STATE_PATH", default_value = "/tmp/phiflow_daemon_state.json")]
     state_path: PathBuf,
 
     /// Trigger a resonant handoff: "TargetAgent:TaskID:Context"
@@ -85,8 +85,10 @@ impl SomaManager {
 
     fn start_soma(&mut self) {
         println!("🌀 Starting SOMA Sensor Suite (Python)...");
+        let soma_py = std::env::var("SOMA_PY_PATH")
+            .unwrap_or_else(|_| "soma.py".to_string());
         let child = std::process::Command::new("python")
-            .arg("D:/Projects/PhiHarmonic/SOMA/soma.py")
+            .arg(&soma_py)
             .arg("--phiflow")
             .arg("--headless")
             .spawn();
@@ -293,6 +295,7 @@ async fn run(
 
     println!("Compiling to PhiFlow IR...");
     let ir_program = lower_program_checked(&ast).map_err(|e| CliError::Lower(e.to_string()))?;
+    let session_signing_key = Arc::new(phiflow::security::anchor::AnchorSigningKey::generate());
 
     if json_errors {
         return Ok(Some(RunReport {
@@ -324,6 +327,7 @@ async fn run(
                             native_two_qubit_gate,
                         }),
                         live_backend_profile: Some(profile),
+                        anchor_signing_key: Some(Arc::clone(&session_signing_key)),
                     };
                     let qasm = compile_to_openqasm_with_options(&source, &options)
                         .map_err(CliError::Eval)?;
@@ -333,6 +337,8 @@ async fn run(
 
                 let mut emitter = OpenQasmEmitter::new();
                 emitter.optimize_depth = optimize_depth;
+                emitter.anchor_fingerprint_ecdsa = Some(session_signing_key.fingerprint());
+                emitter.anchor_fingerprint_pq = Some(session_signing_key.fingerprint_pq());
                 let qasm = emitter
                     .emit(&ir_program)
                     .map_err(|e| CliError::Eval(e.to_string()))?;
@@ -458,7 +464,13 @@ impl<'a> DaemonHypervisor<'a> {
         for (id, (_, eval)) in &self.streams {
             states.insert(id.clone(), eval.freeze_state());
         }
-        
+
+        if let Some(parent) = self.state_path.parent() {
+            if let Err(e) = fs::create_dir_all(parent) {
+                eprintln!("warning: could not create daemon state directory {:?}: {}", parent, e);
+            }
+        }
+
         if let Ok(json) = serde_json::to_string_pretty(&states) {
             let _ = fs::write(&self.state_path, json);
             println!("💾 Daemon state snapshotted to {:?}", self.state_path);
@@ -476,7 +488,12 @@ impl<'a> DaemonHypervisor<'a> {
                     let mut eval = Evaluator::new(state.program.clone())
                         .with_hardware_modifier(sensors::compute_coherence_from_sensors)
                         .with_shared_resonance(Arc::clone(&self.shared_resonance))
-                        .with_host(Box::new(SystemHostProvider::new(PathBuf::from("D:\\CosmicFamily"), Arc::clone(&self.signing_key))));
+                        .with_host(Box::new(SystemHostProvider::new(
+                        std::env::var("PHIFLOW_HOST_PATH")
+                            .map(PathBuf::from)
+                            .unwrap_or_else(|_| sensors::get_phiflow_data_dir()),
+                        Arc::clone(&self.signing_key),
+                    )));
                     
                     eval.max_steps = None;
                     let _ = eval.resume(state);
@@ -509,6 +526,10 @@ async fn daemon_run(
     // 1. Try to resume from disk (uses programs saved in state)
     hypervisor.load_state();
 
+    let phiflow_host_path = std::env::var("PHIFLOW_HOST_PATH")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| sensors::get_phiflow_data_dir());
+
     // --- Idempotent stream manifest reconciler ---
     // Always ensure the three canonical streams exist regardless of whether
     // this is a fresh boot or a resumed daemon. This fixes the gap documented
@@ -524,7 +545,7 @@ async fn daemon_run(
         let mut council_eval = Evaluator::new(initial_ir)
             .with_hardware_modifier(sensors::compute_coherence_from_sensors)
             .with_shared_resonance(Arc::clone(&hypervisor.shared_resonance))
-            .with_host(Box::new(SystemHostProvider::new(PathBuf::from("D:\\CosmicFamily"), Arc::clone(&hypervisor.signing_key))));
+            .with_host(Box::new(SystemHostProvider::new(phiflow_host_path.clone(), Arc::clone(&hypervisor.signing_key))));
         council_eval.max_steps = None;
         hypervisor.spawn_stream("council".to_string(), council_eval);
         println!("🚀 Council stream spawned (new).");
@@ -546,7 +567,7 @@ async fn daemon_run(
                     let mut ledger_eval = Evaluator::new(ledger_ir)
                         .with_hardware_modifier(sensors::compute_coherence_from_sensors)
                         .with_shared_resonance(Arc::clone(&hypervisor.shared_resonance))
-                        .with_host(Box::new(SystemHostProvider::new(PathBuf::from("D:\\CosmicFamily"), Arc::clone(&hypervisor.signing_key))));
+                        .with_host(Box::new(SystemHostProvider::new(phiflow_host_path.clone(), Arc::clone(&hypervisor.signing_key))));
                     ledger_eval.max_steps = None;
                     hypervisor.spawn_stream("ledger".to_string(), ledger_eval);
                     println!("🚀 Ledger stream spawned (new).");
@@ -571,7 +592,7 @@ async fn daemon_run(
                     let mut lumi_eval = Evaluator::new(lumi_ir)
                         .with_hardware_modifier(sensors::compute_coherence_from_sensors)
                         .with_shared_resonance(Arc::clone(&hypervisor.shared_resonance))
-                        .with_host(Box::new(SystemHostProvider::new(PathBuf::from("D:\\CosmicFamily"), Arc::clone(&hypervisor.signing_key))));
+                        .with_host(Box::new(SystemHostProvider::new(phiflow_host_path.clone(), Arc::clone(&hypervisor.signing_key))));
                     lumi_eval.max_steps = None;
                     hypervisor.spawn_stream("lumi_identity".to_string(), lumi_eval);
                     println!("🚀 Lumi identity stream spawned (new).");

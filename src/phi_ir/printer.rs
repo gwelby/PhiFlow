@@ -153,5 +153,16 @@ fn format_instr(node: &PhiIRNode) -> String {
         PhiIRNode::Nop => "Nop".to_string(),
         PhiIRNode::FuncDef { name, .. } => format!("FuncDef '{}'", name),
         PhiIRNode::Jump(target) => format!("Jump -> Block {}", target),
+
+        // v0.5.0 Integrity
+        PhiIRNode::AnchorGate {
+            target,
+            min_presence,
+            frequency,
+            gate_fidelity,
+        } => format!(
+            "AnchorGate target=\"{}\" min_presence={} frequency={} gate_fidelity={}",
+            target, min_presence, frequency, gate_fidelity
+        ),
     }
 }

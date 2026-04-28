@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex};
 /// A host provider for the PhiFlow Daemon that provides "System" level capabilities.
 /// 
 /// Security:
-/// - File operations outside D:\CosmicFamily require an active "SYSTEM" intention.
+/// - File operations outside the configured PHIFLOW_HOST_PATH require an active "SYSTEM" intention.
 /// - Shell execution (if enabled) requires an active "SYSTEM" intention.
 pub struct SystemHostProvider {
     base_path: PathBuf,
@@ -159,9 +159,23 @@ impl PhiHostProvider for SystemHostProvider {
         let is_handoff = channel == "_handoff";
 
         let path = if is_ledger {
-            PathBuf::from("D:\\Projects\\AGENT_REPORTS\\LEDGER.ndjson")
+            PathBuf::from(std::env::var("PHIFLOW_LEDGER_PATH").unwrap_or_else(|_| {
+                let base = std::env::var("XDG_DATA_HOME").unwrap_or_else(|_| {
+                    std::env::var("HOME")
+                        .map(|h| format!("{}/.local/share", h))
+                        .unwrap_or_else(|_| "/tmp".to_string())
+                });
+                format!("{}/phiflow/LEDGER.ndjson", base)
+            }))
         } else if is_attestation {
-            PathBuf::from("D:\\Projects\\AGENT_REPORTS\\ATTESTATION_LOG.ndjson")
+            PathBuf::from(std::env::var("PHIFLOW_ATTESTATION_LOG_PATH").unwrap_or_else(|_| {
+                let base = std::env::var("XDG_DATA_HOME").unwrap_or_else(|_| {
+                    std::env::var("HOME")
+                        .map(|h| format!("{}/.local/share", h))
+                        .unwrap_or_else(|_| "/tmp".to_string())
+                });
+                format!("{}/phiflow/ATTESTATION_LOG.ndjson", base)
+            }))
         } else if is_handoff {
             self.base_path.join("channel__handoff.jsonl")
         } else {
@@ -177,7 +191,15 @@ impl PhiHostProvider for SystemHostProvider {
                     
                     ledger_map.insert("ts".to_string(), serde_json::json!(ts));
                     ledger_map.insert("agent".to_string(), json.get("target").unwrap_or(&serde_json::json!("phiflow")).clone());
-                    ledger_map.insert("workspace".to_string(), serde_json::json!("D:/Projects/PhiFlow"));
+                    let workspace = std::env::var("PHIFLOW_HOST_PATH").unwrap_or_else(|_| {
+                        let base = std::env::var("XDG_DATA_HOME").unwrap_or_else(|_| {
+                            std::env::var("HOME")
+                                .map(|h| format!("{}/.local/share", h))
+                                .unwrap_or_else(|_| "/tmp".to_string())
+                        });
+                        format!("{}/phiflow", base)
+                    });
+                    ledger_map.insert("workspace".to_string(), serde_json::json!(workspace));
                     
                     let context = json.get("context").unwrap_or(&serde_json::json!("No context provided")).clone();
                     ledger_map.insert("report".to_string(), context);

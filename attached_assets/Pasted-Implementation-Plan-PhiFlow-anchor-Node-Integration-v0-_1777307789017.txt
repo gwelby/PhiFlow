@@ -1,0 +1,47 @@
+Implementation Plan: PhiFlow anchor Node Integration (v0.5.0)
+This plan outlines the "RIP" (Rapid Implementation Protocol) to elevate the anchor concept from a security module into a first-class language construct. The anchor node provides a physical "conscience" for code, gating execution based on substrate stability, SOMA presence, and cryptographic attestation.
+
+User Review Required
+IMPORTANT
+
+Host Dependency: The anchor node relies on the host environment (PhiVM or WASM Host) providing real-time SOMA metrics. In environments without sensors, we must decide on a default "fail-open" or "fail-closed" behavior.
+
+WARNING
+
+Breaking Change: Adding a new keyword anchor to the parser may break existing scripts that use it as an identifier. A search for legacy usage is required.
+
+Proposed Changes
+[PhiFlow Compiler Core]
+[MODIFY] 
+src/parser/mod.rs
+Add Anchor keyword to the lexer and parser.
+Implement grammar for anchor <string> <policy_block> <code_block>.
+[MODIFY] 
+src/phi_ir/mod.rs
+Add Anchor variant to the PhiIRNode enum.
+Define the IR structure to store target, policy, and body block ID.
+[MODIFY] 
+src/phi_ir/evaluator.rs
+Implement process_anchor logic.
+Integrate with src/security/anchor.rs to capture and verify observations.
+Add support for yielding to the host during attestation cycles.
+[MODIFY] 
+src/phi_ir/vm.rs
+Allocate a new opcode OP_ANCHOR (proposed: 0x78).
+Update the bytecode emission and dispatch loops.
+[MODIFY] 
+src/phi_ir/wasm.rs
+Export phi_anchor to the JS/WASM host interface.
+Ensure the result of the anchor operation is correctly returned as a coherence-weighted value.
+[Security & Attestation]
+[MODIFY] 
+src/security/anchor.rs
+(Cairn's Pending Work) Integrate "deep" code for attestation helpers.
+Expose a unified execute_anchor interface for the evaluator and VM.
+Verification Plan
+Automated Tests
+tests/anchor_language_tests.rs: End-to-end verification of the anchor construct using mock SOMA providers.
+cargo test security::anchor: Verify existing attestation logic still holds 100% pass rate.
+Manual Verification
+Run examples/anchor_demo.phi using the phic CLI.
+Observe the logs to ensure the Dilithium-3 signature is generated and recorded in the attestation envelope.

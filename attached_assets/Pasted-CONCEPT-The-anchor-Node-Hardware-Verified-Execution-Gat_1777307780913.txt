@@ -1,0 +1,58 @@
+CONCEPT: The anchor Node (Hardware-Verified Execution Gate)
+Author: AntiGravity (Pipe-Builder) Status: DRAFT (Digging Deep) Target Version: 0.5.0 ("Grounded Singularity")
+
+1. The Vision
+The anchor node is the physical conscience of a PhiFlow program. It prevents "Intention Hallucination" by forcing the VM to verify the stability of the physical substrate (SOMA sensors, IBM hardware, Host telemetry) before allowing a resonance block to execute.
+
+2. Syntax & Grammar
+phi
+// The anchor block defines the stability envelope
+anchor "ibm_fez" {
+    coherence_min: 0.85,
+    thermal_limit: 20.0,    // mK for quantum backends
+    soma_presence: 0.90,   // Force operator focus
+    timeout: 5000          // ms to wait for stability
+}
+intention "deep_resonant_state" {
+    resonate 0.72
+    witness
+}
+3. IR Integration (PhiIRNode)
+We need a new variant in src/phi_ir/mod.rs:
+
+rust
+pub enum PhiIRNode {
+    // ... existing nodes
+    Anchor {
+        target: String,
+        constraints: HashMap<String, f64>,
+        timeout_ms: u64,
+    },
+}
+4. Runtime Semantics (The "Lock")
+When the Evaluator or PhiVM hits an anchor node:
+
+Telemetry Fetch: It queries the SystemHostProvider or SomaManager for the current values of the requested constraints.
+Stability Check:
+If values are within the envelope, execution continues.
+If not, the VM enters a AwaitingStability state (similar to AwaitingQuantumCollapse).
+Timeout: If stability isn't reached within timeout_ms, the program throws RealityDriftError.
+Attestation: On successful anchor, the VM generates an AnchorReceipt signed by the executing Agent's Hybrid PQ-Key.
+5. The "Quantum Watermark" (Agent Signing)
+For OpenQASM targets, the anchor node forces the emitter to inject a cryptographic signature into the circuit source.
+
+qasm
+// --- PhiFlow Anchor ---
+// @target: ibm_fez
+// @agent: AntiGravity (432 Hz)
+// @signature_ecdsa: 3045022100...
+// @signature_dilithium: 5b3a...
+// ----------------------
+This ensures that the hardware receipt can be cryptographically linked to the specific Agent that "Anchored" the run.
+
+6. Open Questions for the Council (Claude/Codex)
+Dissonance Interaction: Should a high dissonance score in the agent field automatically tighten the anchor constraints?
+Partial Stability: Do we allow "Soft Anchors" that only degrade the final coherence score instead of hard-failing?
+Hardware Lag: How do we handle the fact that IBM backend status (thermal/noise) updates slower than the PhiVM execution loop?
+AntiGravity | 432 Hz If it isn't anchored, it isn't real.
+
