@@ -25,6 +25,11 @@
 //! followed by the timeline text on the same stdout stream — parsers that
 //! only need the JSON should read up to and including the final `}` character.
 //!
+//! Pass `--collapse` (together with `--timeline`) to collapse runs of
+//! consecutive resonances that share the same channel into a single summary
+//! row, e.g. `~  resonate: follow_one_signal ×12`. This keeps the timeline
+//! readable when a program fires many resonances in a single interval.
+//!
 //! The tool only relies on the four core constructs the runtime already ships
 //! with — `intention`, `stream`, `witness`, `resonate`, `coherence` — and adds
 //! no new IR nodes or keywords.
@@ -43,11 +48,13 @@ use phiflow::phi_ir::PhiIRValue;
 fn main() -> ExitCode {
     let mut show_timeline = false;
     let mut emit_json_flag = false;
+    let mut collapse_resonances = false;
     let mut path: Option<PathBuf> = None;
     for arg in env::args().skip(1) {
         match arg.as_str() {
             "--timeline" => show_timeline = true,
             "--json" => emit_json_flag = true,
+            "--collapse" => collapse_resonances = true,
             "-h" | "--help" => {
                 print_usage();
                 return ExitCode::SUCCESS;
@@ -171,18 +178,21 @@ fn main() -> ExitCode {
 
     if show_timeline {
         println!();
-        print_timeline(witness_log, resonance_events);
+        print_timeline(witness_log, resonance_events, collapse_resonances);
     }
 
     ExitCode::SUCCESS
 }
 
 fn print_usage() {
-    eprintln!("usage: coherence_report [--timeline] [--json] <path-to.phi>");
+    eprintln!("usage: coherence_report [--timeline] [--collapse] [--json] <path-to.phi>");
     eprintln!();
     eprintln!("Options:");
     eprintln!("  --timeline   Also print a per-witness-checkpoint table and a");
     eprintln!("               sparkline of coherence over the run.");
+    eprintln!("  --collapse   (requires --timeline) Collapse consecutive resonances");
+    eprintln!("               that share the same channel into a single summary row");
+    eprintln!("               showing the count, e.g. `resonate: my_chan ×12`.");
     eprintln!("  --json       Emit the full witness log and aggregate metrics as");
     eprintln!("               a JSON document on stdout instead of the text report.");
     eprintln!("               When combined with --timeline the JSON block appears");
@@ -477,11 +487,15 @@ fn collect_declared_intentions(source: &str) -> Vec<String> {
 ///
 /// Delegates to `render_timeline`, which builds the full output as a `String`
 /// so that callers (including tests) can inspect the rendered text directly.
+///
+/// When `collapse` is `true`, consecutive resonances that share the same
+/// channel are folded into a single summary row (run-length encoding).
 pub(crate) fn print_timeline(
     witness_log: &[VmWitnessEvent],
     resonance_events: &[(String, PhiIRValue)],
+    collapse: bool,
 ) {
-    print!("{}", render_timeline(witness_log, resonance_events));
+    print!("{}", render_timeline(witness_log, resonance_events, collapse));
 }
 
 /// Build the per-witness-checkpoint table as a `String`.
@@ -495,9 +509,14 @@ pub(crate) fn print_timeline(
 /// events fired since the previous witness (or since program start for the
 /// first row).  This is more actionable than a running total, which is
 /// already shown in the summary section above the timeline.
+///
+/// When `collapse` is `true`, consecutive resonances that share the same
+/// channel name are folded into a single summary row using run-length
+/// encoding (e.g. `resonate: my_chan ×12`).
 pub(crate) fn render_timeline(
     witness_log: &[VmWitnessEvent],
     resonance_events: &[(String, PhiIRValue)],
+    collapse: bool,
 ) -> String {
     let mut out = String::new();
     out.push_str("Timeline (per-witness checkpoint)\n");
@@ -543,7 +562,7 @@ pub(crate) fn render_timeline(
         .first()
         .map(|w| w.resonance_event_idx)
         .unwrap_or(0);
-    render_resonance_slice(&mut out, resonance_events, 0, first_event_idx, idx_width, scope_width);
+    render_resonance_slice(&mut out, resonance_events, 0, first_event_idx, idx_width, scope_width, collapse);
 
     let mut prev_event_idx: usize = 0;
     for (i, (event, scope)) in witness_log.iter().zip(scope_strings.iter()).enumerate() {
@@ -566,7 +585,7 @@ pub(crate) fn render_timeline(
             .get(i + 1)
             .map(|next| next.resonance_event_idx)
             .unwrap_or(resonance_events.len());
-        render_resonance_slice(&mut out, resonance_events, from, to, idx_width, scope_width);
+        render_resonance_slice(&mut out, resonance_events, from, to, idx_width, scope_width, collapse);
     }
 
     let coherences: Vec<f64> = witness_log.iter().map(|w| w.coherence).collect();
@@ -582,6 +601,12 @@ pub(crate) fn render_timeline(
 /// right-aligned in a 9-character field at the same column as the coherence
 /// column in the witness rows, so the table stays visually consistent and
 /// within a 120-character terminal.
+///
+/// When `collapse` is `true`, consecutive events that share the same channel
+/// name are run-length encoded into a single summary row. If only one event
+/// exists in a run it is shown normally (with its value). When two or more
+/// consecutive events share a channel, a single row is shown with the count
+/// suffix `×N` in place of the value field (e.g. `resonate: my_chan ×12`).
 fn render_resonance_slice(
     out: &mut String,
     events: &[(String, PhiIRValue)],
@@ -589,21 +614,61 @@ fn render_resonance_slice(
     to: usize,
     idx_width: usize,
     scope_width: usize,
+    collapse: bool,
 ) {
     let from = from.min(events.len());
     let to = to.min(events.len());
     let prefix = "resonate: ";
     let chan_width = scope_width.saturating_sub(prefix.len());
-    for (channel, value) in &events[from..to] {
-        let value_str = format_phi_ir_value(value);
-        out.push_str(&format!(
-            "  {:>idx_w$}  {prefix}{channel:<chan_w$}  {:>9}\n",
-            "~",
-            value_str,
-            prefix = prefix,
-            chan_w = chan_width,
-            idx_w = idx_width,
-        ));
+
+    if !collapse {
+        for (channel, value) in &events[from..to] {
+            let value_str = format_phi_ir_value(value);
+            out.push_str(&format!(
+                "  {:>idx_w$}  {prefix}{channel:<chan_w$}  {:>9}\n",
+                "~",
+                value_str,
+                prefix = prefix,
+                chan_w = chan_width,
+                idx_w = idx_width,
+            ));
+        }
+        return;
+    }
+
+    // Run-length encode consecutive same-channel events.
+    let slice = &events[from..to];
+    let mut i = 0;
+    while i < slice.len() {
+        let (channel, value) = &slice[i];
+        // Count how many consecutive events share this channel.
+        let mut run_len = 1;
+        while i + run_len < slice.len() && slice[i + run_len].0 == *channel {
+            run_len += 1;
+        }
+        if run_len == 1 {
+            let value_str = format_phi_ir_value(value);
+            out.push_str(&format!(
+                "  {:>idx_w$}  {prefix}{channel:<chan_w$}  {:>9}\n",
+                "~",
+                value_str,
+                prefix = prefix,
+                chan_w = chan_width,
+                idx_w = idx_width,
+            ));
+        } else {
+            // Collapsed summary row: show channel name and ×N count.
+            let count_str = format!("\u{d7}{}", run_len);
+            out.push_str(&format!(
+                "  {:>idx_w$}  {prefix}{channel:<chan_w$}  {:>9}\n",
+                "~",
+                count_str,
+                prefix = prefix,
+                chan_w = chan_width,
+                idx_w = idx_width,
+            ));
+        }
+        i += run_len;
     }
 }
 
@@ -744,7 +809,7 @@ mod tests {
 
     #[test]
     fn render_timeline_empty_log_contains_no_witness_message() {
-        let out = render_timeline(&[], &[]);
+        let out = render_timeline(&[], &[], false);
         assert!(
             out.contains("no witness checkpoints"),
             "expected empty-log message, got: {}",
@@ -766,7 +831,7 @@ mod tests {
             ("follow_one_signal".to_string(), PhiIRValue::Number(396.0)),
             ("follow_one_signal".to_string(), PhiIRValue::Number(285.0)),
         ];
-        let out = render_timeline(&log, &resonances);
+        let out = render_timeline(&log, &resonances, false);
         assert!(out.contains("Timeline (per-witness checkpoint)"));
         assert!(out.contains("coherence over time:"));
         assert!(out.contains("resonances"));
@@ -786,7 +851,7 @@ mod tests {
             ("inner".to_string(), PhiIRValue::Number(396.0)),
             ("inner".to_string(), PhiIRValue::Number(285.0)),
         ];
-        let out = render_timeline(&log, &resonances);
+        let out = render_timeline(&log, &resonances, false);
         let lines: Vec<&str> = out.lines().collect();
 
         let w1_pos = lines
@@ -831,7 +896,7 @@ mod tests {
             ("scope".to_string(), PhiIRValue::Number(2.0)),
             ("scope".to_string(), PhiIRValue::Number(3.0)),
         ];
-        let out = render_timeline(&log, &resonances);
+        let out = render_timeline(&log, &resonances, false);
         let lines: Vec<&str> = out.lines().collect();
 
         let w1_line = lines
@@ -858,5 +923,130 @@ mod tests {
             .expect("w2 resonances column should be numeric");
         assert_eq!(count1, 2, "witness #1 interval count should be 2");
         assert_eq!(count2, 1, "witness #2 interval count should be 1, not 3");
+    }
+
+    // ---- collapse (run-length encoding) tests --------------------------------
+
+    #[test]
+    fn collapse_many_same_channel_into_one_row() {
+        // 12 consecutive resonances on the same channel; with collapse=true
+        // they should collapse into a single row containing "×12".
+        let log = vec![ev_at(&["scope"], 0.5, 12, 12)];
+        let resonances: Vec<(String, PhiIRValue)> = (0..12)
+            .map(|_| ("follow_one_signal".to_string(), PhiIRValue::Number(432.0)))
+            .collect();
+        let out = render_timeline(&log, &resonances, true);
+
+        let resonate_lines: Vec<&str> = out
+            .lines()
+            .filter(|l| l.contains("resonate:"))
+            .collect();
+        assert_eq!(
+            resonate_lines.len(),
+            1,
+            "expected 1 collapsed resonance row, got {}; output:\n{}",
+            resonate_lines.len(),
+            out
+        );
+        assert!(
+            resonate_lines[0].contains("\u{d7}12"),
+            "collapsed row should contain ×12, got: {}",
+            resonate_lines[0]
+        );
+        assert!(
+            resonate_lines[0].contains("follow_one_signal"),
+            "collapsed row should name the channel, got: {}",
+            resonate_lines[0]
+        );
+    }
+
+    #[test]
+    fn collapse_does_not_merge_different_channels() {
+        // Two different channels interleaved: each single event must stay as
+        // its own row even with collapse=true (no consecutive run ≥ 2).
+        let log = vec![ev_at(&["scope"], 0.5, 4, 4)];
+        let resonances: Vec<(String, PhiIRValue)> = vec![
+            ("chan_a".to_string(), PhiIRValue::Number(1.0)),
+            ("chan_b".to_string(), PhiIRValue::Number(2.0)),
+            ("chan_a".to_string(), PhiIRValue::Number(3.0)),
+            ("chan_b".to_string(), PhiIRValue::Number(4.0)),
+        ];
+        let out = render_timeline(&log, &resonances, true);
+
+        let resonate_lines: Vec<&str> = out
+            .lines()
+            .filter(|l| l.contains("resonate:"))
+            .collect();
+        assert_eq!(
+            resonate_lines.len(),
+            4,
+            "alternating channels must not be collapsed; got {} rows:\n{}",
+            resonate_lines.len(),
+            out
+        );
+        // None of the rows should contain ×N.
+        for line in &resonate_lines {
+            assert!(
+                !line.contains('\u{d7}'),
+                "no ×N suffix expected for single-event rows, got: {}",
+                line
+            );
+        }
+    }
+
+    #[test]
+    fn collapse_partial_run_within_slice() {
+        // 3 events on chan_a, then 1 on chan_b: collapse yields 2 rows.
+        let log = vec![ev_at(&["scope"], 0.5, 4, 4)];
+        let resonances: Vec<(String, PhiIRValue)> = vec![
+            ("chan_a".to_string(), PhiIRValue::Number(1.0)),
+            ("chan_a".to_string(), PhiIRValue::Number(2.0)),
+            ("chan_a".to_string(), PhiIRValue::Number(3.0)),
+            ("chan_b".to_string(), PhiIRValue::Number(4.0)),
+        ];
+        let out = render_timeline(&log, &resonances, true);
+
+        let resonate_lines: Vec<&str> = out
+            .lines()
+            .filter(|l| l.contains("resonate:"))
+            .collect();
+        assert_eq!(
+            resonate_lines.len(),
+            2,
+            "expected 2 resonance rows (one collapsed run + one single), got {};\n{}",
+            resonate_lines.len(),
+            out
+        );
+        assert!(
+            resonate_lines[0].contains("\u{d7}3"),
+            "first row should be ×3 for chan_a run, got: {}",
+            resonate_lines[0]
+        );
+        assert!(
+            resonate_lines[1].contains("chan_b"),
+            "second row should show chan_b, got: {}",
+            resonate_lines[1]
+        );
+    }
+
+    #[test]
+    fn collapse_false_leaves_rows_unexpanded() {
+        // Same 12-event scenario but with collapse=false: all 12 rows appear.
+        let log = vec![ev_at(&["scope"], 0.5, 12, 12)];
+        let resonances: Vec<(String, PhiIRValue)> = (0..12)
+            .map(|_| ("follow_one_signal".to_string(), PhiIRValue::Number(432.0)))
+            .collect();
+        let out = render_timeline(&log, &resonances, false);
+
+        let resonate_lines: Vec<&str> = out
+            .lines()
+            .filter(|l| l.contains("resonate:"))
+            .collect();
+        assert_eq!(
+            resonate_lines.len(),
+            12,
+            "without collapse all 12 rows must appear, got {}",
+            resonate_lines.len()
+        );
     }
 }
