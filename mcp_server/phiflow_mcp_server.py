@@ -259,15 +259,15 @@ def tool_quantum_vqe_hydrogen(api_token: str = None, backend: str = "ibmq_qasm_s
         }
     
     try:
-        from qiskit_ibm_runtime import QiskitRuntimeService, VQE, Estimator
+        from qiskit_ibm_runtime import QiskitRuntimeService
         from qiskit.circuit.library import TwoLocal
         from qiskit.quantum_info import SparsePauliOp
-        from qiskit.algorithms.minimum_eigensolvers import NumPyMinimumEigensolver
+        from qiskit_algorithms import NumPyMinimumEigensolver
         from qiskit.quantum_info import Pauli
         import numpy as np
         
         # Connect to IBM Quantum
-        service = QiskitRuntimeService(channel="ibm_quantum", token=token)
+        service = QiskitRuntimeService(channel="ibm_cloud", token=token)
         
         # Get the backend
         try:
@@ -351,7 +351,7 @@ def tool_quantum_list_backends(api_token: str = None) -> dict:
     try:
         from qiskit_ibm_runtime import QiskitRuntimeService
         
-        service = QiskitRuntimeService(channel="ibm_quantum", token=token)
+        service = QiskitRuntimeService(channel="ibm_cloud", token=token)
         all_backends = service.backends()
         
         backend_list = []

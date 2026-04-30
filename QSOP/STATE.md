@@ -1,4 +1,12 @@
-﻿## Verified (2026-04-30) [Codex: PF Bridge Hostile Audit]
+﻿## Active (2026-04-30) [Bob: Deep Audit + Type 4 Roadmap]
+
+- **Deep Fundamentals Audit COMPLETE**: `QSOP/DEEP_FUNDAMENTALS_AUDIT_2026-04-30.md`
+- **Type 4 Implementation Roadmap CREATED**: `QSOP/IMPLEMENTATION_ROADMAP_TYPE4_CANONICAL.md`
+- **Task tracker**: 13 items in active todo list (T4-001 through T4-013)
+- **Current Phase**: Phase 1 (Type 4 Benchmark Trace) — NOT STARTED
+- **Estimated Timeline**: 3-6 months to Type 4 canonical status
+
+## Verified (2026-04-30) [Codex: PF Bridge Hostile Audit]
 
 - **PF bridge audit COMPLETE**:
   - Audit report: `QSOP/PF_BRIDGE_CODEX_AUDIT_2026-04-30.md`
