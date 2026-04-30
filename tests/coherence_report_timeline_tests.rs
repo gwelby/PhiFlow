@@ -313,6 +313,71 @@ fn timeline_resonance_value_column_aligns_with_coherence_column() {
     );
 }
 
+// ── --collapse flag tests ─────────────────────────────────────────────────────
+
+#[test]
+fn collapse_flag_reduces_repeated_channel_rows_to_one() {
+    // drifts.phi fires four resonances, all on the same channel.
+    // Three of them are consecutive (between witness #1 and #2) and must
+    // collapse into a single ×3 summary row when --collapse is active.
+    let out = run(&[
+        "--timeline",
+        "--collapse",
+        "examples/coherence_playground/drifts.phi",
+    ]);
+    assert!(out.status.success(), "binary exited with {:?}", out.status);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+
+    // The timeline section must still be present.
+    assert!(
+        stdout.contains("Timeline (per-witness checkpoint)"),
+        "Timeline header missing in:\n{}",
+        stdout
+    );
+
+    // There must be at least one collapsed summary row containing ×3.
+    assert!(
+        stdout.contains('\u{d7}'),
+        "expected at least one ×N collapsed row but found none in:\n{}",
+        stdout
+    );
+    let collapsed_row = stdout
+        .lines()
+        .find(|l| l.contains("resonate:") && l.contains('\u{d7}'))
+        .expect("no collapsed resonance row found");
+    assert!(
+        collapsed_row.contains("\u{d7}3"),
+        "expected ×3 in collapsed row, got: {}",
+        collapsed_row
+    );
+
+    // Total resonance rows must be 2 (1 single before witness #1 + 1 collapsed ×3).
+    let resonate_row_count = stdout.lines().filter(|l| l.contains("resonate:")).count();
+    assert_eq!(
+        resonate_row_count, 2,
+        "expected 2 resonance rows with --collapse (1 single + 1 collapsed ×3), \
+        got {};\n{}",
+        resonate_row_count, stdout
+    );
+}
+
+#[test]
+fn collapse_flag_without_timeline_is_accepted_silently() {
+    // --collapse has no effect without --timeline (the timeline section
+    // is simply not rendered), but the flag must not cause an error exit.
+    let out = run(&["--collapse", "examples/coherence_playground/aligned.phi"]);
+    assert!(
+        out.status.success(),
+        "--collapse without --timeline must not fail, got: {:?}",
+        out.status
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    // The normal text report is still printed.
+    assert!(stdout.contains("Plain-English reading"));
+    // No timeline section.
+    assert!(!stdout.contains("Timeline (per-witness checkpoint)"));
+}
+
 // ── JSON flag tests ──────────────────────────────────────────────────────────
 
 #[test]
