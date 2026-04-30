@@ -10,3 +10,4 @@
 ///   - Replay resistance via nonce + freshness check
 ///   - Least privilege: attestation channel is separate from SYSTEM ledger channel
 pub mod anchor;
+pub mod entropy_buffer;

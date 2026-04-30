@@ -1,7 +1,7 @@
 use clap::Parser;
 use phiflow::compile_to_openqasm_with_options;
 use phiflow::parser::parse_phi_program_with_diagnostics;
-use phiflow::phi_ir::evaluator::{Evaluator, VmExecResult};
+use phiflow::phi_ir::evaluator::Evaluator;
 use phiflow::phi_ir::lowering::{lower_program, lower_program_checked};
 use phiflow::phi_ir::openqasm::OpenQasmEmitter;
 use phiflow::phi_ir::quantum_codegen::compile_ir_to_quantum;

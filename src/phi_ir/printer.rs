@@ -160,6 +160,7 @@ fn format_instr(node: &PhiIRNode) -> String {
             min_presence,
             frequency,
             gate_fidelity,
+            signature: _,
         } => format!(
             "AnchorGate target=\"{}\" min_presence={} frequency={} gate_fidelity={}",
             target, min_presence, frequency, gate_fidelity

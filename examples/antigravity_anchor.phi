@@ -50,6 +50,7 @@ function approach_432(origin: Number) -> Number {
             min_presence 0.88
             frequency 432.0
             gate_fidelity 0.992
+            signature "AntiGravity-PipeBuilder-v1"
         }
 
         while found == false {

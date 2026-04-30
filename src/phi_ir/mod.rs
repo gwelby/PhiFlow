@@ -435,6 +435,7 @@ pub enum PhiIRNode {
         min_presence: f64,
         frequency: f64,
         gate_fidelity: f64,
+        signature: Option<String>,
     },
 
     // --- Control Flow (block terminators) ---

@@ -318,6 +318,7 @@ pub enum PhiExpression {
         min_presence: f64,
         frequency: f64,
         gate_fidelity: f64,
+        signature: Option<String>,
     },
 
     // v0.4.0 Transcendent Capabilities
@@ -2015,6 +2016,7 @@ impl PhiParser {
         let mut min_presence: f64 = 0.3;
         let mut frequency: f64 = 432.0;
         let mut gate_fidelity: f64 = 0.992;
+        let mut signature: Option<String> = None;
 
         loop {
             while self.current_token == PhiToken::Newline {
@@ -2047,15 +2049,34 @@ impl PhiParser {
             while self.current_token == PhiToken::Newline {
                 self.advance();
             }
-            let val = self.expect_number()?;
-            match key.as_str() {
-                "min_presence" => min_presence = val,
-                "frequency" => frequency = val,
-                "gate_fidelity" => gate_fidelity = val,
-                other => {
-                    return Err(format!(
-                        "Unknown anchor parameter `{other}`. Expected min_presence, frequency, or gate_fidelity"
-                    ))
+            
+            // Handle signature parameter (string) vs numeric parameters
+            if key == "signature" {
+                let sig_val = match &self.current_token {
+                    PhiToken::String(s) => {
+                        let s = s.clone();
+                        self.advance();
+                        s
+                    }
+                    _ => {
+                        return Err(format!(
+                            "Expected string value for signature, found {:?}",
+                            self.current_token
+                        ))
+                    }
+                };
+                signature = Some(sig_val);
+            } else {
+                let val = self.expect_number()?;
+                match key.as_str() {
+                    "min_presence" => min_presence = val,
+                    "frequency" => frequency = val,
+                    "gate_fidelity" => gate_fidelity = val,
+                    other => {
+                        return Err(format!(
+                            "Unknown anchor parameter `{other}`. Expected min_presence, frequency, gate_fidelity, or signature"
+                        ))
+                    }
                 }
             }
         }
@@ -2067,6 +2088,7 @@ impl PhiParser {
             min_presence,
             frequency,
             gate_fidelity,
+            signature,
         })
     }
 

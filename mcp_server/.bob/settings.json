@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "phiflow": {
+      "command": "python3",
+      "args": [
+        "/mnt/d/Projects/PhiFlow/mcp_server/phiflow_mcp_server.py"
+      ]
+    }
+  }
+}

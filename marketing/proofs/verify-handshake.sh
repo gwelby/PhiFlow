@@ -78,7 +78,7 @@ echo "════════════════════════�
 echo ""
 
 echo "  Hook 1: Lambda (λ) Coherence"
-echo "    Formula: λ = φ^(-depth) × coherence_score"
+echo "    Formula: base(depth) = 1 - φ^(-depth); λ = base(depth) × phase(k)"
 echo "    Verified: ✅ 0.618033988749895 at depth 2"
 echo ""
 
@@ -90,7 +90,7 @@ echo ""
 
 echo "  Hook 3: Phi-Harmonic Resonance"
 echo "    Frequencies: 432Hz, 528Hz, 594Hz, 672Hz, 720Hz, 768Hz, 963Hz"
-echo "    Verified: ✅ Quantum hardware execution"
+echo "    Verified: ✅ Hardware execution path exists; individual frequency claims require separate receipts"
 echo ""
 
 echo "  Hook 4: Coherence-Weighted Consensus"

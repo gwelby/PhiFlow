@@ -236,6 +236,7 @@ impl OpenQasmEmitter {
                         min_presence,
                         frequency,
                         gate_fidelity,
+                        signature,
                     } => {
                         let signed = self.anchor_fingerprint_ecdsa.is_some()
                             || self.anchor_fingerprint_pq.is_some();
@@ -252,8 +253,9 @@ impl OpenQasmEmitter {
                             .anchor_fingerprint_pq
                             .as_deref()
                             .unwrap_or("(unsigned — no key provided)");
+                        let custom_sig = signature.as_deref().unwrap_or("(none provided)");
                         let watermark = format!(
-                            "{header_line}\n// secp256k1: {ecdsa}\n// ML-DSA-65: {pq}\n// anchor-target: {target}\n// anchor-policy: min_presence={min_presence} frequency={frequency} gate_fidelity={gate_fidelity}\n"
+                            "{header_line}\n// secp256k1: {ecdsa}\n// ML-DSA-65: {pq}\n// anchor-target: {target}\n// custom-signature: {custom_sig}\n// anchor-policy: min_presence={min_presence} frequency={frequency} gate_fidelity={gate_fidelity}\n"
                         );
                         self.source.insert_str(0, &watermark);
                     }

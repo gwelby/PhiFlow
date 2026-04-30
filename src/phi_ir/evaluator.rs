@@ -505,6 +505,7 @@ impl<'a> Evaluator<'a> {
                 min_presence,
                 frequency,
                 gate_fidelity,
+                signature: _,
             } => {
                 use crate::phi_ir::SensorKind;
                 use crate::security::anchor::AnchorError;
@@ -1374,6 +1375,7 @@ impl<'a> Evaluator<'a> {
                 min_presence,
                 frequency,
                 gate_fidelity,
+                signature: None,
             },
         };
 

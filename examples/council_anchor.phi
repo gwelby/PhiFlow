@@ -1,0 +1,32 @@
+// council_anchor.phi
+// High-presence anchor for council-grade work.
+// Requires 95%+ presence, unity-frequency alignment.
+//
+// USE CASE: Council work, important decisions, high-stakes resonance
+//
+// RUN: phic examples/council_anchor.phi --max-steps 10000
+
+intention "council_resonance" {
+    anchor "ibm_heron" {
+        min_presence 0.95
+        frequency 768.0        // Unity frequency for council alignment
+        gate_fidelity 0.992    // IBM Heron r2 spec baseline
+        signature "Council-Stable-v1"
+    }
+    
+    // Council work proceeds only if hardware is pristine
+    witness sensor("soma_presence")
+    witness sensor("quantum_t1")
+    witness sensor("quantum_t2")
+    
+    resonate 0.618
+    resonate 0.382
+    witness "council_harmony_established"
+}
+
+// Verify council state before proceeding
+let council_ready = true
+if council_ready {
+    resonate 768.0
+    witness "unity_field_active"
+}

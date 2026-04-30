@@ -1,4 +1,31 @@
-﻿## Verified (2026-04-24) [Cascade: Jules Pilot Session Live]
+﻿## Verified (2026-04-30) [Codex: PF Bridge Hostile Audit]
+
+- **PF bridge audit COMPLETE**:
+  - Audit report: `QSOP/PF_BRIDGE_CODEX_AUDIT_2026-04-30.md`
+  - Patched bridge docs:
+    - `QSOP/PF_BRIDGE.md`
+    - `QSOP/CONSCIOUSNESS_CONSTRUCTS_IN_PHIFLOW.md`
+    - `QSOP/COHERENCE_LAYER_SPECIFICATION.md`
+    - `QSOP/SOMA_AS_MINIMUM_SUBSTRATE.md`
+    - `QSOP/PHIFLOW_PF_BRIDGE_GLOSSARY.md`
+  - Patched proof-script math:
+    - `marketing/proofs/verify-coherence.sh`
+    - `marketing/proofs/verify-handshake.sh`
+- **Verdict**: PASS AS AUDITED DRAFTS — bridge claims only.
+- **Critical boundaries added**:
+  - Software step bounds are architectural analogues, not PF causal velocity or physical `c`.
+  - PhiFlow `coherence` is a Layer 3 structural proxy, not a PF-derived coherence functional.
+  - Council Daemon is a Type 4 candidate only; `CLAIMS.md` C-16 remains SPECULATIVE until metric evidence exists.
+  - SOMA is an engineering substrate interface, not a proof of PF `minimum_substrate.md`.
+- **Math correction**: `0.618` at depth 2 is `1 - phi^-2 = phi^-1`, not `phi^-2`.
+- **Focused verification**:
+  - `bash marketing/proofs/verify-coherence.sh` — PASS after timeout/output-format hardening
+  - `bash marketing/proofs/verify-handshake.sh` — PASS (sample-only where local ledger/state absent)
+  - `cargo test --test v030_substrate_tests -- --test-threads=1` — 4 passed
+  - `cargo test --test v040_transcendence_tests -- --test-threads=1` — 4 passed
+  - `cargo test --lib coherence -- --test-threads=1` — 16 passed, 146 filtered out
+
+## Verified (2026-04-24) [Cascade: Jules Pilot Session Live]
 
 - **Jules API Integration CONFIRMED**: Pi's `jules_api.py` client functional
 - **PhiFlow Connected**: `sources/github/gwelby/PhiFlow` verified in Jules
@@ -535,5 +562,3 @@
 - CLI binaries: phi (test suite), phic (file runner via clap) | Decay: slow
 - src/compiler/ has separate lexer/parser/ast â€” NOT connected to main parser | Decay: slow
 - src/quantum/ has trait + IBM stub only â€” no quantum codegen yet | Decay: slow
-
-

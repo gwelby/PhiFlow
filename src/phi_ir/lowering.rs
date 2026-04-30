@@ -549,12 +549,14 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             min_presence,
             frequency,
             gate_fidelity,
+            signature,
         } => {
             ctx.emit(PhiIRNode::AnchorGate {
                 target: target.clone(),
                 min_presence: *min_presence,
                 frequency: *frequency,
                 gate_fidelity: *gate_fidelity,
+                signature: signature.clone(),
             });
             LowerResult::None
         }
