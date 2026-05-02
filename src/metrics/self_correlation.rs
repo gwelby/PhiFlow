@@ -111,12 +111,15 @@ impl SelfCorrelation {
 
     /// Compute self-correlation specifically from type4_trace_benchmark format.
     /// This is optimized for the 4-tuple output (step, obs, model, action).
+    ///
+    /// R_out now correctly measures: I(model[t] -> action[t+1] | obs[t])
+    /// This is model predicting future behavior (action), not residual deviation.
     pub fn from_type4_trace(trace: &Trace, threshold: f64) -> Self {
         if trace.len() < 4 {
             return Self::zero();
         }
 
-        // Reconstruct obs and model from raw_events
+        // Reconstruct obs, model, and action from raw_events
         // Format: step, obs, model, action in groups of 4
         let mut steps: Vec<f64> = Vec::new();
         let mut obs_vals: Vec<f64> = Vec::new();
@@ -138,6 +141,7 @@ impl SelfCorrelation {
         }
 
         // R_in: correlation between past obs and current model
+        // obs[t-1] -> model[t] (past observations predict current model state)
         let r_in_corr = if obs_vals.len() >= 2 {
             pearson_correlation(&obs_vals[..obs_vals.len() - 1], &model_vals[1..])
         } else {
@@ -145,13 +149,14 @@ impl SelfCorrelation {
         };
         let r_in_norm = r_in_corr.abs();
 
-        // R_out: MI between model and deviation (obs - model)
-        let deviation: Vec<f64> = obs_vals.iter().zip(model_vals.iter())
-            .map(|(o, m)| o - m)
-            .collect();
-
-        let r_out_norm = if model_vals.len() == deviation.len() && model_vals.len() >= 4 {
-            normalized_mi(&model_vals, &deviation, 5)
+        // R_out: MI between model[t] and action[t+1] (future behavior)
+        // This measures directed influence: does model state predict future action?
+        // action[t+1] is the behavior taken after observing the model at time t
+        let r_out_norm = if model_vals.len() >= 2 && actions.len() >= 2 {
+            // model[t] aligned with action[t+1] (one-step prediction)
+            let model_t = &model_vals[..model_vals.len() - 1];
+            let action_future = &actions[1..];
+            normalized_mi(model_t, action_future, 5)
         } else {
             0.0
         };
@@ -166,6 +171,53 @@ impl SelfCorrelation {
             loop_closed,
             threshold,
         }
+    }
+
+    /// Compute R_out with shuffle control to validate temporal alignment.
+    ///
+    /// Returns (actual_r_out, shuffled_r_out) where shuffled_r_out should be
+    /// significantly lower if the relationship is genuinely temporal.
+    ///
+    /// This breaks temporal alignment while preserving marginal distributions,
+    /// serving as a null model for the model->future behavior relationship.
+    pub fn from_type4_trace_with_shuffle_control(
+        trace: &Trace,
+        threshold: f64,
+    ) -> (Self, f64) {
+        let base = Self::from_type4_trace(trace, threshold);
+
+        // Compute shuffled R_out
+        let mut steps: Vec<f64> = Vec::new();
+        let mut obs_vals: Vec<f64> = Vec::new();
+        let mut model_vals: Vec<f64> = Vec::new();
+        let mut actions: Vec<f64> = Vec::new();
+
+        for chunk in trace.raw_events.chunks(4) {
+            if chunk.len() == 4 {
+                steps.push(chunk[0].1);
+                obs_vals.push(chunk[1].1);
+                model_vals.push(chunk[2].1);
+                actions.push(chunk[3].1);
+            }
+        }
+
+        // Shuffle actions to break temporal alignment
+        let shuffled_r_out = if model_vals.len() >= 2 && actions.len() >= 2 {
+            use rand::seq::SliceRandom;
+            use rand::thread_rng;
+
+            let mut rng = thread_rng();
+            let mut shuffled_actions = actions.clone();
+            shuffled_actions.shuffle(&mut rng);
+
+            let model_t = &model_vals[..model_vals.len() - 1];
+            let shuffled_future = &shuffled_actions[1..];
+            normalized_mi(model_t, shuffled_future, 5)
+        } else {
+            0.0
+        };
+
+        (base, shuffled_r_out)
     }
 }
 
