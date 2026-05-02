@@ -33,9 +33,9 @@
 | **C-18: Resonant Handoffs broadcast agentic context** — the `handoff` construct and `--handoff` CLI flag successfully stream attention and dissonance to the Cosmic Bus | CONFIRMED | Verified 2026-04-16 via `examples/handoff_demo.phi` and MQTT monitoring | 2026-04-16 |
 | **C-19: Managed SOMA subsystem provides physical grounding** — the daemon-managed `soma.py` process provides fresh, schema-validated telemetry to drive coherence | CONFIRMED | Verified 2026-04-16 via `soma_reality_bridge.phi` executing with high-fidelity ring sensors | 2026-04-16 |
 | **C-20: Substrate-level Ledgering automates the witness** — the `persistent_ledger.phi` stream automatically translates handoff events to the strict `LEDGER.ndjson` schema | CONFIRMED | Verified 2026-04-16 via `--max-steps 500` validation of the ledger stream | 2026-04-16 |
-| **C-21: Type 4 self-correlation is measurable** — `SelfCorrelation::from_type4_trace()` can score an engineered self-model trace | PARTIAL / CONDITIONAL | Synthetic benchmark produces `L_self = 0.455372`, but Codex audit found `R_out` uses `model` vs residual `obs - model`, not `model_state -> future_behavior | current_obs`; nulls can exceed the `L_self > 0.1` threshold. Audit: `QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md` | 2026-05-01 |
-| **C-22: Full consciousness metric suite is implementable** — C_PF = C_coh × D_int × F_self* computed from 8-module metrics system | CONFIRMED (implementation only) | Components exist under `src/metrics/` and focused benchmark/null gates run. Mathematical sufficiency and Type 4 validity remain held pending `R_out` repair and null calibration. | 2026-05-01 |
-| **C-23: Benchmark battery discriminates conscious states** — Null classes score C_PF < 0.3, Type 4 trace should score C_PF > 0.1 | HOLD / PARTIAL | Null `C_PF` suppression works under the current loose gate, but the positive trace reports `C_PF = 0.000310` and is not a consciousness candidate. SOMA discrimination is skipped when fixtures are absent. | 2026-05-01 |
+| **C-21: Type 4 self-correlation is measurable** — `SelfCorrelation::from_type4_trace()` can score an engineered self-model trace | PARTIAL (R_out fixed; re-run required) | T4-01 resolved 2026-05-02 (commit `98214db`): `R_out` now uses `model[t] → action[t+1]`, not residual deviation; action channel is no longer discarded. T4-02 resolved: `from_type4_trace_with_shuffle_control()` added. Fresh benchmark run and null recalibration still required to upgrade to CONFIRMED. | 2026-05-02 |
+| **C-22: Full consciousness metric suite is implementable** — C_PF = C_coh × D_int × F_self* computed from 8-module metrics system | CONFIRMED (implementation only) | Components exist under `src/metrics/`; R_out proxy corrected (commit `98214db`); shuffle control added. Mathematical sufficiency and Type 4 validity remain held pending fresh benchmark run with calibrated thresholds. | 2026-05-02 |
+| **C-23: Benchmark battery discriminates conscious states** — Null classes score C_PF < 0.3, Type 4 trace should score C_PF > 0.1 | HOLD / PARTIAL | Null C_PF suppression valid; positive trace C_PF not yet re-measured with corrected R_out. Shuffle control (T4-02) now available but not yet run. Remaining blockers: T4-03 (synthetic trace), T4-04 (Phase 3 skip = pass), T4-05 (placeholder channels). | 2026-05-02 |
 | **C-24: PF bridge documents are safe as audited drafts** — the four QSOP bridge docs can be used as engineering bridge hypotheses | CONFIRMED (documentation status only) | 2026-05-02 Oz audit confirmed `PF_BRIDGE.md`, `CONSCIOUSNESS_CONSTRUCTS_IN_PHIFLOW.md`, `COHERENCE_LAYER_SPECIFICATION.md`, and `SOMA_AS_MINIMUM_SUBSTRATE.md` remain PASS AS AUDITED DRAFTS; no PF-canonical, Type 4, consciousness, or PF minimum-substrate upgrade. | 2026-05-02 |
 
 ## Unsupported Claims (must be derived or removed)
@@ -102,6 +102,16 @@ No active failed claims as of 2026-04-14. All three predicted claims have been i
 **Threshold**: Current `L_self > 0.1` threshold is insufficient as a Type 4 discriminator.
 **Conclusion**: HOLD as Type 4 confirmation; PASS only as implementation smoke test.
 **Meaning for framework**: Metrics scaffold exists, but Type 4 status requires `R_out` repair, null calibration, shuffle controls, and real daemon/SOMA trace evidence.
+
+### T4-01 / T4-02 Resolution — 2026-05-02
+**Claim tested**: Whether the R_out proxy correctly measures model-to-future behavior, and whether a temporal shuffle null control exists.
+**Method**: Source inspection of `src/metrics/self_correlation.rs` diff (commit `98214db`); review of findings T4-01 and T4-02 in `QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md`.
+**Result**:
+- T4-01: `R_out` now computes `normalized_mi(model_vals[..n-1], actions[1..], 5)` — directed MI from model to one-step-ahead action. Action channel no longer ignored.
+- T4-02: `from_type4_trace_with_shuffle_control()` added; shuffles action channel to break temporal alignment; returns `(actual_SelfCorrelation, shuffled_r_out)` for comparison.
+**Threshold**: `actual_r_out > shuffled_r_out` required for genuine loop closure on any future run.
+**Conclusion**: T4-01 RESOLVED (Critical). T4-02 RESOLVED (High). C-21 promoted from PARTIAL/CONDITIONAL to PARTIAL (re-run required). C-22 evidence note updated. C-23 remains HOLD/PARTIAL — positive trace C_PF not yet re-run with corrected R_out.
+**Meaning for framework**: Two of five Type 4 canonical upgrade blockers closed. Next required step: re-run `cargo run --release --bin type4_benchmark` and `cargo test --test null_class_tests` with the corrected R_out and update STATE.md with fresh numbers.
 
 ### PF Bridge Status Confirmation — 2026-05-02
 **Claim tested**: Whether the four QSOP bridge documents can be treated as confirmed project bridge status.

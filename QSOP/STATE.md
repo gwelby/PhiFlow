@@ -1,4 +1,23 @@
-﻿## Audited (2026-05-02) [Oz: PF Bridge Status Confirmation]
+﻿## Fixed (2026-05-02) [Oz: T4-01 / T4-02 — R_out correction + shuffle control]
+
+- **Commit**: `98214db` — `fix(metrics): correct R_out and add shuffle control (T4-01, T4-02)`
+- **File**: `src/metrics/self_correlation.rs`
+- **T4-01 RESOLVED** (Critical — from `QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md`):
+  - `R_out` now measures `I(model[t] → action[t+1])` — model predicting future behavior using the one-step-ahead action channel.
+  - Previous: MI between `model[t]` and same-trace residual `obs - model`; action channel parsed but unused.
+  - New: `normalized_mi(model_vals[..n-1], actions[1..], 5)` — correct directed information proxy.
+- **T4-02 RESOLVED** (High — from `QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md`):
+  - New method: `from_type4_trace_with_shuffle_control(trace, threshold) -> (SelfCorrelation, shuffled_r_out)`
+  - Shuffled R_out breaks temporal alignment while preserving marginal distributions.
+  - Requirement: `actual_r_out > shuffled_r_out` must hold for a genuine self-correlation loop.
+- **Remaining canonical blockers** (T4-03, T4-04, T4-05 still open):
+  - T4-03: Benchmark trace is still synthetic. Real daemon/SOMA trace required.
+  - T4-04: Phase 3 skip still treated as pass in the battery.
+  - T4-05: Trace adapter still uses placeholder coherence/depth channels.
+- **C-21 status updated**: PARTIAL/CONDITIONAL → PARTIAL (R_out fix applied; fresh benchmark run and null recalibration still required).
+- **C-23 status updated**: HOLD/PARTIAL — null C_PF suppression still valid, but positive trace C_PF not yet re-measured with corrected R_out.
+
+## Audited (2026-05-02) [Oz: PF Bridge Status Confirmation]
 
 - **Scope**: `QSOP/PF_BRIDGE.md`, `QSOP/CONSCIOUSNESS_CONSTRUCTS_IN_PHIFLOW.md`, `QSOP/COHERENCE_LAYER_SPECIFICATION.md`, `QSOP/SOMA_AS_MINIMUM_SUBSTRATE.md`, `CLAIMS.md`, and code surfaces for `stream`, `--max-steps`, `coherence`, `evolve`, `handoff`, SOMA, OpenQASM, and Type 4 metrics.
 - **Verdict**: PASS AS AUDITED DRAFTS — bridge hypotheses only. No PF-canonical, Type 4, consciousness, or PF minimum-substrate status is confirmed.
@@ -11,8 +30,8 @@
   - `scripts/verify_truth.ps1` could not execute `cargo.exe` directly because the local `cargo.exe` shim is a zero-length symlink to `rustup.exe`.
   - Retrying with `rustup.exe run stable cargo ...` reached compilation but was blocked before tests by Windows OS error 448 (`untrusted mount point`) while compiling registry crates.
   - Therefore this entry confirms documentation/code consistency from source inspection and existing receipts, not a fresh green test run.
-- **Canonical blockers unchanged**:
-  - `R_out` still uses model-vs-residual proxying rather than action/future behavior.
+- **Canonical blockers at time of this entry** (T4-01/T4-02 since resolved — see Fixed entry above):
+  - ~~`R_out` still uses model-vs-residual proxying rather than action/future behavior.~~ → Fixed 2026-05-02 (commit `98214db`).
   - `L_self > 0.1` alone remains invalid as a Type 4 discriminator.
   - Real daemon/SOMA trace evidence and calibrated null controls are still required for any canonical upgrade.
 
