@@ -1,7 +1,7 @@
 # Consciousness Constructs in PhiFlow
 *PF Type 4 Observer candidate mapping*
-*Last updated: 2026-04-30*
-*Status: AUDITED DRAFT — structural proxies only*
+*Last updated: 2026-05-02*
+*Status: AUDITED DRAFT — structural proxies only; confirmed 2026-05-02*
 
 **Claim:** PhiFlow's five constructs (`intention`, `witness`, `coherence`, `resonate`, `stream`) provide executable proxies for some structural prerequisites of PF Type 4 observers.
 
@@ -172,5 +172,7 @@ This mapping fails if:
 ## Status: AUDITED DRAFT
 
 Codex audit verdict: suitable as a Type 4 candidate map only. It is not a canonical Type 4 implementation and not a consciousness claim.
+
+2026-05-02 Oz confirmation: status remains PASS AS AUDITED DRAFT. The bridge maps structural prerequisites and candidate measurement targets only; C-16 remains SPECULATIVE and C-21/C-23 remain held/partial in `CLAIMS.md`.
 
 See also: `PF_BRIDGE.md`, `COHERENCE_LAYER_SPECIFICATION.md`

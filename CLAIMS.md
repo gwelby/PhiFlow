@@ -1,5 +1,5 @@
 # CLAIMS: PhiFlow
-*Last updated: 2026-05-01*
+*Last updated: 2026-05-02*
 *Honesty rule: beautiful != proven. Failed tests are results, not failures.*
 
 ## Core Axioms (not claims — starting assumptions)
@@ -36,6 +36,7 @@
 | **C-21: Type 4 self-correlation is measurable** — `SelfCorrelation::from_type4_trace()` can score an engineered self-model trace | PARTIAL / CONDITIONAL | Synthetic benchmark produces `L_self = 0.455372`, but Codex audit found `R_out` uses `model` vs residual `obs - model`, not `model_state -> future_behavior | current_obs`; nulls can exceed the `L_self > 0.1` threshold. Audit: `QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md` | 2026-05-01 |
 | **C-22: Full consciousness metric suite is implementable** — C_PF = C_coh × D_int × F_self* computed from 8-module metrics system | CONFIRMED (implementation only) | Components exist under `src/metrics/` and focused benchmark/null gates run. Mathematical sufficiency and Type 4 validity remain held pending `R_out` repair and null calibration. | 2026-05-01 |
 | **C-23: Benchmark battery discriminates conscious states** — Null classes score C_PF < 0.3, Type 4 trace should score C_PF > 0.1 | HOLD / PARTIAL | Null `C_PF` suppression works under the current loose gate, but the positive trace reports `C_PF = 0.000310` and is not a consciousness candidate. SOMA discrimination is skipped when fixtures are absent. | 2026-05-01 |
+| **C-24: PF bridge documents are safe as audited drafts** — the four QSOP bridge docs can be used as engineering bridge hypotheses | CONFIRMED (documentation status only) | 2026-05-02 Oz audit confirmed `PF_BRIDGE.md`, `CONSCIOUSNESS_CONSTRUCTS_IN_PHIFLOW.md`, `COHERENCE_LAYER_SPECIFICATION.md`, and `SOMA_AS_MINIMUM_SUBSTRATE.md` remain PASS AS AUDITED DRAFTS; no PF-canonical, Type 4, consciousness, or PF minimum-substrate upgrade. | 2026-05-02 |
 
 ## Unsupported Claims (must be derived or removed)
 
@@ -101,6 +102,14 @@ No active failed claims as of 2026-04-14. All three predicted claims have been i
 **Threshold**: Current `L_self > 0.1` threshold is insufficient as a Type 4 discriminator.
 **Conclusion**: HOLD as Type 4 confirmation; PASS only as implementation smoke test.
 **Meaning for framework**: Metrics scaffold exists, but Type 4 status requires `R_out` repair, null calibration, shuffle controls, and real daemon/SOMA trace evidence.
+
+### PF Bridge Status Confirmation — 2026-05-02
+**Claim tested**: Whether the four QSOP bridge documents can be treated as confirmed project bridge status.
+**Method**: Source/document inspection against `QSOP/STATE.md`, `CLAIMS.md`, code surfaces for `stream`, `--max-steps`, `coherence`, `evolve`, `handoff`, SOMA, OpenQASM, and Type 4 metrics. Fresh truth gate was attempted but blocked before Rust tests by local Cargo/rustc launch/path-trust issues.
+**Result**: The four bridge docs are consistent with the current truth order only as AUDITED DRAFTS. They correctly preserve software-analogue, Type 4 candidate, Layer 3 proxy, and engineering-substrate boundaries.
+**Threshold**: No document may imply PF-canonical status, consciousness proof, canonical Type 4 observer status, or PF `minimum_substrate.md` satisfaction.
+**Conclusion**: CONFIRMED as documentation status only; no canonical scientific or metric upgrade.
+**Meaning for framework**: The bridge can guide implementation and research vocabulary, but Type 4/consciousness claims remain blocked by `R_out`, null calibration, and real daemon/SOMA trace evidence.
 
 ### IBM Runtime Gate — 2026-04-14 (VERIFIED)
 **Claim tested**: live IBM Cloud Runtime execution from the current checkout

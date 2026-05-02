@@ -1,6 +1,6 @@
 # SOMA Bridge as PhiFlow Substrate Interface
-*Last updated: 2026-04-30*
-*Status: AUDITED DRAFT*
+*Last updated: 2026-05-02*
+*Status: AUDITED DRAFT — confirmed 2026-05-02*
 
 **Claim:** SOMA Bridge helps PhiFlow avoid being a purely isolated program by coupling runtime state to local physical telemetry and, when configured, quantum-hardware execution receipts.
 
@@ -57,4 +57,4 @@ Bridge fails if:
 
 ---
 
-*Status: AUDITED DRAFT — engineering substrate interface only*
+*Status: AUDITED DRAFT — engineering substrate interface only. 2026-05-02 audit confirms SOMA remains an interface/analogue, not PF `minimum_substrate.md`.*

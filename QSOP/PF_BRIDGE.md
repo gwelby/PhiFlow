@@ -1,7 +1,7 @@
 # PhiFlow ↔ Propagation Framework Bridge
 *Bridge contract document*
-*Last updated: 2026-04-30*
-*Status: AUDITED DRAFT — bridge hypotheses only; not a PF canonical definition*
+*Last updated: 2026-05-02*
+*Status: AUDITED DRAFT — bridge hypotheses only; confirmed 2026-05-02; not a PF canonical definition*
 
 **Purpose:** Explicit mapping between PhiFlow language/compiler constructs and Propagation Framework (Fundamentals) definitions.
 
@@ -164,6 +164,7 @@ This bridge fails if:
 |------|---------|--------|
 | 2026-04-30 | Cascade | First draft created |
 | 2026-04-30 | Codex | Hardened bridge boundaries: software analogue vs physical PF claim; Type 4 and SOMA remain candidates |
+| 2026-05-02 | Oz | Confirmed PASS AS AUDITED DRAFTS; no PF-canonical, Type 4, consciousness, or PF minimum-substrate upgrade |
 
 ---
 

@@ -1,4 +1,22 @@
-﻿## Audited (2026-05-01) [Codex: Type 4 Benchmark Hostile Audit]
+﻿## Audited (2026-05-02) [Oz: PF Bridge Status Confirmation]
+
+- **Scope**: `QSOP/PF_BRIDGE.md`, `QSOP/CONSCIOUSNESS_CONSTRUCTS_IN_PHIFLOW.md`, `QSOP/COHERENCE_LAYER_SPECIFICATION.md`, `QSOP/SOMA_AS_MINIMUM_SUBSTRATE.md`, `CLAIMS.md`, and code surfaces for `stream`, `--max-steps`, `coherence`, `evolve`, `handoff`, SOMA, OpenQASM, and Type 4 metrics.
+- **Verdict**: PASS AS AUDITED DRAFTS — bridge hypotheses only. No PF-canonical, Type 4, consciousness, or PF minimum-substrate status is confirmed.
+- **Confirmed bridge status**:
+  - `PF_BRIDGE.md`: software analogue map only; PF Axioms 1-3 are not derived or physically proven.
+  - `CONSCIOUSNESS_CONSTRUCTS_IN_PHIFLOW.md`: Type 4 candidate map only; C-16 remains SPECULATIVE and C-21/C-23 remain held/partial.
+  - `COHERENCE_LAYER_SPECIFICATION.md`: Layer 3 structural proxy with Layer 2 OpenQASM realization; `0.618` remains a PhiFlow runtime invariant, not PF-derived.
+  - `SOMA_AS_MINIMUM_SUBSTRATE.md`: engineering substrate interface only; not PF `minimum_substrate.md`.
+- **Fresh verification caveat**:
+  - `scripts/verify_truth.ps1` could not execute `cargo.exe` directly because the local `cargo.exe` shim is a zero-length symlink to `rustup.exe`.
+  - Retrying with `rustup.exe run stable cargo ...` reached compilation but was blocked before tests by Windows OS error 448 (`untrusted mount point`) while compiling registry crates.
+  - Therefore this entry confirms documentation/code consistency from source inspection and existing receipts, not a fresh green test run.
+- **Canonical blockers unchanged**:
+  - `R_out` still uses model-vs-residual proxying rather than action/future behavior.
+  - `L_self > 0.1` alone remains invalid as a Type 4 discriminator.
+  - Real daemon/SOMA trace evidence and calibrated null controls are still required for any canonical upgrade.
+
+## Audited (2026-05-01) [Codex: Type 4 Benchmark Hostile Audit]
 
 - **Audit report**: `QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md`
 - **Verdict**: PASS as implementation smoke test; **HOLD as Type 4 confirmation**.
