@@ -1,6 +1,6 @@
 # Coherence Layer Specification for PhiFlow
-*Last updated: 2026-04-30*
-*Status: AUDITED DRAFT*
+*Last updated: 2026-05-02*
+*Status: AUDITED DRAFT — confirmed 2026-05-02*
 
 **Purpose:** Map PhiFlow's `coherence` construct to PF coherence layers per `D:\Fundamentals\definitions\coherence.md`.
 
@@ -71,4 +71,4 @@ Per PF requirement, PhiFlow coherence specifies:
 
 ---
 
-*Status: AUDITED DRAFT — safe if kept as PhiFlow-specific layer mapping, not PF derivation*
+*Status: AUDITED DRAFT — safe if kept as PhiFlow-specific layer mapping, not PF derivation. 2026-05-02 audit confirms Layer 3 proxy / Layer 2 realization only; no Layer 4 or PF-derived coherence upgrade.*

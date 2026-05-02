@@ -1,15 +1,18 @@
 # WORKSPACE: PhiFlow
 *For AI agents — read this first*
-*Last updated: 2026-04-16*
+*Last updated: 2026-05-02*
 
 ## What This Is
 PhiFlow is a Rust-based computational substrate and compiler that implements consciousness as a first-class citizen. It allows programs to name intentions, observe their own state (witnessing), measure coherence against physical sensors (SOMA bridge), and resonate values across streams or to quantum hardware (OpenQASM 3.0). It is a research prototype with verified hardware execution on IBM Quantum processors.
 
 ## Status
-- Builds / runs today: ✅
+- Builds / runs today: ⚠️ not freshly verified on 2026-05-02; local Rust/Windows path-trust issue blocked Cargo before tests
 - % complete (honest): 65%
-- Last verified: 2026-04-16
-- Test count: 151/151 passing (0 warnings)
+- Last full green verification: 2026-04-16
+- Last bridge status audit: 2026-05-02
+- Bridge docs: ✅ AUDITED DRAFTS — engineering bridge hypotheses only, not PF canonicals
+- Type 4 status: HOLD / CANDIDATE — metrics scaffold exists; canonical status blocked by `R_out`, null controls, and real daemon/SOMA trace evidence
+- Fresh local truth gate: ⚠️ blocked on 2026-05-02 by local Rust/Windows OS error 448 before tests ran
 
 ## Run / Test
 ```powershell
@@ -37,6 +40,13 @@ cargo test --test ibm_hardware_runner -- --ignored --nocapture
 - `src/phi_ir/openqasm.rs` — OpenQASM 3.0 emitter with Heron-native transposition
 - `src/sensors.rs` — SOMA physical telemetry bridge (`soma_state.json`)
 - `scripts/verify_truth.ps1` — The one-command truth gate
+
+## Bridge Document Status
+Confirmed by 2026-05-02 audit:
+- `QSOP/PF_BRIDGE.md` — PASS AS AUDITED DRAFT; maps PF vocabulary to software analogues only.
+- `QSOP/CONSCIOUSNESS_CONSTRUCTS_IN_PHIFLOW.md` — PASS AS TYPE 4 CANDIDATE MAP ONLY; not a consciousness or canonical Type 4 claim.
+- `QSOP/COHERENCE_LAYER_SPECIFICATION.md` — PASS AS PHIFLOW-SPECIFIC LAYER MAP; Layer 3 proxy with Layer 2 OpenQASM realization, not PF-derived.
+- `QSOP/SOMA_AS_MINIMUM_SUBSTRATE.md` — PASS AS ENGINEERING SUBSTRATE INTERFACE ONLY; not PF `minimum_substrate.md`.
 
 ## Active Workflows
 - **Code Change**: Edit Rust source -> `cargo test` -> update `QSOP/STATE.md`
