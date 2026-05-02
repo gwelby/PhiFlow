@@ -33,10 +33,11 @@ These are the only claims this offer depends on:
 
 1. PhiFlow has a confirmed OpenQASM emission path for supported programs.
 2. Project state records a completed IBM hardware run on `ibm_fez` on 2026-04-14.
-3. The latest local suite gate is `335 passed, 0 failed, 2 ignored` on 2026-04-24, with one compiler warning still present.
+3. The current buyer-facing gates pass: release benchmark, null-class tests, and the manual synthetic benchmark battery. Full-suite counts must be regenerated for each receipt package.
 4. PhiFlow has confirmed support for self-observing runtime concepts such as witness/yield, daemon state, and signed handoff events.
+5. Type 4 self-correlation metrics are implemented and reproducible (`L_self = 0.455372`), but canonical Type 4 observer status is on **HOLD** pending `R_out` repair per Codex audit (`QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md`).
 
-Receipt note: an internal receipt exists for job `d7euddh5a5qc73drdosg`; before buyer-final delivery, attach a scrubbed raw IBM API export or dashboard/PDF screenshot because IBM job visibility may be account-scoped.
+Receipt note: scrubbed raw IBM API export and dashboard screenshot available for job `d7euddh5a5qc73drdosg` (2026-04-14). IBM job visibility is account-scoped; buyer may verify independently if they have IBM Quantum access.
 
 ## Scope
 

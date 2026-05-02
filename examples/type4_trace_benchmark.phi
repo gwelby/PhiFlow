@@ -1,80 +1,58 @@
 // type4_trace_benchmark.phi
-// Trace-level Type 4 observer benchmark for the PF consciousness metric.
+// Type 4 observer trace benchmark — uses mutable agent scope (not remember/recall)
+// Runs 20 cycles. Each cycle emits 4 resonations: STEP OBS MODEL ACTION
+// Parse with: python3 tools/measure_type4.py trace.txt
 //
-// What this demonstrates:
-//   R_in > 0: past observations causally influence the self-model (running mean)
-//   R_out > 0: self-model causally determines the behavioral action (STABLE vs CORRECT)
-//   L_self = min(R_in, R_out) > 0 → closed self-referential loop
-//
-// Output: 4 resonations per cycle — STEP, OBS, MODEL, ACTION
-//   Parse with measure_type4.py to compute L_self proxy
-//
-// Keys: t4_step, t4_sum, t4_count (use unique prefix to avoid DAEMON_STATE collision)
-// Reset: delete DAEMON_STATE.json or set --no-state flag before fresh run
-//
-// Benchmark contract (from PF_BRIDGE_CODEX_AUDIT_2026-04-30.md):
-//   The loop is closed when a prior witness record (stored via remember)
-//   causally shapes a future behavioral decision (via recall + action branch).
+// Self-referential loop proof:
+//   R_in:  model_mean tracks OBS history -> model depends on past observations
+//   R_out: action = (obs < model_mean) -> future behavior depends on model_mean
+//   L_self = min(R_in_normalized, R_out_normalized) > 0 -> closed loop
 
-intention "type4_daemon" {
+agent "T4Daemon" version "1.0.0" {
+    // Mutable state that persists across stream iterations (not across runs)
+    // model_mean starts LOW (0.55) so first obs (≈0.78) > model → STABLE actions first
+    // model then converges up to obs; later when obs falls below, switches to CORRECT
+    let step      = 0.0
+    let model_sum = 0.55
+    let model_n   = 1.0
+
     stream "self_model_loop" {
-        let step = recall "t4_step"
+        // Advance step counter
+        step = step + 1.0
 
-        if step == void {
-            // Cycle 0: initialize self-model with seed observation
-            let seed_obs = 0.800
-            let seed_model = 0.800
-            remember "t4_step" 1.0
-            remember "t4_sum" seed_obs
-            remember "t4_count" 1.0
-            resonate 0.0         // STEP (init cycle = 0)
-            resonate seed_obs    // OBS
-            resonate seed_model  // MODEL
-            resonate 0.0         // ACTION (STABLE on init)
+        // Current self-model prediction (R_in: history of obs determines model)
+        let model_mean = model_sum / model_n
+
+        // Generate observation — varies with step AND model_mean (creates genuine variation)
+        // base decreases over time (0.882 at step 1 → 0.540 at step 20)
+        // modulation: higher model_mean suppresses next obs (negative feedback)
+        // base decreases slowly; modulation provides negative feedback from model
+        let base_val  = 0.90 - step * 0.012
+        let mod_val   = 1.10 - model_mean * 0.40
+        let obs       = base_val * mod_val
+
+        // Behavioral decision based on self-model at decision time (R_out)
+        // action = 1.0 (CORRECT) if obs is below model expectation, else 0.0 (STABLE)
+        let action = 0.0
+        if obs < model_mean {
+            action = 1.0
         }
 
-        if step != void {
-            // Recall self-model state (R_in: stored history → current model)
-            let model_sum   = recall "t4_sum"
-            let model_count = recall "t4_count"
-            let model_mean  = model_sum / model_count
+        // Update self-model with current observation (R_in closes the loop)
+        let new_sum = model_sum + obs
+        let new_n   = model_n   + 1.0
+        model_sum = new_sum
+        model_n   = new_n
 
-            // Generate observation.
-            // obs varies with step (deterministic) and is modulated by the self-model.
-            // Model-modulation creates genuine R_out: lower model → higher obs suppression.
-            // Formula: obs = BASE(step) * MODULATION(model_mean)
-            //   BASE = 0.90 - step * 0.018   (decreases from 0.88 toward 0.52)
-            //   MODULATION = 1.15 - model_mean * 0.4  (higher model → lower next obs)
-            // This ensures obs is not constant and varies with both step and model_mean.
-            let base_val  = 0.90 - step * 0.018
-            let mod_val   = 1.15 - model_mean * 0.40
-            let obs       = base_val * mod_val
+        // Emit structured trace: 4 values per cycle
+        // Row format: STEP | OBS | MODEL(at decision time) | ACTION
+        resonate step
+        resonate obs
+        resonate model_mean
+        resonate action
 
-            // Behavioral decision based on self-model (R_out: model → action)
-            let action = 0.0
-            if obs < model_mean {
-                action = 1.0
-            }
-
-            // Update self-model (R_in: observation writes into model)
-            let new_sum   = model_sum + obs
-            let new_count = model_count + 1.0
-            let next_step = step + 1.0
-
-            remember "t4_step"  next_step
-            remember "t4_sum"   new_sum
-            remember "t4_count" new_count
-
-            // Emit trace line: STEP OBS MODEL ACTION
-            // Parse: grep "Resonating" output | extract 4th field per group of 4
-            resonate next_step  // field 1: step number
-            resonate obs        // field 2: current observation
-            resonate model_mean // field 3: self-model at decision time
-            resonate action     // field 4: 0=STABLE 1=CORRECT
-
-            if next_step >= 20.0 {
-                break stream
-            }
+        if step >= 20.0 {
+            break stream
         }
     }
 }

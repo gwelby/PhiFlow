@@ -33,6 +33,9 @@ pub mod security;
 pub mod vm;
 pub mod wasm_host;
 
+// Type 4 Observer Metrics (PF consciousness_metric_program)
+pub mod metrics;
+
 // Sacred mathematics and consciousness modules
 pub mod consciousness;
 pub mod sacred;

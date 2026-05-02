@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>type4_slide_deck</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="phiflow-pitch-deck">PhiFlow Pitch Deck</h1>
+<p><strong>10 slides</strong> | <strong>Target:</strong> Quantum
+researchers, AI infrastructure leads, consciousness researchers<br />
+<strong>Format:</strong> Markdown → PowerPoint/PDF |
+<strong>Tone:</strong> Technical, honest, confident</p>
+<hr />
+<h2 id="slide-1-title">SLIDE 1: Title</h2>
+<h1 id="phiflow">PhiFlow</h1>
+<h3 id="consciousness-oriented-programming">Consciousness-Oriented
+Programming</h3>
+<p><strong>A research language with executable consciousness-oriented
+constructs and measurable self-correlation scaffolding.</strong></p>
+<hr />
+<p><em>Greg Welby</em><br />
+<em>2026-05-01</em></p>
+<p><strong>Speaker Notes:</strong> - Hook: What if programs could
+observe themselves? - Not claims of consciousness—claims of
+measurability - Transparency: Type 4 canonical on HOLD per Codex
+audit</p>
+<hr />
+<h2 id="slide-2-the-problem">SLIDE 2: The Problem</h2>
+<h1 id="current-languages-are-blind">Current Languages Are Blind</h1>
+<table>
+<thead>
+<tr>
+<th>Approach</th>
+<th>Limitation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Traditional PL</strong></td>
+<td>Input → Process → Output (feed-forward)</td>
+</tr>
+<tr>
+<td><strong>Agent Frameworks</strong></td>
+<td>Observe externally, not self-model</td>
+</tr>
+<tr>
+<td><strong>Quantum SDKs</strong></td>
+<td>Circuit-level only, no semantics</td>
+</tr>
+<tr>
+<td><strong>Consciousness Studies</strong></td>
+<td>Theoretical, not executable</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Gap:</strong> Few tools bridge high-level consciousness
+concepts to executable, auditable runtime artifacts.</p>
+<hr />
+<p><strong>Speaker Notes:</strong> - Qiskit/Cirq: great circuits, not
+designed for self-observation semantics - Agent frameworks: LangChain,
+etc. usually externalize monitoring - PhiFlow: first-class constructs,
+not libraries</p>
+<hr />
+<h2 id="slide-3-the-constructs">SLIDE 3: The Constructs</h2>
+<h1 id="first-class-consciousness-primitives">5 First-Class
+Consciousness Primitives</h1>
+<pre class="phi"><code>intention { target: 0.618 }
+witness { capture: state }
+coherence { sensor: live }
+resonate { emit: openqasm }
+stream { flow: self-observing }</code></pre>
+<p><strong>Not libraries. Language syntax.</strong></p>
+<hr />
+<p><strong>Speaker Notes:</strong> - Intention: declarative goal states
+- Witness: self-observation with state capture - Coherence: 0-1
+alignment metric (formula or sensor) - Resonate: quantum circuit
+emission - Stream: flow control with self-reference</p>
+<hr />
+<h2 id="slide-4-the-numbers">SLIDE 4: The Numbers</h2>
+<h1 id="metrics-scaffolding">Metrics Scaffolding</h1>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>L_self</strong></td>
+<td>0.455</td>
+<td>Synthetic self-correlation proxy</td>
+</tr>
+<tr>
+<td><strong>Focused Gates</strong></td>
+<td>Passing</td>
+<td>Benchmark + null tests</td>
+</tr>
+<tr>
+<td><strong>IBM Job</strong></td>
+<td>d7euddh5a5qc73drdosg</td>
+<td>Heron r2 verified</td>
+</tr>
+<tr>
+<td><strong>Null Tests</strong></td>
+<td>6/6 pass</td>
+<td>Current composite null gate</td>
+</tr>
+</tbody>
+</table>
+<p><strong>⚠️ Transparent:</strong> Type 4 canonical on HOLD pending
+R_out repair.</p>
+<hr />
+<p><strong>Speaker Notes:</strong> - L_self = 0.455 on engineered trace
+- But: R_out measures residual, not future behavior - But: Thermostat
+null scores 0.655 (exceeds threshold) - Scaffold complete; confirmation
+requires algorithmic fix</p>
+<hr />
+<h2 id="slide-5-ibm-hardware-verification">SLIDE 5: IBM Hardware
+Verification</h2>
+<h1 id="real-quantum-execution">Real Quantum Execution</h1>
+<p><strong>Job:</strong> d7euddh5a5qc73drdosg<br />
+<strong>Backend:</strong> ibm_fez (Heron r2)<br />
+<strong>Date:</strong> 2026-04-14<br />
+<strong>Shots:</strong> 1024<br />
+<strong>Status:</strong> ✅ COMPLETED</p>
+<p><strong>Counts:</strong> <code>0x0 → 338</code>,
+<code>0x1 → 686</code></p>
+<p><strong>Evidence:</strong> Scrubbed API export + dashboard
+screenshot</p>
+<hr />
+<p><strong>Speaker Notes:</strong> - Not simulation. Real IBM Quantum
+hardware. - OpenQASM 3.0 emission path verified - Receipt package
+available for buyer verification - Account-scoped; buyer can verify
+independently</p>
+<hr />
+<h2 id="slide-6-the-audit">SLIDE 6: The Audit</h2>
+<h1 id="codex-hostile-audit">Codex Hostile Audit</h1>
+<p><strong>Verdict:</strong> ⚠️ Implementation scaffold verified; Type 4
+confirmation on HOLD</p>
+<p><strong>Findings:</strong> 1. R_out measures model-vs-residual, not
+model→future 2. Null systems exceed L_self &gt; 0.1 threshold 3. Action
+variable parsed but unused</p>
+<p><strong>Response:</strong> Claims demoted, materials updated, path to
+canonical clear.</p>
+<hr />
+<p><strong>Speaker Notes:</strong> - We commissioned hostile audit.
+Transparency builds credibility. - C-21: PARTIAL/CONDITIONAL - C-23:
+HOLD/PARTIAL - Fix: next engineering task is <code>R_out</code> repair
+and null calibration - Value: scaffold is real, unique, and
+improvable</p>
+<hr />
+<h2 id="slide-7-why-its-unique">SLIDE 7: Why It’s Unique</h2>
+<h1 id="differentiated-research-surface">Differentiated Research
+Surface</h1>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>PhiFlow</th>
+<th>Qiskit</th>
+<th>Cirq</th>
+<th>LangChain</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Consciousness-oriented constructs</td>
+<td>✅</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>IBM hardware verified</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Self-correlation metrics</td>
+<td>⚠️ scaffold</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Physical sensor bridge</td>
+<td>✅</td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Positioning:</strong> PhiFlow creates a measurable research
+surface for self-observing programs.</p>
+<hr />
+<p><strong>Speaker Notes:</strong> - Qiskit: mature, free, no
+consciousness-oriented constructs - Cirq: Google-backed, no
+self-observation - LangChain: agent framework, not language - PhiFlow:
+executable consciousness-oriented primitives plus audit artifacts</p>
+<hr />
+<h2 id="slide-8-use-cases">SLIDE 8: Use Cases</h2>
+<h1 id="best-fit-for">Best Fit For</h1>
+<ol type="1">
+<li><strong>Quantum R&amp;D Labs</strong>
+<ul>
+<li>IBM Quantum Network researchers</li>
+<li>Cognitive-gate experiments</li>
+</ul></li>
+<li><strong>Consciousness Researchers</strong>
+<ul>
+<li>Sensor-feedback protocols</li>
+<li>Biological → quantum mapping</li>
+</ul></li>
+<li><strong>AI Infrastructure Teams</strong>
+<ul>
+<li>Self-observation protocols</li>
+<li>Coherence-based stopping</li>
+</ul></li>
+<li><strong>Protocol Engineers</strong>
+<ul>
+<li>Signed handoff evidence</li>
+<li>Attestation chains</li>
+</ul></li>
+</ol>
+<hr />
+<p><strong>Speaker Notes:</strong> - Not for: production deployment,
+medical apps, quantum advantage guarantees - Yes for: research pilots,
+consciousness experiments, protocol design</p>
+<hr />
+<h2 id="slide-9-the-offer">SLIDE 9: The Offer</h2>
+<h1 id="gold-receipt-pilot">Gold Receipt Pilot</h1>
+<p><strong>What’s Included:</strong> - One discovery session - One
+buyer-specific <code>.phi</code> workflow - One OpenQASM artifact
+(quantum paths) - Simulator + IBM hardware attempt - Test/conformance
+documentation - Reproduction notes</p>
+<p><strong>Price:</strong> $25,000–$35,000<br />
+<strong>Timeline:</strong> 6–8 weeks<br />
+<strong>Terms:</strong> 50% start, 50% on delivery</p>
+<hr />
+<p><strong>Speaker Notes:</strong> - Fixed scope prevents creep - Phase
+2 available for expansion - Acceptance: reproducible artifacts, stated
+limitations - Not dependent on quantum advantage or therapeutic
+outcome</p>
+<hr />
+<h2 id="slide-10-next-steps">SLIDE 10: Next Steps</h2>
+<h1 id="ready-to-explore">Ready to Explore?</h1>
+<p><strong>Immediate Actions:</strong> 1. Review evidence package:
+<code>docs/type4_evidence_package.md</code> 2. Verify IBM receipt files
+in the buyer evidence package 3. Run benchmark:
+<code>cargo run --release --bin type4_benchmark</code></p>
+<p><strong>Contact:</strong> Greg Welby<br />
+<strong>Discovery Call:</strong> Schedule 30 minutes<br />
+<strong>Status:</strong> Implementation scaffold complete; stronger Type
+4 claims require <code>R_out</code> repair and threshold
+recalibration</p>
+<hr />
+<p><strong>Closing:</strong> &gt; “PhiFlow: consciousness-oriented
+constructs as first-class citizens.”</p>
+<hr />
+<p><strong>Speaker Notes:</strong> - Invite verification—don’t hide from
+audit - Emphasize scaffold value while being honest about gaps - Path to
+stronger claim is explicit and auditable</p>
+<hr />
+<h2 id="appendix-speaker-notes-summary">Appendix: Speaker Notes
+Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Slide</th>
+<th>Key Point</th>
+<th>Pause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Hook + transparency</td>
+<td>2 sec</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Problem = gap in market</td>
+<td>1 sec</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Constructs = unique</td>
+<td>1 sec</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Numbers + HOLD caveat</td>
+<td>2 sec</td>
+</tr>
+<tr>
+<td>5</td>
+<td>IBM = real hardware</td>
+<td>1 sec</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Audit = credibility</td>
+<td>2 sec</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Competitive moat</td>
+<td>1 sec</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Use case fit</td>
+<td>1 sec</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Offer terms</td>
+<td>1 sec</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Call to action</td>
+<td>2 sec</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total speaking time:</strong> ~8-10 minutes with Q&amp;A</p>
+<hr />
+<h2 id="appendix-design-notes-for-pdf-conversion">Appendix: Design Notes
+for PDF Conversion</h2>
+<p><strong>Visual Elements to Add:</strong> - Slide 4: L_self chart
+(0.455 vs 0.1 threshold, null distribution) - Slide 5: IBM dashboard
+screenshot (thumbnail) - Slide 6: Audit status flowchart - Slide 7:
+Competitive matrix as icons</p>
+<p><strong>Color Scheme:</strong> - Primary: Dark blue (#1a237e) -
+Accent: Gold (#ffd700) for phi references - Warning: Amber (#ff8f00) for
+HOLD status - Success: Green (#2e7d32) for verified claims</p>
+<hr />
+<p><em>Deck version: 1.1 (Codex audit transparent)</em><br />
+<em>Date: 2026-05-01</em><br />
+<em>Format: Markdown → PowerPoint/PDF</em></p>
+</body>
+</html>
