@@ -1,0 +1,36 @@
+{
+  "schema": "phiflow-resonance-v1",
+  "timestamp": "2026-05-07T05:00:28.740781Z",
+  "lambda": 0.618033988749895,
+  "formula": "1 - phi^(-depth)",
+  "programs": {
+    "healing_bed": {
+      "cycles": 2,
+      "final_coherence": 0.6203771552,
+      "converged": true,
+      "resonance_field": [
+        0.589350320982891,
+        0.6203771552262256
+      ]
+    },
+    "agent_handshake": {
+      "field": [
+        0.6180339887498949,
+        0.6180339887498949,
+        0.1,
+        0.3819660112501052
+      ],
+      "lambda_verified": true,
+      "passed": true
+    },
+    "claude_phi": {
+      "coherence_at_depth2": 0.618033988749895,
+      "lambda_discovered": true
+    }
+  },
+  "verification": {
+    "instruction": "Run examples/agent_handshake.phi. resonance_field[1] must be exactly 0.618033988749895.",
+    "spec": "https://github.com/gwelby/PhiFlow/blob/master/AGENT_PROTOCOL.json"
+  },
+  "status": "resonating"
+}
