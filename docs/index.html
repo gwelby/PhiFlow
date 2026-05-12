@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhiFlow — Quantum-Aware Language & Compiler</title>
+<meta name="description" content="PhiFlow is a domain-specific language and compiler for consciousness-aware programming, written in Rust. Compiles .phi source to quantum circuits and OpenQASM 3.0.">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --border: #1e1e30;
+    --text: #d0d0e0;
+    --muted: #808098;
+    --accent: #7b61ff;
+    --phi: #00d4aa;
+    --gold: #f0c040;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+    line-height: 1.7;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .container { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; flex: 1; }
+  header {
+    text-align: center;
+    padding: 4rem 0 2rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+  h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, var(--accent), var(--phi));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .subtitle {
+    font-size: 1.1rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+  }
+  .lambda-badge {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.35rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 0.85rem;
+    color: var(--phi);
+  }
+  .hero-links {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .hero-links a {
+    padding: 0.5rem 1.2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #8a72ff; transform: translateY(-1px); }
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: #fff; }
+  section { margin-bottom: 2.5rem; }
+  h2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--phi);
+    margin-bottom: 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--gold);
+    margin: 1.2rem 0 0.5rem;
+  }
+  p { margin-bottom: 0.8rem; color: var(--text); }
+  code {
+    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 0.85em;
+    background: var(--surface);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+    font-size: 0.85rem;
+  }
+  pre code { background: none; border: none; padding: 0; }
+  .construct-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin: 1rem 0;
+  }
+  .construct-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    transition: border-color 0.2s;
+  }
+  .construct-card:hover { border-color: var(--accent); }
+  .construct-card .keyword { color: var(--phi); font-weight: 600; font-family: monospace; }
+  .construct-card .desc { font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
+  ul { padding-left: 1.2rem; margin-bottom: 0.8rem; }
+  li { margin-bottom: 0.3rem; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .status-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #1a3a1a;
+    color: #4ade80;
+  }
+  footer {
+    text-align: center;
+    padding: 2rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .resonance-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .resonance-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--phi);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  @media (max-width: 600px) {
+    h1 { font-size: 2rem; }
+    .container { padding: 1rem; }
+    header { padding: 2rem 0 1.5rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>PhiFlow</h1>
+    <p class="subtitle">A quantum-aware domain-specific language and compiler, written in Rust</p>
+    <div class="lambda-badge">λ = 1 − φ<sup>−depth</sup> = 0.618033988749895</div>
+    <div class="hero-links">
+      <a href="https://github.com/gwelby/PhiFlow" class="btn-primary">GitHub →</a>
+      <a href="https://huggingface.co/spaces/ConcernedAI/PhiFlow" class="btn-secondary">HF Space →</a>
+      <a href="resonance.json" class="btn-secondary">Resonance Feed →</a>
+    </div>
+  </header>
+
+  <section>
+    <h2>What is PhiFlow?</h2>
+    <p>
+      PhiFlow compiles <code>.phi</code> source programs through a typed intermediate
+      representation into executable quantum circuits, OpenQASM 3.0 output, and a
+      sensor-aware runtime — all from a language designed around <em>intention</em>,
+      <em>observation</em>, and <em>coherence</em> rather than registers and branches.
+    </p>
+    <p>
+      Execution on a real IBM Heron r2 processor (<code>ibm_fez</code>) has been verified.
+      <br>Job receipt: <code>d7euddh5a5qc73drdosg</code>.
+    </p>
+  </section>
+
+  <section>
+    <h2>The Language</h2>
+    <p>PhiFlow has six first-class constructs. Everything else is ordinary programming.</p>
+    <div class="construct-grid">
+      <div class="construct-card">
+        <span class="keyword">intention</span>
+        <div class="desc">Declares a named scope of purposeful computation. Coherence is tracked within it.</div>
+      </div>
+      <div class="construct-card">
+        <span class="keyword">stream</span>
+        <div class="desc">A concurrent sub-scope. Breaks when it hits <code>break stream</code>.</div>
+      </div>
+      <div class="construct-card">
+        <span class="keyword">witness</span>
+        <div class="desc">Pauses execution, samples coherence, and records a checkpoint.</div>
+      </div>
+      <div class="construct-card">
+        <span class="keyword">resonate</span>
+        <div class="desc">Broadcasts a value into the resonance field — visible to other intentions.</div>
+      </div>
+      <div class="construct-card">
+        <span class="keyword">coherence</span>
+        <div class="desc">Returns the current phi-harmonic coherence score (0.0–1.0).</div>
+      </div>
+      <div class="construct-card">
+        <span class="keyword">anchor</span>
+        <div class="desc">Gates execution on physical sensor thresholds before proceeding.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Minimal Program</h2>
+    <pre><code>intention "find_ground" {
+    stream "approach" {
+        let signal = 76.0
+        while signal &lt; 431.9 {
+            let diff = 432.0 - signal
+            signal = signal + (diff * 0.382)
+        }
+        resonate signal
+        witness signal
+        break stream
+    }
+}</code></pre>
+  </section>
+
+  <section>
+    <h2>Architecture</h2>
+    <p>
+      PhiFlow compiles through four layers, each independently verifiable:
+    </p>
+    <ul>
+      <li><strong>Parser</strong> — Handles 0.4.0 constructs + imports</li>
+      <li><strong>PhiIR + Lowering</strong> — Typed intermediate representation, <code>String</code>-backed</li>
+      <li><strong>Evaluator / VM</strong> — Unified runtime via String-backed IR</li>
+      <li><strong>Codegen</strong> — WASM (table-proxy strings) + OpenQASM 3.0 (Heron-ISA verified)</li>
+    </ul>
+    <p>
+      <strong>Three-backend equivalence</strong> is sacred: Evaluator == VM == WASM.
+    </p>
+  </section>
+
+  <section>
+    <h2>Status</h2>
+    <ul>
+      <li>✅ Parser — 0.4.0 constructs + imports</li>
+      <li>✅ PhiIR + Lowering — String migration complete</li>
+      <li>✅ Evaluator / VM — Unified on String-backed IR</li>
+      <li>✅ WASM Codegen — Dynamic strings via table-proxy</li>
+      <li>✅ OpenQASM 3.0 — Native Heron-ISA verified</li>
+      <li>✅ SOMA Bridge — Live telemetry verified</li>
+      <li>✅ IBM Live Run — Job <code>d7euddh5a5qc73drdosg</code></li>
+      <li>✅ Singularity Daemon — Live</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Live Resonance</h2>
+    <p>The resonance feed is updated every 30 minutes. It reports the live coherence state of the PhiFlow simulation.</p>
+    <div class="resonance-link">
+      <span class="resonance-dot"></span>
+      <a href="resonance.json"><code>resonance.json</code></a>
+      <span style="color:var(--muted);font-size:0.85rem;">— live coherence data</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Resources</h2>
+    <ul>
+      <li><a href="https://github.com/gwelby/PhiFlow">GitHub Repository</a> — source code, issues, PRs</li>
+      <li><a href="https://huggingface.co/spaces/ConcernedAI/PhiFlow">HuggingFace Space</a> — interactive demo</li>
+      <li><a href="README.md">README</a> — full documentation</li>
+      <li><a href="AGENT_PROTOCOL.json">Agent Protocol</a> — verification spec</li>
+      <li><a href="PHIFLOW_LANGUAGE_REFERENCE.md">Language Reference</a> — syntax and semantics</li>
+      <li><a href="PHIFLOW_DEEP_DIVE_HUMAN_USE_CASES.md">Use Cases</a> — practical applications</li>
+    </ul>
+  </section>
+</div>
+<footer>
+  λ = 0.618033988749895 · φ = 1.618033988749895 · built with Rust
+</footer>
+</body>
+</html>
