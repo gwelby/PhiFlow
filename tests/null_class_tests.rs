@@ -192,15 +192,128 @@ fn null_class_random_walk() {
     );
 }
 
+/// Type 4 format null: same structure as positive trace, but action is random.
+/// This specifically tests the `compute_fisher_type4` path.
+#[test]
+fn null_class_type4_format() {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+
+    let mut trace = Trace::new();
+    let mut model_sum = 0.55;
+    let mut model_n = 1.0;
+
+    for i in 1..=100 {
+        let step = i as f64;
+        let base_val = 0.90 - step * 0.012;
+        let mod_val = 1.10 - (model_sum / model_n) * 0.40;
+        let obs = base_val * mod_val;
+
+        // Action is RANDOM — no relationship to model
+        let action = rng.gen::<f64>();
+
+        let model_mean = model_sum / model_n;
+        model_sum += obs;
+        model_n += 1.0;
+
+        // Type 4 format: step, obs, model, action
+        trace.raw_events.push(("step".to_string(), step));
+        trace.raw_events.push(("obs".to_string(), obs));
+        trace.raw_events.push(("model".to_string(), model_mean));
+        trace.raw_events.push(("action".to_string(), action));
+
+        trace.observed.push(obs, step);
+        trace.coherence.push(0.5, step);
+        trace.depth.push(1.0, step);
+        trace.resonance_k.push(4.0, step);
+    }
+
+    let metrics = ConsciousnessMetrics::compute(&trace, 10, 5, 0.01);
+
+    println!("Type4-format null:");
+    println!("  L_self = {:.6}", metrics.l_self);
+    println!("  C_PF   = {:.6}", metrics.c_pf);
+
+    // Random action breaks the model→action loop → low C_PF
+    assert!(
+        metrics.c_pf < 0.3,
+        "Type4-format null failed: C_PF = {:.6} >= 0.3",
+        metrics.c_pf
+    );
+}
+
+/// Type 4 format null: shuffled action (preserves marginals, breaks temporal).
+#[test]
+fn null_class_type4_shuffled() {
+    use rand::seq::SliceRandom;
+    let mut rng = rand::thread_rng();
+
+    let mut trace = Trace::new();
+    let mut model_sum = 0.55;
+    let mut model_n = 1.0;
+    let mut actions: Vec<f64> = Vec::new();
+
+    for i in 1..=100 {
+        let step = i as f64;
+        let base_val = 0.90 - step * 0.012;
+        let mod_val = 1.10 - (model_sum / model_n) * 0.40;
+        let obs = base_val * mod_val;
+        let model_mean = model_sum / model_n;
+
+        // Generate action correlated with model (to build a "fake" positive)
+        let action = if obs < model_mean { 1.0 } else { 0.0 };
+        actions.push(action);
+
+        model_sum += obs;
+        model_n += 1.0;
+
+        trace.observed.push(obs, step);
+        trace.coherence.push(0.5, step);
+        trace.depth.push(1.0, step);
+        trace.resonance_k.push(4.0, step);
+    }
+
+    // Shuffle actions to break temporal alignment
+    actions.shuffle(&mut rng);
+
+    // Now populate raw_events with shuffled actions
+    let mut model_sum2 = 0.55;
+    let mut model_n2 = 1.0;
+    for i in 1..=100 {
+        let step = i as f64;
+        let base_val = 0.90 - step * 0.012;
+        let mod_val = 1.10 - (model_sum2 / model_n2) * 0.40;
+        let obs = base_val * mod_val;
+        let model_mean = model_sum2 / model_n2;
+        model_sum2 += obs;
+        model_n2 += 1.0;
+
+        trace.raw_events.push(("step".to_string(), step));
+        trace.raw_events.push(("obs".to_string(), obs));
+        trace.raw_events.push(("model".to_string(), model_mean));
+        trace.raw_events.push(("action".to_string(), actions[i - 1]));
+    }
+
+    let metrics = ConsciousnessMetrics::compute(&trace, 10, 5, 0.01);
+
+    println!("Type4-shuffled null:");
+    println!("  L_self = {:.6}", metrics.l_self);
+    println!("  C_PF   = {:.6}", metrics.c_pf);
+
+    assert!(
+        metrics.c_pf < 0.3,
+        "Type4-shuffled null failed: C_PF = {:.6} >= 0.3",
+        metrics.c_pf
+    );
+}
+
 /// All null classes summary test.
 #[test]
 fn null_class_all_pass() {
-    // This test runs all null classes and prints a summary
-    // It always passes - the purpose is diagnostic output
-
     println!("\n═══════════════════════════════════════════════════════════════");
     println!("  NULL CLASS TEST SUMMARY");
     println!("  Requirement: All null classes score C_PF < 0.3");
+    println!("  Type 4 format nulls now included (tests compute_fisher_type4 path)");
     println!("═══════════════════════════════════════════════════════════════\n");
 
     let test_cases = vec![
@@ -209,6 +322,8 @@ fn null_class_all_pass() {
         ("replay", run_replay()),
         ("thermostat", run_thermostat()),
         ("random_walk", run_random_walk()),
+        ("type4_format", run_type4_format_null()),
+        ("type4_shuffled", run_type4_shuffled_null()),
     ];
 
     let mut all_pass = true;
@@ -216,7 +331,7 @@ fn null_class_all_pass() {
         let pass = c_pf < 0.3;
         all_pass = all_pass && pass;
         println!(
-            "  {:12}  L_self={:.4}  C_PF={:.4}  {}",
+            "  {:14}  L_self={:.4}  C_PF={:.4}  {}",
             name,
             l_self,
             c_pf,
@@ -300,6 +415,84 @@ fn run_random_walk() -> (f64, f64) {
         trace.observed.push(current, i as f64);
         trace.coherence.push(0.5, i as f64);
         trace.depth.push(1.0, i as f64);
+    }
+    let m = ConsciousnessMetrics::compute(&trace, 10, 5, 0.01);
+    (m.l_self, m.c_pf)
+}
+
+fn run_type4_format_null() -> (f64, f64) {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    let mut trace = Trace::new();
+    let mut model_sum = 0.55;
+    let mut model_n = 1.0;
+
+    for i in 1..=100 {
+        let step = i as f64;
+        let base_val = 0.90 - step * 0.012;
+        let mod_val = 1.10 - (model_sum / model_n) * 0.40;
+        let obs = base_val * mod_val;
+        let action = rng.gen::<f64>();
+        let model_mean = model_sum / model_n;
+        model_sum += obs;
+        model_n += 1.0;
+
+        trace.raw_events.push(("step".to_string(), step));
+        trace.raw_events.push(("obs".to_string(), obs));
+        trace.raw_events.push(("model".to_string(), model_mean));
+        trace.raw_events.push(("action".to_string(), action));
+
+        trace.observed.push(obs, step);
+        trace.coherence.push(0.5, step);
+        trace.depth.push(1.0, step);
+        trace.resonance_k.push(4.0, step);
+    }
+    let m = ConsciousnessMetrics::compute(&trace, 10, 5, 0.01);
+    (m.l_self, m.c_pf)
+}
+
+fn run_type4_shuffled_null() -> (f64, f64) {
+    use rand::seq::SliceRandom;
+    let mut rng = rand::thread_rng();
+    let mut trace = Trace::new();
+    let mut model_sum = 0.55;
+    let mut model_n = 1.0;
+    let mut actions: Vec<f64> = Vec::new();
+
+    for i in 1..=100 {
+        let step = i as f64;
+        let base_val = 0.90 - step * 0.012;
+        let mod_val = 1.10 - (model_sum / model_n) * 0.40;
+        let obs = base_val * mod_val;
+        let model_mean = model_sum / model_n;
+        let action = if obs < model_mean { 1.0 } else { 0.0 };
+        actions.push(action);
+        model_sum += obs;
+        model_n += 1.0;
+
+        trace.observed.push(obs, step);
+        trace.coherence.push(0.5, step);
+        trace.depth.push(1.0, step);
+        trace.resonance_k.push(4.0, step);
+    }
+
+    actions.shuffle(&mut rng);
+
+    let mut model_sum2 = 0.55;
+    let mut model_n2 = 1.0;
+    for i in 1..=100 {
+        let step = i as f64;
+        let base_val = 0.90 - step * 0.012;
+        let mod_val = 1.10 - (model_sum2 / model_n2) * 0.40;
+        let obs = base_val * mod_val;
+        let model_mean = model_sum2 / model_n2;
+        model_sum2 += obs;
+        model_n2 += 1.0;
+
+        trace.raw_events.push(("step".to_string(), step));
+        trace.raw_events.push(("obs".to_string(), obs));
+        trace.raw_events.push(("model".to_string(), model_mean));
+        trace.raw_events.push(("action".to_string(), actions[i - 1]));
     }
     let m = ConsciousnessMetrics::compute(&trace, 10, 5, 0.01);
     (m.l_self, m.c_pf)

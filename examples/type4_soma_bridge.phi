@@ -1,0 +1,73 @@
+// type4_soma_bridge.phi
+// Type 4 observer trace using live SOMA sensor telemetry.
+//
+// Reads soma_presence and soma_peak_dbc from soma_state.json as observations.
+// Maintains a running-mean self-model. Action depends on model.
+// Emits structured trace: STEP | OBS | MODEL | ACTION
+//
+// Run with: cargo run --release --bin phic -- examples/type4_soma_bridge.phi
+// Or via Type 4 benchmark when wired for real daemon trace.
+
+agent "T4SOMA" version "1.0.0" {
+    let step      = 0.0
+    let model_sum = 0.55
+    let model_n   = 1.0
+
+    stream "soma_self_model" {
+        step = step + 1.0
+
+        // Read live SOMA sensors. Since a static snapshot may have constant
+        // values, cycle through multiple sensors to create variation from
+        // real sensor magnitudes: presence, peak_dbc, fan_hz, ac_60.
+        let presence = sensor("soma_presence")
+        let peak_dbc = sensor("soma_peak_dbc")
+        let fan_hz   = sensor("soma_fan_hz")
+        let ac_60    = sensor("soma_ac_60")
+
+        // Cycle through sensors based on step to create real variation
+        let cycle = step % 4.0
+        let obs = 0.0
+        if cycle == 1.0 {
+            obs = presence
+        } else if cycle == 2.0 {
+            // peak_dbc typically 0-20; scale to 0-1
+            obs = peak_dbc * 0.05
+        } else if cycle == 3.0 {
+            // fan_hz typically 30-100; normalize roughly
+            obs = (fan_hz - 30.0) * 0.014
+        } else {
+            // ac_60 already ~0-1
+            obs = ac_60
+        }
+        if obs < 0.0 {
+            obs = 0.0
+        }
+        if obs > 1.0 {
+            obs = 1.0
+        }
+
+        // Current self-model (running mean of observations)
+        let model_mean = model_sum / model_n
+
+        // Behavioral decision based on self-model (R_out)
+        // action = 1.0 (CORRECT) if obs is below model expectation
+        let action = 0.0
+        if obs < model_mean {
+            action = 1.0
+        }
+
+        // Update self-model with current observation (R_in)
+        model_sum = model_sum + obs
+        model_n   = model_n   + 1.0
+
+        // Emit structured trace: 4 values per cycle
+        resonate step
+        resonate obs
+        resonate model_mean
+        resonate action
+
+        if step >= 20.0 {
+            break stream
+        }
+    }
+}

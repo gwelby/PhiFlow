@@ -37,7 +37,7 @@ fn full_benchmark_battery() {
     println!("\n📊 PHASE 3: State Discrimination");
     println!("───────────────────────────────────────────────────────────────");
     let phase3_pass = phase3_discrimination_tests(&mut report);
-    println!("  Phase 3: {}", if phase3_pass { "PASS" } else { "SKIP" });
+    println!("  Phase 3: {}", if phase3_pass { "PASS" } else { "FAIL" });
 
     // Phase 4: PhiFlow Daemon
     println!("\n📊 PHASE 4: PhiFlow Daemon Type 4 Trace");
@@ -45,8 +45,8 @@ fn full_benchmark_battery() {
     let phase4_pass = phase4_daemon_trace(&mut report);
     println!("  Phase 4: {}", if phase4_pass { "PASS" } else { "FAIL" });
 
-    // Overall verdict
-    let all_pass = phase1_pass && phase2_pass && phase4_pass;
+    // Overall verdict — T4-04 fix: Phase 3 is now required
+    let all_pass = phase1_pass && phase2_pass && phase3_pass && phase4_pass;
 
     println!("\n═══════════════════════════════════════════════════════════════");
     println!("  FINAL VERDICT");
@@ -120,9 +120,9 @@ fn phase2_null_tests(report: &mut BenchmarkReport) -> bool {
 fn phase3_discrimination_tests(report: &mut BenchmarkReport) -> bool {
     // Check if SOMA fixtures available
     if std::env::var("PHIFLOW_SOMA_FIXTURES").is_err() {
-        println!("  SKIPPED (PHIFLOW_SOMA_FIXTURES not set)");
-        report.add_note("Phase 3 skipped: SOMA fixtures not available");
-        return true; // Skip is not a failure
+        println!("  FAIL (PHIFLOW_SOMA_FIXTURES not set)");
+        report.add_note("Phase 3 failed: SOMA fixtures not available — skip is not a pass");
+        return false; // T4-04 fix: skip is NOT a pass
     }
 
     // Would load fixtures and run tests here

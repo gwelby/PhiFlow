@@ -4,6 +4,7 @@
 //! F_model measures how sharply the future depends on the current model.
 //! F_self* = L_self × F_model is the self-model sensitivity.
 
+use crate::metrics::trace::Trace;
 use ndarray::Array1;
 
 /// Compute Fisher information of future trajectory w.r.t. model state.
@@ -52,6 +53,68 @@ pub fn compute_f_self_star(l_self: f64, f_model: f64) -> f64 {
     l * f
 }
 
+/// Pearson correlation coefficient between two vectors.
+fn pearson_correlation_fi(x: &[f64], y: &[f64]) -> f64 {
+    if x.len() != y.len() || x.len() < 2 {
+        return 0.0;
+    }
+
+    let n = x.len() as f64;
+    let mean_x = x.iter().sum::<f64>() / n;
+    let mean_y = y.iter().sum::<f64>() / n;
+
+    let mut num = 0.0;
+    let mut den_x = 0.0;
+    let mut den_y = 0.0;
+
+    for (&xi, &yi) in x.iter().zip(y.iter()) {
+        let dx = xi - mean_x;
+        let dy = yi - mean_y;
+        num += dx * dy;
+        den_x += dx * dx;
+        den_y += dy * dy;
+    }
+
+    if den_x == 0.0 || den_y == 0.0 {
+        return 0.0;
+    }
+
+    num / (den_x.sqrt() * den_y.sqrt())
+}
+
+/// Compute Fisher information specifically for Type 4 traces.
+///
+/// Extracts model and action from `raw_events` (step, obs, model, action format)
+/// and measures how strongly the model predicts the future action via R².
+///
+/// For a genuine self-referential loop, action[t+1] should depend on model[t].
+/// For null systems, the relationship is near zero.
+///
+/// Returns R² (coefficient of determination), bounded to [0, 1].
+pub fn compute_fisher_type4(trace: &Trace) -> f64 {
+    let mut models: Vec<f64> = Vec::new();
+    let mut actions: Vec<f64> = Vec::new();
+
+    for chunk in trace.raw_events.chunks(4) {
+        if chunk.len() == 4 {
+            // chunk: (step, obs, model, action)
+            models.push(chunk[2].1);
+            actions.push(chunk[3].1);
+        }
+    }
+
+    if models.len() < 4 || actions.len() < 4 {
+        return 0.0;
+    }
+
+    // model[t] predicts action[t+1]
+    let x = &models[..models.len() - 1];
+    let y = &actions[1..];
+
+    let r = pearson_correlation_fi(x, y);
+    r * r // F_model = R²
+}
+
 /// Compute numerical gradient of log-likelihood.
 /// Uses central differences for better accuracy.
 fn compute_numerical_gradient(model: &[f64], future: &[f64], epsilon: f64) -> Vec<f64> {
@@ -75,7 +138,8 @@ fn compute_numerical_gradient(model: &[f64], future: &[f64], epsilon: f64) -> Ve
 }
 
 /// Gaussian log-likelihood: log p(future|model) ≈ -0.5 * Σ(future_i - model_i)²
-/// Simplified assumption: model predicts future directly
+/// Compares the first min(model.len(), future.len()) elements.
+/// This is a one-step-ahead prediction: model at time t predicts future at time t+1.
 fn log_likelihood_gaussian(model: &[f64], future: &[f64]) -> f64 {
     let len = model.len().min(future.len());
     if len == 0 {
@@ -297,5 +361,62 @@ mod tests {
         assert_eq!(compute_f_model(&[], &[]), 0.0);
         assert_eq!(fisher_information_1d(&[]), 0.0);
         assert_eq!(fisher_information_1d(&[1.0]), 0.0); // Need at least 2 samples
+    }
+
+    #[test]
+    fn test_fisher_type4_strong_relationship() {
+        // Build a Type 4 trace where action[t+1] = 1.0 iff model[t] > 0.5
+        let mut trace = Trace::new();
+        for i in 1..=20 {
+            let step = i as f64;
+            let model = 0.3 + step * 0.02; // 0.32 -> 0.70, crosses 0.5 at step ~10
+            let obs = model + 0.01 * (step * 0.5).sin();
+            let action = if model > 0.5 { 1.0 } else { 0.0 };
+
+            trace.raw_events.push(("step".to_string(), step));
+            trace.raw_events.push(("obs".to_string(), obs));
+            trace.raw_events.push(("model".to_string(), model));
+            trace.raw_events.push(("action".to_string(), action));
+
+            trace.observed.push(obs, step);
+            trace.coherence.push(0.5, step);
+            trace.depth.push(1.0, step);
+            trace.resonance_k.push(4.0, step);
+        }
+
+        let f = compute_fisher_type4(&trace);
+        println!("Type 4 Fisher (strong binary action): {:.6}", f);
+        // model and action have a strong monotonic relationship → high R²
+        assert!(f > 0.5, "Strong model→action relationship should have R² > 0.5, got {}", f);
+    }
+
+    #[test]
+    fn test_fisher_type4_no_relationship() {
+        // Build a Type 4 trace where action is random, unrelated to model
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+
+        let mut trace = Trace::new();
+        for i in 1..=20 {
+            let step = i as f64;
+            let model = 0.3 + step * 0.02;
+            let obs = model + 0.01 * (step * 0.5).sin();
+            let action = rng.gen::<f64>(); // random, no relationship to model
+
+            trace.raw_events.push(("step".to_string(), step));
+            trace.raw_events.push(("obs".to_string(), obs));
+            trace.raw_events.push(("model".to_string(), model));
+            trace.raw_events.push(("action".to_string(), action));
+
+            trace.observed.push(obs, step);
+            trace.coherence.push(0.5, step);
+            trace.depth.push(1.0, step);
+            trace.resonance_k.push(4.0, step);
+        }
+
+        let f = compute_fisher_type4(&trace);
+        println!("Type 4 Fisher (no relationship): {:.6}", f);
+        // Random action should have near-zero correlation with model
+        assert!(f < 0.3, "Random action should have R² < 0.3, got {}", f);
     }
 }

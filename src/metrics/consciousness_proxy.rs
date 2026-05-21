@@ -12,7 +12,7 @@
 
 use crate::metrics::coherence_panel::CoherencePanel;
 use crate::metrics::differentiation::compute_d_int;
-use crate::metrics::fisher_information::{compute_f_model, compute_f_self_star};
+use crate::metrics::fisher_information::{compute_f_model, compute_f_self_star, compute_fisher_type4};
 use crate::metrics::self_correlation::{self_correlation_from_trace, SelfCorrelation};
 use crate::metrics::trace::Trace;
 use chrono::{DateTime, Utc};
@@ -86,8 +86,14 @@ impl ConsciousnessMetrics {
         let c_coh = panel.c_coh;
 
         // 4. F_model (Fisher information)
-        let (models, futures) = trace.to_model_future_pairs(window);
-        let f_model = compute_f_model(&models, &futures);
+        // Type 4 traces with explicit model/action channels use R²(model→action).
+        // Generic traces fall back to numerical gradient over model→future.
+        let f_model = if trace.raw_events.len() >= 4 && trace.raw_events.len() % 4 == 0 {
+            compute_fisher_type4(trace)
+        } else {
+            let (models, futures) = trace.to_model_future_pairs(window);
+            compute_f_model(&models, &futures)
+        };
 
         // 5. F_self* = L_self × F_model
         let f_self_star = compute_f_self_star(l_self, f_model);
