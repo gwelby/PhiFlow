@@ -288,10 +288,16 @@ impl<'a> Evaluator<'a> {
 
     /// Run the program to completion. Returns the final value.
     pub fn run(&mut self) -> EvalResult<PhiIRValue> {
-        match self.run_or_yield()? {
-            VmExecResult::Complete(value) => Ok(value),
-            VmExecResult::Yielded { .. } => Ok(PhiIRValue::Number(self.compute_coherence())),
-            VmExecResult::Entangled { .. } => Ok(PhiIRValue::Number(self.compute_coherence())),
+        loop {
+            match self.run_or_yield()? {
+                VmExecResult::Complete(value) => return Ok(value),
+                VmExecResult::Yielded { .. } => {
+                    return Ok(PhiIRValue::Number(self.compute_coherence()))
+                }
+                VmExecResult::Entangled { frozen_state, .. } => {
+                    self.resume(frozen_state)?;
+                }
+            }
         }
     }
 

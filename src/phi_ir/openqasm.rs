@@ -64,6 +64,10 @@ pub struct OpenQasmEmitter {
     pub anchor_fingerprint_ecdsa: Option<String>,
     /// Optional ML-DSA-65 (Dilithium3) fingerprint for AntiGravity-Verified watermark.
     pub anchor_fingerprint_pq: Option<String>,
+    /// Runtime parameter overrides: intention_name → coherence_value.
+    /// When set, resonate angles inside matching intentions use these
+    /// values instead of compile-time constants.
+    pub runtime_params: HashMap<String, f64>,
 }
 
 impl OpenQasmEmitter {
@@ -81,6 +85,7 @@ impl OpenQasmEmitter {
             collapsed_qubits: HashSet::new(),
             anchor_fingerprint_ecdsa: None,
             anchor_fingerprint_pq: None,
+            runtime_params: HashMap::new(),
         }
     }
 
@@ -266,17 +271,37 @@ impl OpenQasmEmitter {
             }
         }
 
-        // Flush deferred (Final/NonDestructive) measurements at end of circuit
+        // Flush deferred (Final/NonDestructive) measurements at end of circuit.
+        // Deduplicate: multiple witness statements may enqueue the same qubit
+        // measurement; we only emit each unique line once.
         if !self.deferred_measures.is_empty() {
             self.source
                 .push_str("\n    // --- Final Witness measurements (end-of-circuit) ---\n");
             let deferred = self.deferred_measures.drain(..).collect::<Vec<_>>();
+            let mut seen = HashSet::new();
             for line in deferred {
-                self.source.push_str(&format!("{line}\n"));
+                if seen.insert(line.clone()) {
+                    self.source.push_str(&format!("{line}\n"));
+                }
             }
         }
 
         Ok(self.source.clone())
+    }
+
+    /// Emit OpenQASM with runtime parameter overrides.
+    ///
+    ///  maps intention names to coherence values (0.0–1.0).
+    /// When a  instruction is encountered inside an intention whose
+    /// name exists in the map, the compile-time constant is replaced by the
+    /// runtime value, producing a parameterized quantum circuit.
+    pub fn emit_with_runtime_params(
+        &mut self,
+        ir: &PhiIRProgram,
+        params: &HashMap<String, f64>,
+    ) -> Result<String, OpenQasmEmitError> {
+        self.runtime_params = params.clone();
+        self.emit(ir)
     }
 
     pub fn emit_with_topology(
@@ -388,6 +413,18 @@ impl OpenQasmEmitter {
         direction: ResonateDirection,
         number_constants: &HashMap<Operand, f64>,
     ) -> String {
+        // Runtime parameter override: if the current intention has a
+        // runtime coherence value, use it instead of the compile-time constant.
+        if let Some(name) = self.active_intentions.last() {
+            if let Some(&coherence) = self.runtime_params.get(name) {
+                let theta = format!("{} * pi", format_multiplier(coherence));
+                return match direction {
+                    ResonateDirection::TeamA => theta,
+                    ResonateDirection::TeamB => format!("pi - ({theta})"),
+                };
+            }
+        }
+
         match value.and_then(|op| number_constants.get(&op).copied()) {
             Some(confidence) => {
                 let theta = format!("{} * pi", format_multiplier(confidence));

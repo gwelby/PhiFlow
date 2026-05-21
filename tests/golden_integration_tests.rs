@@ -138,12 +138,14 @@ witness
     let mut emitter = OpenQasmEmitter::new();
     let qasm = emitter.emit(&program).expect("emit failed");
 
-    // Count occurrences of measure
-    let measure_count = qasm.matches("measure").count();
-    // 2 qubits * 2 witness calls = 4 measurements if mid-circuit (though the emitter currently measures all qubits for each witness call)
-    assert!(
-        measure_count >= 4,
-        "Expected at least 4 measurement operations, but found: {}",
+    // Count actual measurement operations (not the header comment "measurements").
+    let measure_count = qasm.lines().filter(|l| l.contains("measure q[")).count();
+    // With Final/NonDestructive policy, all qubits are measured once at end-of-circuit,
+    // regardless of how many witness statements appear. Deduplication ensures each
+    // qubit is measured exactly once.
+    assert_eq!(
+        measure_count, 2,
+        "Expected exactly 2 measurement operations (one per qubit), but found: {}",
         measure_count
     );
 }

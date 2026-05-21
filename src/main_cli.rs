@@ -4,7 +4,7 @@ use phiflow::parser::parse_phi_program_with_diagnostics;
 use phiflow::phi_ir::evaluator::Evaluator;
 use phiflow::phi_ir::lowering::{lower_program, lower_program_checked};
 use phiflow::phi_ir::openqasm::OpenQasmEmitter;
-use phiflow::phi_ir::quantum_codegen::compile_ir_to_quantum;
+
 use phiflow::phi_ir::topology_transpiler::{RoutingStrategy, TopologyTranspileConfig};
 use phiflow::quantum::ibm_quantum::IBMQuantumBackend;
 use phiflow::quantum::{BackendTopologyProfile, QuantumBackend, QuantumConfig};
@@ -309,10 +309,39 @@ async fn run(
     if let Some(t) = target {
         match t.as_str() {
             "quantum" => {
-                println!("Routing to Quantum Codegen Backend...");
-                let circuit = compile_ir_to_quantum(&ir_program);
-                println!("Generates Quantum Circuit:");
-                println!("{:#?}", circuit);
+                println!("🌌 Quantum Consciousness Council — parameterized emission");
+
+                // 1. Run evaluator to capture live coherence per intention
+                let mut evaluator = Evaluator::new(ir_program.clone())
+                    .with_hardware_modifier(sensors::compute_coherence_from_sensors);
+                let _ = evaluator.run(); // may end naturally
+
+                let frozen = evaluator.freeze_state();
+                let mut runtime_params = HashMap::new();
+                for event in &frozen.witness_log {
+                    if let Some(name) = event.intention_stack.last() {
+                        // Last coherence value for each intention wins
+                        runtime_params.insert(name.clone(), event.coherence);
+                    }
+                }
+
+                if runtime_params.is_empty() {
+                    println!("⚠️  No witness events found — using compile-time constants");
+                } else {
+                    println!("📊 Captured council coherence:");
+                    for (name, coherence) in &runtime_params {
+                        println!("  {}: {:.4}", name, coherence);
+                    }
+                }
+
+                // 2. Emit parameterized QASM
+                let mut emitter = OpenQasmEmitter::new();
+                emitter.optimize_depth = optimize_depth;
+                let qasm = emitter
+                    .emit_with_runtime_params(&ir_program, &runtime_params)
+                    .map_err(|e| CliError::Eval(e.to_string()))?;
+
+                print!("{}", qasm);
                 return Ok(None);
             }
             "openqasm" => {
