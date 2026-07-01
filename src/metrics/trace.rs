@@ -56,12 +56,12 @@ impl TraceChannel {
 /// Complete trace extracted from a PhiFlow execution.
 #[derive(Debug, Clone)]
 pub struct Trace {
-    pub coherence: TraceChannel,     // WitnessEvent.coherence
-    pub depth: TraceChannel,         // intention_stack.len()
-    pub resonance_k: TraceChannel,   // resonance_count
-    pub observed: TraceChannel,      // Parsed from resonance_events between witnesses
-    pub agents: Vec<Option<String>>, // agent_name per witness
-    pub timestamps: Vec<f64>,        // yield_timestamp or monotonic index
+    pub coherence: TraceChannel,        // WitnessEvent.coherence
+    pub depth: TraceChannel,            // intention_stack.len()
+    pub resonance_k: TraceChannel,      // resonance_count
+    pub observed: TraceChannel,         // Parsed from resonance_events between witnesses
+    pub agents: Vec<Option<String>>,    // agent_name per witness
+    pub timestamps: Vec<f64>,           // yield_timestamp or monotonic index
     pub raw_events: Vec<(String, f64)>, // All resonance events as (scope, value)
 }
 
@@ -87,7 +87,7 @@ impl Trace {
     }
 
     /// Build a Trace from a frozen VmState (e.g., after daemon yields).
-    /// 
+    ///
     /// First tries witness_log. If empty, falls back to parsing grouped
     /// resonance_events (e.g., type4_trace_benchmark format: step, obs, model, action).
     pub fn from_vm_state(state: &VmState) -> Self {
@@ -101,7 +101,7 @@ impl Trace {
     }
 
     /// Build trace from resonance_events when no witness_log exists.
-    /// 
+    ///
     /// Parses the type4_trace_benchmark format where each cycle emits:
     ///   resonate step, resonate obs, resonate model_mean, resonate action
     fn from_resonance_events_only(events: &[(String, PhiIRValue)]) -> Self {
@@ -131,7 +131,7 @@ impl Trace {
                 trace.depth.push(1.0 + model * 0.5, step); // Depth varies with model complexity
                 trace.resonance_k.push(4.0, step); // 4 resonances per cycle
                 trace.agents.push(Some("T4Daemon".to_string()));
-                
+
                 // Store raw for later analysis
                 trace.raw_events.push(("step".to_string(), step));
                 trace.raw_events.push(("obs".to_string(), obs));
@@ -144,10 +144,7 @@ impl Trace {
     }
 
     /// Build a Trace from witness_log and resonance_events directly.
-    pub fn from_witness_log(
-        log: &[VmWitnessEvent],
-        events: &[(String, PhiIRValue)],
-    ) -> Self {
+    pub fn from_witness_log(log: &[VmWitnessEvent], events: &[(String, PhiIRValue)]) -> Self {
         let mut trace = Trace::new();
 
         let resonance_values: Vec<(String, f64)> = events
@@ -159,21 +156,22 @@ impl Trace {
             })
             .collect();
 
-        let mut event_idx = 0usize;
         for (i, witness) in log.iter().enumerate() {
             let timestamp = i as f64; // Use index when no yield_timestamp
 
-            let observed_value = if event_idx < resonance_values.len() {
-                resonance_values[witness.resonance_event_idx.min(resonance_values.len())]
-                    .1
+            let observed_value = if witness.resonance_event_idx < resonance_values.len() {
+                resonance_values[witness.resonance_event_idx].1
             } else {
                 0.0
             };
-            event_idx = witness.resonance_event_idx;
 
             trace.coherence.push(witness.coherence, timestamp);
-            trace.depth.push(witness.intention_stack.len() as f64, timestamp);
-            trace.resonance_k.push(witness.resonance_count as f64, timestamp);
+            trace
+                .depth
+                .push(witness.intention_stack.len() as f64, timestamp);
+            trace
+                .resonance_k
+                .push(witness.resonance_count as f64, timestamp);
             trace.observed.push(observed_value, timestamp);
             trace.agents.push(witness.agent_name.clone());
             trace.timestamps.push(timestamp);
@@ -223,7 +221,7 @@ impl Trace {
 
                 trace.timestamps.push(step);
                 trace.coherence.push(0.5, step); // Placeholder coherence
-                trace.depth.push(1.0, step);     // Placeholder depth
+                trace.depth.push(1.0, step); // Placeholder depth
                 trace.resonance_k.push(4.0, step); // 4 resonances per cycle
                 trace.observed.push(obs, step);
                 trace.raw_events.push(("step".to_string(), step));
@@ -259,7 +257,47 @@ impl Trace {
         ]
     }
 
+    /// Verify Type 4 trace format and extract (model, action) pairs.
+    ///
+    /// Checks that raw_events follow the exact label sequence:
+    ///   (step, obs, model, action), (step, obs, model, action), ...
+    ///
+    /// Returns None if the label order is wrong or insufficient data.
+    /// Lag-1 R² needs at least three chunks so the aligned vectors have
+    /// at least two samples after shifting.
+    pub fn type4_model_action_pairs(&self) -> Option<(Vec<f64>, Vec<f64>)> {
+        if self.raw_events.len() < 12 || self.raw_events.len() % 4 != 0 {
+            return None;
+        }
+
+        let mut models = Vec::new();
+        let mut actions = Vec::new();
+
+        for chunk in self.raw_events.chunks(4) {
+            // Verify exact label order: step, obs, model, action
+            if chunk[0].0 != "step"
+                || chunk[1].0 != "obs"
+                || chunk[2].0 != "model"
+                || chunk[3].0 != "action"
+            {
+                return None;
+            }
+            models.push(chunk[2].1);
+            actions.push(chunk[3].1);
+        }
+
+        // Need at least 3 pairs so lag-1 R² has at least 2 aligned samples.
+        if models.len() < 3 {
+            return None;
+        }
+
+        Some((models, actions))
+    }
+
     /// Extract (model_states, future_trajectories) for Fisher information.
+    ///
+    /// DEPRECATED: This method computes state roughness, not Fisher information.
+    /// Use `type4_model_action_pairs()` for proper Type 4 traces.
     pub fn to_model_future_pairs(&self, window: usize) -> (Vec<Vec<f64>>, Vec<Vec<f64>>) {
         let mut models = Vec::new();
         let mut futures = Vec::new();
@@ -316,16 +354,14 @@ mod tests {
             ("model".to_string(), PhiIRValue::Number(0.6)),
         ];
 
-        let log = vec![
-            VmWitnessEvent {
-                intention_stack: vec!["test".to_string()],
-                coherence: 0.7,
-                register_count: 5,
-                resonance_count: 2,
-                agent_name: Some("agent".to_string()),
-                resonance_event_idx: 1,
-            },
-        ];
+        let log = vec![VmWitnessEvent {
+            intention_stack: vec!["test".to_string()],
+            coherence: 0.7,
+            register_count: 5,
+            resonance_count: 2,
+            agent_name: Some("agent".to_string()),
+            resonance_event_idx: 1,
+        }];
 
         let trace = Trace::from_witness_log(&log, &events);
         assert_eq!(trace.len(), 1);

@@ -9,6 +9,8 @@ use phiflow::phi_ir::topology_transpiler::{RoutingStrategy, TopologyTranspileCon
 use phiflow::quantum::ibm_quantum::IBMQuantumBackend;
 use phiflow::quantum::{BackendTopologyProfile, QuantumBackend, QuantumConfig};
 use phiflow::phi_ir::PhiIRValue;
+use phiflow::metrics::consciousness_proxy::ConsciousnessMetrics;
+use phiflow::metrics::trace::Trace;
 use phiflow::resonance_bus::{self, ResonanceEvent};
 use phiflow::sensors;
 use phiflow::system_host::SystemHostProvider;
@@ -31,6 +33,10 @@ struct Args {
     /// Emit parse errors as a strict JSON array of PhiDiagnostic objects (for tooling).
     #[arg(long, default_value_t = false)]
     json_errors: bool,
+
+    /// Emit execution metrics as JSON (coherence, resonance, self-correlation signals).
+    #[arg(long, default_value_t = false)]
+    measure: bool,
 
     /// The target backend to compile to (e.g., 'quantum'). If not specified, runs in the interpreter.
     #[arg(long)]
@@ -160,6 +166,7 @@ struct RunReport {
     final_coherence: f64,
     resonance_events: Vec<(String, PhiIRValue)>,
     ended_streams: Vec<String>,
+    consciousness_metrics: Option<ConsciousnessMetrics>,
     _program: phiflow::phi_ir::PhiIRProgram,
 }
 
@@ -168,9 +175,11 @@ async fn main() {
     let args = Args::parse();
     let json_errors = args.json_errors;
 
+    let measure = args.measure;
     match run(
         &args.file,
         json_errors,
+        measure,
         args.target.clone(),
         args.optimize_depth,
         args.topology_aware,
@@ -187,6 +196,43 @@ async fn main() {
         Ok(Some(report)) => {
             if json_errors {
                 println!("[]");
+                std::process::exit(0);
+            }
+
+            if measure {
+                let mut resonance_map = serde_json::Map::new();
+                for (scope, value) in &report.resonance_events {
+                    let v = match value {
+                        PhiIRValue::Number(n) => serde_json::json!(n),
+                        PhiIRValue::String(s) => serde_json::json!(s),
+                        PhiIRValue::Boolean(b) => serde_json::json!(b),
+                        _ => serde_json::json!(null),
+                    };
+                    resonance_map.insert(scope.clone(), v);
+                }
+
+                // Include consciousness metrics (C_PF) when available.
+                let consciousness = match &report.consciousness_metrics {
+                    Some(m) => serde_json::json!({
+                        "l_self": m.l_self,
+                        "d_int": m.d_int,
+                        "c_coh": m.c_coh,
+                        "f_model": m.f_model,
+                        "f_self_star": m.f_self_star,
+                        "c_pf": m.c_pf,
+                    }),
+                    None => serde_json::json!(null),
+                };
+
+                let payload = serde_json::json!({
+                    "ok": true,
+                    "final_coherence": report.final_coherence,
+                    "resonance_events": resonance_map,
+                    "ended_streams": report.ended_streams,
+                    "consciousness": consciousness,
+                    "source": args.file.to_string_lossy(),
+                });
+                println!("{}", serde_json::to_string_pretty(&payload).unwrap());
                 std::process::exit(0);
             }
 
@@ -253,6 +299,7 @@ async fn main() {
 async fn run(
     file_path: &PathBuf,
     json_errors: bool,
+    measure: bool,
     target: Option<String>,
     optimize_depth: bool,
     topology_aware: bool,
@@ -302,6 +349,7 @@ async fn run(
             final_coherence: 0.0,
             resonance_events: Vec::new(),
             ended_streams: Vec::new(),
+            consciousness_metrics: None,
             _program: ir_program,
         }));
     }
@@ -332,6 +380,39 @@ async fn run(
                     for (name, coherence) in &runtime_params {
                         println!("  {}: {:.4}", name, coherence);
                     }
+                }
+
+                if measure {
+                    let mut coherence_map = serde_json::Map::new();
+                    for (name, coherence) in &runtime_params {
+                        coherence_map.insert(name.clone(), serde_json::json!(coherence));
+                    }
+
+                    // Compute consciousness metrics from the frozen council trace.
+                    let q_trace = Trace::from_vm_state(&frozen);
+                    let q_consciousness = if q_trace.len() >= 20 {
+                        let m = ConsciousnessMetrics::compute(&q_trace, 10, 5, 0.01);
+                        serde_json::json!({
+                            "l_self": m.l_self,
+                            "d_int": m.d_int,
+                            "c_coh": m.c_coh,
+                            "f_model": m.f_model,
+                            "f_self_star": m.f_self_star,
+                            "c_pf": m.c_pf,
+                        })
+                    } else {
+                        serde_json::json!(null)
+                    };
+
+                    let payload = serde_json::json!({
+                        "ok": true,
+                        "target": "quantum",
+                        "coherence_per_intention": coherence_map,
+                        "consciousness": q_consciousness,
+                        "source": file_path.to_string_lossy(),
+                    });
+                    println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+                    return Ok(None);
                 }
 
                 // 2. Emit parameterized QASM
@@ -404,10 +485,20 @@ async fn run(
 
     let _result = evaluator.run().map_err(|e| CliError::Eval(e.to_string()))?;
 
+    // Compute consciousness metrics (C_PF) from the frozen execution trace.
+    let frozen = evaluator.freeze_state();
+    let trace = Trace::from_vm_state(&frozen);
+    let consciousness_metrics = if trace.len() >= 20 {
+        Some(ConsciousnessMetrics::compute(&trace, 10, 5, 0.01))
+    } else {
+        None // Not enough data for meaningful metric computation
+    };
+
     Ok(Some(RunReport {
         final_coherence: evaluator.resolved_coherence(),
         resonance_events: evaluator.resonance_events().to_vec(),
         ended_streams: evaluator.ended_streams().to_vec(),
+        consciousness_metrics,
         _program: ir_program,
     }))
 }
