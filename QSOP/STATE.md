@@ -1,3 +1,34 @@
+## Verified (2026-07-03) [Devin: WASM host + quantum feedback CLI wiring, T4-05 placeholder fix]
+
+- **Done**:
+  - **T4-05 fix in `trace.rs`**: Replaced placeholder 0.5 coherence / 1.0 depth with values derived from actual trace data (running variance of coherence channel, normalized depth from event count). C_PF improved from 0.057 to 0.113 on the type4 benchmark trace.
+  - **WASM host wired to CLI (`--target wasm`)**: `phic --target wasm <file>` now compiles `.phi` to WAT and executes via wasmtime host with `WasmHostHooks` capturing witness/resonate events. Third backend functional alongside native and quantum.
+  - **Quantum feedback wired to CLI (`--poll-ibm <job_id>`)**: `phic --poll-ibm <job_id>` polls IBM Quantum jobs, computes physical coherence from measurement counts, and emits self-correcting PhiFlow code if coherence < φ⁻¹. Reads `IBM_QUANTUM_TOKEN` from CASCADE vault (`~/.cascade_keys`). `--poll-ibm mock` works without credentials for demo runs. Pre-commit hook compliant (no credential-pattern words in code).
+  - **`<FILE>` arg made optional** when `--poll-ibm` is given.
+  - **CLAIMS.md updated** for T4-05 resolution (C-21/C-22/C-23).
+
+- **Verified**:
+  - `cargo build --release --bin phic`: clean, zero warnings.
+  - `cargo test --lib`: 215 passed, 0 failed.
+  - `cargo test --test parameterized_qasm_tests`: 6 passed, 0 failed.
+  - `cargo test --test state_discrimination_tests`: 3 passed, 1 ignored, 0 failed.
+  - `phic --target wasm examples/code_that_resonates.phi`: WASM execution, coherence=1.0, 4 witness events.
+  - `phic --poll-ibm mock`: mock counts (|00⟩: 512, |11⟩: 488), coherence=1.0.
+  - `phic --target quantum examples/quantum_council.phi`: QASM output (unchanged).
+  - `cargo test --test benchmark_battery -- --ignored`: Phases 1,2,4 PASS; Phase 3 fails (no SOMA fixtures — expected).
+
+- **Next**:
+  - Test `--poll-ibm` with a real IBM job ID (vault has `IBM_QUANTUM_TOKEN`).
+  - Build/provide real daemon/SOMA fixtures and set `PHIFLOW_SOMA_FIXTURES`.
+  - From audit: document/archive legacy compiler/VM modules; wire remaining unused modules if useful.
+
+- **State**:
+  - C-21: PARTIAL (T4-05 placeholder fix improves C_PF; real trace discrimination still needed).
+  - C-22: CONFIRMED (metrics suite + three CLI backends functional).
+  - C-23: HOLD/PARTIAL (synthetic null suppression works; real-state discrimination not proven).
+
+---
+
 ## Verified (2026-07-01) [Devin: Type 4 frontier push — Phase 3 wiring, synth tests, --measure C_PF, QASM integration tests]
 
 - **Done**:
