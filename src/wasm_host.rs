@@ -7,6 +7,12 @@
 //! - `phi.coherence() -> f64`
 //! - `phi.intention_push(i32)`
 //! - `phi.intention_pop()`
+//! - `phi.field_coherence() -> f64`
+//! - `phi.dissonance() -> f64`
+//! - `phi.coherence_of(i32) -> f64`
+//! - `phi.recall(i32) -> f64`
+//! - `phi.listen(i32) -> f64`
+//! - `phi.void_depth() -> f64`
 
 use crate::parser::parse_phi_program;
 use crate::phi_ir::lowering::lower_program_checked;
@@ -162,6 +168,14 @@ struct RuntimeState {
     resonance_field: Vec<f64>,
     intention_stack: Vec<String>,
     witness_log: Vec<WasmWitnessEvent>,
+    /// Key-value store for Recall/Remember (durable storage simulation).
+    kv_store: std::collections::HashMap<String, f64>,
+    /// Channel-based message store for Listen/Broadcast.
+    channels: std::collections::HashMap<String, f64>,
+    /// Timestamp of last yield (for VoidDepth).
+    yield_timestamp: Option<f64>,
+    /// String table for resolving string-index parameters.
+    string_table: Vec<String>,
 }
 
 impl RuntimeState {
@@ -172,6 +186,24 @@ impl RuntimeState {
             resonance_field: Vec::new(),
             intention_stack: Vec::new(),
             witness_log: Vec::new(),
+            kv_store: std::collections::HashMap::new(),
+            channels: std::collections::HashMap::new(),
+            yield_timestamp: None,
+            string_table: Vec::new(),
+        }
+    }
+
+    /// Resolve a string-table index (≥ STRING_BASE) to a string key.
+    /// Returns a synthetic name if the index is out of range.
+    fn resolve_string(&self, idx: i32) -> String {
+        if idx >= STRING_BASE {
+            let real_idx = (idx - STRING_BASE) as usize;
+            if real_idx < self.string_table.len() {
+                return self.string_table[real_idx].clone();
+            }
+            format!("_str_{}", real_idx)
+        } else {
+            format!("_key_{}", idx)
         }
     }
 
@@ -311,6 +343,118 @@ pub fn run_wat_with_host(
                 (popped, depth, data.hooks.on_intention_pop.clone())
             };
             callback(popped, depth);
+        },
+    )?;
+
+    // phi.field_coherence() -> f64
+    // Returns the average of all resonated values in the resonance field.
+    linker.func_wrap(
+        "phi",
+        "field_coherence",
+        |caller: Caller<'_, RuntimeState>| -> f64 {
+            let data = caller.data();
+            if data.resonance_field.is_empty() {
+                data.coherence
+            } else {
+                data.resonance_field.iter().sum::<f64>() / data.resonance_field.len() as f64
+            }
+        },
+    )?;
+
+    // phi.dissonance() -> f64
+    // Returns the normalized delta between the last two witness coherence values.
+    linker.func_wrap(
+        "phi",
+        "dissonance",
+        |caller: Caller<'_, RuntimeState>| -> f64 {
+            let data = caller.data();
+            if data.witness_log.len() < 2 {
+                0.0
+            } else {
+                let last = data.witness_log[data.witness_log.len() - 1].coherence;
+                let prev = data.witness_log[data.witness_log.len() - 2].coherence;
+                let delta = last - prev;
+                (delta * 10.0).clamp(-1.0, 1.0)
+            }
+        },
+    )?;
+
+    // phi.coherence_of(i32) -> f64
+    // Returns the last resonated value for a named intention stream.
+    // The i32 parameter is a string-table index for the stream name.
+    linker.func_wrap(
+        "phi",
+        "coherence_of",
+        |caller: Caller<'_, RuntimeState>, name_idx: i32| -> f64 {
+            let data = caller.data();
+            let _name = data.resolve_string(name_idx);
+            // In the WASM host, resonance_field is a flat list, not per-channel.
+            // Return the last resonated value, or current coherence if empty.
+            data.resonance_field.last().copied().unwrap_or(data.coherence)
+        },
+    )?;
+
+    // phi.remember(i32, f64)
+    // Stores a value in the key-value store. The i32 is a string-table index for the key.
+    linker.func_wrap(
+        "phi",
+        "remember",
+        |mut caller: Caller<'_, RuntimeState>, key_idx: i32, value: f64| {
+            let key = caller.data().resolve_string(key_idx);
+            caller.data_mut().kv_store.insert(key, value);
+        },
+    )?;
+
+    // phi.recall(i32) -> f64
+    // Retrieves a value from the key-value store. Returns 0.0 if not found.
+    linker.func_wrap(
+        "phi",
+        "recall",
+        |caller: Caller<'_, RuntimeState>, key_idx: i32| -> f64 {
+            let key = caller.data().resolve_string(key_idx);
+            caller.data().kv_store.get(&key).copied().unwrap_or(0.0)
+        },
+    )?;
+
+    // phi.broadcast(i32, f64)
+    // Sends a value to a named channel. The i32 is a string-table index for the channel name.
+    linker.func_wrap(
+        "phi",
+        "broadcast",
+        |mut caller: Caller<'_, RuntimeState>, channel_idx: i32, value: f64| {
+            let channel = caller.data().resolve_string(channel_idx);
+            caller.data_mut().channels.insert(channel, value);
+        },
+    )?;
+
+    // phi.listen(i32) -> f64
+    // Retrieves the latest value on a named channel. Returns 0.0 if no message.
+    linker.func_wrap(
+        "phi",
+        "listen",
+        |caller: Caller<'_, RuntimeState>, channel_idx: i32| -> f64 {
+            let channel = caller.data().resolve_string(channel_idx);
+            caller.data().channels.get(&channel).copied().unwrap_or(0.0)
+        },
+    )?;
+
+    // phi.void_depth() -> f64
+    // Returns time elapsed since the last yield point (in seconds).
+    // Returns 0.0 if no yield has occurred.
+    linker.func_wrap(
+        "phi",
+        "void_depth",
+        |caller: Caller<'_, RuntimeState>| -> f64 {
+            let data = caller.data();
+            if let Some(ts) = data.yield_timestamp {
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs_f64();
+                now - ts
+            } else {
+                0.0
+            }
         },
     )?;
 

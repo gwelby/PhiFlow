@@ -165,6 +165,14 @@ impl<'a> WatEmitter<'a> {
         self.line(r#"(import "phi" "coherence" (func $phi_coherence (result f64)))"#);
         self.line(r#"(import "phi" "intention_push" (func $phi_intention_push (param i32)))"#);
         self.line(r#"(import "phi" "intention_pop" (func $phi_intention_pop))"#);
+        self.line(r#"(import "phi" "field_coherence" (func $phi_field_coherence (result f64)))"#);
+        self.line(r#"(import "phi" "dissonance" (func $phi_dissonance (result f64)))"#);
+        self.line(r#"(import "phi" "coherence_of" (func $phi_coherence_of (param i32) (result f64)))"#);
+        self.line(r#"(import "phi" "remember" (func $phi_remember (param i32 f64)))"#);
+        self.line(r#"(import "phi" "recall" (func $phi_recall (param i32) (result f64)))"#);
+        self.line(r#"(import "phi" "broadcast" (func $phi_broadcast (param i32 f64)))"#);
+        self.line(r#"(import "phi" "listen" (func $phi_listen (param i32) (result f64)))"#);
+        self.line(r#"(import "phi" "void_depth" (func $phi_void_depth (result f64)))"#);
     }
 
     fn emit_main_function(&mut self) {
@@ -239,6 +247,8 @@ impl<'a> WatEmitter<'a> {
                         | PhiIRNode::FieldCoherence
                         | PhiIRNode::Dissonance
                         | PhiIRNode::CoherenceOf(_)
+                        | PhiIRNode::Evolve(_)
+                        | PhiIRNode::Entangle(_)
                         );                if pushes_value {
                     self.line("drop");
                 }
@@ -298,6 +308,17 @@ impl<'a> WatEmitter<'a> {
             PhiIRNode::Fallthrough => {}
             _ => {}
         }
+    }
+
+    /// Resolve a string key to its WASM memory offset (≥ STRING_BASE).
+    /// Returns STRING_BASE as fallback if the string is not in the table.
+    fn string_offset_for(&self, name: &str) -> u32 {
+        self.program
+            .string_table
+            .iter()
+            .position(|s| s == name)
+            .and_then(|i| self.string_offsets.get(i).copied())
+            .unwrap_or(STRING_BASE)
     }
 
     fn emit_node_wat(&self, node: &PhiIRNode, inferred: Option<&PhiIRValue>) -> String {
@@ -436,21 +457,65 @@ impl<'a> WatEmitter<'a> {
 
             // side-effect-only nodes (no return value → no stack push)
             PhiIRNode::FuncDef { .. }
-            | PhiIRNode::Remember { .. }
-            | PhiIRNode::Broadcast { .. }
             | PhiIRNode::AgentDecl { .. }
             | PhiIRNode::StreamPush(..)
             | PhiIRNode::StreamPop => String::new(),
 
-            // value-returning nodes not yet fully codegen'd (stub — in pushes_value list)
-            PhiIRNode::Recall(_)
-            | PhiIRNode::Listen(_)
-            | PhiIRNode::VoidDepth
-            | PhiIRNode::Evolve(_)
-            | PhiIRNode::Entangle(_)
-            | PhiIRNode::FieldCoherence
-            | PhiIRNode::Dissonance
-            | PhiIRNode::CoherenceOf(_) => "f64.const 0.0 ;; v0.4.5 stub".to_string(),
+            // Remember: store value in host kv_store
+            PhiIRNode::Remember { key, value } => {
+                let key_idx = self.string_offset_for(key);
+                format!(
+                    ";; remember \"{}\"\ni32.const {}\nlocal.get $r{}\ncall $phi_remember",
+                    key, key_idx, value
+                )
+            }
+
+            // Broadcast: send value to host channel
+            PhiIRNode::Broadcast { channel, value } => {
+                let chan_idx = self.string_offset_for(channel);
+                format!(
+                    ";; broadcast \"{}\"\ni32.const {}\nlocal.get $r{}\ncall $phi_broadcast",
+                    channel, chan_idx, value
+                )
+            }
+
+            // Recall: retrieve value from host kv_store
+            PhiIRNode::Recall(key) => {
+                let key_idx = self.string_offset_for(key);
+                format!(";; recall \"{}\"\ni32.const {}\ncall $phi_recall", key, key_idx)
+            }
+
+            // Listen: retrieve latest message from host channel
+            PhiIRNode::Listen(channel) => {
+                let chan_idx = self.string_offset_for(channel);
+                format!(";; listen \"{}\"\ni32.const {}\ncall $phi_listen", channel, chan_idx)
+            }
+
+            // VoidDepth: time since last yield
+            PhiIRNode::VoidDepth => "call $phi_void_depth".to_string(),
+
+            // FieldCoherence: average of resonance field
+            PhiIRNode::FieldCoherence => "call $phi_field_coherence".to_string(),
+
+            // Dissonance: delta of last two witness coherence values
+            PhiIRNode::Dissonance => "call $phi_dissonance".to_string(),
+
+            // CoherenceOf: last resonated value for a named stream
+            PhiIRNode::CoherenceOf(name) => {
+                let name_idx = self.string_offset_for(name);
+                format!(";; coherence_of \"{}\"\ni32.const {}\ncall $phi_coherence_of", name, name_idx)
+            }
+
+            // Evolve: self-modification — cannot run in WASM (needs the evaluator).
+            // Return the operand value unchanged so the program doesn't break.
+            PhiIRNode::Evolve(op) => {
+                format!(";; evolve (not supported in WASM, returning operand)\nlocal.get $r{}", op)
+            }
+
+            // Entangle: yield to host — in WASM this is a no-op (no yield mechanism).
+            PhiIRNode::Entangle(_freq) => {
+                ";; entangle (no-op in WASM host)\nf64.const 0.0".to_string()
+            }
 
             _ => "f64.const 0.0 ;; generic stub".to_string(),
         }
