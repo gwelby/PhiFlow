@@ -14,6 +14,7 @@ use phiflow::metrics::trace::Trace;
 use phiflow::resonance_bus::{self, ResonanceEvent};
 use phiflow::sensors;
 use phiflow::system_host::SystemHostProvider;
+use phiflow::wasm_host::{self, WasmHostHooks};
 use phiflow::OpenQasmCompileOptions;
 use phiflow::PhiDiagnostic;
 use serde::Deserialize;
@@ -26,9 +27,8 @@ use std::sync::{Arc, Mutex};
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// The path to the .phi file to execute.
-    #[arg(required = true)]
-    file: PathBuf,
+    /// The path to the .phi file to execute. Required unless --poll-ibm is given.
+    file: Option<PathBuf>,
 
     /// Emit parse errors as a strict JSON array of PhiDiagnostic objects (for tooling).
     #[arg(long, default_value_t = false)]
@@ -77,6 +77,10 @@ struct Args {
     /// Launch and manage the Quantum Presence bridge for real-time Heron telemetry.
     #[arg(long, default_value_t = false)]
     with_quantum: bool,
+
+    /// Poll an IBM Quantum job by ID and analyze coherence. Use "mock" for a demo run.
+    #[arg(long)]
+    poll_ibm: Option<String>,
 }
 
 struct SomaManager {
@@ -175,9 +179,24 @@ async fn main() {
     let args = Args::parse();
     let json_errors = args.json_errors;
 
+    // --poll-ibm <job_id>: Poll an IBM Quantum job and analyze coherence.
+    // Use "mock" for a demo run without credentials.
+    if let Some(job_id) = &args.poll_ibm {
+        poll_ibm_job_and_analyze(job_id);
+        return;
+    }
+
+    let file = match &args.file {
+        Some(f) => f.clone(),
+        None => {
+            eprintln!("Error: <FILE> is required unless --poll-ibm is given.");
+            std::process::exit(2);
+        }
+    };
+
     let measure = args.measure;
     match run(
-        &args.file,
+        &file,
         json_errors,
         measure,
         args.target.clone(),
@@ -230,7 +249,7 @@ async fn main() {
                     "resonance_events": resonance_map,
                     "ended_streams": report.ended_streams,
                     "consciousness": consciousness,
-                    "source": args.file.to_string_lossy(),
+                    "source": file.to_string_lossy(),
                 });
                 println!("{}", serde_json::to_string_pretty(&payload).unwrap());
                 std::process::exit(0);
@@ -453,6 +472,75 @@ async fn run(
                     .emit(&ir_program)
                     .map_err(|e| CliError::Eval(e.to_string()))?;
                 print!("{}", qasm);
+                return Ok(None);
+            }
+            "wasm" => {
+                println!("🌐 WASM backend — compiling to WAT and executing via wasmtime host");
+
+                // 1. Compile source to WAT
+                let wat = wasm_host::compile_source_to_wat(&source)
+                    .map_err(|e| CliError::Eval(e.to_string()))?;
+
+                if measure {
+                    // Just emit the WAT for tooling
+                    let payload = serde_json::json!({
+                        "ok": true,
+                        "target": "wasm",
+                        "wat": wat,
+                        "source": file_path.to_string_lossy(),
+                    });
+                    println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+                    return Ok(None);
+                }
+
+                // 2. Run through the WASM host with consciousness hooks
+                let hooks = WasmHostHooks::new()
+                    .with_coherence_provider(sensors::compute_coherence_from_sensors)
+                    .with_witness(|event| {
+                        if let Some(ref intention) = event.intention {
+                            println!(
+                                "👁  witness ({}): coherence={:.4}",
+                                intention, event.coherence
+                            );
+                        } else {
+                            println!("👁  witness: coherence={:.4}", event.coherence);
+                        }
+                    })
+                    .with_resonate(|value, scope| {
+                        if let Some(s) = scope {
+                            println!("🔔 resonate {} in {}", value, s);
+                        } else {
+                            println!("🔔 resonate {}", value);
+                        }
+                    })
+                    .with_intention_push(|name, depth| {
+                        println!("📥 intention push: {} (depth={})", name, depth);
+                    })
+                    .with_intention_pop(|name, depth| {
+                        println!("📤 intention pop: {} (depth={})", name, depth);
+                    });
+
+                let result = wasm_host::run_source_with_host(&source, hooks)
+                    .map_err(|e| CliError::Eval(e.to_string()))?;
+
+                println!("\n═══════════════════════════════════════════");
+                println!("  WASM Execution Result");
+                println!("═══════════════════════════════════════════");
+                println!("  Result: {:?}", result.result);
+                println!(
+                    "  Final coherence: {:.4}",
+                    result.snapshot.coherence
+                );
+                println!(
+                    "  Witness events: {}",
+                    result.snapshot.witness_log.len()
+                );
+                println!(
+                    "  Intention stack depth: {}",
+                    result.snapshot.intention_stack.len()
+                );
+                println!("═══════════════════════════════════════════");
+
                 return Ok(None);
             }
             _ => {
@@ -848,4 +936,98 @@ fn handle_daemon_event(hypervisor: &mut DaemonHypervisor, event: ResonanceEvent)
             _ => println!("⚠️ Unknown control command: {:?}", event.value),
         }
     }
+}
+
+/// Poll an IBM Quantum job and analyze its measurement coherence.
+///
+/// Uses `quantum_feedback::poll_ibm_job` to retrieve measurement counts,
+/// `quantum_feedback::calculate_coherence` to compute physical coherence,
+/// and `quantum_feedback::generate_correction_if_needed` to emit a
+/// self-correcting PhiFlow snippet if coherence is below 0.618.
+///
+/// Credentials are read from the CASCADE vault (`~/.cascade_keys`),
+/// the canonical key store for the CASCADE ecosystem. When `job_id` is
+/// "mock", no credentials are needed (demo run, no network access).
+fn poll_ibm_job_and_analyze(job_id: &str) {
+    use phiflow::quantum_feedback;
+
+    println!("🔬 IBM Quantum Job Poller");
+    println!("═══════════════════════════════════════════");
+    println!("  Job ID: {}", job_id);
+
+    // Read credential from the CASCADE vault (~/.cascade_keys).
+    // The vault is a shell-sourceable file with `KEY=value` lines.
+    // Use "MOCK_KEY" for demo runs or if the vault key is absent.
+    let credential = if job_id == "mock" {
+        "MOCK_KEY".to_string()
+    } else {
+        match read_vault_key("IBM_QUANTUM_TOKEN") {
+            Some(v) if !v.is_empty() => v,
+            _ => {
+                eprintln!("⚠️  IBM_QUANTUM_TOKEN not found in vault — using mock mode");
+                "MOCK_KEY".to_string()
+            }
+        }
+    };
+
+    println!("  Fetching measurement counts...");
+
+    let counts = match quantum_feedback::poll_ibm_job(job_id, &credential) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("❌ Failed to poll job: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    println!("\n📊 Measurement Results:");
+    println!("───────────────────────────────────────────");
+    let mut sorted_counts: Vec<_> = counts.iter().collect();
+    sorted_counts.sort_by(|a, b| b.1.cmp(a.1));
+    for (state, count) in &sorted_counts {
+        println!("  |{}⟩: {} shots", state, count);
+    }
+
+    let coherence = quantum_feedback::calculate_coherence(&counts);
+    println!("\n🧮 Physical Coherence: {:.4}", coherence);
+    println!("  (φ⁻¹ threshold: 0.6180)");
+
+    if coherence >= 0.618 {
+        println!("  ✅ Coherence above φ⁻¹ threshold — system aligned");
+    } else {
+        println!("  ⚠️  Coherence below φ⁻¹ threshold — correction needed");
+    }
+
+    if let Some(correction) = quantum_feedback::generate_correction_if_needed(coherence) {
+        println!("\n🔧 Self-Correcting PhiFlow Code:");
+        println!("───────────────────────────────────────────");
+        println!("{}", correction);
+    }
+
+    println!("\n═══════════════════════════════════════════");
+}
+
+/// Read a key from the CASCADE vault (`~/.cascade_keys`).
+///
+/// The vault is a shell-sourceable file with `KEY=value` lines and `#` comments.
+/// Returns `None` if the vault or key is not found.
+fn read_vault_key(key_name: &str) -> Option<String> {
+    let home = std::env::var("HOME").ok()?;
+    let vault_path = format!("{}/.cascade_keys", home);
+    let content = fs::read_to_string(&vault_path).ok()?;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('#') || trimmed.is_empty() {
+            continue;
+        }
+        if let Some((k, v)) = trimmed.split_once('=') {
+            if k.trim() == key_name {
+                let val = v.trim();
+                // Strip surrounding quotes if present
+                let val = val.trim_matches(|c| c == '"' || c == '\'');
+                return Some(val.to_string());
+            }
+        }
+    }
+    None
 }

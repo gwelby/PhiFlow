@@ -117,27 +117,41 @@ impl Trace {
             })
             .collect();
 
-        // Group into 4-tuples: (step, obs, model, action)
-        for chunk in values.chunks(4) {
-            if chunk.len() == 4 {
-                let step = chunk[0];
-                let obs = chunk[1];
-                let model = chunk[2];
-                let action = chunk[3];
+        // First pass: collect all (step, obs, model, action) tuples
+        let tuples: Vec<(f64, f64, f64, f64)> = values
+            .chunks(4)
+            .filter(|c| c.len() == 4)
+            .map(|c| (c[0], c[1], c[2], c[3]))
+            .collect();
 
-                trace.timestamps.push(step);
-                trace.observed.push(obs, step);
-                trace.coherence.push(0.5, step); // Placeholder - could derive from model stability
-                trace.depth.push(1.0 + model * 0.5, step); // Depth varies with model complexity
-                trace.resonance_k.push(4.0, step); // 4 resonances per cycle
-                trace.agents.push(Some("T4Daemon".to_string()));
+        // Second pass: derive coherence and depth from actual data
+        // T4-05 fix: no more placeholder 0.5 coherence / 1.0 depth.
+        let mut prev_model = tuples.first().map(|t| t.2).unwrap_or(0.5);
+        for &(step, obs, model, action) in &tuples {
+            // Coherence: how well the model tracks observations.
+            // High when |obs - model| is small, low when they diverge.
+            let tracking_error = (obs - model).abs();
+            let coherence = (1.0 - tracking_error).clamp(0.0, 1.0);
 
-                // Store raw for later analysis
-                trace.raw_events.push(("step".to_string(), step));
-                trace.raw_events.push(("obs".to_string(), obs));
-                trace.raw_events.push(("model".to_string(), model));
-                trace.raw_events.push(("action".to_string(), action));
-            }
+            // Depth: model adaptation rate — how much the model is changing.
+            // Captures intention complexity: a static model has depth ~1,
+            // an actively adapting model has higher depth.
+            let model_delta = (model - prev_model).abs();
+            let depth = 1.0 + model_delta;
+            prev_model = model;
+
+            trace.timestamps.push(step);
+            trace.observed.push(obs, step);
+            trace.coherence.push(coherence, step);
+            trace.depth.push(depth, step);
+            trace.resonance_k.push(4.0, step); // 4 resonances per cycle
+            trace.agents.push(Some("T4Daemon".to_string()));
+
+            // Store raw for later analysis
+            trace.raw_events.push(("step".to_string(), step));
+            trace.raw_events.push(("obs".to_string(), obs));
+            trace.raw_events.push(("model".to_string(), model));
+            trace.raw_events.push(("action".to_string(), action));
         }
 
         trace
@@ -212,23 +226,33 @@ impl Trace {
         }
 
         // Group into rows of 4: step, obs, model, action (type4_trace_benchmark format)
-        for chunk in vals.chunks(4) {
-            if chunk.len() == 4 {
-                let step = chunk[0];
-                let obs = chunk[1];
-                let model = chunk[2];
-                let action = chunk[3];
+        // T4-05 fix: derive coherence and depth from actual data, not placeholders.
+        let tuples: Vec<(f64, f64, f64, f64)> = vals
+            .chunks(4)
+            .filter(|c| c.len() == 4)
+            .map(|c| (c[0], c[1], c[2], c[3]))
+            .collect();
 
-                trace.timestamps.push(step);
-                trace.coherence.push(0.5, step); // Placeholder coherence
-                trace.depth.push(1.0, step); // Placeholder depth
-                trace.resonance_k.push(4.0, step); // 4 resonances per cycle
-                trace.observed.push(obs, step);
-                trace.raw_events.push(("step".to_string(), step));
-                trace.raw_events.push(("obs".to_string(), obs));
-                trace.raw_events.push(("model".to_string(), model));
-                trace.raw_events.push(("action".to_string(), action));
-            }
+        let mut prev_model = tuples.first().map(|t| t.2).unwrap_or(0.5);
+        for &(step, obs, model, action) in &tuples {
+            // Coherence: how well the model tracks observations.
+            let tracking_error = (obs - model).abs();
+            let coherence = (1.0 - tracking_error).clamp(0.0, 1.0);
+
+            // Depth: model adaptation rate.
+            let model_delta = (model - prev_model).abs();
+            let depth = 1.0 + model_delta;
+            prev_model = model;
+
+            trace.timestamps.push(step);
+            trace.coherence.push(coherence, step);
+            trace.depth.push(depth, step);
+            trace.resonance_k.push(4.0, step); // 4 resonances per cycle
+            trace.observed.push(obs, step);
+            trace.raw_events.push(("step".to_string(), step));
+            trace.raw_events.push(("obs".to_string(), obs));
+            trace.raw_events.push(("model".to_string(), model));
+            trace.raw_events.push(("action".to_string(), action));
         }
 
         Ok(trace)
