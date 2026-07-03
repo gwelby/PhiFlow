@@ -129,6 +129,23 @@ No active failed claims as of 2026-04-14. All three predicted claims have been i
 **Conclusion**: CONFIRMED
 **Meaning for framework**: C-10 is closed. PhiFlow is a verified quantum compilation and execution substrate.
 
+### C-24: Modern IBM Quantum API bridge — `phic --poll-ibm` works with real hardware
+
+**Claim tested**: `phic --poll-ibm <real_job_id>` retrieves measurement counts from completed IBM Quantum jobs and computes physical coherence
+**Method**: `phic --poll-ibm d7euddh5a5qc73drdosg` (archived job on ibm_fez, Heron r2, 156 qubits)
+**Result**: Counts retrieved: |0⟩→338, |1⟩→686 (1024 shots). Physical coherence: 0.6699. Above φ⁻¹ threshold (0.618). System aligned.
+**Architecture**: Rust CLI shells out to `scripts/poll_ibm_real.py` (Python bridge using `qiskit_ibm_runtime` with `ibm_quantum_platform` channel). The old Rust REST API (`api.quantum-computing.ibm.com/v1/jobs/`) is deprecated. Mock mode remains native Rust.
+**Threshold**: Real measurement counts from real hardware, coherence computed correctly
+**Conclusion**: CONFIRMED
+**Meaning for framework**: The full pipeline — `.phi` source → QASM 3.0 → IBM hardware → coherence calculation — now works end-to-end from the Rust CLI.
+
+### C-25: New IBM Quantum job submitted (2026-07-03)
+
+**Claim tested**: PhiFlow-generated QASM 3.0 circuit submitted to IBM Quantum hardware today
+**Method**: `phic --target quantum examples/quantum_council.phi` → QASM 3.0 → qiskit transpile → submit to ibm_marrakesh
+**Result**: Job ID `d941s54ql68s73c909fg` submitted to ibm_marrakesh (Heron r2, 156 qubits). 3 qubits, 2 entangling gates, transpiled to depth 13. Status: QUEUED (open plan).
+**Note**: Job is queued; results pending. Will update when complete.
+
 ## Notes
 
 - Claims marked SPECULATIVE must be explicitly labeled in external communication

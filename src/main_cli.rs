@@ -940,43 +940,86 @@ fn handle_daemon_event(hypervisor: &mut DaemonHypervisor, event: ResonanceEvent)
 
 /// Poll an IBM Quantum job and analyze its measurement coherence.
 ///
-/// Uses `quantum_feedback::poll_ibm_job` to retrieve measurement counts,
-/// `quantum_feedback::calculate_coherence` to compute physical coherence,
-/// and `quantum_feedback::generate_correction_if_needed` to emit a
-/// self-correcting PhiFlow snippet if coherence is below 0.618.
+/// For real job IDs: shells out to the Python bridge script
+/// (`scripts/poll_ibm_real.py`) which uses the modern `qiskit_ibm_runtime`
+/// API (`ibm_quantum_platform` channel). The Rust `quantum_feedback` module
+/// uses the deprecated REST API which no longer works.
 ///
-/// Credentials are read from the CASCADE vault (`~/.cascade_keys`),
-/// the canonical key store for the CASCADE ecosystem. When `job_id` is
-/// "mock", no credentials are needed (demo run, no network access).
+/// For "mock" job ID: uses the native Rust mock (no network, no credential).
+///
+/// In both cases, `quantum_feedback::calculate_coherence` computes physical
+/// coherence and `generate_correction_if_needed` emits a self-correcting
+/// PhiFlow snippet if coherence is below 0.618.
 fn poll_ibm_job_and_analyze(job_id: &str) {
     use phiflow::quantum_feedback;
+    use std::collections::HashMap;
 
     println!("🔬 IBM Quantum Job Poller");
     println!("═══════════════════════════════════════════");
     println!("  Job ID: {}", job_id);
 
-    // Read credential from the CASCADE vault (~/.cascade_keys).
-    // The vault is a shell-sourceable file with `KEY=value` lines.
-    // Use "MOCK_KEY" for demo runs or if the vault key is absent.
-    let credential = if job_id == "mock" {
-        "MOCK_KEY".to_string()
-    } else {
-        match read_vault_key("IBM_QUANTUM_TOKEN") {
-            Some(v) if !v.is_empty() => v,
-            _ => {
-                eprintln!("⚠️  IBM_QUANTUM_TOKEN not found in vault — using mock mode");
-                "MOCK_KEY".to_string()
+    let counts: HashMap<String, u64> = if job_id == "mock" {
+        // Mock mode: no network, no credential needed.
+        println!("  (Mock mode — no network access)");
+        println!("  Fetching mock measurement counts...");
+        match quantum_feedback::poll_ibm_job("mock", "MOCK_KEY") {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("❌ Mock poll failed: {}", e);
+                std::process::exit(1);
             }
         }
-    };
+    } else {
+        // Real job: shell out to the Python bridge.
+        // The modern IBM Quantum Platform API requires qiskit_ibm_runtime
+        // and a completely different auth flow than the old REST API.
+        println!("  Polling via Python bridge (modern IBM Quantum API)...");
 
-    println!("  Fetching measurement counts...");
-
-    let counts = match quantum_feedback::poll_ibm_job(job_id, &credential) {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("❌ Failed to poll job: {}", e);
+        let script = std::path::Path::new("scripts/poll_ibm_real.py");
+        if !script.exists() {
+            eprintln!("❌ scripts/poll_ibm_real.py not found (run from PhiFlow root)");
             std::process::exit(1);
+        }
+
+        let output = std::process::Command::new("python3.12")
+            .arg("scripts/poll_ibm_real.py")
+            .arg(job_id)
+            .arg("--no-wait")
+            .output();
+
+        match output {
+            Ok(result) => {
+                if !result.status.success() {
+                    eprintln!("❌ Python bridge failed:");
+                    eprintln!("{}", String::from_utf8_lossy(&result.stderr));
+                    std::process::exit(1);
+                }
+
+                // The Python bridge saves counts to a job-specific JSON file.
+                let counts_path = format!("/tmp/ibm_counts_{}.json", job_id);
+                match std::fs::read_to_string(&counts_path) {
+                    Ok(json_str) => {
+                        match serde_json::from_str::<HashMap<String, u64>>(&json_str) {
+                            Ok(c) => c,
+                            Err(e) => {
+                                eprintln!("❌ Failed to parse counts JSON: {}", e);
+                                std::process::exit(1);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("❌ Counts file not found ({}): {}", counts_path, e);
+                        eprintln!("   The Python bridge may need to be run manually first:");
+                        eprintln!("   python3.12 scripts/poll_ibm_real.py {}", job_id);
+                        std::process::exit(1);
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("❌ Failed to run Python bridge: {}", e);
+                eprintln!("   Is python3.12 installed with qiskit_ibm_runtime?");
+                std::process::exit(1);
+            }
         }
     };
 
@@ -984,8 +1027,11 @@ fn poll_ibm_job_and_analyze(job_id: &str) {
     println!("───────────────────────────────────────────");
     let mut sorted_counts: Vec<_> = counts.iter().collect();
     sorted_counts.sort_by(|a, b| b.1.cmp(a.1));
+    let total: u64 = counts.values().sum();
     for (state, count) in &sorted_counts {
-        println!("  |{}⟩: {} shots", state, count);
+        let pct = if total > 0 { 100.0 * **count as f64 / total as f64 } else { 0.0 };
+        let bar: String = std::iter::repeat('#').take((pct / 2.0) as usize).collect();
+        println!("  |{}⟩: {:4} shots ({:5.1}%) {}", state, count, pct, bar);
     }
 
     let coherence = quantum_feedback::calculate_coherence(&counts);
@@ -1011,6 +1057,7 @@ fn poll_ibm_job_and_analyze(job_id: &str) {
 ///
 /// The vault is a shell-sourceable file with `KEY=value` lines and `#` comments.
 /// Returns `None` if the vault or key is not found.
+#[allow(dead_code)]
 fn read_vault_key(key_name: &str) -> Option<String> {
     let home = std::env::var("HOME").ok()?;
     let vault_path = format!("{}/.cascade_keys", home);
