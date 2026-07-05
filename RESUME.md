@@ -109,6 +109,7 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 |---------|------|---------|--------|----------------|
 | phiflow-metrics bridge | 18030 | `python3.12 /mnt/d/System/phiflow_metrics_bridge.py` | running | restart via watchdog.sh |
 | SOMA Bridge (when running) | — | `cargo run --bin phic -- examples/p1_soma_bridge.phi` | not running | `cargo run --release --bin phic -- examples/p1_soma_bridge.phi` |
+| P1 Daemon (verified 2026-07-03) | — | `./target/release/phic /mnt/d/P1/phiflow_daemon.phi` | verified working | Run SOMA first: `python.exe soma.py --profile harmonic_scan --duration 60 --phiflow` then run daemon |
 | Quantum Council (when running) | — | `cargo run --bin phic -- --target quantum examples/quantum_council.phi` | not running | `cargo run --release --bin phic -- --target quantum examples/quantum_council.phi` |
 
 ---
