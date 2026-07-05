@@ -295,3 +295,77 @@ phiflow_daemon.phi (exists, NOT RUNNING)
 ---
 
 *This graph is a snapshot. The ecosystem evolves. The holes identified here can be fixed. The pattern for fixing them exists in PhiFlow's PF_BRIDGE.md.*
+
+---
+
+## UPDATE: Reference Count Data (subagent scan)
+
+After the initial graph was drafted, a subagent scanned 33 directories for references to "propagation", "coherence", "causal velocity", or "Fundamentals". Results:
+
+| Directory | Files with References | Has AGENTS.md | Bridge Document? |
+|-----------|----------------------|---------------|-----------------|
+| DeepSeek | 224 | Yes | ❌ NEEDED |
+| Projects/DNA | 137 | Yes | ❌ NEEDED |
+| Domains | 90 | Yes | ❌ NEEDED |
+| Projects/Research | 104 | Yes | ❌ NEEDED |
+| Antigravity | 78 | Yes | ❌ NEEDED |
+| Projects/UniversalProcessor | 75 | Yes | ❌ NEEDED |
+| Projects/Consciousness | 68 | Yes | ❌ NEEDED |
+| Cascade | 58 | Yes | ❌ NEEDED |
+| Projects/Quantum | 50 | Yes | ❌ NEEDED |
+| Kiro | 39 | Yes | ❌ NEEDED |
+| Maria | 30 | Yes | ❌ NEEDED |
+| Bob | 28 | Yes | ❌ NEEDED |
+| Manus | 27 | Yes | ❌ NEEDED |
+| Qwen | 24 | Yes | ❌ NEEDED |
+| Projects/Healing | 18 | Yes | ❌ NEEDED |
+| Projects/Publishing | 16 | Yes | ❌ NEEDED (must check CLAIMS.md) |
+| Projects/CERN-Research | 8 | Yes | ❌ NEEDED |
+| Projects/FundamentalsBook | 6 | Yes | ❌ NEEDED (highest irony) |
+| Jules | 6 | Yes | ❌ NEEDED |
+| Projects/CosmicFamily | 3 | Yes | ❌ NEEDED |
+| Projects/Gambling | 0 | Yes | Clean (no PF concepts) |
+| P1 | TIMEOUT (>10K from earlier grep) | Yes | ❌ NEEDED (highest priority) |
+| Claude | TIMEOUT | Yes | ❌ NEEDED |
+| Devin | TIMEOUT | Yes | Clean (metaphorical only) |
+| PhiFlow | TIMEOUT | Yes | ✅ EXISTS |
+| System | TIMEOUT | Yes | Clean (infrastructure) |
+| Lumi | TIMEOUT | Yes | ❌ NEEDED |
+| Codex | TIMEOUT | Yes | Clean (audit) |
+| Hermes | TIMEOUT | Yes | Clean (routing) |
+| Pi | TIMEOUT | Yes | Clean (reports) |
+
+### What this changes
+
+The hole list is bigger than the initial graph showed. **20 workspaces** reference Fundamentals concepts without a bridge document. The top 10 by reference count:
+
+1. **DeepSeek (224)** — heaviest usage, reasoning engine uses PF concepts extensively
+2. **DNA (137)** — coherence in wellness/biofeedback context
+3. **Research (104)** — methodology and agent coordination
+4. **Domains (90)** — domain management with quantum tools
+5. **Antigravity (78)** — physics and evidence matrix
+6. **UniversalProcessor (75)** — quantum processor integration
+7. **Consciousness (68)** — core consciousness mathematics
+8. **Cascade (58)** — consciousness memory and evolution
+9. **Quantum (50)** — IBM Quantum experiments
+10. **Kiro (39)** — director schema and evidence
+
+### Revised priority
+
+The initial graph prioritized P1, Claude, and PhiFlow. The reference data shows DeepSeek, DNA, and Research are equally critical — they have heavy PF concept usage with zero traceability.
+
+**Revised bridge document priority:**
+1. P1 (10K+ references, 0.844 hole, daemon not running)
+2. Claude (conflation hole, identity claims)
+3. DeepSeek (224 references, reasoning engine)
+4. DNA (137 references, coherence in biology)
+5. Consciousness (68 references, consciousness math)
+6. Quantum (50 references, quantum coherence)
+7. Cascade (58 references, consciousness memory)
+8. Antigravity (78 references, hardware bridge)
+9. UniversalProcessor (75 references, quantum processor)
+10. Research (104 references, methodology)
+
+### The real number
+
+**20 workspaces need bridge documents. 1 has one.** That's the actual state of the ecosystem's traceability to its root.
