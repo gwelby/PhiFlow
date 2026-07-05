@@ -139,12 +139,21 @@ No active failed claims as of 2026-04-14. All three predicted claims have been i
 **Conclusion**: CONFIRMED
 **Meaning for framework**: The full pipeline — `.phi` source → QASM 3.0 → IBM hardware → coherence calculation — now works end-to-end from the Rust CLI.
 
-### C-25: New IBM Quantum job submitted (2026-07-03)
+### C-25: New IBM Quantum job completed (2026-07-03)
 
-**Claim tested**: PhiFlow-generated QASM 3.0 circuit submitted to IBM Quantum hardware today
-**Method**: `phic --target quantum examples/quantum_council.phi` → QASM 3.0 → qiskit transpile → submit to ibm_marrakesh
-**Result**: Job ID `d941s54ql68s73c909fg` submitted to ibm_marrakesh (Heron r2, 156 qubits). 3 qubits, 2 entangling gates, transpiled to depth 13. Status: QUEUED (open plan).
-**Note**: Job is queued; results pending. Will update when complete.
+**Claim tested**: PhiFlow-generated QASM 3.0 circuit submitted and completed on IBM Quantum hardware today
+**Method**: `phic --target quantum examples/quantum_council.phi` → QASM 3.0 → qiskit transpile → submit to ibm_marrakesh → poll via `phic --poll-ibm`
+**Result**: Job ID `d941s54ql68s73c909fg` completed on ibm_marrakesh (Heron r2, 156 qubits). 3 qubits, 2 entangling gates, transpiled to depth 13, 1024 shots.
+  - |000⟩: 358 shots (35.0%)
+  - |110⟩: 175 shots (17.1%)
+  - |111⟩: 143 shots (14.0%)
+  - |100⟩: 127 shots (12.4%)
+  - |010⟩: 69 shots (6.7%)
+  - |001⟩: 66 shots (6.4%)
+  - |011⟩: 62 shots (6.1%)
+  - |101⟩: 24 shots (2.3%)
+  - Physical coherence: 0.3496 — below φ⁻¹ (0.618). Self-correction triggered.
+**Conclusion**: CONFIRMED. Real quantum noise spread the 3-qubit distribution, producing coherence below the golden ratio threshold. The self-correcting PhiFlow mechanism activated automatically — emitting an `intention "self_correction"` block. This is the first end-to-end demonstration of the full feedback loop: `.phi` → QASM → IBM hardware → coherence calculation → self-correction.
 
 ## Notes
 
