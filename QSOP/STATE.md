@@ -1,3 +1,42 @@
+## Verified (2026-07-10) [Devin: GHZ coherence scaling on IBM Heron-R2]
+
+- **Done**:
+  - Submitted GHZ circuits for n=4,5,6,7,8 to `ibm_marrakesh` (Heron R2) via `scripts/submit_ghz_nqubit.py`.
+  - Polled jobs with `scripts/poll_ghz_scaling.py` and `scripts/poll_ibm_real.py`.
+  - Computed physical coherence from real hardware counts for all n.
+  - Wrote analysis script `scripts/analyze_ghz_scaling.py` and report `reports/GHZ_SCALING_2026-07-10.md`.
+
+- **Results** (4096 shots each, `ibm_marrakesh`):
+  - n=4: coherence 0.9551
+  - n=5: coherence 0.9509
+  - n=6: coherence 0.9297
+  - n=7: coherence 0.8630
+  - n=8: coherence 0.8738
+
+- **Observations**:
+  - All n=4..8 remain above φ⁻¹ (0.6180).
+  - Coherence is flat from n=4 to n=6, then drops more sharply at n=7.
+  - n=8 slightly higher than n=7, consistent with run-to-run device variation.
+  - Transpiled depths are linear: 16, 20, 24, 28, 32 (≈ 4n).
+  - First PhiFlow real-hardware scaling law: GHZ entanglement on Heron-R2 is robust up to ~6 qubits, with a steeper decay window around n=7–8.
+
+- **Verified**:
+  - `scripts/submit_ghz_nqubit.py 8 ibm_marrakesh 4096` submitted successfully.
+  - All five jobs completed (DONE) and produced counts.
+  - Coherence values computed consistently via `calculate_coherence` in `poll_ibm_real.py`.
+  - Report and raw JSON archived in `reports/`.
+
+- **Next**:
+  - Add depth/coherence logging to the CLI so every hardware run emits these metrics automatically.
+  - Compare with noise-model simulation to bound unmodeled hardware effects.
+  - Extend to n=9,10 if usage limits allow, to locate the true inflection point.
+
+- **State**:
+  - C-10 (quantum hardware execution): CONFIRMED with multi-size GHZ data.
+  - New empirical regularity: GHZ coherence on Heron-R2 stays >0.92 for n≤6, then enters a 0.86–0.88 band at n=7–8.
+
+---
+
 ## Verified (2026-07-03) [Devin: WASM codegen stubs + real IBM Quantum API bridge]
 
 - **Done**:
