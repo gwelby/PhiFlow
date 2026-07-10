@@ -117,27 +117,48 @@ def poll_job(job_id, wait=True, max_wait_minutes=60):
 
 
 def calculate_coherence(counts):
-    """Compute physical coherence from measurement counts."""
+    """Compute physical coherence from measurement counts.
+
+    For GHZ states (3+ qubits), coherence = fraction of shots in the
+    two expected entangled basis states (all-0s and all-1s).
+    This is the N-qubit generalization of the Bell-state check.
+    """
     total = sum(counts.values())
     if total == 0:
         return 0.0
 
-    # Two-qubit Bell state check
-    count_00 = counts.get('00', 0)
-    count_11 = counts.get('11', 0)
-    count_01 = counts.get('01', 0)
-    count_10 = counts.get('10', 0)
+    # Determine bit width from the longest state string
+    max_len = max((len(s) for s in counts.keys()), default=0)
 
-    good_states = count_00 + count_11
-    bad_states = count_01 + count_10
+    if max_len <= 1:
+        # 1-qubit: concentration
+        count_0 = counts.get('0', 0)
+        count_1 = counts.get('1', 0)
+        return max(count_0, count_1) / total
 
-    if good_states + bad_states > 0:
-        return good_states / total
+    if max_len == 2:
+        # 2-qubit: Bell-state coherence
+        count_00 = counts.get('00', 0)
+        count_11 = counts.get('11', 0)
+        count_01 = counts.get('01', 0)
+        count_10 = counts.get('10', 0)
+        good_states = count_00 + count_11
+        bad_states = count_01 + count_10
+        if good_states + bad_states > 0:
+            return good_states / total
 
-    # Single-qubit fallback
-    count_0 = counts.get('0', 0)
-    count_1 = counts.get('1', 0)
-    max_count = max(count_0, count_1)
+    # 3+ qubits: GHZ coherence — all-0s + all-1s / total
+    all_zeros = '0' * max_len
+    all_ones = '1' * max_len
+    count_00 = counts.get(all_zeros, 0)
+    count_11 = counts.get(all_ones, 0)
+    ghz_states = count_00 + count_11
+
+    if ghz_states > 0:
+        return ghz_states / total
+
+    # Fallback: concentration
+    max_count = max(counts.values())
     return max_count / total
 
 

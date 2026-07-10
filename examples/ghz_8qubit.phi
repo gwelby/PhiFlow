@@ -1,0 +1,44 @@
+// ghz_8qubit.phi
+// 8-qubit GHZ state: (|00000000⟩ + |11111111⟩) / √2
+//
+// Q0 gets resonate 0.5 → ry(pi/2) → superposition (|0⟩ + |1⟩)/√2
+// Q1-Q7 stay in |0⟩ (no resonate)
+// CX chain entangles them: Q0→Q1→Q2→...→Q7
+//
+// Result: maximal 8-qubit entanglement.
+// Question: how much survives on real IBM Heron hardware?
+// Compare to 3-qubit council (0.3496 coherence on ibm_marrakesh).
+
+intention "Q0_anchor" {
+    resonate 0.5
+    entangle on 432
+}
+
+intention "Q1" {
+    entangle on 432
+}
+
+intention "Q2" {
+    entangle on 432
+}
+
+intention "Q3" {
+    entangle on 432
+}
+
+intention "Q4" {
+    entangle on 432
+}
+
+intention "Q5" {
+    entangle on 432
+}
+
+intention "Q6" {
+    entangle on 432
+}
+
+intention "Q7" {
+    entangle on 432
+    witness
+}

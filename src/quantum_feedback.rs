@@ -70,10 +70,28 @@ pub fn calculate_coherence(counts: &HashMap<String, u64>) -> f64 {
                 good_states as f64 / total as f64
             }
         }
-        // 3+ qubits: concentration measure (how peaked is the distribution)
+        // 3+ qubits: GHZ coherence — fraction of shots in the two
+        // expected entangled basis states (all-0s and all-1s).
+        // This is the N-qubit generalization of the Bell-state check:
+        // a GHZ state (|0...0⟩ + |1...1⟩)/√2 should produce only
+        // |0...0⟩ and |1...1⟩ measurements. Any other bitstring is
+        // a decoherence event.
+        //
+        // If neither all-0s nor all-1s appears, fall back to concentration.
         _ => {
-            let max_count = counts.values().copied().max().unwrap_or(0);
-            max_count as f64 / total as f64
+            let all_zeros = "0".repeat(max_len);
+            let all_ones = "1".repeat(max_len);
+            let count_00 = counts.get(&all_zeros).copied().unwrap_or(0);
+            let count_11 = counts.get(&all_ones).copied().unwrap_or(0);
+            let ghz_states = count_00 + count_11;
+
+            if ghz_states > 0 {
+                ghz_states as f64 / total as f64
+            } else {
+                // No GHZ basis states found — fall back to concentration
+                let max_count = counts.values().copied().max().unwrap_or(0);
+                max_count as f64 / total as f64
+            }
         }
     }
 }
