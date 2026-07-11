@@ -1,3 +1,23 @@
+## Verified (2026-07-11) [Devin: Quantum transpile guardrail wired to CLI]
+
+- **Done**:
+  - Added `scripts/transpile_report.py` to transpile QASM for a real IBM backend and emit a JSON report: pre/post depth, gate counts, physical layout, adjacent idle spectators, and a warning if spectators are present.
+  - Added `--quantum-backend` CLI arg (default `ibm_marrakesh`).
+  - Wired the guardrail into `src/main_cli.rs` for `--target quantum`.
+  - Non-measure path prints the guardrail report to stderr after the QASM.
+  - `--measure` path includes the full `transpile_report` object in the JSON output.
+
+- **Verified**:
+  - `cargo build --release --bin phic`: clean, zero warnings.
+  - `./target/release/phic --target quantum examples/quantum_council.phi` emits QASM + guardrail report showing backend `ibm_marrakesh`, post-depth 13, layout `[0, 1, 2]`, and 1 adjacent spectator.
+  - `./target/release/phic --target quantum --measure examples/quantum_council.phi` emits JSON with `transpile_report` included.
+  - `./target/release/phic --target quantum examples/ghz_8qubit.phi` shows post-depth 32, layout `[0..7]`, and 3 adjacent spectators.
+
+- **State**:
+  - The depth/layout guardrail requested after C-27 is now implemented. Every hardware-targeted QASM run logs post-transpile depth, physical layout, and spectator count.
+
+---
+
 ## Verified (2026-07-11) [Devin: GHZ-6 crosstalk test confirms Crypto Spark 6 finding]
 
 - **Done**:

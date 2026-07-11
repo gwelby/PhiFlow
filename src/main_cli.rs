@@ -54,6 +54,10 @@ struct Args {
     #[arg(long, default_value = "ibm_fez")]
     topology_backend: String,
 
+    /// IBM backend name used by the quantum transpile guardrail (--target quantum).
+    #[arg(long, default_value = "ibm_marrakesh")]
+    quantum_backend: String,
+
     /// Run as a daemon, listening for evolve events.
     #[arg(long, default_value_t = false)]
     daemon: bool,
@@ -203,6 +207,7 @@ async fn main() {
         args.optimize_depth,
         args.topology_aware,
         args.topology_backend.clone(),
+        args.quantum_backend.clone(),
         args.daemon,
         args.state_path.clone(),
         args.handoff.clone(),
@@ -323,6 +328,7 @@ async fn run(
     optimize_depth: bool,
     topology_aware: bool,
     topology_backend: String,
+    quantum_backend: String,
     daemon: bool,
     state_path: PathBuf,
     handoff: Option<String>,
@@ -401,6 +407,16 @@ async fn run(
                     }
                 }
 
+                // 2. Emit parameterized QASM (used by both measure and non-measure paths).
+                let mut emitter = OpenQasmEmitter::new();
+                emitter.optimize_depth = optimize_depth;
+                let qasm = emitter
+                    .emit_with_runtime_params(&ir_program, &runtime_params)
+                    .map_err(|e| CliError::Eval(e.to_string()))?;
+
+                // 3. Quantum transpile guardrail: depth, ops, layout, spectators.
+                let guardrail = run_transpile_guardrail(&qasm, &quantum_backend);
+
                 if measure {
                     let mut coherence_map = serde_json::Map::new();
                     for (name, coherence) in &runtime_params {
@@ -423,25 +439,56 @@ async fn run(
                         serde_json::json!(null)
                     };
 
-                    let payload = serde_json::json!({
+                    let mut payload = serde_json::json!({
                         "ok": true,
                         "target": "quantum",
                         "coherence_per_intention": coherence_map,
                         "consciousness": q_consciousness,
                         "source": file_path.to_string_lossy(),
                     });
+                    if let Ok(report) = guardrail {
+                        if let Some(obj) = payload.as_object_mut() {
+                            obj.insert("transpile_report".to_string(), report);
+                        }
+                    } else if let Err(e) = guardrail {
+                        eprintln!("⚠️  Transpile guardrail unavailable: {}", e);
+                    }
                     println!("{}", serde_json::to_string_pretty(&payload).unwrap());
                     return Ok(None);
                 }
 
-                // 2. Emit parameterized QASM
-                let mut emitter = OpenQasmEmitter::new();
-                emitter.optimize_depth = optimize_depth;
-                let qasm = emitter
-                    .emit_with_runtime_params(&ir_program, &runtime_params)
-                    .map_err(|e| CliError::Eval(e.to_string()))?;
-
+                // Non-measure path: print the QASM, then the guardrail report.
                 print!("{}", qasm);
+
+                match guardrail {
+                    Ok(report) => {
+                        eprintln!("\n═══════════════════════════════════════════");
+                        eprintln!("  Quantum Transpile Guardrail");
+                        eprintln!("═══════════════════════════════════════════");
+                        eprintln!("  Backend: {}", report.get("backend").and_then(|v| v.as_str()).unwrap_or("unknown"));
+                        eprintln!("  Logical qubits: {}", report.get("num_logical_qubits").and_then(|v| v.as_u64()).unwrap_or(0));
+                        eprintln!("  Pre-transpile depth: {}", report.get("pre_depth").and_then(|v| v.as_u64()).unwrap_or(0));
+                        eprintln!("  Post-transpile depth: {}", report.get("post_depth").and_then(|v| v.as_u64()).unwrap_or(0));
+                        if let Some(ops) = report.get("post_ops").and_then(|v| v.as_object()) {
+                            eprintln!("  Post-transpile ops: {:?}", ops.iter().map(|(k, v)| format!("{}:{}", k, v.as_u64().unwrap_or(0))).collect::<Vec<_>>().join(", "));
+                        }
+                        if let Some(layout) = report.get("layout").and_then(|v| v.as_array()) {
+                            let layout_str = layout.iter().map(|v| v.as_u64().map(|n| n.to_string()).unwrap_or_default()).collect::<Vec<_>>().join(", ");
+                            eprintln!("  Physical layout: [{}]", layout_str);
+                        }
+                        if let Some(spectators) = report.get("spectator_qubits").and_then(|v| v.as_array()) {
+                            let spectator_str = spectators.iter().map(|v| v.as_u64().map(|n| n.to_string()).unwrap_or_default()).collect::<Vec<_>>().join(", ");
+                            eprintln!("  Adjacent idle spectators: [{}]", spectator_str);
+                        }
+                        if let Some(warning) = report.get("warning").and_then(|v| v.as_str()) {
+                            eprintln!("\n  ⚠️  {}", warning);
+                        }
+                        eprintln!("═══════════════════════════════════════════");
+                    }
+                    Err(e) => {
+                        eprintln!("⚠️  Transpile guardrail unavailable: {}", e);
+                    }
+                }
                 return Ok(None);
             }
             "openqasm" => {
@@ -941,6 +988,44 @@ fn handle_daemon_event(hypervisor: &mut DaemonHypervisor, event: ResonanceEvent)
 /// Poll an IBM Quantum job and analyze its measurement coherence.
 ///
 /// For real job IDs: shells out to the Python bridge script
+/// Run the PhiFlow quantum transpile guardrail.
+///
+/// Shells out to `scripts/transpile_report.py` to transpile the generated QASM
+/// for a real IBM backend and report depth, gate counts, physical layout, and
+/// adjacent idle spectators. Returns a JSON value on success, or an error
+/// string on failure. The guardrail is advisory: failures are logged but do not
+/// stop the CLI.
+fn run_transpile_guardrail(qasm: &str, backend: &str) -> Result<serde_json::Value, String> {
+    let script = std::path::Path::new("scripts/transpile_report.py");
+    if !script.exists() {
+        return Err("scripts/transpile_report.py not found (run from PhiFlow root)".to_string());
+    }
+
+    // Write QASM to a temp file; the Python bridge reads from disk.
+    let qasm_path = std::path::PathBuf::from("/tmp/phiflow_guardrail_qasm.qasm");
+    if let Err(e) = std::fs::write(&qasm_path, qasm) {
+        return Err(format!("Failed to write temp QASM file: {}", e));
+    }
+
+    let output = std::process::Command::new("python3.12")
+        .arg("scripts/transpile_report.py")
+        .arg(&qasm_path)
+        .arg(backend)
+        .output()
+        .map_err(|e| format!("Failed to run transpile_report.py: {}", e))?;
+
+    let _ = std::fs::remove_file(&qasm_path);
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("transpile_report.py failed: {}", stderr));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    serde_json::from_str(&stdout)
+        .map_err(|e| format!("Failed to parse transpile report JSON: {}", e))
+}
+
 /// (`scripts/poll_ibm_real.py`) which uses the modern `qiskit_ibm_runtime`
 /// API (`ibm_quantum_platform` channel). The Rust `quantum_feedback` module
 /// uses the deprecated REST API which no longer works.

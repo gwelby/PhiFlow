@@ -35,6 +35,7 @@ stale_after_hours: 72
 | Type 4 battery | `cargo test --test benchmark_battery -- --ignored` | Phases 1,2,4 PASS; Phase 3 needs fixtures | 2026-07-03 | EXPECTED (Phase 3 wired) |
 | GHZ scaling (n=4..8) | `python3.12 scripts/analyze_ghz_scaling.py` | Coherence 0.955→0.874 on ibm_marrakesh | 2026-07-10 | PASS |
 | GHZ crosstalk (k=0..5) | `python3.12 scripts/analyze_ghz_crosstalk.py` | Spectators halve GHZ coherence | 2026-07-11 | PASS |
+| Quantum transpile guardrail | `phic --target quantum examples/quantum_council.phi` | Emits QASM + depth/layout/spectator report | 2026-07-11 | PASS |
 | Truth verification | `./scripts/verify_truth.ps1` | All truth tests pass | 2026-05-21 | not rerun |
 
 > **Note:** Current verified baseline is build PASS + lib tests 215/215 + 9 integration tests. Three CLI backends now functional: native, `--target wasm`, `--target quantum`. `--poll-ibm` reads credentials from CASCADE vault (`~/.cascade_keys`).
@@ -57,9 +58,10 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 - **Quantum feedback wired to CLI (`--poll-ibm <job_id>`)**: Polls IBM Quantum jobs, computes coherence, emits self-correcting PhiFlow. Reads from CASCADE vault (`~/.cascade_keys`).
 - **CLAIMS.md updated** for T4-05 resolution (C-21/C-22/C-23).
 
-**What happened in the 2026-07-11 Devin session (GHZ hardware scaling + crosstalk):**
+**What happened in the 2026-07-11 Devin session (GHZ hardware scaling + crosstalk + guardrail):**
 - **GHZ coherence scaling curve**: Submitted n=4..8 GHZ circuits to `ibm_marrakesh`, all completed. Coherence: 0.9551, 0.9509, 0.9297, 0.8630, 0.8738. First PhiFlow real-hardware multi-qubit entanglement scaling law. Added `scripts/submit_ghz_nqubit.py`, `scripts/poll_ghz_scaling.py`, `scripts/analyze_ghz_scaling.py`, report `reports/GHZ_SCALING_2026-07-10.md`, and C-26.
 - **Crosstalk test**: Fixed GHZ-6 chain on `ibm_marrakesh` with 0, 2, 4, or 5 adjacent idle spectators. Adding 2 spectators dropped GHZ coherence from 0.7292 to 0.3853; spectator error saturated near 50%. Confirms Crypto's Spark 6 crosstalk finding on a different circuit type. Added `scripts/submit_ghz_crosstalk.py`, `scripts/analyze_ghz_crosstalk.py`, report `reports/GHZ_CROSSTALK_2026-07-11.md`, and C-27.
+- **Quantum transpile guardrail**: Added `--quantum-backend` CLI arg, `scripts/transpile_report.py`, and wired the guardrail into `--target quantum`. Every run now reports pre/post depth, gate counts, physical layout, adjacent idle spectators, and a warning if crosstalk risk is detected.
 
 **What happened in the 2026-07-03 Devin session:**
 - **Phase 3 of `benchmark_battery.rs` wired**: Replaced the "would load fixtures here" stub with real fixture loading + discrimination logic.
@@ -143,12 +145,15 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 - `scripts/analyze_ghz_scaling.py` — GHZ scaling analysis + ASCII plot
 - `scripts/submit_ghz_crosstalk.py` — GHZ-6 + idle spectator submission
 - `scripts/analyze_ghz_crosstalk.py` — crosstalk analysis
+- `scripts/transpile_report.py` — quantum transpile guardrail report
+- `src/main_cli.rs` — wired transpile guardrail into `--target quantum`; added `--quantum-backend` arg
 - `reports/GHZ_SCALING_2026-07-10.md` — n=4..8 scaling report
 - `reports/ghz_scaling_2026-07-10.json` — scaling raw data
 - `reports/GHZ_CROSSTALK_2026-07-11.md` — crosstalk report
 - `reports/ghz_crosstalk_2026-07-11.json` — crosstalk raw data
 - `CLAIMS.md` — added C-26 and C-27
 - `QSOP/STATE.md` — verification entries
+- `RESUME.md` — handoff updated
 - `/mnt/d/LESSONS.md` — L-034 (pre-commit hook pattern)
 - `/mnt/d/Devin/PROJECTS/PhiFlow.md` — project shard
 - `/mnt/d/System/TOOL_REGISTRY.md` — PhiFlow CLI entry
@@ -183,7 +188,7 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 
 ## Next Step
 
-1. **Implement CLI depth/layout guardrail** — every `--target quantum` run should log post-transpile depth, physical qubits used, and adjacent idle spectators. This is the direct follow-up to C-27.
+1. **Extend guardrail to `--target openqasm --topology-aware`** — the same transpile report should run for topology-aware QASM emission.
 2. Build/provide real daemon/SOMA fixtures and export `PHIFLOW_SOMA_FIXTURES`.
 3. Rerun `cargo test --test benchmark_battery -- --ignored --test-threads=1 --nocapture` — Phase 3 will now actually test the fixtures.
 4. Keep C-21 PARTIAL, C-22 CONFIRMED, and C-23 HOLD/PARTIAL until Codex re-audits a passing real-trace packet.
