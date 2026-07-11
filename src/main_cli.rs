@@ -461,38 +461,13 @@ async fn run(
                 print!("{}", qasm);
 
                 match guardrail {
-                    Ok(report) => {
-                        eprintln!("\n═══════════════════════════════════════════");
-                        eprintln!("  Quantum Transpile Guardrail");
-                        eprintln!("═══════════════════════════════════════════");
-                        eprintln!("  Backend: {}", report.get("backend").and_then(|v| v.as_str()).unwrap_or("unknown"));
-                        eprintln!("  Logical qubits: {}", report.get("num_logical_qubits").and_then(|v| v.as_u64()).unwrap_or(0));
-                        eprintln!("  Pre-transpile depth: {}", report.get("pre_depth").and_then(|v| v.as_u64()).unwrap_or(0));
-                        eprintln!("  Post-transpile depth: {}", report.get("post_depth").and_then(|v| v.as_u64()).unwrap_or(0));
-                        if let Some(ops) = report.get("post_ops").and_then(|v| v.as_object()) {
-                            eprintln!("  Post-transpile ops: {:?}", ops.iter().map(|(k, v)| format!("{}:{}", k, v.as_u64().unwrap_or(0))).collect::<Vec<_>>().join(", "));
-                        }
-                        if let Some(layout) = report.get("layout").and_then(|v| v.as_array()) {
-                            let layout_str = layout.iter().map(|v| v.as_u64().map(|n| n.to_string()).unwrap_or_default()).collect::<Vec<_>>().join(", ");
-                            eprintln!("  Physical layout: [{}]", layout_str);
-                        }
-                        if let Some(spectators) = report.get("spectator_qubits").and_then(|v| v.as_array()) {
-                            let spectator_str = spectators.iter().map(|v| v.as_u64().map(|n| n.to_string()).unwrap_or_default()).collect::<Vec<_>>().join(", ");
-                            eprintln!("  Adjacent idle spectators: [{}]", spectator_str);
-                        }
-                        if let Some(warning) = report.get("warning").and_then(|v| v.as_str()) {
-                            eprintln!("\n  ⚠️  {}", warning);
-                        }
-                        eprintln!("═══════════════════════════════════════════");
-                    }
-                    Err(e) => {
-                        eprintln!("⚠️  Transpile guardrail unavailable: {}", e);
-                    }
+                    Ok(report) => print_guardrail_report(&report),
+                    Err(e) => eprintln!("⚠️  Transpile guardrail unavailable: {}", e),
                 }
                 return Ok(None);
             }
             "openqasm" => {
-                if topology_aware {
+                let qasm = if topology_aware {
                     let profile = fetch_live_topology_profile(&topology_backend).await?;
                     let native_two_qubit_gate = profile.native_two_qubit_gate;
                     let options = OpenQasmCompileOptions {
@@ -505,20 +480,33 @@ async fn run(
                         live_backend_profile: Some(profile),
                         anchor_signing_key: Some(Arc::clone(&session_signing_key)),
                     };
-                    let qasm = compile_to_openqasm_with_options(&source, &options)
-                        .map_err(CliError::Eval)?;
-                    print!("{}", qasm);
-                    return Ok(None);
-                }
+                    compile_to_openqasm_with_options(&source, &options)
+                        .map_err(CliError::Eval)?
+                } else {
+                    let mut emitter = OpenQasmEmitter::new();
+                    emitter.optimize_depth = optimize_depth;
+                    emitter.anchor_fingerprint_ecdsa = Some(session_signing_key.fingerprint());
+                    emitter.anchor_fingerprint_pq = Some(session_signing_key.fingerprint_pq());
+                    emitter
+                        .emit(&ir_program)
+                        .map_err(|e| CliError::Eval(e.to_string()))?
+                };
 
-                let mut emitter = OpenQasmEmitter::new();
-                emitter.optimize_depth = optimize_depth;
-                emitter.anchor_fingerprint_ecdsa = Some(session_signing_key.fingerprint());
-                emitter.anchor_fingerprint_pq = Some(session_signing_key.fingerprint_pq());
-                let qasm = emitter
-                    .emit(&ir_program)
-                    .map_err(|e| CliError::Eval(e.to_string()))?;
+                // Transpile guardrail: use topology_backend for topology-aware,
+                // otherwise fall back to quantum_backend.
+                let guardrail_backend = if topology_aware {
+                    topology_backend.clone()
+                } else {
+                    quantum_backend.clone()
+                };
+                let guardrail = run_transpile_guardrail(&qasm, &guardrail_backend);
+
                 print!("{}", qasm);
+
+                match guardrail {
+                    Ok(report) => print_guardrail_report(&report),
+                    Err(e) => eprintln!("⚠️  Transpile guardrail unavailable: {}", e),
+                }
                 return Ok(None);
             }
             "wasm" => {
@@ -1024,6 +1012,32 @@ fn run_transpile_guardrail(qasm: &str, backend: &str) -> Result<serde_json::Valu
     let stdout = String::from_utf8_lossy(&output.stdout);
     serde_json::from_str(&stdout)
         .map_err(|e| format!("Failed to parse transpile report JSON: {}", e))
+}
+
+/// Print a transpile guardrail report to stderr in a consistent format.
+fn print_guardrail_report(report: &serde_json::Value) {
+    eprintln!("\n═══════════════════════════════════════════");
+    eprintln!("  Quantum Transpile Guardrail");
+    eprintln!("═══════════════════════════════════════════");
+    eprintln!("  Backend: {}", report.get("backend").and_then(|v| v.as_str()).unwrap_or("unknown"));
+    eprintln!("  Logical qubits: {}", report.get("num_logical_qubits").and_then(|v| v.as_u64()).unwrap_or(0));
+    eprintln!("  Pre-transpile depth: {}", report.get("pre_depth").and_then(|v| v.as_u64()).unwrap_or(0));
+    eprintln!("  Post-transpile depth: {}", report.get("post_depth").and_then(|v| v.as_u64()).unwrap_or(0));
+    if let Some(ops) = report.get("post_ops").and_then(|v| v.as_object()) {
+        eprintln!("  Post-transpile ops: {:?}", ops.iter().map(|(k, v)| format!("{}:{}", k, v.as_u64().unwrap_or(0))).collect::<Vec<_>>().join(", "));
+    }
+    if let Some(layout) = report.get("layout").and_then(|v| v.as_array()) {
+        let layout_str = layout.iter().map(|v| v.as_u64().map(|n| n.to_string()).unwrap_or_default()).collect::<Vec<_>>().join(", ");
+        eprintln!("  Physical layout: [{}]", layout_str);
+    }
+    if let Some(spectators) = report.get("spectator_qubits").and_then(|v| v.as_array()) {
+        let spectator_str = spectators.iter().map(|v| v.as_u64().map(|n| n.to_string()).unwrap_or_default()).collect::<Vec<_>>().join(", ");
+        eprintln!("  Adjacent idle spectators: [{}]", spectator_str);
+    }
+    if let Some(warning) = report.get("warning").and_then(|v| v.as_str()) {
+        eprintln!("\n  ⚠️  {}", warning);
+    }
+    eprintln!("═══════════════════════════════════════════");
 }
 
 /// (`scripts/poll_ibm_real.py`) which uses the modern `qiskit_ibm_runtime`

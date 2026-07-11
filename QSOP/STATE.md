@@ -12,9 +12,11 @@
   - `./target/release/phic --target quantum examples/quantum_council.phi` emits QASM + guardrail report showing backend `ibm_marrakesh`, post-depth 13, layout `[0, 1, 2]`, and 1 adjacent spectator.
   - `./target/release/phic --target quantum --measure examples/quantum_council.phi` emits JSON with `transpile_report` included.
   - `./target/release/phic --target quantum examples/ghz_8qubit.phi` shows post-depth 32, layout `[0..7]`, and 3 adjacent spectators.
+  - `./target/release/phic --target openqasm examples/quantum_council.phi` also emits the guardrail report.
+  - `./target/release/phic --target openqasm --topology-aware --topology-backend ibm_marrakesh ...` has the guardrail wired after the live topology fetch; the live topology fetch itself is a separate prerequisite handled by the existing topology-aware pipeline.
 
 - **State**:
-  - The depth/layout guardrail requested after C-27 is now implemented. Every hardware-targeted QASM run logs post-transpile depth, physical layout, and spectator count.
+  - The depth/layout guardrail requested after C-27 is now implemented. for both `--target quantum` and `--target openqasm`.
 
 ---
 
