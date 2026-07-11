@@ -2,23 +2,23 @@
 protocol_version: "2.1"
 schema_version: "2.1"
 health_score: 88
-last_verified_at: "2026-07-03T18:00:00-04:00"
+last_verified_at: "2026-07-11T00:30:00-04:00"
 verification_status: "verified"
 stale_after_hours: 72
 ---
 
 # RESUME.md — PhiFlow Workspace
 > *Agent-agnostic workspace handoff. Read this first when arriving in PhiFlow.*
-> *Last updated: 2026-07-03 by Devin (WASM codegen stubs replaced)*
-> *Previous update: 2026-07-03 by Devin (WASM + quantum feedback CLI wiring)*
+> *Last updated: 2026-07-11 by Devin (GHZ scaling + crosstalk tests on IBM hardware)*
+> *Previous update: 2026-07-03 by Devin (WASM codegen stubs replaced)*
 
 ---
 
 ## Last Agent Here
 - **Agent:** Devin
-- **When:** 2026-07-03
-- **Session goal:** Replace 8 WASM codegen stubs with real host import calls; wire WASM host + quantum feedback to CLI; fix T4-05 placeholder coherence.
-- **Git commits:** `7271cb2` (WASM stubs), `a38693d` (CLI wiring + T4-05), `ea3d1e1` (docs).
+- **When:** 2026-07-11
+- **Session goal:** Run GHZ n=4..8 scaling curve on ibm_marrakesh; test Crypto's crosstalk hypothesis on GHZ-6 with idle spectators; add C-26 and C-27.
+- **Git commits:** `bbdef9d` (GHZ scaling curve), `c9a1815` (GHZ crosstalk confirmation).
 
 ---
 
@@ -33,6 +33,8 @@ stale_after_hours: 72
 | `--poll-ibm mock` | `phic --poll-ibm mock` | Mock counts + coherence analysis | 2026-07-03 | PASS |
 | `--target quantum` | `phic --target quantum examples/quantum_council.phi` | QASM output | 2026-07-03 | PASS |
 | Type 4 battery | `cargo test --test benchmark_battery -- --ignored` | Phases 1,2,4 PASS; Phase 3 needs fixtures | 2026-07-03 | EXPECTED (Phase 3 wired) |
+| GHZ scaling (n=4..8) | `python3.12 scripts/analyze_ghz_scaling.py` | Coherence 0.955→0.874 on ibm_marrakesh | 2026-07-10 | PASS |
+| GHZ crosstalk (k=0..5) | `python3.12 scripts/analyze_ghz_crosstalk.py` | Spectators halve GHZ coherence | 2026-07-11 | PASS |
 | Truth verification | `./scripts/verify_truth.ps1` | All truth tests pass | 2026-05-21 | not rerun |
 
 > **Note:** Current verified baseline is build PASS + lib tests 215/215 + 9 integration tests. Three CLI backends now functional: native, `--target wasm`, `--target quantum`. `--poll-ibm` reads credentials from CASCADE vault (`~/.cascade_keys`).
@@ -55,7 +57,11 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 - **Quantum feedback wired to CLI (`--poll-ibm <job_id>`)**: Polls IBM Quantum jobs, computes coherence, emits self-correcting PhiFlow. Reads from CASCADE vault (`~/.cascade_keys`).
 - **CLAIMS.md updated** for T4-05 resolution (C-21/C-22/C-23).
 
-**What happened in the 2026-07-01 Devin session:**
+**What happened in the 2026-07-11 Devin session (GHZ hardware scaling + crosstalk):**
+- **GHZ coherence scaling curve**: Submitted n=4..8 GHZ circuits to `ibm_marrakesh`, all completed. Coherence: 0.9551, 0.9509, 0.9297, 0.8630, 0.8738. First PhiFlow real-hardware multi-qubit entanglement scaling law. Added `scripts/submit_ghz_nqubit.py`, `scripts/poll_ghz_scaling.py`, `scripts/analyze_ghz_scaling.py`, report `reports/GHZ_SCALING_2026-07-10.md`, and C-26.
+- **Crosstalk test**: Fixed GHZ-6 chain on `ibm_marrakesh` with 0, 2, 4, or 5 adjacent idle spectators. Adding 2 spectators dropped GHZ coherence from 0.7292 to 0.3853; spectator error saturated near 50%. Confirms Crypto's Spark 6 crosstalk finding on a different circuit type. Added `scripts/submit_ghz_crosstalk.py`, `scripts/analyze_ghz_crosstalk.py`, report `reports/GHZ_CROSSTALK_2026-07-11.md`, and C-27.
+
+**What happened in the 2026-07-03 Devin session:**
 - **Phase 3 of `benchmark_battery.rs` wired**: Replaced the "would load fixtures here" stub with real fixture loading + discrimination logic.
 - **State discrimination tests un-ignored**: `state_wakeful`, `state_deep_sleep`, `state_anesthesia` now run with synthetic proxies.
 - **`phic --measure` now includes C_PF**: Both normal and `--target quantum` paths emit consciousness metrics in JSON.
@@ -91,8 +97,7 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 
 1. **Real/SOMA fixture package** — `PHIFLOW_SOMA_FIXTURES` is not set, so benchmark Phase 3 fails as it should.
 2. **L_self / C_PF on real Council Daemon trace** — current positive result is synthetic only.
-3. **`--poll-ibm` with real IBM job** — mock mode works; real job needs valid `IBM_QUANTUM_TOKEN` in vault and a real job ID.
-4. **WASM Evolve/Entangle** — architecturally impossible in sandboxed WASM (self-modification needs the evaluator; yield needs a host mechanism). Not a blocker — documented as limitations.
+3. **WASM Evolve/Entangle** — architecturally impossible in sandboxed WASM (self-modification needs the evaluator; yield needs a host mechanism). Not a blocker — documented as limitations.
 
 ---
 
@@ -133,6 +138,16 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 - `tests/benchmark_battery.rs` — Phase 3 wired
 - `tests/state_discrimination_tests.rs` — un-ignored 3 synthetic-fallback tests
 - `tests/parameterized_qasm_tests.rs` — 6 integration tests for QASM pipeline
+- `scripts/submit_ghz_nqubit.py` — generalized n-qubit GHZ submission
+- `scripts/poll_ghz_scaling.py` — multi-job polling for scaling curve
+- `scripts/analyze_ghz_scaling.py` — GHZ scaling analysis + ASCII plot
+- `scripts/submit_ghz_crosstalk.py` — GHZ-6 + idle spectator submission
+- `scripts/analyze_ghz_crosstalk.py` — crosstalk analysis
+- `reports/GHZ_SCALING_2026-07-10.md` — n=4..8 scaling report
+- `reports/ghz_scaling_2026-07-10.json` — scaling raw data
+- `reports/GHZ_CROSSTALK_2026-07-11.md` — crosstalk report
+- `reports/ghz_crosstalk_2026-07-11.json` — crosstalk raw data
+- `CLAIMS.md` — added C-26 and C-27
 - `QSOP/STATE.md` — verification entries
 - `/mnt/d/LESSONS.md` — L-034 (pre-commit hook pattern)
 - `/mnt/d/Devin/PROJECTS/PhiFlow.md` — project shard
@@ -168,7 +183,7 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 
 ## Next Step
 
-1. **Test `--poll-ibm` with a real IBM job ID** — vault has `IBM_QUANTUM_TOKEN`; needs a valid job ID to poll.
+1. **Implement CLI depth/layout guardrail** — every `--target quantum` run should log post-transpile depth, physical qubits used, and adjacent idle spectators. This is the direct follow-up to C-27.
 2. Build/provide real daemon/SOMA fixtures and export `PHIFLOW_SOMA_FIXTURES`.
 3. Rerun `cargo test --test benchmark_battery -- --ignored --test-threads=1 --nocapture` — Phase 3 will now actually test the fixtures.
 4. Keep C-21 PARTIAL, C-22 CONFIRMED, and C-23 HOLD/PARTIAL until Codex re-audits a passing real-trace packet.
