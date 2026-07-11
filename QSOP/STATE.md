@@ -1,3 +1,39 @@
+## Verified (2026-07-11) [Devin: GHZ-6 crosstalk test confirms Crypto Spark 6 finding]
+
+- **Done**:
+  - Designed a crosstalk test using a fixed 6-qubit GHZ chain on `ibm_marrakesh` plus 0, 2, 4, or 5 adjacent idle spectator qubits.
+  - Used a fixed `initial_layout` so the GHZ chain stays on the same physical qubits while only the spectator count varies.
+  - Submitted 4 jobs with `scripts/submit_ghz_crosstalk.py` and analyzed them with `scripts/analyze_ghz_crosstalk.py`.
+  - Wrote report `reports/GHZ_CROSSTALK_2026-07-11.md`.
+
+- **Results** (4096 shots each, fixed chain `[4, 3, 16, 23, 24, 25]`, transpiled depth 24):
+  - k=0 spectators: GHZ coherence 0.7292
+  - k=2 spectators: GHZ coherence 0.3853, spectator error 50.2%
+  - k=4 spectators: GHZ coherence 0.3628, spectator error 52.4%
+  - k=5 spectators: GHZ coherence 0.4006, spectator error 52.8%
+
+- **Observations**:
+  - Adding 2 adjacent idle spectators cuts GHZ coherence roughly in half.
+  - Spectator error saturates near 50% for k≥2, matching Crypto's front-loaded crosstalk burst.
+  - The fixed GHZ chain used here is noisier than the scaling-curve chain (k=0 coherence 0.73 vs 0.93), but the spectator-induced drop is unambiguous and dominates.
+  - This confirms Crypto's Spark 6 finding on a different circuit type (GHZ) on the same Heron-R2 chip.
+
+- **Verified**:
+  - All 4 jobs completed on `ibm_marrakesh`.
+  - Coherence computed correctly from the first 6 bits only; spectator error computed separately.
+  - Transpiled depth is identical (24) across all variants, so the effect is not depth-driven.
+
+- **Next**:
+  - Implement the CLI depth/layout guardrail so every hardware run logs physical qubits, idle neighbors, and post-transpile depth.
+  - Re-run the n=4..8 GHZ scaling curve with the same layout-aware approach to separate chain quality from size scaling.
+  - Feed this into the quantum-backend codegen work: transpile-aware layout selection should avoid placing idle qubits near active gates.
+
+- **State**:
+  - C-27: CONFIRMED — idle spectators near active GHZ gates destroy entanglement.
+  - P-1: Cross-workspace bridge established between Crypto crosstalk (Spark 6) and PhiFlow GHZ hardware results.
+
+---
+
 ## Verified (2026-07-10) [Devin: GHZ coherence scaling on IBM Heron-R2]
 
 - **Done**:

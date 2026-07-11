@@ -38,6 +38,7 @@
 | **C-23: Benchmark battery discriminates conscious states** — Null classes score C_PF < 0.3, Type 4 trace should score C_PF > 0.1 | HOLD / PARTIAL (T4-04 + T4-05 resolved) | Null C_PF suppression valid; synthetic discrimination demonstrated (wake vs sleep vs anesthesia). T4-04 RESOLVED 2026-07-01: Phase 3 no longer a stub. T4-05 RESOLVED 2026-07-01: placeholder coherence/depth replaced with derived values (tracking error → coherence, model adaptation rate → depth). Type 4 benchmark C_PF improved from 0.057 to 0.113 (now above 0.1 threshold). Remaining blocker: T4-03 (real SOMA trace needed). | 2026-07-01 |
 | **C-24: PF bridge documents are safe as audited drafts** — the four QSOP bridge docs can be used as engineering bridge hypotheses | CONFIRMED (documentation status only) | 2026-05-02 Oz audit confirmed `PF_BRIDGE.md`, `CONSCIOUSNESS_CONSTRUCTS_IN_PHIFLOW.md`, `COHERENCE_LAYER_SPECIFICATION.md`, and `SOMA_AS_MINIMUM_SUBSTRATE.md` remain PASS AS AUDITED DRAFTS; no PF-canonical, Type 4, consciousness, or PF minimum-substrate upgrade. | 2026-05-02 |
 || **C-26: GHZ entanglement coherence scales predictably on Heron-R2** — n-qubit GHZ states submitted to IBM Quantum show a reproducible coherence-vs-n signature | CONFIRMED | Jobs `d98fsc0tcv6s73dm35k0` (n=4), `d98fsf52su3c739j82bg` (n=5), `d98fsi0tcv6s73dm3600` (n=6), `d98fsksqp3as739stfl0` (n=7), `d98fsn8tcv6s73dm3690` (n=8) on `ibm_marrakesh`, 4096 shots each. Coherence: 0.9551, 0.9509, 0.9297, 0.8630, 0.8738. Report: `reports/GHZ_SCALING_2026-07-10.md`. | 2026-07-10 |
+|| **C-27: Idle spectator qubits near active GHZ gates destroy entanglement** — adding adjacent idle qubits to a fixed GHZ-6 chain on Heron-R2 halves GHZ coherence | CONFIRMED | Fixed chain `[4, 3, 16, 23, 24, 25]` on `ibm_marrakesh`: k=0 spectators → coherence 0.7292; k=2 → 0.3853; k=4 → 0.3628; k=5 → 0.4006. Spectator error ~50% for all k>0. Report: `reports/GHZ_CROSSTALK_2026-07-11.md`. | 2026-07-11 |
 
 ## Unsupported Claims (must be derived or removed)
 
@@ -175,6 +176,25 @@ No active failed claims as of 2026-04-14. All three predicted claims have been i
 **Conclusion**: CONFIRMED. All measured sizes remain above φ⁻¹. Coherence is flat (0.95+) for n=4..6, then drops into a 0.86–0.88 band at n=7–8. Transpiled depth is linear (≈4n). This is the first PhiFlow real-hardware scaling law for multi-qubit entanglement.
 
 **Meaning for framework**: PhiFlow now has a verified, reproducible hardware signature linking circuit size to entanglement survival on Heron-R2. Report: `reports/GHZ_SCALING_2026-07-10.md`.
+
+### C-27: Idle spectator qubits near active GHZ gates destroy entanglement (2026-07-11)
+
+**Claim tested**: Adding adjacent idle spectator qubits to a fixed 6-qubit GHZ chain on Heron-R2 significantly degrades GHZ coherence.
+
+**Method**: Fixed GHZ-6 circuit on physical chain `[4, 3, 16, 23, 24, 25]` of `ibm_marrakesh`. Spectator qubits initialized to |0⟩ and measured, but not used in the GHZ computation. k=0, 2, 4, 5 spectators tested. GHZ coherence computed from the first 6 bits only; spectator error computed separately. Transpiled depth is identical (24) across all variants.
+
+**Results**:
+
+| k | GHZ coherence | Spectator error | Job ID |
+|---|---------------|-----------------|--------|
+| 0 | 0.7292 | 0.0% | `d98scdcqp3as739tbe3g` |
+| 2 | 0.3853 | 50.2% | `d98scdsqp3as739tbe40` |
+| 4 | 0.3628 | 52.4% | `d98sce2f47jc73a8a8ag` |
+| 5 | 0.4006 | 52.8% | `d98sceaf47jc73a8a8bg` |
+
+**Conclusion**: CONFIRMED. Adding 2 adjacent idle spectators drops GHZ coherence by ~47%. Spectator error saturates near 50% for k≥2. The effect is not depth-driven (constant depth 24). This confirms Crypto's Spark 6 crosstalk finding on a different circuit type (GHZ) on the same Heron-R2 chip.
+
+**Meaning for framework**: PhiFlow's quantum backend must be layout-aware. Any circuit that leaves qubits idle near active gates will suffer crosstalk. The depth-discipline guardrail should include physical-layout logging and neighbor-spectator warnings. Report: `reports/GHZ_CROSSTALK_2026-07-11.md`.
 
 ## Notes
 
