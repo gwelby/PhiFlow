@@ -665,7 +665,10 @@ async fn fetch_live_topology_profile(
     backend
         .initialize(config)
         .await
-        .map_err(|e| CliError::Eval(format!("Failed to initialize IBM backend: {e}")))?;
+        .map_err(|e| CliError::Eval(format!("Failed to initialize IBM backend: {e}
+
+Hint: --topology-aware requires a valid IBM Cloud credential and service identifier in the credential file.
+The IBM Quantum Platform credential in ~/.cascade_keys is not used for the live topology fetch.")))?;
     backend
         .fetch_topology_profile()
         .await

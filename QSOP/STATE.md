@@ -1,3 +1,21 @@
+## Verified (2026-07-11) [Devin: Topology-aware live fetch failure investigated]
+
+- **Done**:
+  - Ran ./target/release/phic --target openqasm --topology-aware --topology-backend ibm_marrakesh examples/quantum_council.phi.
+  - Traced the failure to load_ibm_quantum_config in src/main_cli.rs, which reads the credential file and authenticates against IBM Cloud IAM.
+  - Confirmed the credential file exists and has the expected keys (credential, service identifier, region).
+  - Confirmed the failure is an IBM IAM 400 Bad Request: Provided credential could not be found.
+  - Updated the CLI error message in src/main_cli.rs to explain that --topology-aware requires a valid IBM Cloud credential + service identifier in the credential file, and that the IBM Quantum Platform credential in ~/.cascade_keys is not used for the live topology fetch.
+
+- **Root cause**:
+  - The Rust IBMQuantumBackend uses the IBM Cloud Runtime / IAM flow (service identifier + credential), while the Python scripts use the IBM Quantum Platform credential in ~/.cascade_keys. These are different credentials.
+
+- **Fix options**:
+  1. Obtain a valid IBM Cloud credential + service identifier and update the credential file (user credential action).
+  2. Replace the Rust live fetch with a Python bridge (scripts/fetch_topology_profile.py) that uses qiskit_ibm_runtime + the IBM Quantum Platform credential, unifying credentials with the rest of the IBM pipeline.
+
+---
+
 ## Verified (2026-07-11) [Devin: Quantum transpile guardrail wired to CLI]
 
 - **Done**:

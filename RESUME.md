@@ -189,7 +189,7 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 ## Next Step
 
 1. ✅ **Extend guardrail to `--target openqasm --topology-aware`** — completed. Guardrail now runs for both `--target openqasm` and `--target openqasm --topology-aware` (the live topology fetch is a separate prerequisite).
-2. **Investigate topology-aware live fetch failure** — the existing `--topology-aware` path on `ibm_marrakesh` fails at IBM authentication; needs a valid IBM account setup.
+2. ✅ **Investigate topology-aware live fetch failure** — COMPLETED. Root cause: Rust IBMQuantumBackend uses IBM Cloud IAM (credential + service identifier in the credential file), while the Python scripts use the IBM Quantum Platform credential in ~/.cascade_keys. The credential file credential is rejected by IBM IAM. Options: (A) obtain valid IBM Cloud credentials, or (B) replace Rust fetch with a Python bridge using qiskit_ibm_runtime + the IBM Quantum Platform credential.
 3. Build/provide real daemon/SOMA fixtures and export `PHIFLOW_SOMA_FIXTURES`.
 4. Rerun `cargo test --test benchmark_battery -- --ignored --test-threads=1 --nocapture` — Phase 3 will now actually test the fixtures.
 5. Keep C-21 PARTIAL, C-22 CONFIRMED, and C-23 HOLD/PARTIAL until Codex re-audits a passing real-trace packet.
