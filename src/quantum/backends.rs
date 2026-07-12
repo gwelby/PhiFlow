@@ -39,7 +39,7 @@ impl QuantumBackendManager {
         info!("✅ Quantum simulator registered");
 
         // Register IBM Quantum if token is provided
-        if config.api_token.is_some() {
+        if config.ibm_cloud_key.is_some() {
             let ibm_backend = Arc::new(Mutex::new(IBMQuantumBackend::with_backend(
                 config.backend_name.clone(),
             )));
@@ -291,7 +291,7 @@ pub async fn detect_available_backends(config: &QuantumConfig) -> Vec<String> {
     let mut available = vec!["simulator".to_string()];
 
     // Test IBM Quantum connectivity
-    if config.api_token.is_some() {
+    if config.ibm_cloud_key.is_some() {
         let mut ibm_backend = IBMQuantumBackend::new();
         if ibm_backend.initialize(config.clone()).await.is_ok() {
             available.push("ibm".to_string());

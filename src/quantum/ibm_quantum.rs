@@ -22,7 +22,7 @@ const IBM_API_VERSION: &str = "2026-02-15";
 
 pub struct IBMQuantumBackend {
     client: Client,
-    api_token: Option<String>,
+    ibm_cloud_key: Option<String>,
     service_crn: Option<String>,
     region: Option<String>,
     base_url: String,
@@ -39,7 +39,7 @@ impl IBMQuantumBackend {
     pub fn new() -> Self {
         IBMQuantumBackend {
             client: Client::new(),
-            api_token: None,
+            ibm_cloud_key: None,
             service_crn: None,
             region: None,
             base_url: LEGACY_BASE_URL.to_string(),
@@ -93,7 +93,7 @@ impl IBMQuantumBackend {
 
     async fn authenticate(&self) -> QuantumResult2<String> {
         let token = self
-            .api_token
+            .ibm_cloud_key
             .as_ref()
             .ok_or_else(|| QuantumError::AuthError {
                 message: "No API token provided".to_string(),
@@ -821,7 +821,7 @@ impl QuantumBackend for IBMQuantumBackend {
             config.backend_name
         );
 
-        self.api_token = config.api_token.clone();
+        self.ibm_cloud_key = config.ibm_cloud_key.clone();
         self.service_crn = config.service_crn.clone();
         self.region = config.region.clone();
         self.hub = config.hub.clone();

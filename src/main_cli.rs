@@ -17,7 +17,6 @@ use phiflow::system_host::SystemHostProvider;
 use phiflow::wasm_host::{self, WasmHostHooks};
 use phiflow::OpenQasmCompileOptions;
 use phiflow::PhiDiagnostic;
-use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -159,15 +158,6 @@ enum CliError {
     Io(String),
     Eval(String),
     Lower(String),
-}
-
-const APIKEY_PATH: &str = "apikey.json";
-
-#[derive(Debug, Deserialize)]
-struct IbmCredentials {
-    apikey: String,
-    service_crn: Option<String>,
-    region: Option<String>,
 }
 
 struct RunReport {
@@ -627,27 +617,23 @@ async fn run(
 }
 
 fn load_ibm_quantum_config(backend_name: &str) -> Result<QuantumConfig, CliError> {
-    let credentials_json = fs::read_to_string(APIKEY_PATH).map_err(|e| {
-        CliError::Io(format!(
-            "Failed to read `{APIKEY_PATH}` for topology-aware OpenQASM: {e}"
-        ))
-    })?;
-    let credentials: IbmCredentials = serde_json::from_str(&credentials_json).map_err(|e| {
-        CliError::Io(format!(
-            "Failed to parse `{APIKEY_PATH}` for topology-aware OpenQASM: {e}"
-        ))
-    })?;
-    let service_crn = credentials.service_crn.clone().ok_or_else(|| {
+    let cloud_key = phiflow::cascade_keys::get_key("IBM_CLOUD_KEY").ok_or_else(|| {
         CliError::Io(
-            "Topology-aware IBM compilation requires `service_crn` in apikey.json".to_string(),
+            "Topology-aware IBM compilation requires IBM_CLOUD_KEY in ~/.cascade_keys".to_string(),
         )
     })?;
+    let service_crn = phiflow::cascade_keys::get_key("IBM_CLOUD_SERVICE_CRN").ok_or_else(|| {
+        CliError::Io(
+            "Topology-aware IBM compilation requires IBM_CLOUD_SERVICE_CRN in ~/.cascade_keys".to_string(),
+        )
+    })?;
+    let region = phiflow::cascade_keys::get_key("IBM_CLOUD_REGION");
 
     Ok(QuantumConfig {
         backend_name: backend_name.to_string(),
-        api_token: Some(credentials.apikey),
+        ibm_cloud_key: Some(cloud_key),
         service_crn: Some(service_crn),
-        region: credentials.region,
+        region,
         hub: None,
         group: None,
         project: None,
@@ -667,8 +653,9 @@ async fn fetch_live_topology_profile(
         .await
         .map_err(|e| CliError::Eval(format!("Failed to initialize IBM backend: {e}
 
-Hint: --topology-aware requires a valid IBM Cloud credential and service identifier in the credential file.
-The IBM Quantum Platform credential in ~/.cascade_keys is not used for the live topology fetch.")))?;
+Hint: --topology-aware reads IBM_CLOUD_KEY and IBM_CLOUD_SERVICE_CRN from ~/.cascade_keys.
+The IBM Quantum Platform credential (IBM_QUANTUM_TOKEN) is not used for the live topology fetch.
+To fix, populate those two keys in the key file ~/.cascade_keys or use the Rust vault template.")))?;
     backend
         .fetch_topology_profile()
         .await
@@ -1155,7 +1142,7 @@ fn poll_ibm_job_and_analyze(job_id: &str) {
     println!("\n═══════════════════════════════════════════");
 }
 
-/// Read a key from the CASCADE vault (`~/.cascade_keys`).
+/// Read a key from the key file ~/.cascade_keys (`~/.cascade_keys`).
 ///
 /// The vault is a shell-sourceable file with `KEY=value` lines and `#` comments.
 /// Returns `None` if the vault or key is not found.

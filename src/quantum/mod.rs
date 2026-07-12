@@ -52,7 +52,7 @@ pub trait QuantumBackend: Send + Sync {
 #[derive(Debug, Clone)]
 pub struct QuantumConfig {
     pub backend_name: String,
-    pub api_token: Option<String>,
+    pub ibm_cloud_key: Option<String>,
     pub service_crn: Option<String>,
     pub region: Option<String>,
     pub hub: Option<String>,
@@ -67,7 +67,7 @@ impl Default for QuantumConfig {
     fn default() -> Self {
         QuantumConfig {
             backend_name: "ibmq_qasm_simulator".to_string(),
-            api_token: None,
+            ibm_cloud_key: None,
             service_crn: None,
             region: None,
             hub: None,

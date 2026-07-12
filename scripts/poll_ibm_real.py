@@ -19,28 +19,19 @@ import sys
 import json
 import time
 from collections import Counter
+sys.path.insert(0, "/mnt/d/Pi/routing")
+from cascade_keys import get_key
 
-# Add vault helper paths
-# NOTE: We read the vault directly to avoid path references that trigger
-# the pre-commit hook credential-word scanner.
 
 PHI_INV = 0.618033988749895
 
 
-def get_token():
-    """Read IBM_QUANTUM_TOKEN from the CASCADE vault (~/.cascade_keys)."""
-    from pathlib import Path
-    vault_path = Path.home() / ".cascade_keys"
-    if not vault_path.exists():
-        raise FileNotFoundError(f"Vault not found: {vault_path}")
-    for line in vault_path.read_text().splitlines():
-        line = line.strip()
-        if line.startswith('#') or '=' not in line:
-            continue
-        key, _, value = line.partition('=')
-        if key.strip() == 'IBM_QUANTUM_TOKEN':
-            return value.strip().strip('"').strip("'")
-    raise KeyError("IBM_QUANTUM_TOKEN not found in vault")
+def get_token() -> str:
+    """Read IBM_QUANTUM_TOKEN from the CASCADE vault via cascade_keys."""
+    token = get_key("IBM_QUANTUM_TOKEN")
+    if not token:
+        raise KeyError("IBM_QUANTUM_TOKEN not found in vault")
+    return token
 
 
 def poll_job(job_id, wait=True, max_wait_minutes=60):

@@ -13,6 +13,7 @@
 )]
 
 // Core modules
+pub mod cascade_keys;
 pub mod host;
 pub mod interpreter;
 pub mod ir;

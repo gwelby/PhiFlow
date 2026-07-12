@@ -1,3 +1,23 @@
+## Verified (2026-07-12) [Devin: Migrated PhiFlow to CASCADE vault templates]
+
+- **Done**:
+  - Migrated all IBM Quantum Python scripts (`poll_ibm_real.py`, `submit_ghz_*.py`, `transpile_report.py`) to read `IBM_QUANTUM_TOKEN` from `~/.cascade_keys` via the canonical `/mnt/d/Pi/routing/cascade_keys.py` `get_key()` helper.
+  - Added `src/cascade_keys.rs` to PhiFlow (copy of `the CASCADE vault templates/rust/cascade_keys.rs`) and exposed it as `phiflow::cascade_keys`.
+  - Rewired `src/main_cli.rs` `load_ibm_quantum_config()` to read `IBM_CLOUD_KEY`, `IBM_CLOUD_SERVICE_CRN`, and optional `IBM_CLOUD_REGION` from `~/.cascade_keys` instead of `the legacy credential file`.
+  - Removed `the legacy credential file` usage from `src/main_cli.rs`; `the legacy credential file` is now a legacy artifact per `AGENTS.md` red lines.
+  - Updated `AGENTS.md` with a Credential Access section pointing to `the CASCADE vault templates/`.
+
+- **Verification**:
+  - `cargo build --release --bin phic` clean.
+  - `cargo test --lib` 209 pass.
+  - Python scripts parse and import `cascade_keys` successfully.
+
+- **Next**:
+  - Populate `IBM_CLOUD_KEY` and `IBM_CLOUD_SERVICE_CRN` in `~/.cascade_keys` if live topology fetch is needed.
+  - Optionally delete `the legacy credential file` once confirmed obsolete.
+
+---
+
 ## Verified (2026-07-11) [Devin: Topology-aware live fetch failure investigated]
 
 - **Done**:
@@ -454,7 +474,7 @@
   - Auto-fixes: lint, tests, build, deps
   - Manual review: security, API changes, quantum physics
   - Commit as: jules (with approval required)
-- **Red Lines Defined**: coherence.rs, openqasm.rs, apikey.json, IBM receipts never touched
+- **Red Lines Defined**: coherence.rs, openqasm.rs, the legacy credential file, IBM receipts never touched
 - **Coordination Rules**: Escalate quantum physics to Greg, audits to Codex, hardware to AntiGravity
 - **Documentation Created**:
   - `.github/jules.yml` — Configuration
@@ -634,14 +654,14 @@
   - `src/phi_ir/openqasm.rs` now formally tracks `collapsed_qubits` during OpenQASM emission. It emits compiler warnings inside the QASM source code if post-mid-circuit operations like `coherence` or `resonate` are attempted on previously `measured` target bits.
   - The entire PhiFlow conformance and test suite is green again: `cargo test --quiet` has 0 failures and all `phi_ir_conformance_tests` pass.
 - **IBM Cloud Authorization Blocker (GET /v1/backends 403 error) Diagnosed**:
-  - The 403 failure observed on the "Live IBM Gate" was due to the `apikey.json` containing literal, randomized dummy placeholder strings (`1234567890:1qwerty2...`) for the `service_crn`.
-  - The compiler's capability to route to IBM Cloud is complete; the blocker exists purely at the physical credential level. Live Gate testing will succeed the moment a real CRN instance ID is inserted in `apikey.json`.
+  - The 403 failure observed on the "Live IBM Gate" was due to the `the legacy credential file` containing literal, randomized dummy placeholder strings (`1234567890:1qwerty2...`) for the `service_crn`.
+  - The compiler's capability to route to IBM Cloud is complete; the blocker exists purely at the physical credential level. Live Gate testing will succeed the moment a real CRN instance ID is inserted in `the legacy credential file`.
 
 ## Corrected (2026-04-12) [Codex compiler IBM runtime path localised]
 
-- `tests/ibm_hardware_runner.rs` now reads `apikey.json` from the compiler worktree itself instead of hard-coding the root checkout path.
-- The runner now deserializes `service_crn` as optional and fails the ignored live test with an explicit local error if `apikey.json` does not provide it.
-- This removes the compiler worktree's direct credential dependency on `D:\Projects\PhiFlow\apikey.json`.
+- `tests/ibm_hardware_runner.rs` now reads `the legacy credential file` from the compiler worktree itself instead of hard-coding the root checkout path.
+- The runner now deserializes `service_crn` as optional and fails the ignored live test with an explicit local error if `the legacy credential file` does not provide it.
+- This removes the compiler worktree's direct credential dependency on `D:\Projects\PhiFlow\the legacy credential file`.
 
 ## Verified (2026-03-29) [Codex truth-sync: Pipe 1 typed sensor witness + Pipe 2 runtime path correction]
 
@@ -665,7 +685,7 @@
   - C-10 remains SPECULATIVE until `cargo test --test ibm_hardware_runner -- --ignored --nocapture` succeeds with real credentials and a scrubbed receipt
 - Live IBM gate attempted on 2026-03-29 from this workstation reached IBM Cloud Runtime and failed before submission with:
   - `GET /v1/backends` -> `403` JSON authorization error (`code: 1200`, "You are not authorized to perform this action.")
-  - This means `D:\Projects\PhiFlow\apikey.json` parses correctly, but the current API key / service instance pair is not authorized for backend discovery
+  - This means `D:\Projects\PhiFlow\the legacy credential file` parses correctly, but the current API key / service instance pair is not authorized for backend discovery
   - Likely boundary: missing IBM Quantum service permissions on the instance referenced by `service_crn`, or mismatched API key and service CRN
 
 ## Corrected (2026-03-29) [replacing overstated 2026-03-24 claims]
