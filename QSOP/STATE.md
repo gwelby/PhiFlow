@@ -1,3 +1,38 @@
+## Verified (2026-07-13) [Devin: Layout-aware GHZ scaling eliminates n=7 dip]
+
+- **Done**:
+  - Extended `scripts/submit_ghz_nqubit.py` with `--layout-aware` mode that selects a
+    low-spectator physical path on the device and pins the virtual GHZ chain to it
+    via `initial_layout`.
+  - Submitted n=4..8 GHZ circuits on `ibm_marrakesh` with layout-aware transpilation.
+  - Polled jobs and compared coherence to the original 2026-07-10 default curve.
+
+- **Results**:
+
+| n | Default (2026-07-10) | Layout-aware (2026-07-13) | Δ | Spectators |
+|---|----------------------|---------------------------|--------|------------|
+| 4 | 0.9551 | 0.9448 | -0.0103 | 2 |
+| 5 | 0.9509 | 0.9380 | -0.0129 | 2 |
+| 6 | 0.9297 | 0.9214 | -0.0083 | 2 |
+| 7 | 0.8630 | 0.9187 | +0.0557 | 2 |
+| 8 | 0.8738 | 0.9011 | +0.0273 | 3 |
+
+- **Interpretation**:
+  - The n=7 dip is largely eliminated when the GHZ chain uses a low-spectator path.
+  - This supports the C-27 crosstalk mechanism: adjacent idle spectators degrade
+    GHZ coherence, and minimizing them restores smoother scaling.
+  - n=4..6 are slightly lower in the layout-aware run, likely due to device
+    run-to-run variation or the specific path chosen; the differences are small.
+
+- **Artifacts**:
+  - Report: `reports/GHZ_LAYOUT_AWARE_2026-07-13.md`
+  - JSON: `reports/ghz_layout_aware_2026-07-13.json`
+  - Job IDs: `d9a6o4l2su3c739l7pqg` (n=4), `d9a6o8if47jc73a9rru0` (n=5), `d9a6obsqp3as739utg30` (n=6), `d9a6oecqp3as739utg7g` (n=7), `d9a6ogkqp3as739utga0` (n=8).
+
+- **Claim impact**: C-26 remains CONFIRMED; additional evidence added. C-27 supported.
+
+---
+
 ## Verified (2026-07-12) [Devin: Migrated PhiFlow to CASCADE vault templates]
 
 - **Done**:

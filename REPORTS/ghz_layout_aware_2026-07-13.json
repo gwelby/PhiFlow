@@ -1,0 +1,82 @@
+[
+  {
+    "n_qubits": 4,
+    "job_id": "d9a6o4l2su3c739l7pqg",
+    "coherence": 0.94482421875,
+    "path": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "spectators": 2,
+    "backend": "ibm_marrakesh",
+    "shots": 4096
+  },
+  {
+    "n_qubits": 5,
+    "job_id": "d9a6o8if47jc73a9rru0",
+    "coherence": 0.93798828125,
+    "path": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "spectators": 2,
+    "backend": "ibm_marrakesh",
+    "shots": 4096
+  },
+  {
+    "n_qubits": 6,
+    "job_id": "d9a6obsqp3as739utg30",
+    "coherence": 0.92138671875,
+    "path": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "spectators": 2,
+    "backend": "ibm_marrakesh",
+    "shots": 4096
+  },
+  {
+    "n_qubits": 7,
+    "job_id": "d9a6oecqp3as739utg7g",
+    "coherence": 0.918701171875,
+    "path": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "spectators": 2,
+    "backend": "ibm_marrakesh",
+    "shots": 4096
+  },
+  {
+    "n_qubits": 8,
+    "job_id": "d9a6ogkqp3as739utga0",
+    "coherence": 0.901123046875,
+    "path": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "spectators": 3,
+    "backend": "ibm_marrakesh",
+    "shots": 4096
+  }
+]

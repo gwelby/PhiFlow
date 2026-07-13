@@ -177,6 +177,8 @@ No active failed claims as of 2026-04-14. All three predicted claims have been i
 
 **Meaning for framework**: PhiFlow now has a verified, reproducible hardware signature linking circuit size to entanglement survival on Heron-R2. Report: `reports/GHZ_SCALING_2026-07-10.md`.
 
+**Follow-up (2026-07-13)**: Re-ran the n=4..8 scaling curve with layout-aware transpilation (`submit_ghz_nqubit.py --layout-aware`), pinning the GHZ chain to low-spectator physical paths on `ibm_marrakesh`. Coherence: 0.9448, 0.9380, 0.9214, 0.9187, 0.9011. The n=7 dip (0.8630 to 0.9187) and n=8 recovery are largely smoothed out, consistent with the C-27 crosstalk mechanism. Report: `reports/GHZ_LAYOUT_AWARE_2026-07-13.md`.
+
 ### C-27: Idle spectator qubits near active GHZ gates destroy entanglement (2026-07-11)
 
 **Claim tested**: Adding adjacent idle spectator qubits to a fixed 6-qubit GHZ chain on Heron-R2 significantly degrades GHZ coherence.
