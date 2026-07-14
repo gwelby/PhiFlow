@@ -192,8 +192,8 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 2. ✅ **Migrate PhiFlow to CASCADE vault templates** — completed. Python scripts and Rust topology fetch now read `~/.cascade_keys` via the canonical `cascade_keys` templates.
 3. ✅ **Re-run GHZ scaling curve with layout-aware transpilation** — completed. The n=7 dip (0.8630 → 0.9187) is largely eliminated by pinning the GHZ chain to a low-spectator physical path on `ibm_marrakesh`. Report: `reports/GHZ_LAYOUT_AWARE_2026-07-13.md`.
 4. ✅ **Python bridge for topology-aware fetch** — completed. `--topology-aware` now calls `scripts/fetch_topology_profile.py` which uses `IBM_QUANTUM_TOKEN` from `~/.cascade_keys`. No longer needs `IBM_CLOUD_KEY` or `IBM_CLOUD_SERVICE_CRN`.
-5. **Build/provide real daemon/SOMA fixtures** and export `PHIFLOW_SOMA_FIXTURES`.
-6. Rerun `cargo test --test benchmark_battery -- --ignored --test-threads=1 --nocapture` — Phase 3 will now actually test the fixtures.
+5. ✅ **SOMA fixtures + benchmark battery** — completed. All 4 phases pass with `PHIFLOW_SOMA_FIXTURES=tests/fixtures/soma`. Evidence: `QSOP/EVIDENCE/type4_battery_2026-07-14.md`.
+6. ✅ **Benchmark battery rerun** — completed. All 14 tests pass.
 7. Keep C-21 PARTIAL, C-22 CONFIRMED, and C-23 HOLD/PARTIAL until Codex re-audits a passing real-trace packet.
 8. **Archive legacy modules** — `src/compiler/`, `src/vm/`, `src/interpreter/` are superseded by `src/phi_ir/`. Add DEPRECATED headers or move to `src/_archive/`.
 9. **Wire `phic --measure` to :18030** — the metrics bridge already exists; connect it to the consciousness JSON output for live daemon monitoring.

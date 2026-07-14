@@ -1,3 +1,29 @@
+## Verified (2026-07-13) [Devin: SOMA fixtures + benchmark battery all phases pass]
+
+- **Done**:
+  - Confirmed existing SOMA fixtures at `tests/fixtures/soma/` (`wakeful.json`,
+    `deep_sleep.json`, `anesthesia.json`) have the correct schema (observed,
+    coherence, depth, model, action arrays of length 1000).
+  - Ran `cargo test --test benchmark_battery -- --ignored --test-threads=1 --nocapture`
+    with `PHIFLOW_SOMA_FIXTURES=tests/fixtures/soma`.
+  - All 4 phases pass: Phase 1 (self-correlation), Phase 2 (null class),
+    Phase 3 (state discrimination), Phase 4 (daemon trace).
+
+- **Results**:
+  - Phase 1: L_self = 0.2454 (threshold 0.1) — PASS
+  - Phase 2: feedforward C_PF=0.0000, noise C_PF=0.0175, thermostat C_PF=0.0000 — all < 0.3 PASS
+  - Phase 3: wakeful L_self=0.4381 C_PF=0.2895, sleep L_self=0.0000 C_PF=0.0000, discrimination=inf — PASS
+  - Phase 4: daemon L_self=0.2584, R_in=0.7129, R_out=0.2584 — PASS
+
+- **Artifacts**:
+  - Evidence report: `QSOP/EVIDENCE/type4_battery_2026-07-14.md`
+  - Fixtures: `tests/fixtures/soma/`
+  - Run command: `PHIFLOW_SOMA_FIXTURES=tests/fixtures/soma cargo test --test benchmark_battery -- --ignored --test-threads=1 --nocapture`
+
+- **Note**: Type 4 observer status remains HOLD — this is a synthetic proxy smoke test only.
+
+---
+
 ## Verified (2026-07-13) [Devin: Python bridge for topology-aware fetch]
 
 - **Done**:
