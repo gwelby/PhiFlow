@@ -1,32 +1,35 @@
 use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum ProcessorFamily {
     Heron,
     Eagle,
     Unknown,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum NativeTwoQGate {
     Cz,
     Ecr,
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct QubitCalibration {
     pub t1_s: Option<f64>,
     pub t2_s: Option<f64>,
     pub readout_error: Option<f64>,
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EdgeCalibration {
     pub duration_s: Option<f64>,
     pub error: Option<f64>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BackendTopologyProfile {
     pub backend_name: String,
     pub family: ProcessorFamily,

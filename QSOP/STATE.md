@@ -1,3 +1,31 @@
+## Verified (2026-07-13) [Devin: Python bridge for topology-aware fetch]
+
+- **Done**:
+  - Created `scripts/fetch_topology_profile.py` — Python bridge that fetches backend
+    topology (coupling map, qubit/edge calibrations, processor family, native 2q gate)
+    using `IBM_QUANTUM_TOKEN` from `~/.cascade_keys` via `qiskit_ibm_runtime`.
+  - Added `Serialize`/`Deserialize` derives to `BackendTopologyProfile` and sub-types
+    in `src/quantum/backend_topology.rs`.
+  - Rewired `fetch_live_topology_profile()` in `src/main_cli.rs` to call the Python
+    bridge via `tokio::process::Command` and parse the JSON output, instead of using
+    `IBMQuantumBackend` (which required `IBM_CLOUD_KEY` + `IBM_CLOUD_SERVICE_CRN`).
+  - Removed `load_ibm_quantum_config()`, `IBMQuantumBackend` import, `QuantumConfig`
+    import, and `QuantumBackend` import from `src/main_cli.rs`.
+  - PhiFlow now uses a single IBM credential (`IBM_QUANTUM_TOKEN`) for all IBM
+    Quantum operations. The IBM Cloud IAM credential split is eliminated.
+
+- **Verification**:
+  - `cargo build --release --bin phic`: clean.
+  - `cargo test --lib`: 210 pass.
+  - `./target/release/phic --target openqasm --topology-aware --topology-backend ibm_marrakesh examples/quantum_council.phi`: success. Emits topology-aware QASM using live backend profile (156 qubits, Heron family, CZ native gate, 352 coupling map entries, 156 qubit calibrations, 176 edge calibrations).
+
+- **Next**:
+  - `IBM_CLOUD_KEY` and `IBM_CLOUD_SERVICE_CRN` in `~/.cascade_keys` are no longer
+    needed by PhiFlow. They can be removed if no other tool uses them.
+  - The legacy credential file is now fully obsolete.
+
+---
+
 ## Verified (2026-07-13) [Devin: Layout-aware GHZ scaling eliminates n=7 dip]
 
 - **Done**:

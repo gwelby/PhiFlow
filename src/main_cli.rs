@@ -6,8 +6,7 @@ use phiflow::phi_ir::lowering::{lower_program, lower_program_checked};
 use phiflow::phi_ir::openqasm::OpenQasmEmitter;
 
 use phiflow::phi_ir::topology_transpiler::{RoutingStrategy, TopologyTranspileConfig};
-use phiflow::quantum::ibm_quantum::IBMQuantumBackend;
-use phiflow::quantum::{BackendTopologyProfile, QuantumBackend, QuantumConfig};
+use phiflow::quantum::BackendTopologyProfile;
 use phiflow::phi_ir::PhiIRValue;
 use phiflow::metrics::consciousness_proxy::ConsciousnessMetrics;
 use phiflow::metrics::trace::Trace;
@@ -616,50 +615,81 @@ async fn run(
     }))
 }
 
-fn load_ibm_quantum_config(backend_name: &str) -> Result<QuantumConfig, CliError> {
-    let cloud_key = phiflow::cascade_keys::get_key("IBM_CLOUD_KEY").ok_or_else(|| {
-        CliError::Io(
-            "Topology-aware IBM compilation requires IBM_CLOUD_KEY in ~/.cascade_keys".to_string(),
-        )
-    })?;
-    let service_crn = phiflow::cascade_keys::get_key("IBM_CLOUD_SERVICE_CRN").ok_or_else(|| {
-        CliError::Io(
-            "Topology-aware IBM compilation requires IBM_CLOUD_SERVICE_CRN in ~/.cascade_keys".to_string(),
-        )
-    })?;
-    let region = phiflow::cascade_keys::get_key("IBM_CLOUD_REGION");
-
-    Ok(QuantumConfig {
-        backend_name: backend_name.to_string(),
-        ibm_cloud_key: Some(cloud_key),
-        service_crn: Some(service_crn),
-        region,
-        hub: None,
-        group: None,
-        project: None,
-        max_qubits: 156,
-        shots: 1024,
-        timeout_seconds: 300,
-    })
-}
-
 async fn fetch_live_topology_profile(
     backend_name: &str,
 ) -> Result<BackendTopologyProfile, CliError> {
-    let config = load_ibm_quantum_config(backend_name)?;
-    let mut backend = IBMQuantumBackend::with_backend(backend_name.to_string());
-    backend
-        .initialize(config)
-        .await
-        .map_err(|e| CliError::Eval(format!("Failed to initialize IBM backend: {e}
+    // Use the Python bridge (scripts/fetch_topology_profile.py) which authenticates
+    // via IBM_QUANTUM_TOKEN from ~/.cascade_keys — the same credential used by all
+    // other PhiFlow IBM scripts. This avoids the need for a separate IBM Cloud IAM
+    // API key + service CRN.
+    let script_path = std::env::var("PHIFLOW_TOPOLOGY_BRIDGE")
+        .unwrap_or_else(|_| "scripts/fetch_topology_profile.py".to_string());
 
-Hint: --topology-aware reads IBM_CLOUD_KEY and IBM_CLOUD_SERVICE_CRN from ~/.cascade_keys.
-The IBM Quantum Platform credential (IBM_QUANTUM_TOKEN) is not used for the live topology fetch.
-To fix, populate those two keys in the key file ~/.cascade_keys or use the Rust vault template.")))?;
-    backend
-        .fetch_topology_profile()
+    let output = tokio::process::Command::new("python3.12")
+        .arg(&script_path)
+        .arg(backend_name)
+        .output()
         .await
-        .map_err(|e| CliError::Eval(format!("Failed to fetch backend topology profile: {e}")))
+        .map_err(|e| CliError::Eval(format!(
+            "Failed to launch topology bridge script: {e}\n\
+             Hint: --topology-aware calls scripts/fetch_topology_profile.py which uses\n\
+             IBM_QUANTUM_TOKEN from ~/.cascade_keys."
+        )))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(CliError::Eval(format!(
+            "Topology bridge script failed: {stderr}\n\
+             Hint: --topology-aware calls scripts/fetch_topology_profile.py which uses\n\
+             IBM_QUANTUM_TOKEN from ~/.cascade_keys."
+        )));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    // Deserialize using an intermediate struct that represents edges as a
+    // list (JSON can't have tuple keys in objects). Then convert to the
+    // HashMap<(usize, usize), EdgeCalibration> expected by BackendTopologyProfile.
+    #[derive(serde::Deserialize)]
+    struct EdgeEntry {
+        edge: (usize, usize),
+        #[serde(flatten)]
+        cal: phiflow::quantum::EdgeCalibration,
+    }
+    #[derive(serde::Deserialize)]
+    struct RawProfile {
+        backend_name: String,
+        family: phiflow::quantum::ProcessorFamily,
+        num_qubits: usize,
+        coupling_map: Vec<(usize, usize)>,
+        native_two_qubit_gate: phiflow::quantum::NativeTwoQGate,
+        qubits: HashMap<usize, phiflow::quantum::QubitCalibration>,
+        edges: Vec<EdgeEntry>,
+    }
+
+    let raw: RawProfile = serde_json::from_str(&stdout)
+        .map_err(|e| CliError::Eval(format!(
+            "Failed to parse topology profile JSON: {e}\n\
+             Raw output (first 500 chars): {}",
+            &stdout[..stdout.len().min(500)]
+        )))?;
+
+    let edges: HashMap<(usize, usize), phiflow::quantum::EdgeCalibration> = raw.edges
+        .into_iter()
+        .map(|e| (e.edge, e.cal))
+        .collect();
+
+    let profile = BackendTopologyProfile {
+        backend_name: raw.backend_name,
+        family: raw.family,
+        num_qubits: raw.num_qubits,
+        coupling_map: raw.coupling_map,
+        native_two_qubit_gate: raw.native_two_qubit_gate,
+        qubits: raw.qubits,
+        edges,
+    };
+
+    Ok(profile)
 }
 
 #[derive(Debug, Clone, PartialEq)]
