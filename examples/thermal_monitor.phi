@@ -1,0 +1,56 @@
+// Thermal Monitor — a practical PhiFlow program
+//
+// Demonstrates why PhiFlow's four constructs are useful for real problems:
+//
+// 1. intention: structures the monitoring pipeline into named phases
+//    (calibrate, sample, analyze, alert) — the code declares WHY before HOW
+// 2. witness: reads sensors and checkpoints state at each phase boundary
+// 3. resonate: shares sensor readings between phases without explicit wiring
+// 4. coherence: measures whether the system is operating within spec
+//
+// Run with: phic examples/thermal_monitor.phi
+// Or with metrics: phic --measure examples/thermal_monitor.phi
+
+intention "calibrate" {
+    // Read the baseline CPU temperature
+    let baseline = witness sensor("cpu_temp")
+
+    // Share the baseline with later phases via resonance
+    resonate baseline
+
+    // Checkpoint: observe our state after calibration
+    witness
+}
+
+intention "sample" {
+    // Read current CPU usage
+    let current = witness sensor("cpu_usage")
+
+    // Share the current reading
+    resonate current
+
+    // Checkpoint: observe what we measured
+    witness
+}
+
+intention "analyze" {
+    // Read the field — average of all resonated values
+    let field_avg = field
+
+    // Check if we're within operating range
+    let in_range = field_avg > 10.0
+
+    // Share the analysis result
+    resonate in_range
+
+    // Observe our analysis state
+    witness
+}
+
+intention "alert" {
+    // The coherence of the system tells us if all phases aligned
+    let system_coherence = coherence
+
+    // If coherence is high, the monitoring pipeline is healthy
+    system_coherence
+}
