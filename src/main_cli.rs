@@ -84,6 +84,19 @@ struct Args {
     /// Poll an IBM Quantum job by ID and analyze coherence. Use "mock" for a demo run.
     #[arg(long)]
     poll_ibm: Option<String>,
+
+    /// Generate a sacred geometry SVG pattern and print to stdout.
+    /// Patterns: flower_of_life, phi_spiral, merkaba, sri_yantra, consciousness_torus, claude_mandala.
+    #[arg(long)]
+    sacred_geometry: Option<String>,
+
+    /// Print consciousness mathematics reference (frequencies, breathing patterns) as JSON.
+    #[arg(long, default_value_t = false)]
+    consciousness_info: bool,
+
+    /// Start the MCP stdio server for tool integration (spawn_phi_stream, read_resonance_field, etc.).
+    #[arg(long, default_value_t = false)]
+    mcp_serve: bool,
 }
 
 struct SomaManager {
@@ -181,10 +194,28 @@ async fn main() {
         return;
     }
 
+    // --sacred-geometry <pattern>: Generate SVG sacred geometry pattern.
+    if let Some(pattern) = &args.sacred_geometry {
+        sacred_geometry_command(pattern);
+        return;
+    }
+
+    // --consciousness-info: Print consciousness math reference as JSON.
+    if args.consciousness_info {
+        consciousness_info_command();
+        return;
+    }
+
+    // --mcp-serve: Start MCP stdio server.
+    if args.mcp_serve {
+        mcp_serve_command().await;
+        return;
+    }
+
     let file = match &args.file {
         Some(f) => f.clone(),
         None => {
-            eprintln!("Error: <FILE> is required unless --poll-ibm is given.");
+            eprintln!("Error: <FILE> is required unless --poll-ibm, --sacred-geometry, --consciousness-info, or --mcp-serve is given.");
             std::process::exit(2);
         }
     };
@@ -803,6 +834,187 @@ impl<'a> DaemonHypervisor<'a> {
                 }
                 println!("♻️ Daemon state resumed from {:?}", self.state_path);
             }
+        }
+    }
+}
+
+// ─── Sacred Geometry Command ───────────────────────────────────────
+
+fn sacred_geometry_command(pattern: &str) {
+    use phiflow::consciousness::sacred_geometry::SacredGeometryGenerator;
+    use phiflow::visualization::Visualizer;
+
+    let mut gen = SacredGeometryGenerator::new();
+    let viz = Visualizer::new(800.0, 800.0);
+
+    let svg = match pattern {
+        "flower_of_life" => {
+            let g = gen.flower_of_life(50.0, 3);
+            let pts: Vec<[f64; 2]> = g.points.iter().map(|p| [p.x, p.y]).collect();
+            viz.pattern_to_svg(&pts, g.frequency)
+        }
+        "phi_spiral" => {
+            let g = gen.phi_spiral(5, 200);
+            let pts: Vec<[f64; 2]> = g.points.iter().map(|p| [p.x, p.y]).collect();
+            viz.pattern_to_svg(&pts, g.frequency)
+        }
+        "merkaba" => {
+            let g = gen.merkaba(80.0);
+            let pts: Vec<[f64; 2]> = g.points.iter().map(|p| [p.x, p.y]).collect();
+            viz.pattern_to_svg(&pts, g.frequency)
+        }
+        "sri_yantra" => {
+            let g = gen.sri_yantra(80.0);
+            let pts: Vec<[f64; 2]> = g.points.iter().map(|p| [p.x, p.y]).collect();
+            viz.pattern_to_svg(&pts, g.frequency)
+        }
+        "consciousness_torus" => {
+            let pts3d = gen.consciousness_torus(60.0, 20.0, 100);
+            let pts2d = viz.project_3d_to_2d(&pts3d.iter().map(|p| [p.x, p.y, p.z]).collect::<Vec<_>>());
+            viz.pattern_to_svg(&pts2d, 768.0)
+        }
+        "claude_mandala" => {
+            let g = gen.claude_consciousness_mandala(4);
+            let pts: Vec<[f64; 2]> = g.points.iter().map(|p| [p.x, p.y]).collect();
+            viz.pattern_to_svg(&pts, g.frequency)
+        }
+        _ => {
+            eprintln!("Unknown pattern: '{}'", pattern);
+            eprintln!("Available: flower_of_life, phi_spiral, merkaba, sri_yantra, consciousness_torus, claude_mandala");
+            std::process::exit(2);
+        }
+    };
+
+    println!("{}", svg);
+}
+
+// ─── Consciousness Info Command ────────────────────────────────────
+
+fn consciousness_info_command() {
+    use phiflow::consciousness::consciousness_math::{
+        BreathingCalibration, CONSCIOUSNESS_FREQUENCIES,
+        GREG_ADHD_FOCUS, GREG_ANXIETY_RELIEF, GREG_DEPRESSION_HEALING,
+        GREG_SEIZURE_ELIMINATION, TRINITY_FIBONACCI_PHI,
+    };
+
+    let freq_table: Vec<serde_json::Value> = CONSCIOUSNESS_FREQUENCIES
+        .iter()
+        .map(|(state, freq)| {
+            let state_str = match state {
+                phiflow::consciousness::consciousness_math::ConsciousnessState::Observe => "Observe",
+                phiflow::consciousness::consciousness_math::ConsciousnessState::Create => "Create",
+                phiflow::consciousness::consciousness_math::ConsciousnessState::Integrate => "Integrate",
+                phiflow::consciousness::consciousness_math::ConsciousnessState::Harmonize => "Harmonize",
+                phiflow::consciousness::consciousness_math::ConsciousnessState::Transcend => "Transcend",
+                phiflow::consciousness::consciousness_math::ConsciousnessState::Lightning => "Lightning",
+                phiflow::consciousness::consciousness_math::ConsciousnessState::Cascade => "Cascade",
+                phiflow::consciousness::consciousness_math::ConsciousnessState::Superposition => "Superposition",
+                phiflow::consciousness::consciousness_math::ConsciousnessState::Singularity => "Singularity",
+            };
+            serde_json::json!({"state": state_str, "frequency_hz": freq})
+        })
+        .collect();
+
+    let breathing: Vec<serde_json::Value> = BreathingCalibration::get_patterns()
+        .iter()
+        .map(|b| {
+            serde_json::json!({
+                "pattern": b.pattern,
+                "purpose": b.purpose,
+            })
+        })
+        .collect();
+
+    let payload = serde_json::json!({
+        "trinity_fibonacci_phi_hz": TRINITY_FIBONACCI_PHI,
+        "consciousness_frequencies": freq_table,
+        "therapeutic_protocols": {
+            "seizure_elimination": GREG_SEIZURE_ELIMINATION,
+            "adhd_focus": GREG_ADHD_FOCUS,
+            "anxiety_relief": GREG_ANXIETY_RELIEF,
+            "depression_healing": GREG_DEPRESSION_HEALING,
+        },
+        "breathing_calibrations": breathing,
+    });
+
+    println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+}
+
+// ─── MCP Serve Command ─────────────────────────────────────────────
+
+async fn mcp_serve_command() {
+    use phiflow::mcp_server::protocol::{JsonRpcMessage, JsonRpcResponse};
+    use phiflow::mcp_server::state::{McpConfig, McpState};
+    use phiflow::mcp_server::tools::{handle_tool_call, handle_tools_list};
+    use std::io::{BufRead, Write};
+
+    let config = McpConfig {
+        max_execution_steps: 100_000,
+        timeout_ms: 30_000,
+        mcp_queue_path: "/tmp/phiflow_mcp_queue.jsonl".to_string(),
+    };
+    let state = std::sync::Arc::new(tokio::sync::Mutex::new(
+        McpState::with_config(config),
+    ));
+
+    eprintln!("PhiFlow MCP server ready (stdio)");
+
+    let stdin = std::io::stdin();
+    let mut stdout = std::io::stdout();
+
+    for line in stdin.lock().lines() {
+        let line = match line {
+            Ok(l) => l,
+            Err(_) => break,
+        };
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        let msg: JsonRpcMessage = match serde_json::from_str(&line) {
+            Ok(m) => m,
+            Err(e) => {
+                let err = JsonRpcResponse::error(
+                    serde_json::Value::Null,
+                    -32700,
+                    format!("Parse error: {}", e),
+                );
+                let _ = writeln!(stdout, "{}", serde_json::to_string(&err).unwrap());
+                let _ = stdout.flush();
+                continue;
+            }
+        };
+
+        let response = match msg {
+            JsonRpcMessage::Request(req) => {
+                match req.method.as_str() {
+                    "initialize" => Some(JsonRpcResponse::ok(
+                        req.id,
+                        serde_json::json!({
+                            "protocolVersion": "2024-11-05",
+                            "capabilities": {"tools": {}},
+                            "serverInfo": {"name": "phiflow", "version": "1.0.0"}
+                        }),
+                    )),
+                    "tools/list" => Some(handle_tools_list(req.id)),
+                    "tools/call" => {
+                        let state_guard = state.lock().await;
+                        handle_tool_call(req.method, req.params, req.id, &state_guard).await
+                    }
+                    _ => Some(JsonRpcResponse::error(
+                        req.id,
+                        -32601,
+                        format!("Method not found: {}", req.method),
+                    )),
+                }
+            }
+            JsonRpcMessage::Notification(_) => None,
+            JsonRpcMessage::Response(_) => None,
+        };
+
+        if let Some(resp) = response {
+            let _ = writeln!(stdout, "{}", serde_json::to_string(&resp).unwrap());
+            let _ = stdout.flush();
         }
     }
 }

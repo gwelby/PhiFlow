@@ -197,5 +197,9 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 7. Keep C-21 PARTIAL, C-22 CONFIRMED, and C-23 HOLD/PARTIAL until Codex re-audits a passing real-trace packet.
 8. ✅ **Archive legacy modules** — completed. `src/compiler/`, `src/vm/`, `src/interpreter/`, `src/main.rs`, `src/main_simple.rs` moved to `src/_archive/` with DEPRECATED headers. Removed from `lib.rs` and `Cargo.toml`.
 9. ✅ **Wire `phic --measure` to :18030** — completed. `phic --measure` now writes consciousness metrics (L_self, R_in, R_out, C_PF, coherence per intention) to `/tmp/phiflow_daemon_metrics.jsonl`, which the `phiflow-metrics-bridge` on port 18030 serves via `GET /metrics` and `GET /coherence`.
-10. **From audit (lower priority):** Wire `mcp_server`, `bio_compute`, `consciousness`, `visualization` modules if they have useful CLI-facing functionality.
+10. ✅ **Wire mcp_server, consciousness, visualization to CLI** — completed.
+    - `--sacred-geometry <pattern>`: 6 SVG patterns (flower_of_life, phi_spiral, merkaba, sri_yantra, consciousness_torus, claude_mandala)
+    - `--consciousness-info`: JSON reference of frequencies, therapeutic protocols, breathing calibrations
+    - `--mcp-serve`: MCP stdio server with 4 tools (spawn_phi_stream, read_resonance_field, resume_phi_stream, resume_entangled_streams)
+    - `bio_compute` left as library-only (DNA/protein modules are too speculative for CLI exposure).
 

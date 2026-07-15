@@ -1,3 +1,45 @@
+## Verified (2026-07-14) [Devin: Wired mcp_server, consciousness, visualization to CLI]
+
+- **Done**:
+  - **`--sacred-geometry <pattern>`**: Generates SVG sacred geometry patterns and
+    prints to stdout. Available patterns: `flower_of_life`, `phi_spiral`, `merkaba`,
+    `sri_yantra`, `consciousness_torus`, `claude_mandala`. Uses
+    `SacredGeometryGenerator` + `Visualizer` (3D torus projected to 2D).
+  - **`--consciousness-info`**: Prints consciousness mathematics reference as JSON.
+    Includes Trinity-Fibonacci-Phi constant (432.015075 Hz), 9 consciousness
+    frequencies with states, 4 therapeutic protocols (seizure elimination, ADHD
+    focus, anxiety relief, depression healing), and 4 breathing calibrations.
+  - **`--mcp-serve`**: Starts MCP (Model Context Protocol) stdio server. Supports
+    `initialize`, `tools/list`, and `tools/call` methods. Exposes 4 tools:
+    `spawn_phi_stream`, `read_resonance_field`, `resume_phi_stream`,
+    `resume_entangled_streams`. Enables AI assistants to run PhiFlow programs
+    as background streams and interact with them.
+
+- **Verification**:
+  - `cargo build --release --bin phic`: clean.
+  - `cargo test --lib`: 191 pass.
+  - `phic --sacred-geometry flower_of_life`: valid SVG (37 points).
+  - `phic --sacred-geometry phi_spiral`: valid SVG (41KB).
+  - All 6 patterns produce valid SVG with `<svg>`, `<path>` elements.
+  - `phic --consciousness-info`: valid JSON with frequencies, protocols, breathing.
+  - `phic --mcp-serve`: responds to `initialize` and `tools/list` correctly.
+
+- **Usage**:
+  ```bash
+  # Sacred geometry SVG generation
+  phic --sacred-geometry flower_of_life > flower.svg
+  phic --sacred-geometry phi_spiral > spiral.svg
+  phic --sacred-geometry merkaba > merkaba.svg
+
+  # Consciousness math reference
+  phic --consciousness-info | jq .
+
+  # MCP server (for AI assistant integration)
+  phic --mcp-serve  # reads JSON-RPC from stdin, writes to stdout
+  ```
+
+---
+
 ## Verified (2026-07-14) [Devin: Wired phic --measure to :18030 metrics bridge]
 
 - **Done**:
