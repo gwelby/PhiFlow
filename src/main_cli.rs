@@ -9,6 +9,7 @@ use phiflow::phi_ir::topology_transpiler::{RoutingStrategy, TopologyTranspileCon
 use phiflow::quantum::BackendTopologyProfile;
 use phiflow::phi_ir::PhiIRValue;
 use phiflow::metrics::consciousness_proxy::ConsciousnessMetrics;
+use phiflow::metrics::self_correlation::SelfCorrelation;
 use phiflow::metrics::trace::Trace;
 use phiflow::resonance_bus::{self, ResonanceEvent};
 use phiflow::sensors;
@@ -164,6 +165,7 @@ struct RunReport {
     resonance_events: Vec<(String, PhiIRValue)>,
     ended_streams: Vec<String>,
     consciousness_metrics: Option<ConsciousnessMetrics>,
+    self_correlation: Option<SelfCorrelation>,
     _program: phiflow::phi_ir::PhiIRProgram,
 }
 
@@ -246,6 +248,39 @@ async fn main() {
                     "source": file.to_string_lossy(),
                 });
                 println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+
+                // Write metrics to the daemon metrics JSONL file so the
+                // phiflow-metrics-bridge (:18030) can serve them.
+                if let (Some(m), Some(sc)) = (&report.consciousness_metrics, &report.self_correlation) {
+                    let bridge_entry = serde_json::json!({
+                        "timestamp": chrono::Utc::now().to_rfc3339(),
+                        "l_self": m.l_self,
+                        "r_in": sc.r_in_norm,
+                        "r_out": sc.r_out_norm,
+                        "c_pf": m.c_pf,
+                        "d_int": m.d_int,
+                        "c_coh": m.c_coh,
+                        "f_model": m.f_model,
+                        "window_size": 10,
+                        "final_coherence": report.final_coherence,
+                        "coherence_per_intention": resonance_map,
+                        "source": file.to_string_lossy(),
+                    });
+                    let jsonl_path = std::path::Path::new("/tmp/phiflow_daemon_metrics.jsonl");
+                    if let Some(parent) = jsonl_path.parent() {
+                        let _ = std::fs::create_dir_all(parent);
+                    }
+                    use std::io::Write;
+                    if let Ok(mut f) = std::fs::OpenOptions::new()
+                        .create(true)
+                        .append(true)
+                        .open(jsonl_path)
+                    {
+                        let _ = writeln!(f, "{}", bridge_entry);
+                        eprintln!("📊 Metrics published to :18030 ({} bytes)", bridge_entry.to_string().len());
+                    }
+                }
+
                 std::process::exit(0);
             }
 
@@ -364,6 +399,7 @@ async fn run(
             resonance_events: Vec::new(),
             ended_streams: Vec::new(),
             consciousness_metrics: None,
+            self_correlation: None,
             _program: ir_program,
         }));
     }
@@ -600,10 +636,12 @@ async fn run(
     // Compute consciousness metrics (C_PF) from the frozen execution trace.
     let frozen = evaluator.freeze_state();
     let trace = Trace::from_vm_state(&frozen);
-    let consciousness_metrics = if trace.len() >= 20 {
-        Some(ConsciousnessMetrics::compute(&trace, 10, 5, 0.01))
+    let (consciousness_metrics, self_correlation) = if trace.len() >= 20 {
+        let cm = ConsciousnessMetrics::compute(&trace, 10, 5, 0.01);
+        let sc = SelfCorrelation::from_type4_trace(&trace, 0.01);
+        (Some(cm), Some(sc))
     } else {
-        None // Not enough data for meaningful metric computation
+        (None, None) // Not enough data for meaningful metric computation
     };
 
     Ok(Some(RunReport {
@@ -611,6 +649,7 @@ async fn run(
         resonance_events: evaluator.resonance_events().to_vec(),
         ended_streams: evaluator.ended_streams().to_vec(),
         consciousness_metrics,
+        self_correlation,
         _program: ir_program,
     }))
 }

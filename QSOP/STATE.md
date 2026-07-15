@@ -1,3 +1,40 @@
+## Verified (2026-07-14) [Devin: Wired phic --measure to :18030 metrics bridge]
+
+- **Done**:
+  - Added `SelfCorrelation` computation to the `run()` function in `src/main_cli.rs`,
+    producing `r_in` and `r_out` alongside the existing `ConsciousnessMetrics`.
+  - Extended `RunReport` struct with a `self_correlation: Option<SelfCorrelation>` field.
+  - When `phic --measure` runs and consciousness metrics are available, appends a JSON
+    line to `/tmp/phiflow_daemon_metrics.jsonl` with: timestamp, l_self, r_in, r_out,
+    c_pf, d_int, c_coh, f_model, window_size, final_coherence, coherence_per_intention,
+    source.
+  - The `phiflow-metrics-bridge` (port 18030, `/mnt/d/System/phiflow_metrics_bridge.py`)
+    reads this JSONL file and serves it via:
+      - `GET /health` — daemon alive check
+      - `GET /metrics` — latest L_self, R_in, R_out, C_PF
+      - `GET /coherence` — latest coherence per intention
+
+- **Verification**:
+  - `cargo build --release --bin phic`: clean.
+  - `cargo test --lib`: 191 pass.
+  - `phic --measure examples/type4_trace_benchmark.phi`: produces consciousness JSON
+    on stdout AND writes metrics to `/tmp/phiflow_daemon_metrics.jsonl`.
+  - Started bridge, confirmed `GET /metrics` returns the metrics written by `phic`.
+  - `GET /coherence` returns coherence per intention.
+
+- **Usage**:
+  ```bash
+  # 1. Start the metrics bridge
+  python3.12 /mnt/d/System/phiflow_metrics_bridge.py &
+  # 2. Run a PhiFlow program with --measure
+  ./target/release/phic --measure examples/type4_trace_benchmark.phi
+  # 3. Query the bridge
+  curl http://localhost:18030/metrics
+  curl http://localhost:18030/coherence
+  ```
+
+---
+
 ## Verified (2026-07-14) [Devin: Archived legacy modules]
 
 - **Done**:

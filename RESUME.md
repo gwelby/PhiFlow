@@ -196,6 +196,6 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 6. ✅ **Benchmark battery rerun** — completed. All 14 tests pass.
 7. Keep C-21 PARTIAL, C-22 CONFIRMED, and C-23 HOLD/PARTIAL until Codex re-audits a passing real-trace packet.
 8. ✅ **Archive legacy modules** — completed. `src/compiler/`, `src/vm/`, `src/interpreter/`, `src/main.rs`, `src/main_simple.rs` moved to `src/_archive/` with DEPRECATED headers. Removed from `lib.rs` and `Cargo.toml`.
-9. **Wire `phic --measure` to :18030** — the metrics bridge already exists; connect it to the consciousness JSON output for live daemon monitoring.
+9. ✅ **Wire `phic --measure` to :18030** — completed. `phic --measure` now writes consciousness metrics (L_self, R_in, R_out, C_PF, coherence per intention) to `/tmp/phiflow_daemon_metrics.jsonl`, which the `phiflow-metrics-bridge` on port 18030 serves via `GET /metrics` and `GET /coherence`.
 10. **From audit (lower priority):** Wire `mcp_server`, `bio_compute`, `consciousness`, `visualization` modules if they have useful CLI-facing functionality.
 
