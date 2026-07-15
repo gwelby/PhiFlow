@@ -10,10 +10,6 @@ keywords = ["quantum", "consciousness", "dsl", "sacred-geometry", "phi"]
 categories = ["compilers", "science", "development-tools"]
 
 [[bin]]
-name = "phi"
-path = "src/main.rs"
-
-[[bin]]
 name = "phic"
 path = "src/main_cli.rs"
 

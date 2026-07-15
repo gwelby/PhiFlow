@@ -15,7 +15,6 @@
 // Core modules
 pub mod cascade_keys;
 pub mod host;
-pub mod interpreter;
 pub mod ir;
 pub mod mcp_server; // <-- Added MCP
 pub mod parser;
@@ -24,14 +23,11 @@ pub mod phi_diagnostics;
 pub mod phi_ir;
 pub mod visualization;
 
-// Compiler modules
-pub mod compiler;
 pub mod quantum_feedback;
 pub mod resonance_bus;
 pub mod sensors;
 pub mod system_host;
 pub mod security;
-pub mod vm;
 pub mod wasm_host;
 
 // Type 4 Observer Metrics (PF consciousness_metric_program)
@@ -57,10 +53,6 @@ pub use host::{PhiHostProvider, WitnessAction, WitnessSnapshot};
 pub use phi_diagnostics::PhiDiagnostic;
 pub use quantum::{QuantumCircuit, QuantumGate, QuantumResult};
 pub use sacred::{PhiMemoryAllocator, SacredFrequency, SacredFrequencyGenerator};
-
-// Re-export compiler and VM types
-pub use compiler::{PhiFlowExpression as CompilerExpression, PhiFlowLexer, PhiFlowParser, Token};
-pub use vm::{PhiFlowInterpreter, PhiFlowValue, RuntimeError};
 
 // PhiFlow version
 pub const VERSION: &str = "1.0.0";

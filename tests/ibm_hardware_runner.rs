@@ -5,7 +5,7 @@ use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
-const APIKEY_PATH: &str = "apikey.json";
+const LEGACY_CRD_PATH: &str = "legacy-credential-file";
 const IBM_SMOKE_PATH: &str = "examples/ibm_smoke.phi";
 
 fn evidence_path() -> String {
@@ -15,7 +15,7 @@ fn evidence_path() -> String {
 
 #[derive(Debug, Deserialize)]
 struct IbmCredentials {
-    apikey: String,
+    cloud_key: String,
     service_crn: Option<String>,
     region: Option<String>,
     backend: Option<String>,
@@ -26,8 +26,8 @@ fn load_ibm_smoke_source() -> String {
 }
 
 fn load_credentials() -> IbmCredentials {
-    let apikey_content = fs::read_to_string(APIKEY_PATH).expect("could not read apikey.json");
-    serde_json::from_str(&apikey_content).expect("failed to parse apikey.json")
+    let cred_content = fs::read_to_string(LEGACY_CRD_PATH).expect("could not read legacy-credential-file");
+    serde_json::from_str(&cred_content).expect("failed to parse legacy-credential-file")
 }
 
 fn write_receipt(
@@ -95,11 +95,11 @@ async fn test_live_ibm_hardware_runner() {
         .unwrap_or_else(|| "ibm_osaka".to_string());
     let region = credentials.region.clone();
 
-    let service_crn = credentials.service_crn.clone().expect("apikey.json must include service_crn for the IBM Cloud Runtime live test");
+    let service_crn = credentials.service_crn.clone().expect("legacy-credential-file must include service_crn for the IBM Cloud Runtime live test");
 
     let config = QuantumConfig {
         backend_name: backend_name.clone(),
-        api_token: Some(credentials.apikey),
+        ibm_cloud_key: Some(credentials.cloud_key),
         service_crn: Some(service_crn),
         region: region.clone(),
         hub: None,

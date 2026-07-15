@@ -1,3 +1,29 @@
+## Verified (2026-07-14) [Devin: Archived legacy modules]
+
+- **Done**:
+  - Moved `src/compiler/`, `src/vm/`, `src/interpreter/`, `src/main.rs`, and
+    `src/main_simple.rs` to `src/_archive/` with DEPRECATED headers.
+  - Removed `pub mod compiler`, `pub mod vm`, `pub mod interpreter` from `src/lib.rs`.
+  - Removed re-exports of `PhiFlowLexer`, `PhiFlowParser`, `PhiFlowInterpreter`,
+    `PhiFlowValue`, `RuntimeError`, `CompilerExpression`, `Token` from `src/lib.rs`.
+  - Removed the `phi` binary (`src/main.rs`) from `Cargo.toml`. The canonical CLI
+    is `phic` (`src/main_cli.rs`).
+  - Removed unused `use crate::compiler::lexer::Token` from `src/phi_ir/mod.rs`.
+  - Fixed `tests/ibm_hardware_runner.rs` to use `ibm_cloud_key` instead of `api_token`.
+
+- **Verification**:
+  - `cargo build --release --bin phic`: clean.
+  - `cargo test --lib`: 191 pass (down from 210 — the 19 old compiler/vm tests are
+    no longer compiled, as expected).
+  - All integration tests pass except 9 pre-existing WASM conformance failures
+    (missing `field_coherence` import — unrelated to this change, confirmed by
+    stash testing).
+
+- **Note**: The legacy modules are preserved in `src/_archive/` for historical
+  reference. They are not compiled.
+
+---
+
 ## Verified (2026-07-13) [Devin: SOMA fixtures + benchmark battery all phases pass]
 
 - **Done**:

@@ -24,8 +24,6 @@ pub mod vm;
 pub mod vm_state;
 pub mod wasm;
 
-use crate::compiler::lexer::Token; // Re-using Token if needed, or defining own types
-
 /// A reference to a computed value (SSA-style)
 /// In a BasicBlock, this is the index into the instruction list.
 pub type Operand = u32;

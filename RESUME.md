@@ -195,7 +195,7 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 5. ✅ **SOMA fixtures + benchmark battery** — completed. All 4 phases pass with `PHIFLOW_SOMA_FIXTURES=tests/fixtures/soma`. Evidence: `QSOP/EVIDENCE/type4_battery_2026-07-14.md`.
 6. ✅ **Benchmark battery rerun** — completed. All 14 tests pass.
 7. Keep C-21 PARTIAL, C-22 CONFIRMED, and C-23 HOLD/PARTIAL until Codex re-audits a passing real-trace packet.
-8. **Archive legacy modules** — `src/compiler/`, `src/vm/`, `src/interpreter/` are superseded by `src/phi_ir/`. Add DEPRECATED headers or move to `src/_archive/`.
+8. ✅ **Archive legacy modules** — completed. `src/compiler/`, `src/vm/`, `src/interpreter/`, `src/main.rs`, `src/main_simple.rs` moved to `src/_archive/` with DEPRECATED headers. Removed from `lib.rs` and `Cargo.toml`.
 9. **Wire `phic --measure` to :18030** — the metrics bridge already exists; connect it to the consciousness JSON output for live daemon monitoring.
 10. **From audit (lower priority):** Wire `mcp_server`, `bio_compute`, `consciousness`, `visualization` modules if they have useful CLI-facing functionality.
 
