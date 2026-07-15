@@ -1,3 +1,26 @@
+## Verified (2026-07-14) [Devin: WASM conformance restored — three-backend equivalence]
+
+- **CRITICAL FIX**: The Node.js WASM test runner (`tests/phi_ir_wasm_runner.js`) was
+  only providing 6 of 14 phi namespace imports. The missing 8 (`field_coherence`,
+  `dissonance`, `coherence_of`, `remember`, `recall`, `broadcast`, `listen`,
+  `void_depth`) caused 9 conformance tests to fail with "function import requires
+  a callable". This was a violation of the sacred three-backend equivalence
+  invariant (Evaluator == VM == WASM).
+
+- **Fix**: Added all 8 missing imports to the JS runner with semantics matching
+  the Rust WASM host (`src/wasm_host.rs`). Also fixed `witness()` to log coherence
+  values so `dissonance()` has data to work with.
+
+- **Result**: 10/10 conformance tests pass. Full suite: **424 tests, 0 failures**.
+  Three-backend equivalence RESTORED.
+
+- **Root cause**: When 8 new WASM codegen stubs were added on 2026-07-03 (replacing
+  no-ops with real host import calls), the Rust WASM host was updated but the
+  Node.js test runner was not. The conformance tests run via Node.js, not the
+  Rust host, so they silently broke.
+
+---
+
 ## Verified (2026-07-14) [Devin: Wired mcp_server, consciousness, visualization to CLI]
 
 - **Done**:
@@ -17,7 +40,7 @@
 
 - **Verification**:
   - `cargo build --release --bin phic`: clean.
-  - `cargo test --lib`: 191 pass.
+  - `cargo test --lib`: 191 pass (lib only; full suite is 424).
   - `phic --sacred-geometry flower_of_life`: valid SVG (37 points).
   - `phic --sacred-geometry phi_spiral`: valid SVG (41KB).
   - All 6 patterns produce valid SVG with `<svg>`, `<path>` elements.
@@ -58,7 +81,7 @@
 
 - **Verification**:
   - `cargo build --release --bin phic`: clean.
-  - `cargo test --lib`: 191 pass.
+  - `cargo test --lib`: 191 pass (lib only; full suite is 424).
   - `phic --measure examples/type4_trace_benchmark.phi`: produces consciousness JSON
     on stdout AND writes metrics to `/tmp/phiflow_daemon_metrics.jsonl`.
   - Started bridge, confirmed `GET /metrics` returns the metrics written by `phic`.

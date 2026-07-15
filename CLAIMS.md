@@ -1,5 +1,5 @@
 # CLAIMS: PhiFlow
-*Last updated: 2026-07-01*
+*Last updated: 2026-07-14*
 *Honesty rule: beautiful != proven. Failed tests are results, not failures.*
 
 ## Core Axioms (not claims — starting assumptions)
@@ -14,7 +14,7 @@
 | Claim | Status | Derivation / Evidence | Date |
 |-------|--------|----------------------|------|
 | **C-1: Five consciousness constructs are sufficient** — `intention`, `witness`, `coherence`, `resonate`, `stream` capture the minimal set for self-observing programs | SPECULATIVE | Inspired by framework design; no comparative proof of minimality | 2026-03-15 |
-| **C-2: Three-backend equivalence is achievable** — evaluator, PhiVM, and the canonical WASM runner can execute supported programs with identical results | CONFIRMED | `tests/phi_ir_conformance_tests.rs` plus the 2026-03-08 witness repair in `QSOP/STATE.md` | 2026-02-26 |
+| **C-2: Three-backend equivalence is achievable** — evaluator, PhiVM, and the canonical WASM runner can execute supported programs with identical results | CONFIRMED (restored 2026-07-14) | `tests/phi_ir_conformance_tests.rs` (10/10 pass). **Note**: Was silently broken 2026-07-03 to 2026-07-14 — the Node.js runner was missing 8 of 14 phi namespace imports after WASM codegen stubs were added. Fixed in commit `66f6e2a`. Full suite: 424 tests, 0 failures. | 2026-02-26 |
 | **C-3: Canonical coherence at depth 2 with `k <= 1` equals `phi^-1`** — the shared multiplicative formula returns `0.618033988749895` at depth 2 when phase decay is neutral | CONFIRMED | `src/phi_ir/coherence.rs` and `examples/claude.phi` | 2026-03-29 |
 | **C-4: Serializable VM state enables yield/resume** — `VmState` captures complete execution state and round-trips through JSON | CONFIRMED | `test_frozen_eval_state_roundtrips_through_json` + MCP stdio E2E test | 2026-02-27 |
 | **C-5: Real sensors can replace formula coherence** — `sysinfo` readings produce live coherence values | CONFIRMED | `src/sensors.rs`, `examples/healing_bed.phi`, and 2026-03-29 typed witness surface in `QSOP/STATE.md` | 2026-02-27 |
