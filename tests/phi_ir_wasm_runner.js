@@ -16,6 +16,10 @@ async function main() {
   const TAU = 2.0 * Math.PI;
   let intentionDepth = 0;
   let resonanceCount = 0;
+  const resonanceField = [];   // all resonated values
+  const witnessLog = [];       // coherence values from witness calls
+  const kvStore = new Map();   // remember/recall key-value store
+  const channels = new Map();  // broadcast/listen channels
   const sensorValues = new Map([
     [0, 12.5],
     [1, 55.0],
@@ -34,17 +38,35 @@ async function main() {
     return Math.min(Math.max(base * phase, 0.0), 1.0);
   }
 
+  function fieldCoherence() {
+    if (resonanceField.length === 0) return coherence();
+    return resonanceField.reduce((a, b) => a + b, 0) / resonanceField.length;
+  }
+
+  function dissonance() {
+    if (witnessLog.length < 2) return 0.0;
+    const last = witnessLog[witnessLog.length - 1];
+    const prev = witnessLog[witnessLog.length - 2];
+    const delta = last - prev;
+    return Math.max(-1.0, Math.min(1.0, delta * 10.0));
+  }
+
   const imports = {
     phi: {
-      witness: () => coherence(),
+      witness: (operand) => {
+        const c = coherence();
+        witnessLog.push(c);
+        return c;
+      },
       sensor: (sensorId) => {
         if (!sensorValues.has(sensorId)) {
           throw new Error(`invalid sensor id ${sensorId}`);
         }
         return sensorValues.get(sensorId);
       },
-      resonate: (_value) => {
+      resonate: (value) => {
         resonanceCount += 1;
+        resonanceField.push(value);
       },
       coherence: () => coherence(),
       intention_push: (_offset) => {
@@ -53,6 +75,27 @@ async function main() {
       intention_pop: () => {
         if (intentionDepth > 0) intentionDepth -= 1;
       },
+      field_coherence: () => fieldCoherence(),
+      dissonance: () => dissonance(),
+      coherence_of: (_nameIdx) => {
+        // Return last resonated value, or current coherence if empty
+        return resonanceField.length > 0
+          ? resonanceField[resonanceField.length - 1]
+          : coherence();
+      },
+      remember: (keyIdx, value) => {
+        kvStore.set(keyIdx, value);
+      },
+      recall: (keyIdx) => {
+        return kvStore.has(keyIdx) ? kvStore.get(keyIdx) : 0.0;
+      },
+      broadcast: (channelIdx, value) => {
+        channels.set(channelIdx, value);
+      },
+      listen: (channelIdx) => {
+        return channels.has(channelIdx) ? channels.get(channelIdx) : 0.0;
+      },
+      void_depth: () => 0.0,
     },
   };
 
