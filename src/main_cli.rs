@@ -103,6 +103,11 @@ struct Args {
     /// receive the live state stream and render it in real-time.
     #[arg(long)]
     osc: Option<u16>,
+
+    /// Delay (in ms) between OSC events when using --osc. Slows down execution so
+    /// visualizers can render each step. Default: 0 (no delay, run at full speed).
+    #[arg(long, default_value_t = 0)]
+    osc_delay: u64,
 }
 
 struct SomaManager {
@@ -243,6 +248,7 @@ async fn main() {
         args.with_quantum,
         args.max_steps,
         args.osc,
+        args.osc_delay,
     )
     .await
     {
@@ -398,6 +404,7 @@ async fn run(
     with_quantum: bool,
     max_steps: usize,
     osc_port: Option<u16>,
+    osc_delay_ms: u64,
 ) -> Result<Option<RunReport>, CliError> {
     if let Some(h) = handoff {
         let parts: Vec<&str> = h.split(':').collect();
@@ -664,10 +671,14 @@ async fn run(
     // If --osc <port> is given, plug in the OSC host provider to broadcast
     // live runtime events as OSC messages.
     let osc_host = if let Some(port) = osc_port {
-        match phiflow::osc_host::OscHostProvider::new(port) {
+        match phiflow::osc_host::OscHostProvider::with_delay(port, osc_delay_ms) {
             Ok(host) => {
                 host.emit_start(&file_path.to_string_lossy());
-                eprintln!("📡 OSC streaming to 127.0.0.1:{} — connect your visualizer/audio environment", port);
+                if osc_delay_ms > 0 {
+                    eprintln!("📡 OSC streaming to 127.0.0.1:{} ({}ms delay) — connect your visualizer", port, osc_delay_ms);
+                } else {
+                    eprintln!("📡 OSC streaming to 127.0.0.1:{} — connect your visualizer/audio environment", port);
+                }
                 Some(host)
             }
             Err(e) => {

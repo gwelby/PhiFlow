@@ -1,0 +1,50 @@
+// Living Field — a slow visual PhiFlow program for the 3D visualizer
+//
+// Run with: phic --osc 18032 examples/living_field.phi
+//
+// Four intentions appear one by one, resonate between each other,
+// witness their state, and fade out — slowly enough to watch in 3D.
+
+intention "ground" {
+    // Grounding phase — establish the foundation
+    let base = 432.0
+    resonate base
+    witness
+
+    // Hold for a moment, then share again
+    resonate base
+    witness
+}
+
+intention "create" {
+    // Creation phase — receive from ground, build on it
+    let creative = 528.0
+    resonate creative
+    witness
+
+    resonate creative
+    witness
+}
+
+intention "integrate" {
+    // Integration phase — connect ground and creation
+    let heart = 594.0
+    resonate heart
+    witness
+
+    resonate heart
+    witness
+}
+
+intention "transcend" {
+    // Transcendence phase — see the whole field
+    let vision = 720.0
+    resonate vision
+    witness
+
+    resonate vision
+    witness
+}
+
+// Final global witness — the program observes itself
+witness

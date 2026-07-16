@@ -42,6 +42,8 @@ struct OscInner {
     addr: String,
     start_time: Instant,
     depth: i32,
+    /// Delay in ms between OSC events (for visualizer pacing).
+    delay_ms: u64,
 }
 
 /// An OSC host provider that broadcasts PhiFlow runtime events over UDP.
@@ -52,7 +54,13 @@ pub struct OscHostProvider {
 
 impl OscHostProvider {
     /// Create a new OSC host that sends to `127.0.0.1:<port>`.
+    /// `delay_ms` adds a sleep after each OSC event so visualizers can keep up.
     pub fn new(port: u16) -> std::io::Result<Self> {
+        Self::with_delay(port, 0)
+    }
+
+    /// Create an OSC host with a delay (in ms) between events.
+    pub fn with_delay(port: u16, delay_ms: u64) -> std::io::Result<Self> {
         let socket = UdpSocket::bind("0.0.0.0:0")?;
         let addr = format!("127.0.0.1:{}", port);
         Ok(OscHostProvider {
@@ -61,6 +69,7 @@ impl OscHostProvider {
                 addr,
                 start_time: Instant::now(),
                 depth: 0,
+                delay_ms,
             })),
         })
     }
@@ -82,9 +91,15 @@ impl OscHostProvider {
     }
 
     fn send(&self, packet: &OscPacket) {
-        let inner = self.inner.lock().unwrap();
-        if let Ok(bytes) = rosc::encoder::encode(packet) {
-            let _ = inner.socket.send_to(&bytes, &inner.addr);
+        let delay = {
+            let inner = self.inner.lock().unwrap();
+            if let Ok(bytes) = rosc::encoder::encode(packet) {
+                let _ = inner.socket.send_to(&bytes, &inner.addr);
+            }
+            inner.delay_ms
+        };
+        if delay > 0 {
+            std::thread::sleep(std::time::Duration::from_millis(delay));
         }
     }
 
