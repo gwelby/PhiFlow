@@ -97,6 +97,12 @@ struct Args {
     /// Start the MCP stdio server for tool integration (spawn_phi_stream, read_resonance_field, etc.).
     #[arg(long, default_value_t = false)]
     mcp_serve: bool,
+
+    /// Emit OSC (Open Sound Control) messages to 127.0.0.1:<port> as the program runs.
+    /// Any OSC-capable environment (TouchDesigner, Three.js, SuperCollider, etc.) can
+    /// receive the live state stream and render it in real-time.
+    #[arg(long)]
+    osc: Option<u16>,
 }
 
 struct SomaManager {
@@ -236,6 +242,7 @@ async fn main() {
         args.with_soma,
         args.with_quantum,
         args.max_steps,
+        args.osc,
     )
     .await
     {
@@ -390,6 +397,7 @@ async fn run(
     with_soma: bool,
     with_quantum: bool,
     max_steps: usize,
+    osc_port: Option<u16>,
 ) -> Result<Option<RunReport>, CliError> {
     if let Some(h) = handoff {
         let parts: Vec<&str> = h.split(':').collect();
@@ -653,9 +661,33 @@ async fn run(
         soma_manager.start_quantum();
     }
 
+    // If --osc <port> is given, plug in the OSC host provider to broadcast
+    // live runtime events as OSC messages.
+    let osc_host = if let Some(port) = osc_port {
+        match phiflow::osc_host::OscHostProvider::new(port) {
+            Ok(host) => {
+                host.emit_start(&file_path.to_string_lossy());
+                eprintln!("📡 OSC streaming to 127.0.0.1:{} — connect your visualizer/audio environment", port);
+                Some(host)
+            }
+            Err(e) => {
+                eprintln!("⚠️  Failed to create OSC socket: {}", e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     let mut evaluator = Evaluator::new(ir_program.clone())
         .with_hardware_modifier(sensors::compute_coherence_from_sensors);
-    
+
+    if let Some(ref host) = osc_host {
+        // Clone the Arc-backed host so the evaluator gets its own reference
+        // while we retain one to emit the end event after the run.
+        evaluator = evaluator.with_host(Box::new(host.clone()));
+    }
+
     if max_steps > 0 {
         evaluator.max_steps = Some(max_steps);
     } else {
@@ -663,6 +695,11 @@ async fn run(
     }
 
     let _result = evaluator.run().map_err(|e| CliError::Eval(e.to_string()))?;
+
+    // Emit program-end OSC message.
+    if let Some(ref host) = osc_host {
+        host.emit_end(evaluator.resolved_coherence());
+    }
 
     // Compute consciousness metrics (C_PF) from the frozen execution trace.
     let frozen = evaluator.freeze_state();

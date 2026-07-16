@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PhiFlow Live Visualizer</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #000; color: #fff;
+         font-family: 'Courier New', monospace; }
+  #info { position: absolute; top: 10px; left: 10px; z-index: 100;
+          background: rgba(0,0,0,0.7); padding: 12px 16px; border-radius: 8px;
+          font-size: 13px; line-height: 1.6; max-width: 350px; }
+  #info h1 { font-size: 16px; margin: 0 0 8px 0; color: #4af; }
+  #status { color: #fa0; }
+  #status.connected { color: #4f4; }
+  #events { position: absolute; bottom: 10px; left: 10px; z-index: 100;
+            background: rgba(0,0,0,0.7); padding: 10px 14px; border-radius: 8px;
+            font-size: 11px; max-height: 200px; overflow-y: auto; width: 400px; }
+  #events div { margin: 2px 0; }
+  .ev-push { color: #4af; }
+  .ev-pop { color: #a4f; }
+  .ev-witness { color: #ff4; }
+  .ev-resonate { color: #4f4; }
+  .ev-coherence { color: #fa0; }
+  .ev-start { color: #fff; font-weight: bold; }
+  .ev-end { color: #f44; font-weight: bold; }
+  .ev-sensor { color: #4ff; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+
+<div id="info">
+  <h1>PhiFlow Live Visualizer</h1>
+  <div id="status">Connecting...</div>
+  <div>Coherence: <span id="coherence">—</span></div>
+  <div>Intentions: <span id="intentions">0</span></div>
+  <div>Witnesses: <span id="witnesses">0</span></div>
+</div>
+
+<div id="events"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ─── Three.js Scene Setup ───────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x000008, 0.015);
+
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+camera.position.set(0, 5, 25);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+
+// Lighting
+scene.add(new THREE.AmbientLight(0x222244, 0.5));
+const pointLight = new THREE.PointLight(0x4488ff, 2, 100);
+pointLight.position.set(0, 10, 0);
+scene.add(pointLight);
+
+// ─── PhiFlow State ──────────────────────────────────────────────────
+const intentions = new Map();  // name → { mesh, sphere, position, age }
+const resonances = [];         // { from, to, age, value }
+const witnesses = [];          // { position, coherence, age }
+let globalCoherence = 0;
+let witnessCount = 0;
+let intentionCount = 0;
+
+// Sacred frequency colors
+const freqColors = {
+  432: 0x4488ff,  // blue
+  528: 0x44ff88,  // green
+  594: 0xff4488,  // pink
+  672: 0xffaa44,  // orange
+  720: 0xaa44ff,  // purple
+  768: 0xffffff,  // white
+  963: 0x44ffff,  // cyan
+};
+
+function colorForIntention(name) {
+  // Hash the name to a color
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = hash * 31 + name.charCodeAt(i);
+  const hue = (hash % 360) / 360;
+  return new THREE.Color().setHSL(hue, 0.7, 0.5);
+}
+
+// ─── 3D Object Creation ─────────────────────────────────────────────
+function createIntentionMesh(name, depth) {
+  const color = colorForIntention(name);
+  const radius = 2 + depth * 0.5;
+
+  // Outer wireframe sphere
+  const geo = new THREE.IcosahedronGeometry(radius, 1);
+  const mat = new THREE.MeshBasicMaterial({
+    color: color, wireframe: true, transparent: true, opacity: 0.6
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+
+  // Inner solid core
+  const coreGeo = new THREE.SphereGeometry(radius * 0.3, 16, 16);
+  const coreMat = new THREE.MeshBasicMaterial({
+    color: color, transparent: true, opacity: 0.4
+  });
+  const core = new THREE.Mesh(coreGeo, coreMat);
+  mesh.add(core);
+
+  // Position in a circle based on intention count
+  const angle = (intentions.size / 8) * Math.PI * 2;
+  const dist = 8 + depth * 3;
+  mesh.position.set(Math.cos(angle) * dist, depth * 2, Math.sin(angle) * dist);
+
+  // Add text label (using a simple sprite)
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#' + color.getHexString();
+  ctx.font = '24px Courier New';
+  ctx.textAlign = 'center';
+  ctx.fillText(name, 128, 40);
+  const texture = new THREE.CanvasTexture(canvas);
+  const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+  const sprite = new THREE.Sprite(spriteMat);
+  sprite.scale.set(4, 1, 1);
+  sprite.position.set(0, radius + 1.5, 0);
+  mesh.add(sprite);
+
+  scene.add(mesh);
+  return { mesh, core, sprite, color, radius, age: 0, name };
+}
+
+function createResonanceBeam(fromPos, toPos, color) {
+  const points = [fromPos.clone(), toPos.clone()];
+  const geo = new THREE.BufferGeometry().setFromPoints(points);
+  const mat = new THREE.LineBasicMaterial({
+    color: color, transparent: true, opacity: 0.8, linewidth: 2
+  });
+  const line = new THREE.Line(geo, mat);
+  scene.add(line);
+  return { line, age: 0 };
+}
+
+function createWitnessFlash(position, coherence) {
+  const geo = new THREE.SphereGeometry(0.5, 8, 8);
+  const color = new THREE.Color().setHSL(0.15 * coherence, 1, 0.5);
+  const mat = new THREE.MeshBasicMaterial({
+    color: color, transparent: true, opacity: 1.0
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.copy(position);
+  scene.add(mesh);
+  return { mesh, age: 0, coherence };
+}
+
+// ─── OSC Message Handling ───────────────────────────────────────────
+function handleOscMessage(address, args) {
+  const eventLog = document.getElementById('events');
+
+  if (address === '/phi/start') {
+    logEvent('start', `▶ Program started: ${args[0]}`);
+  }
+  else if (address === '/phi/end') {
+    logEvent('end', `■ Program ended. Coherence: ${args[0].toFixed(4)}`);
+  }
+  else if (address === '/phi/intention/push') {
+    const name = args[0];
+    const depth = args[1];
+    const obj = createIntentionMesh(name, depth);
+    intentions.set(name, obj);
+    intentionCount++;
+    document.getElementById('intentions').textContent = intentions.size;
+    logEvent('push', `→ intention "${name}" (depth ${depth})`);
+  }
+  else if (address === '/phi/intention/pop') {
+    const name = args[0];
+    const obj = intentions.get(name);
+    if (obj) {
+      // Fade out
+      obj.fading = true;
+    }
+    logEvent('pop', `← intention "${name}" exited`);
+  }
+  else if (address === '/phi/witness') {
+    const coherence = args[0];
+    const time = args[1];
+    const intention = args[2];
+    const obj = intentions.get(intention);
+    if (obj) {
+      const flash = createWitnessFlash(obj.mesh.position, coherence);
+      witnesses.push(flash);
+    }
+    witnessCount++;
+    document.getElementById('witnesses').textContent = witnessCount;
+    logEvent('witness', `👁 witness @ ${coherence.toFixed(4)} in "${intention}"`);
+  }
+  else if (address === '/phi/resonate') {
+    const intention = args[0];
+    const value = args[1];
+    const obj = intentions.get(intention);
+    if (obj) {
+      // Pulse the core
+      obj.core.scale.set(1.5, 1.5, 1.5);
+      obj.resonatePulse = 1.0;
+      // Create beam to nearest other intention
+      for (const [otherName, other] of intentions) {
+        if (otherName !== intention && !other.fading) {
+          const beam = createResonanceBeam(obj.mesh.position, other.mesh.position, obj.color);
+          resonances.push(beam);
+          break;
+        }
+      }
+    }
+    logEvent('resonate', `🌊 resonate from "${intention}": ${value}`);
+  }
+  else if (address === '/phi/coherence') {
+    globalCoherence = args[0];
+    document.getElementById('coherence').textContent = globalCoherence.toFixed(4);
+    logEvent('coherence', `◆ coherence = ${globalCoherence.toFixed(4)}`);
+  }
+  else if (address === '/phi/sensor') {
+    logEvent('sensor', `📡 sensor ${args[0]} = ${args[1]}`);
+  }
+  else if (address === '/phi/broadcast') {
+    logEvent('resonate', `📢 broadcast ${args[0]}: ${args[1]}`);
+  }
+  else if (address === '/phi/entangle') {
+    logEvent('witness', `⚛ entangle @ ${args[0]}Hz`);
+  }
+  else if (address === '/phi/signal') {
+    logEvent('sensor', `signal ${args[0]}Hz intensity ${args[1]}`);
+  }
+}
+
+function logEvent(type, msg) {
+  const div = document.createElement('div');
+  div.className = 'ev-' + type;
+  div.textContent = msg;
+  const log = document.getElementById('events');
+  log.insertBefore(div, log.firstChild);
+  while (log.children.length > 30) log.removeChild(log.lastChild);
+}
+
+// ─── WebSocket Connection ───────────────────────────────────────────
+const wsUrl = `ws://${location.hostname}:8080`;
+const statusEl = document.getElementById('status');
+
+function connect() {
+  const ws = new WebSocket(wsUrl);
+  ws.onopen = () => {
+    statusEl.textContent = 'Connected — waiting for PhiFlow...';
+    statusEl.className = 'connected';
+  };
+  ws.onmessage = (evt) => {
+    const msg = JSON.parse(evt.data);
+    handleOscMessage(msg.address, msg.args);
+  };
+  ws.onclose = () => {
+    statusEl.textContent = 'Disconnected — retrying in 2s...';
+    statusEl.className = '';
+    setTimeout(connect, 2000);
+  };
+  ws.onerror = () => { ws.close(); };
+}
+connect();
+
+// ─── Animation Loop ─────────────────────────────────────────────────
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const t = clock.getElapsedTime();
+
+  // Update intentions
+  for (const [name, obj] of intentions) {
+    obj.age += dt;
+    // Rotate
+    obj.mesh.rotation.y += dt * 0.5;
+    obj.mesh.rotation.x += dt * 0.2;
+    // Pulse on resonate
+    if (obj.resonatePulse > 0) {
+      obj.resonatePulse -= dt * 3;
+      const s = 1 + obj.resonatePulse * 0.5;
+      obj.core.scale.set(s, s, s);
+    } else {
+      obj.core.scale.lerp(new THREE.Vector3(1,1,1), dt * 5);
+    }
+    // Fade out
+    if (obj.fading) {
+      obj.mesh.material.opacity *= 0.95;
+      obj.core.material.opacity *= 0.95;
+      obj.sprite.material.opacity *= 0.95;
+      if (obj.mesh.material.opacity < 0.01) {
+        scene.remove(obj.mesh);
+        intentions.delete(name);
+      }
+    }
+  }
+
+  // Update resonance beams (fade out)
+  for (let i = resonances.length - 1; i >= 0; i--) {
+    const r = resonances[i];
+    r.age += dt;
+    r.line.material.opacity = Math.max(0, 0.8 - r.age * 2);
+    if (r.age > 0.5) {
+      scene.remove(r.line);
+      resonances.splice(i, 1);
+    }
+  }
+
+  // Update witness flashes (expand and fade)
+  for (let i = witnesses.length - 1; i >= 0; i--) {
+    const w = witnesses[i];
+    w.age += dt;
+    const s = 1 + w.age * 8;
+    w.mesh.scale.set(s, s, s);
+    w.mesh.material.opacity = Math.max(0, 1 - w.age * 3);
+    if (w.age > 0.4) {
+      scene.remove(w.mesh);
+      witnesses.splice(i, 1);
+    }
+  }
+
+  // Global coherence glow
+  const glowIntensity = 0.3 + globalCoherence * 0.7;
+  pointLight.intensity = 2 + globalCoherence * 4;
+  scene.fog.density = 0.015 - globalCoherence * 0.01;
+
+  // Camera slowly orbits
+  camera.position.x = Math.cos(t * 0.1) * 25;
+  camera.position.z = Math.sin(t * 0.1) * 25;
+  camera.lookAt(0, 2, 0);
+
+  renderer.render(scene, camera);
+}
+animate();
+
+// Resize
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>

@@ -29,6 +29,7 @@ pub mod sensors;
 pub mod system_host;
 pub mod security;
 pub mod wasm_host;
+pub mod osc_host;
 
 // Type 4 Observer Metrics (PF consciousness_metric_program)
 pub mod metrics;
