@@ -5,7 +5,7 @@ Receives OSC messages from `phic --osc <port>` and forwards them
 to any browser connected via WebSocket.
 
 Usage:
-    python3.12 osc_websocket_bridge.py --osc-port 9000 --ws-port 8080
+    python3.12 osc_websocket_bridge.py --osc-port 18032 --ws-port 18528
 
 Then open phi_visualizer.html in a browser. It will auto-connect.
 """
@@ -60,8 +60,8 @@ class Bridge:
 
 async def main():
     parser = argparse.ArgumentParser(description="OSC to WebSocket bridge")
-    parser.add_argument("--osc-port", type=int, default=9000, help="OSC receive port")
-    parser.add_argument("--ws-port", type=int, default=8080, help="WebSocket serve port")
+    parser.add_argument("--osc-port", type=int, default=18032, help="OSC receive port (default: 18032)")
+    parser.add_argument("--ws-port", type=int, default=18528, help="WebSocket serve port (default: 18528, 528 Hz = Creation)")
     args = parser.parse_args()
 
     bridge = Bridge()

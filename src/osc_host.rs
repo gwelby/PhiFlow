@@ -5,6 +5,13 @@
 //! Three.js, Unity, SuperCollider, Max/MSP, PureData, vvvv, Notch — can receive
 //! the stream and render it in real-time.
 //!
+//! ## Port allocation
+//!
+//! Default OSC port: **18032** (sibling to the metrics bridge on 18030).
+//! Default WebSocket bridge port: **18528** (528 Hz = Creation frequency).
+//! Both follow the PhiFlow 18xxx port scheme (see PORT_REGISTRY.md).
+//!
+//!
 //! ## OSC address scheme
 //!
 //! | PhiFlow construct | OSC address | Arguments |

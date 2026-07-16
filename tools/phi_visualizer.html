@@ -242,7 +242,8 @@ function logEvent(type, msg) {
 }
 
 // ─── WebSocket Connection ───────────────────────────────────────────
-const wsUrl = `ws://${location.hostname}:8080`;
+// Default port: 18528 (528 Hz = Creation frequency in PhiFlow's scheme)
+const wsUrl = `ws://${location.hostname}:18528`;
 const statusEl = document.getElementById('status');
 
 function connect() {
