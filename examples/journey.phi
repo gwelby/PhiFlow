@@ -1,0 +1,172 @@
+// ═══════════════════════════════════════════════════════════════════
+//  THE JOURNEY — A PhiFlow program that IS the 8-minute narrative
+// ═══════════════════════════════════════════════════════════════════
+//
+//  Run with:
+//    phic --osc 18032 --osc-delay 800 examples/journey.phi
+//
+//  Open in browser:
+//    file:///D:/Fundamentals/sandbox/explorer/journey_live.html?host=YOUR_WSL_IP
+//
+//  This program encodes the Propagation Framework journey as PhiFlow
+//  constructs. Each intention is an act of the journey. Each resonate
+//  broadcasts the act's core insight into the field. Each witness is
+//  the program pausing to let the audience absorb what just happened.
+//
+//  The explorer receives these events via WebSocket and:
+//    - Navigates to the matching journey section
+//    - Transitions the audio engine to the matching sacred frequency
+//    - Pulses visuals on resonate
+//    - Plays a bell on witness
+//    - Adjusts global lighting on coherence
+
+// ─── OPENING: Three Axioms ──────────────────────────────────────────
+// The journey begins with a question: "What if the universe is just
+// propagation?" Three axioms appear, one by one.
+
+intention "opening" {
+    // Axiom 1: Everything propagates through a structured medium
+    resonate "axiom1"
+    witness
+
+    // Axiom 2: Propagation is local — no action at a distance
+    resonate "axiom2"
+    witness
+
+    // Axiom 3: Stable structures are self-reinforcing closed loops
+    resonate "axiom3"
+    witness
+}
+
+// ─── ACT I: The Great Unlearning ────────────────────────────────────
+// Three shocks that dismantle intuition:
+//   1. Gravity is not a pull — it's bent propagation
+//   2. Matter is not solid — it's a standing pattern
+//   3. Generations are not arbitrary — N=3 is a topological lock
+//
+// Scale: Human (432 Hz) — we start where the human mind lives
+
+intention "act1_unlearning" {
+    // The human mind enters, grounded at 432 Hz
+    resonate 432.0
+    witness
+
+    // Shock 1: Gravity
+    // "Gravity is a force that pulls" → "Gravity is bent propagation"
+    // The refraction model: light bends because the medium has a gradient
+    resonate "gravity_is_refraction"
+    witness
+
+    // Shock 2: Matter
+    // "Matter is solid particles" → "Matter is a standing wave pattern"
+    // Stability is phase-locked coherence, not stuff
+    resonate "matter_is_pattern"
+    witness
+
+    // Shock 3: Generations
+    // "Nature could have any number of generations" → "N=3 is locked"
+    // The (2,1) topological weight forces exactly three
+    resonate "n3_topological_lock"
+    witness
+}
+
+// ─── ACT II: The Symphony of Coherence ──────────────────────────────
+// What replaces the old picture? Coherence.
+// When waves align at λ/2, they stop "moving" and start "being."
+// This is the birth of structure from pure propagation.
+//
+// Scale: Cellular (528 Hz) — life emerges, creation frequency
+
+intention "act2_coherence" {
+    // Transition from human to cellular — 528 Hz, creation
+    resonate 528.0
+    witness
+
+    // The playground: tune the medium
+    // When waves align, structure emerges
+    resonate "tune_the_medium"
+    witness
+
+    // Phase closure: only integer orbits close
+    // This is why atoms have discrete energy levels
+    resonate "phase_closure"
+    witness
+
+    // The symphony: coherence is the law, stability is the exception
+    resonate "coherence_is_the_law"
+    witness
+}
+
+// ─── ACT III: The Geometric Anchor ──────────────────────────────────
+// The God Equation: crossing 17 orders of magnitude with one equation.
+// From Planck scale to matter scale, one formula connects them.
+//
+// Scale: Nuclear (720 Hz) — the vision gate, seeing across scales
+
+intention "act3_anchor" {
+    // Transition to nuclear — 720 Hz, transcendence
+    resonate 720.0
+    witness
+
+    // The God Equation appears
+    // λ_c = √2 · l_P · exp(4π² N^(D/2) / b₀)
+    // At N=3, D=3: predicted 1.145 × 10⁻¹⁸ m, observed 1.14 × 10⁻¹⁸ m
+    resonate "god_equation"
+    witness
+
+    // The keyhole: we found where to look
+    // We are still learning how to turn the key
+    resonate "the_keyhole"
+    witness
+}
+
+// ─── ACT IV: The Full Scoreboard ────────────────────────────────────
+// Honest confidence. Every result laid bare.
+// 3 derived. 4 conditional. 1 partial. That's real.
+//
+// Scale: Compton (768 Hz) — unity, the full picture
+
+intention "act4_scoreboard" {
+    // Transition to compton — 768 Hz, unity
+    resonate 768.0
+    witness
+
+    // The scoreboard: 22 audited claims, 3 derived
+    resonate "the_scoreboard"
+    witness
+
+    // Framework comparison: PF vs Standard Model vs String
+    // 3 axioms vs 19+ parameters vs 10^500 landscapes
+    resonate "three_vs_nineteen"
+    witness
+}
+
+// ─── EPILOGUE: What Would Kill This ─────────────────────────────────
+// Real physics makes risky predictions.
+// Six ways to kill the framework, each a falsifier.
+// The duck watches. Honesty is the only currency.
+//
+// Scale: Cosmic (108 Hz) — the void, where truth lives or dies
+
+intention "epilogue_falsification" {
+    // Transition to cosmic — 108 Hz, the void
+    resonate 108.0
+    witness
+
+    // The falsification wall: six ways to kill this
+    resonate "six_ways_to_kill"
+    witness
+
+    // The honesty statement: this is how real physics works
+    // Not by fitting. Not by adjusting.
+    // By making specific, risky predictions and letting nature decide.
+    resonate "honesty_is_the_only_currency"
+    witness
+}
+
+// ─── FINAL WITNESS ──────────────────────────────────────────────────
+// The program observes itself one last time.
+// The journey is complete. The audience has seen everything.
+// What remains is not belief — it is an audited snapshot of what holds.
+
+witness
