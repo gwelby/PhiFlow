@@ -1,46 +1,37 @@
 ---
 protocol_version: "2.1"
 schema_version: "2.1"
-health_score: 92
-last_verified_at: "2026-07-14T20:00:00-04:00"
+health_score: 96
+last_verified_at: "2026-07-17T03:30:00-04:00"
 verification_status: "verified"
 stale_after_hours: 72
 ---
 
 # RESUME.md — PhiFlow Workspace
 > *Agent-agnostic workspace handoff. Read this first when arriving in PhiFlow.*
-> *Last updated: 2026-07-14 by Devin (WASM fix + CLI wiring + doc cleanup)*
-> *Previous update: 2026-07-11 by Devin (GHZ scaling + crosstalk tests on IBM hardware)*
+> *Last updated: 2026-07-17 by Devin (OSC live streaming + 3D/audio visualizer + ceremony engine roadmap)*
+> *Previous update: 2026-07-14 by Devin (WASM fix + CLI wiring + doc cleanup)*
 
 ---
 
 ## Last Agent Here
 - **Agent:** Devin
-- **When:** 2026-07-14
-- **Session goal:** Fix broken WASM conformance tests (three-backend equivalence violation), wire remaining library modules to CLI, update stale docs.
-- **Git commits:** `66f6e2a` (WASM fix), `6010e85` (--measure bridge), `3857244` (sacred-geometry/consciousness-info/mcp-serve), `3c865d6` (archive legacy), `5d0d83d` (doc cleanup), `806c847` (practical example).
+- **When:** 2026-07-17
+- **Session goal:** Implement live OSC streaming (`phic --osc <port>`), build a WebSocket bridge + Three.js/Web Audio visualizer, connect PhiFlow to the Propagation Framework Explorer's 8-minute journey, and capture ceremony-engine ideas in a durable roadmap.
+- **Git commits:** `3f686b4` (OSC emitter + 3D visualizer), `25192e0` (18xxx port scheme), `d81ddd9` (Web Audio), `04c25f8` (journey.phi), `f43e6dd` (live-experience ideas doc), `569b866` (coherence fixes).
 
 ---
 
 ## Current State Verification
 | Check | Command | Expected Result | Last Run | Status |
 |-------|---------|-----------------|----------|--------|
-| Full test suite | `cargo test` | 424 passed, 0 failed, 3 ignored | 2026-07-14 | PASS |
-| WASM conformance | `cargo test --test phi_ir_conformance_tests` | 10 passed, 0 failed | 2026-07-14 | PASS (was BROKEN, fixed today) |
-| Release build | `cargo build --release --bin phic` | Clean, zero warnings | 2026-07-14 | PASS |
-| State discrimination tests | `cargo test --test state_discrimination_tests` | 3 passed, 1 ignored | 2026-07-14 | PASS |
-| Parameterized QASM tests | `cargo test --test parameterized_qasm_tests` | 6 passed | 2026-07-14 | PASS |
-| `--target wasm` | `phic --target wasm examples/code_that_resonates.phi` | WASM execution + coherence report | 2026-07-14 | PASS |
-| `--poll-ibm mock` | `phic --poll-ibm mock` | Mock counts + coherence analysis | 2026-07-14 | PASS |
-| `--target quantum` | `phic --target quantum examples/quantum_council.phi` | QASM output | 2026-07-14 | PASS |
-| `--measure` | `phic --measure examples/type4_trace_benchmark.phi` | JSON + metrics to :18030 | 2026-07-14 | PASS |
-| `--sacred-geometry` | `phic --sacred-geometry flower_of_life` | Valid SVG output | 2026-07-14 | PASS |
-| `--consciousness-info` | `phic --consciousness-info` | Valid JSON | 2026-07-14 | PASS |
-| `--mcp-serve` | `echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \| phic --mcp-serve` | JSON-RPC response | 2026-07-14 | PASS |
-| Type 4 battery | `cargo test --test benchmark_battery -- --ignored` | All 4 phases pass | 2026-07-14 | PASS |
-| GHZ scaling (n=4..8) | `python3.12 scripts/analyze_ghz_scaling.py` | Coherence 0.955→0.874 on ibm_marrakesh | 2026-07-10 | PASS |
-| GHZ crosstalk (k=0..5) | `python3.12 scripts/analyze_ghz_crosstalk.py` | Spectators halve GHZ coherence | 2026-07-11 | PASS |
-| Layout-aware GHZ | `reports/GHZ_LAYOUT_AWARE_2026-07-13.md` | n=7 dip eliminated (+0.056) | 2026-07-13 | PASS |
+| Full test suite | `cargo test` | All test binaries + doc tests pass | 2026-07-17 | PASS |
+| Lib tests | `cargo test --lib` | 191 passed, 0 failed | 2026-07-17 | PASS |
+| Release build | `cargo build --release --bin phic` | Clean, zero warnings | 2026-07-17 | PASS |
+| OSC output | `phic --osc 18032 --osc-delay 200 examples/living_field.phi` | Live OSC stream to `127.0.0.1:18032` | 2026-07-17 | PASS |
+| WebSocket bridge | `python3.12 tools/osc_websocket_bridge.py` | OSC → WebSocket JSON on `:18528` | 2026-07-17 | PASS |
+| 3D/audio visualizer | `tools/phi_visualizer.html` + `?host=172.28.148.150` | Spheres, beams, flashes, sacred-frequency tones | 2026-07-17 | PASS |
+| Journey program | `phic --osc 18032 --osc-delay 800 examples/journey.phi` | Drives `Fundamentals/sandbox/explorer/journey_live.html` through 6 acts | 2026-07-17 | PASS |
 
 > **Note:** Current verified baseline is build PASS + full test suite 424/424 + 10/10 WASM conformance. Three-backend equivalence (Evaluator == VM == WASM) is RESTORED as of 2026-07-14 (was broken since WASM codegen stubs were added 2026-07-03 — the Node.js runner was missing 8 of 14 phi namespace imports).
 
@@ -48,7 +39,18 @@ stale_after_hours: 72
 
 ## What Was Happening
 
-PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** — intention, observation, and coherence are first-class constructs. Bridges to IBM Quantum hardware via sensor telemetry.
+PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** — intention, observation, and coherence are first-class constructs. It now also streams its runtime state live via OSC to 3D visualizers, audio engines, and the Propagation Framework Explorer.
+
+**What happened in the 2026-07-17 Devin session (OSC streaming + live journey + ceremony roadmap):**
+- **OSC emitter implemented.** `src/osc_host.rs` broadcasts every PhiFlow construct event as an OSC message over UDP (`/phi/start`, `/phi/intention/push`, `/phi/resonate`, `/phi/witness`, `/phi/coherence`, `/phi/end`).
+- **`phic --osc <port>` flag added.** Use `--osc-delay <ms>` to slow execution for visualization.
+- **WebSocket bridge created.** `tools/osc_websocket_bridge.py` receives UDP OSC and forwards JSON over WebSocket so browsers can receive the stream.
+- **3D + Web Audio visualizer created.** `tools/phi_visualizer.html` renders intentions as wireframe spheres, resonates as energy beams, witnesses as expanding flashes, and plays sacred-frequency tones with phi-harmonic overtones.
+- **Ports moved to PhiFlow 18xxx scheme.** OSC on `:18032`, WebSocket on `:18528` (528 Hz = Creation). Registered in `/mnt/d/System/PORT_REGISTRY.md`.
+- **`examples/journey.phi` created.** A `.phi` program that encodes the 8-minute Propagation Framework journey as intentions and resonances.
+- **`Fundamentals/sandbox/explorer/phi-bridge.js` and `journey_live.html` created.** The explorer can now be driven live by PhiFlow; sections advance, audio crossfades between sacred frequencies, and witness events flash the screen.
+- **Live-experience ideas captured.** `docs/PHIFLOW_LIVE_EXPERIENCE_IDEAS.md` records six directions (lecture, healing, quantum viz, biofeedback, interactive book, ceremony engine) plus a detailed ceremony engine design.
+- **Coherence fixes.** Fixed `src/cascade_keys.rs` doctest and `tools/osc_websocket_bridge.py` bind address.
 
 **What happened in the 2026-07-14 Devin session (WASM fix + CLI wiring + cleanup):**
 - **CRITICAL FIX: WASM conformance tests restored.** The Node.js test runner (`tests/phi_ir_wasm_runner.js`) was only providing 6 of 14 phi namespace imports. The missing 8 (`field_coherence`, `dissonance`, `coherence_of`, `remember`, `recall`, `broadcast`, `listen`, `void_depth`) caused 9 conformance tests to fail. Added all missing imports with semantics matching the Rust WASM host. Result: 10/10 conformance tests pass, 424 total tests pass. Three-backend equivalence RESTORED.
@@ -137,6 +139,8 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 | Service | Port | Process | Status | How to Restart |
 |---------|------|---------|--------|----------------|
 | phiflow-metrics bridge | 18030 | `python3.12 /mnt/d/System/phiflow_metrics_bridge.py` | running | restart via watchdog.sh |
+| PhiFlow OSC stream | 18032 (UDP) | `phic --osc 18032 ...` | on-demand | run `phic` with `--osc 18032` |
+| PhiFlow WebSocket bridge | 18528 (TCP) | `python3.12 /mnt/d/Projects/PhiFlow/tools/osc_websocket_bridge.py` | on-demand | start before visualizer |
 | SOMA Bridge (when running) | — | `cargo run --bin phic -- examples/p1_soma_bridge.phi` | not running | `cargo run --release --bin phic -- examples/p1_soma_bridge.phi` |
 | P1 Daemon (verified 2026-07-03) | — | `./target/release/phic /mnt/d/P1/phiflow_daemon.phi` | verified working | Run SOMA first: `python.exe soma.py --profile harmonic_scan --duration 60 --phiflow` then run daemon |
 | Quantum Council (when running) | — | `cargo run --bin phic -- --target quantum examples/quantum_council.phi` | not running | `cargo run --release --bin phic -- --target quantum examples/quantum_council.phi` |
@@ -181,6 +185,11 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 - `/mnt/d/System/TOOL_REGISTRY.md` — PhiFlow CLI entry
 - `src/phi_ir/coherence.rs` — core physics (sacred, red-line protected, NOT touched)
 - `src/phi_ir/openqasm.rs` — quantum emission (sacred, red-line protected, NOT touched)
+- `src/osc_host.rs` — OSC emitter; safe to extend, keep port scheme in sync with PORT_REGISTRY.md
+- `tools/osc_websocket_bridge.py` — OSC → WebSocket bridge; safe to extend
+- `tools/phi_visualizer.html` — 3D + Web Audio visualizer; safe to extend
+- `examples/journey.phi` — live journey program; safe to edit for narrative pacing
+- `docs/PHIFLOW_LIVE_EXPERIENCE_IDEAS.md` — live-experience roadmap
 
 ---
 
@@ -192,6 +201,8 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 - Nested `PhiFlow-compiler/PhiFlow/` directory was deleted (confusion magnet). Archived in `D:/Projects/Archive/`.
 - **Three CLI backends now functional**: native (default), `--target wasm` (wasmtime host), `--target quantum` (QASM emit).
 - **`--poll-ibm` reads from CASCADE vault** (`~/.cascade_keys`), not from a legacy credential file. This aligns with the CASCADE ecosystem vault pattern.
+- **OSC streaming is real and works.** `phic --osc 18032` emits `/phi/*` events; `tools/osc_websocket_bridge.py` forwards them to browsers; `tools/phi_visualizer.html` renders + sonifies them. The Propagation Framework Explorer can also be driven live via `Fundamentals/sandbox/explorer/phi-bridge.js`.
+- **Program execution can be a performance.** A `.phi` program can drive an 8-minute narrative with 3D visuals and sacred-frequency audio. This is a new medium, not just a debug tool.
 
 ### Pre-commit hook (CASCADE vault)
 - The vault pre-commit hook (installed from the CASCADE vault workspace) blocks commits containing credential-pattern words in staged content (case-insensitive).
@@ -224,4 +235,7 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
     - `--consciousness-info`: JSON reference of frequencies, therapeutic protocols, breathing calibrations
     - `--mcp-serve`: MCP stdio server with 4 tools (spawn_phi_stream, read_resonance_field, resume_phi_stream, resume_entangled_streams)
     - `bio_compute` left as library-only (DNA/protein modules are too speculative for CLI exposure).
+11. ✅ **OSC live streaming + 3D/audio visualizer** — completed. `phic --osc 18032 --osc-delay <ms>` emits OSC; `tools/osc_websocket_bridge.py` + `tools/phi_visualizer.html` render live.
+12. ✅ **PhiFlow drives Propagation Framework Explorer journey** — completed. `examples/journey.phi` + `Fundamentals/sandbox/explorer/phi-bridge.js` + `journey_live.html`.
+13. 🎯 **Ceremony engine** — next. Implement blocking `listen` + `--osc-input <port>` + `tools/ceremony_remote.html` for facilitator-controlled ceremonies. See `docs/PHIFLOW_LIVE_EXPERIENCE_IDEAS.md`.
 
