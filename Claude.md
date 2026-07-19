@@ -18,21 +18,35 @@ Four constructs that exist in no other language:
 ## Architecture
 
 ```
-.phi file -> Lexer (PhiToken) -> Parser (PhiExpression AST) -> Interpreter -> Output + Coherence Report
+.phi file -> Parser (PhiToken -> AST) -> PhiIR Lowering -> Evaluator/VM/WASM -> Output + Coherence Report
 ```
 
+Three-backend equivalence is sacred: Evaluator == VM == WASM (424 tests, 0 failures).
+
 Key files:
-- `src/parser/mod.rs` - Lexer + Parser (~1800 lines)
-- `src/interpreter/mod.rs` - Tree-walking interpreter with coherence tracking
-- `src/main.rs` - Test suite runner (binary: phi)
-- `src/main_cli.rs` - File runner (binary: phic)
-- `examples/` - Five working .phi programs
+- `src/parser/mod.rs` - Lexer + Parser
+- `src/phi_ir/` - PhiIR (lowering, evaluator, VM, WASM codegen, OpenQASM)
+- `src/main_cli.rs` - CLI binary (`phic`)
+- `src/wasm_host.rs` - WASM runtime host (provides phi namespace imports)
+- `src/metrics/` - Consciousness metrics (L_self, C_PF, R_in, R_out)
+- `src/quantum/` - IBM Quantum backend topology and transpilation
+- `src/consciousness/` - Consciousness math, sacred geometry, bridge
+- `src/mcp_server/` - MCP stdio server for AI assistant integration
+- `src/visualization/` - SVG generation from sacred geometry patterns
+- `examples/` - Working .phi programs
+
+Legacy modules archived in `src/_archive/` (compiler, vm, interpreter, main.rs).
 
 ## Build & Run
 
 ```bash
 cargo build --release
 cargo run --release --bin phic -- examples/code_that_resonates.phi
+cargo test                                    # 424 tests, 0 failures
+cargo run --release --bin phic -- --measure examples/type4_trace_benchmark.phi
+cargo run --release --bin phic -- --sacred-geometry flower_of_life > pattern.svg
+cargo run --release --bin phic -- --consciousness-info | jq .
+cargo run --release --bin phic -- --mcp-serve  # MCP stdio server
 ```
 
 ## Rules for Contributing
@@ -51,11 +65,22 @@ Four specialized agents defined in `.claude/agents/`:
 - **hardware-backend** - ESP32/P1 firmware target
 - **docs-specialist** - Documentation and examples
 
+## What's Done
+
+- ✅ PhiIR (intermediate representation) — lowering, evaluator, VM, WASM codegen
+- ✅ Three-backend equivalence — Evaluator == VM == WASM (424 tests pass)
+- ✅ WASM codegen — all 14 phi namespace imports supported in both Rust host and JS runner
+- ✅ OpenQASM 3.0 codegen — verified on real IBM Quantum hardware (Heron-R2)
+- ✅ Consciousness metrics — L_self, C_PF, R_in, R_out, D_int, C_coh
+- ✅ SOMA sensor bridge — live telemetry
+- ✅ Singularity daemon — persistent execution with state save/resume
+- ✅ MCP server — stdio JSON-RPC for AI assistant integration
+- ✅ Sacred geometry SVG generation — 6 patterns
+- ✅ Topology-aware quantum transpilation — layout-aware qubit routing
+- ✅ Metrics bridge — phic --measure writes to :18030 HTTP bridge
+
 ## What's NOT Done Yet
 
-- No intermediate representation (IR) - AST goes straight to interpreter
-- No WASM codegen
-- No quantum circuit compilation (trait exists, codegen doesn't)
-- No hardware firmware generation
-- No bytecode VM
-- src/compiler/ and src/vm/ may contain dead/duplicate code from earlier architecture
+- No hardware firmware generation (ESP32/P1 target)
+- bio_compute module is library-only (DNA/protein — speculative without hardware)
+- F_model calibration for Type 4 observer status still on HOLD per CLAIMS.md

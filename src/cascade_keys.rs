@@ -3,7 +3,7 @@
 //! Drop this module into your Rust workspace and call:
 //!
 //! ```rust
-//! let token = cascade_keys::get_key("TEST_TOKEN_NAME");
+//! let token = phiflow::cascade_keys::get_key("TEST_TOKEN_NAME");
 //! ```
 //!
 //! Rules enforced:

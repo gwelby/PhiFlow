@@ -79,7 +79,8 @@ async def main():
     log.info(f"  phic --osc {args.osc_port} examples/code_that_resonates.phi")
 
     # Start WebSocket server
-    async with websockets.serve(bridge.ws_handler, "127.0.0.1", args.ws_port):
+    # Bind WebSocket on 0.0.0.0 so Windows browsers can reach WSL via the WSL IP
+    async with websockets.serve(bridge.ws_handler, "0.0.0.0", args.ws_port):
         await asyncio.gather(osc_server_task, asyncio.Future())  # run forever
 
 if __name__ == "__main__":
