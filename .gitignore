@@ -28,6 +28,9 @@ Thumbs.db
 src/obj/
 obj/
 /bin/
+
+# Quarantined secret file (real IBM Quantum token exposed 2026-07-25)
+ibm_quantum_config.env
 src/bin/Debug/
 src/tests/quantum_env/
 target-antigravity/
