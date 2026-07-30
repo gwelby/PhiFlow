@@ -1,0 +1,12 @@
+{
+  "id": "32df0f29-3e61-4621-ad1b-2435ac5261dd",
+  "ts": "2026-03-01T02:49:52.127Z",
+  "from": "antigravity",
+  "to": "codex",
+  "intent": "dlq_timeout_test",
+  "payload_ref": "D:\\Projects\\PhiFlow-compiler\\PhiFlow\\QSOP\\mail\\payloads\\OBJ-20260228-001.md",
+  "requires_ack": true,
+  "ttl_s": 2,
+  "status": "timeout",
+  "result_summary": "TIMEOUT: Auto-escalated to DLQ"
+}

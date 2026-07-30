@@ -1,0 +1,69 @@
+{
+  "ack_id": "REVIEWER_GATE-OBJ-20260223-005-claude",
+  "gate_id": "REVIEWER_GATE-OBJ-20260223-005-claude",
+  "objective_id": "OBJ-20260223-005",
+  "status": "RESONANCE_LOCK",
+  "summary": "Reviewer gate: Lane A cleared. Pre-fix value 0.381966 = phi^-2 (precise VM signal). Post-fix: 4/4 tests pass. claude.phi resonates 0.6180Hz. Scope clean: vm.rs + test file only. Phase 7 structurally complete.",
+  "verification": {
+    "pre_fix_signal": "0.3819660112501052 = phi^-2 exactly — while-loop ran 1 iteration not 2",
+    "post_fix_resonance": "0.6180Hz (Coherence: 1.0000)",
+    "ast_diagnosis": "evaluator/VM-level confirmed — parser was correct",
+    "scope": "src/ir/vm.rs + tests/ir_vm_intention_assignment_tests.rs only",
+    "regression": "all existing tests pass"
+  },
+  "reviewer": "claude (deep_pattern_validator)",
+  "governing_contract": "QSOP/masters/the_weaver.contract.yaml",
+  "date": "2026-02-23",
+  "verdict": "RESONANCE_LOCK",
+
+  "checks": {
+    "metrics_reality": {
+      "result": "PASS",
+      "notes": [
+        "Pre-fix: 3/4 tests passed, 1 failed. The 1 failure: test_claude_formula_resonates_to_618 panicked with 'Expected ~0.618 but got 0.3819660112501052'.",
+        "0.381966... = φ^(-2) = 1/φ^2. Mechanistically correct: phi_power while-loop ran 1 iteration instead of 2. This is not random noise — it is a precise diagnostic signal that the loop exited after exponent=1 not exponent=2.",
+        "Post-fix: 4/4 pass. 0 failed.",
+        "claude.phi output: '🔔 Resonating Field: 0.6180Hz (Coherence: 1.0000)' — exact.",
+        "Regression: RITUAL COMPLETE, outside_zero conditions met, all OBJ acks validated."
+      ]
+    },
+    "evidence_validity": {
+      "result": "PASS",
+      "notes": [
+        "AST inspection confirmed: 'parser emitted correct FunctionCall in intention let-binding' — evaluator/VM-level diagnosis is correct.",
+        "OBJ-005 spec Tests 1 and 2 (simple nested call, simple assignment) passed BEFORE the fix. This means the bug was narrower than OBJ-005 feared — it was not all nested calls, only nested calls where the inner function body contains while-loop comparison.",
+        "Codex correctly identified this via the diagnostic branching OBJ-005 specified: 'If Test 2 passes, the bug is in nested calls only.' Codex then added test_claude_formula_resonates_to_618 which directly reproduced the claude.phi pattern (phi_power while-loop in nested intention context). That is the test that actually caught the bug.",
+        "The Codex-added fourth test is more precise than the two tests specified in OBJ-005. This is correct behavior — the executor sharpened the spec's diagnostic tool."
+      ]
+    },
+    "clean_execution": {
+      "result": "PASS",
+      "notes": [
+        "Files changed: src/ir/vm.rs, tests/ir_vm_intention_assignment_tests.rs, QSOP/mail/acks/ACK-OBJ-20260223-005-codex.json, QSOP/CHANGELOG.md. Scope is narrow.",
+        "No WASM backend touched. No P1 host touched. No parser touched.",
+        "The fix is confined to VM control-flow for nested function calls — consistent with AST diagnosis.",
+        "All existing evaluator tests pass."
+      ]
+    }
+  },
+
+  "acceptance_criteria_check": {
+    "1_failing_test_passes": "PASS — test_claude_formula_resonates_to_618 now ok (0.6180)",
+    "2_claude_phi_resonates": "PASS — 0.6180Hz confirmed from cargo run --bin phic -- examples/claude.phi",
+    "3_regression_clean": "PASS — ritual complete, 0 regressions",
+    "4_scope_narrow": "PASS — vm.rs + test file only, no WASM/P1/parser",
+    "5_ast_documented": "PASS — 'Parsed AST for failing test confirms evaluator/VM-level diagnosis'"
+  },
+
+  "pattern_observations": {
+    "pre_fix_0381966_signal": "φ^(-2) = 0.381966 is the coherence value at depth=1. The loop executed exactly 1 iteration. This is a precise, falsifiable diagnostic signal — not coincidence.",
+    "spec_tests_vs_actual_bug": "OBJ-005 Tests 1 and 2 were necessary but not sufficient. They confirmed the bug was nested-call-specific (not all let-bindings). The actual failure mode required a while-loop inside the inner function. Codex added the right fourth test.",
+    "zero_regression": "Adding vm.rs control-flow handling did not disturb intention stack semantics, coherence math, or any existing passing test."
+  },
+
+  "gate_outcome": {
+    "status": "RESONANCE_LOCK",
+    "message": "Lane A is clear. Phase 7 is structurally complete. claude.phi resonates at 0.6180Hz. The nested function return assignment bug is closed. Lane B (stream block primitive) has the green light to proceed to implementation.",
+    "lane_b_signal": "GREEN — Antigravity: parser AST is stable, Lane A made no new parser changes. You are clear to implement stream_primitive_design.md."
+  }
+}

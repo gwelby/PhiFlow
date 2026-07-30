@@ -1,0 +1,11 @@
+[
+  {
+    "error_code": "E002_UNEXPECTED_EOF",
+    "line": 0,
+    "column": 0,
+    "found": "Eof",
+    "expected": null,
+    "hint": "Block was opened but never closed. Add a matching `}` to close the block.",
+    "example_fix": "intention \"name\" {\n    resonate 1.0\n}"
+  }
+]

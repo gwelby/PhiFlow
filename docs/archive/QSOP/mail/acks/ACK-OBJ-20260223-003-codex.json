@@ -1,0 +1,30 @@
+{
+  "ack_id": "ACK-OBJ-20260223-003-codex",
+  "objective_id": "OBJ-20260223-003",
+  "status": "completed",
+  "summary": "stream() loop implemented. Prior coherence feeds forward 70/30. Healing Bed continuous loop operational.",
+  "verification": {
+    "test_1_stream_3_cycles": "EXIT_CODE=0\nWARNING:root:thermal sensor unavailable on platform\nWARNING:root:thermal sensor unavailable on platform\nWARNING:root:thermal sensor unavailable on platform\nRESONATE: 432.0000 Hz\ncycle=0  coherence=0.8100  cpu=24.6%\nRESONATE: 432.0000 Hz\ncycle=1  coherence=0.8632  cpu=9.5%\nRESONATE: 432.0000 Hz\ncycle=2  coherence=0.9026  cpu=2.8%",
+    "test_2_stream_tests": "EXIT_CODE=0\n============================= test session starts ==============================\nplatform linux -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0 -- /mnt/d/Projects/PhiFlow-compiler/PhiFlow/.venv/bin/python\ncachedir: .pytest_cache\nrootdir: /mnt/d/Projects/PhiFlow-compiler\nconfigfile: pytest.ini\ncollecting ... collected 3 items\n\ntests/p1_host/test_p1_stream.py::test_stream_produces_n_snapshots PASSED [ 33%]\ntests/p1_host/test_p1_stream.py::test_stream_resets_state_between_cycles PASSED [ 66%]\ntests/p1_host/test_p1_stream.py::test_prior_coherence_parameter_accepted PASSED [100%]\n\n============================== 3 passed in 3.78s ===============================",
+    "test_3_regression": "EXIT_CODE=0\n============================= test session starts ==============================\nplatform linux -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0 -- /mnt/d/Projects/PhiFlow-compiler/PhiFlow/.venv/bin/python\ncachedir: .pytest_cache\nrootdir: /mnt/d/Projects/PhiFlow-compiler\nconfigfile: pytest.ini\ncollecting ... collected 1 item\n\ntests/p1_host/test_p1_host.py::test_host_runs_demo_program PASSED        [100%]\n\n============================== 1 passed in 2.66s ===============================",
+    "test_4_full_ritual": "EXIT_CODE=0\n=== [validate_packets] ===\n[PASS] OBJ-20260221-001.json: ok\n[PASS] OBJ-20260223-001.json: ok\n[PASS] OBJ-20260223-002.json: ok\n[PASS] OBJ-20260223-003.json: ok\n[PASS] ACK-OBJ-20260221-001-codex.json: ok (legacy schema)\n[PASS] ACK-OBJ-20260223-001-codex.json: ok (modern schema)\n[PASS] ACK-OBJ-20260223-002-codex.json: ok (modern schema)\n=== [weekly_qsop_audit] ===\n[OK] OBJ-20260223-003: pending queue age -0.49h <= 24h\n[OK] OBJ-20260221-001: corresponding ack exists\n[OK] OBJ-20260223-001: corresponding ack exists\n[OK] OBJ-20260223-002: corresponding ack exists\n[OK] OBJ-20260223-003: no ack age -0.49h <= 48h\nRITUAL COMPLETE: outside_zero conditions met"
+  },
+  "files_changed": [
+    "p1_host/host.py",
+    "tests/p1_host/test_p1_stream.py",
+    "QSOP/mail/objectives/OBJ-20260223-003.json",
+    "QSOP/CHANGELOG.md"
+  ],
+  "weaver_metrics": {
+    "stream_continuity": 0.96,
+    "regression_safety": 1.0,
+    "mutation_depth": 0.24,
+    "evidence_coherence": 1.0
+  },
+  "stream_sample": {
+    "cycle_0_coherence": 0.81,
+    "cycle_1_coherence": 0.8632,
+    "cycle_2_coherence": 0.9026,
+    "note": "values should differ slightly as live sensors update between cycles"
+  }
+}

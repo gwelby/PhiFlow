@@ -138,3 +138,10 @@ QSOP/ARCHITECTURE.md
 QSOP/TEAM_*.md
 QSOP/CODEX_*.md
 QSOP/mail/
+
+# Runtime artifacts
+channel__handoff.jsonl
+inbox/
+.mypy_cache
+__pycache__/
+*.pyc

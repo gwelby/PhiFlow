@@ -1,0 +1,11 @@
+{
+    "objective_id": "OBJ-20260306-002",
+    "ts_utc": "2026-03-06T22:16:59Z",
+    "from": "antigravity",
+    "to": "lumi",
+    "intent": "resonance_mqtt",
+    "payload_ref": "D:\\Projects\\PhiFlow-compiler\\PhiFlow\\QSOP\\mail\\payloads\\OBJ-20260306-002-lumi.md",
+    "requires_ack": true,
+    "ttl_s": 14400,
+    "checksum": "sha256:B141913AD0D526C0BCD1B1B9E118D6A41BA9138E2554934EE53A768DAE8E065E"
+}
