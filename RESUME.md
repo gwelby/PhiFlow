@@ -1,45 +1,66 @@
 ---
 protocol_version: "2.1"
 schema_version: "2.1"
-health_score: 96
-last_verified_at: "2026-07-17T03:30:00-04:00"
+health_score: 98
+last_verified_at: "2026-07-29T17:00:00-04:00"
 verification_status: "verified"
 stale_after_hours: 72
 ---
 
 # RESUME.md — PhiFlow Workspace
 > *Agent-agnostic workspace handoff. Read this first when arriving in PhiFlow.*
-> *Last updated: 2026-07-17 by Devin (OSC live streaming + 3D/audio visualizer + ceremony engine roadmap)*
-> *Previous update: 2026-07-14 by Devin (WASM fix + CLI wiring + doc cleanup)*
+> *Last updated: 2026-07-29 by Devin (speculative module archive — integrity cleanup)*
+> *Previous update: 2026-07-19 by Devin (ceremony engine: OSC input, blocking listen, facilitator remote)*
 
 ---
 
 ## Last Agent Here
 - **Agent:** Devin
-- **When:** 2026-07-17
-- **Session goal:** Implement live OSC streaming (`phic --osc <port>`), build a WebSocket bridge + Three.js/Web Audio visualizer, connect PhiFlow to the Propagation Framework Explorer's 8-minute journey, and capture ceremony-engine ideas in a durable roadmap.
-- **Git commits:** `3f686b4` (OSC emitter + 3D visualizer), `25192e0` (18xxx port scheme), `d81ddd9` (Web Audio), `04c25f8` (journey.phi), `f43e6dd` (live-experience ideas doc), `569b866` (coherence fixes).
+- **When:** 2026-07-29
+- **Session goal:** Integrity cleanup — archive speculative modules (cuda, bio_compute, hardware, legacy ir) that presented the appearance of capability without verified backends. Protect the real work from guilt-by-association before buyer outreach.
+- **Previous session:** 2026-07-19 — ceremony engine (OSC input, blocking listen, facilitator remote)
+- **Git commits:** TBD (changes uncommitted — awaiting Greg's review before commit)
 
 ---
 
 ## Current State Verification
 | Check | Command | Expected Result | Last Run | Status |
 |-------|---------|-----------------|----------|--------|
-| Full test suite | `cargo test` | All test binaries + doc tests pass | 2026-07-17 | PASS |
-| Lib tests | `cargo test --lib` | 191 passed, 0 failed | 2026-07-17 | PASS |
-| Release build | `cargo build --release --bin phic` | Clean, zero warnings | 2026-07-17 | PASS |
+| Full test suite | `cargo test --tests` | 391 passed, 0 failed, 4 ignored | 2026-07-29 | PASS |
+| Lib tests | `cargo test --lib` | 158 passed, 0 failed | 2026-07-29 | PASS |
+| Release build | `cargo build --release --bin phic` | Clean, zero warnings | 2026-07-29 | PASS |
 | OSC output | `phic --osc 18032 --osc-delay 200 examples/living_field.phi` | Live OSC stream to `127.0.0.1:18032` | 2026-07-17 | PASS |
-| WebSocket bridge | `python3.12 tools/osc_websocket_bridge.py` | OSC → WebSocket JSON on `:18528` | 2026-07-17 | PASS |
+| OSC input / facilitator cues | `phic --osc 18032 --osc-input 18033 --osc-delay 500 examples/ceremony_grounding.phi` | Blocks on `listen` until `/ceremony/cue` arrives | 2026-07-19 | PASS |
+| WebSocket bridge | `python3.12 tools/osc_websocket_bridge.py --osc-output 18033` | OSC → WebSocket JSON, WebSocket → OSC cues | 2026-07-19 | PASS |
+| Ceremony remote | `Fundamentals/sandbox/explorer/ceremony_remote.html` | Sends `/ceremony/cue` via WebSocket bridge | 2026-07-19 | PASS |
 | 3D/audio visualizer | `tools/phi_visualizer.html` + `?host=172.28.148.150` | Spheres, beams, flashes, sacred-frequency tones | 2026-07-17 | PASS |
 | Journey program | `phic --osc 18032 --osc-delay 800 examples/journey.phi` | Drives `Fundamentals/sandbox/explorer/journey_live.html` through 6 acts | 2026-07-17 | PASS |
 
-> **Note:** Current verified baseline is build PASS + full test suite 424/424 + 10/10 WASM conformance. Three-backend equivalence (Evaluator == VM == WASM) is RESTORED as of 2026-07-14 (was broken since WASM codegen stubs were added 2026-07-03 — the Node.js runner was missing 8 of 14 phi namespace imports).
+> **Note:** Test count changed from 424 → 391. The 33 dropped tests were in the archived speculative modules: 3 fake CUDA tests (asserting hardcoded `"NVIDIA RTX A5500"` device specs) and 30 legacy `ir` module tests (superseded by `phi_ir`). All real PhiFlow tests pass. Three-backend equivalence (Evaluator == VM == WASM) intact — 10/10 conformance tests pass.
 
 ---
 
 ## What Was Happening
 
-PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** — intention, observation, and coherence are first-class constructs. It now also streams its runtime state live via OSC to 3D visualizers, audio engines, and the Propagation Framework Explorer.
+PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** — intention, observation, and coherence are first-class constructs. It now also streams its runtime state live via OSC to 3D visualizers, audio engines, the Propagation Framework Explorer, and a facilitator-controlled ceremony remote.
+
+**What happened in the 2026-07-29 Devin session (speculative module archive):**
+- **Archived `src/cuda/` (~5,278 lines)** to `src/_archive/speculative/cuda/`. No CUDA dependency in Cargo.toml. No `extern "C"`, no `cuLaunchKernel`, no GPU calls. `detect_cuda_device()` returned hardcoded fake specs (`"NVIDIA RTX A5500"`, 16GB). Tests asserted the fake specs. Kernel names stored as `String` fields — no kernels existed.
+- **Archived `src/bio_compute/` (~1,000+ lines)** to `src/_archive/speculative/bio_compute/`. Functions like `apply_phi_harmonic_tunneling`, `apply_sacred_geometry_restructuring` computed fake numbers with no biological backend.
+- **Archived `src/hardware/` (~500+ lines)** to `src/_archive/speculative/hardware/`. `consciousness_detection.rs`, `device_mapping.rs`, `feedback_systems.rs` — no real device binding, no tests.
+- **Archived `src/ir/` (~1,355 lines)** to `src/_archive/speculative/ir/`. Legacy IR module superseded by `src/phi_ir/`. Was the only consumer of `crate::cuda::PhiFlowCudaEngine`. Not referenced by `main_cli.rs`, `phi_core.rs`, or any test.
+- **Removed `pub mod cuda;`, `pub mod hardware;`, `pub mod bio_compute;`, `pub mod ir;`** from `src/lib.rs`. Left commented-out lines with pointer to archive README.
+- **Created `src/_archive/speculative/README.md`** documenting what was archived, why, and the restoration path (add real dependency → real API calls → tests → cargo feature gate → Codex audit).
+- **Why this matters:** These modules compiled into the library with `pub mod` declarations and looked like shipped features. A buyer running `grep -r "cuda" src/` would find 5,000 lines of pretend GPU code and question whether the IBM hardware receipts are also pretend. The real PhiFlow capability is in `src/parser/`, `src/phi_ir/`, `src/metrics/`, `src/mcp_server/`, `src/quantum/`, `src/wasm_host.rs`, `src/sensors.rs`, and `src/security/`.
+
+**What happened in the 2026-07-19 Devin session (ceremony engine):**
+- **`--osc-input <port>` added.** `src/main_cli.rs` accepts a second UDP port for facilitator OSC cues.
+- **Blocking `listen` implemented.** `src/osc_host.rs` spawns a background UDP listener; `PhiHostProvider::listen` now blocks until a matching `/ceremony/cue` or `/ceremony/advance` message arrives, with a 60s timeout.
+- **`examples/ceremony_grounding.phi` created.** A facilitator-paced grounding ceremony that waits at each phase for a cue (`breathe`, `release`, `close`).
+- **WebSocket bridge bidirectional.** `tools/osc_websocket_bridge.py` now forwards WebSocket JSON messages back out as OSC, so `Fundamentals/sandbox/explorer/ceremony_remote.html` can control the ceremony.
+- **Remote HTML created.** `Fundamentals/sandbox/explorer/ceremony_remote.html` provides large facilitator buttons (Breathe, Release, Advance, Close) and a coherence slider.
+- **String round-trip fixed.** `src/phi_ir/evaluator.rs` `string_to_value` now returns `PhiIRValue::String` for arbitrary text instead of `Void`, enabling `listen` and `recall` to carry OSC cue strings.
+- **Live end-to-end verified.** WebSocket client → bridge → `phic --osc-input` → `examples/ceremony_grounding.phi` completes all phases.
 
 **What happened in the 2026-07-17 Devin session (OSC streaming + live journey + ceremony roadmap):**
 - **OSC emitter implemented.** `src/osc_host.rs` broadcasts every PhiFlow construct event as an OSC message over UDP (`/phi/start`, `/phi/intention/push`, `/phi/resonate`, `/phi/witness`, `/phi/coherence`, `/phi/end`).
@@ -109,13 +130,14 @@ PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** �
 - Parser: ✅ 0.4.0 constructs + imports
 - PhiIR + Lowering: ✅ String-backed
 - Evaluator / VM: ✅ Unified
-- WASM Codegen: ✅ All 14 phi imports, three-backend equivalence verified (424 tests)
+- WASM Codegen: ✅ All 14 phi imports, three-backend equivalence verified (391 tests, 4 ignored)
 - OpenQASM 3.0: ✅ Native Heron-ISA verified + parameterized pipeline + layout-aware transpilation
 - SOMA Bridge: ✅ Live telemetry
 - Singularity Daemon: ✅ T-009/T-010 complete
 - MCP Server: ✅ stdio JSON-RPC, 4 tools
 - Metrics Bridge: ✅ --measure writes to :18030
-- Legacy Modules: 📦 Archived to src/_archive/
+- Legacy Modules: 📦 Archived to src/_archive/ (compiler, vm, interpreter, main.rs)
+- Speculative Modules: 📦 Archived to src/_archive/speculative/ (cuda, bio_compute, hardware, legacy ir) — 2026-07-29
 
 ---
 

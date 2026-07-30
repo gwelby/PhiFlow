@@ -15,7 +15,9 @@
 // Core modules
 pub mod cascade_keys;
 pub mod host;
-pub mod ir;
+// Legacy IR archived 2026-07-29 — superseded by src/phi_ir/
+// See src/_archive/speculative/README.md
+// pub mod ir;
 pub mod mcp_server; // <-- Added MCP
 pub mod parser;
 pub mod phi_core;
@@ -41,12 +43,11 @@ pub mod sacred;
 // Quantum computing integration
 pub mod quantum;
 
-// Hardware integration
-pub mod cuda;
-pub mod hardware;
-
-// Biological computation
-pub mod bio_compute;
+// Hardware integration — archived 2026-07-29 (speculative, no backends)
+// See src/_archive/speculative/README.md
+// pub mod cuda;
+// pub mod hardware;
+// pub mod bio_compute;
 
 // Re-export main types for convenience
 pub use consciousness::{ConsciousnessMonitor, ConsciousnessState, EEGData};
