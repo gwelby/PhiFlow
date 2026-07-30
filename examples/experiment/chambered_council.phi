@@ -1,0 +1,49 @@
+// chambered_council.phi
+// Experiment: Semantic Coherence as Quantum Fidelity Predictor
+//
+// Program 4 of 4: Chambered Council
+// Six intentions, all resonate 0.85, but three entangled on 432 Hz and three on 528 Hz.
+// Semantic structure: two chambers, each internally aligned but on different frequencies.
+// Medium PhiFlow coherence expected — aligned within chambers but no cross-chamber entanglement.
+//
+// Circuit: TWO separate 3-qubit GHZ chains (2+2 = 4 CX gates) instead of one 6-qubit chain (5 CX).
+// Different entanglement topology from the other three programs — the semantic channel
+// structure creates a physically different circuit, not just different rotation angles.
+//
+// This is the key PhiFlow-specific finding: the frequency channel structure of the
+// program determines the entanglement topology of the circuit. In Qiskit, you would
+// have to manually decide to build two separate chains. In PhiFlow, the language
+// construct (entangle on different frequencies) generates it from semantic intent.
+//
+// Run: phic examples/experiment/chambered_council.phi --target quantum
+
+intention "seat_1" {
+    resonate 0.85
+    entangle on 432
+}
+
+intention "seat_2" {
+    resonate 0.85
+    entangle on 432
+}
+
+intention "seat_3" {
+    resonate 0.85
+    entangle on 432
+}
+
+intention "seat_4" {
+    resonate 0.85
+    entangle on 528
+}
+
+intention "seat_5" {
+    resonate 0.85
+    entangle on 528
+}
+
+intention "seat_6" {
+    resonate 0.85
+    entangle on 528
+    witness
+}

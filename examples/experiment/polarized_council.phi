@@ -1,0 +1,44 @@
+// polarized_council.phi
+// Experiment: Semantic Coherence as Quantum Fidelity Predictor
+//
+// Program 3 of 4: Polarized Council
+// Six intentions, three toward TEAM_A and three toward TEAM_B, all entangled on 432 Hz.
+// Semantic structure: two opposing factions on the same frequency.
+// TEAM_A: ry(confidence * PI), TEAM_B: ry(PI - confidence * PI) = complementary rotation.
+// Lower PhiFlow coherence expected — opposing directions create semantic dissonance.
+//
+// Circuit: 6-qubit entangled state with complementary rotations, 5 CX gates.
+// Same depth as coherent_council but rotations are physically opposed.
+//
+// Run: phic examples/experiment/polarized_council.phi --target quantum
+
+intention "seat_1" {
+    resonate 0.85 toward TEAM_A
+    entangle on 432
+}
+
+intention "seat_2" {
+    resonate 0.85 toward TEAM_B
+    entangle on 432
+}
+
+intention "seat_3" {
+    resonate 0.85 toward TEAM_A
+    entangle on 432
+}
+
+intention "seat_4" {
+    resonate 0.85 toward TEAM_B
+    entangle on 432
+}
+
+intention "seat_5" {
+    resonate 0.85 toward TEAM_A
+    entangle on 432
+}
+
+intention "seat_6" {
+    resonate 0.85 toward TEAM_B
+    entangle on 432
+    witness
+}

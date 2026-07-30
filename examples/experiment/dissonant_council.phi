@@ -1,0 +1,43 @@
+// dissonant_council.phi
+// Experiment: Semantic Coherence as Quantum Fidelity Predictor
+//
+// Program 2 of 4: Divided Council
+// Six intentions, alternating high and low confidence, all entangled on 432 Hz.
+// Semantic structure: members alternate between agreement and disagreement.
+// Lower PhiFlow coherence expected — the resonance field is inconsistent.
+//
+// Circuit: 6-qubit entangled state with alternating ry(0.85*PI)/ry(0.15*PI), 5 CX gates.
+// Same depth as coherent_council but different rotation pattern.
+//
+// Run: phic examples/experiment/dissonant_council.phi --target quantum
+
+intention "seat_1" {
+    resonate 0.85
+    entangle on 432
+}
+
+intention "seat_2" {
+    resonate 0.15
+    entangle on 432
+}
+
+intention "seat_3" {
+    resonate 0.85
+    entangle on 432
+}
+
+intention "seat_4" {
+    resonate 0.15
+    entangle on 432
+}
+
+intention "seat_5" {
+    resonate 0.85
+    entangle on 432
+}
+
+intention "seat_6" {
+    resonate 0.15
+    entangle on 432
+    witness
+}
