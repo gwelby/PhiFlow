@@ -238,9 +238,22 @@ fn collect_node_strings(node: &PhiIRNode, interner: &mut StringInterner) {
         | PhiIRNode::Recall(name)
         | PhiIRNode::Broadcast { channel: name, .. }
         | PhiIRNode::Listen(name)
-        | PhiIRNode::CoherenceOf(name)
-        | PhiIRNode::AgentDecl { name, .. } => {
+        | PhiIRNode::CoherenceOf(name) => {
             interner.intern(name);
+        }
+
+        PhiIRNode::AgentDecl { name, version } => {
+            interner.intern(name);
+            interner.intern(version);
+        }
+
+        PhiIRNode::Handoff {
+            target_agent,
+            task_id,
+            ..
+        } => {
+            interner.intern(target_agent);
+            interner.intern(task_id);
         }
 
         PhiIRNode::StoreVar { name, .. } => {

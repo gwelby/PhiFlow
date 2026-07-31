@@ -965,7 +965,10 @@ impl PhiParser {
             PhiToken::Broadcast => self.parse_broadcast_statement(),
             PhiToken::Listen => self.parse_listen_expression(),
             PhiToken::Agent => self.parse_agent_block(),
-            PhiToken::VoidDepth => Ok(PhiExpression::VoidDepth),
+            PhiToken::VoidDepth => {
+                self.advance();
+                Ok(PhiExpression::VoidDepth)
+            }
             PhiToken::Evolve => self.parse_evolve_expression(),
             PhiToken::Entangle => self.parse_entangle_expression(),
             PhiToken::Import => self.parse_import_statement(),

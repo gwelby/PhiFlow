@@ -323,6 +323,10 @@ impl Optimizer {
             PhiIRNode::Broadcast { value, .. } => {
                 used.insert(*value);
             }
+            PhiIRNode::Evolve(op) => {
+                used.insert(*op);
+            }
+            PhiIRNode::Recall(_) | PhiIRNode::Listen(_) | PhiIRNode::CoherenceOf(_) => {}
             _ => {}
         }
     }
