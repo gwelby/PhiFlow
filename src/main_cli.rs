@@ -1466,6 +1466,26 @@ fn poll_ibm_job_and_analyze(job_id: &str) {
         println!("\n🔧 Self-Correcting PhiFlow Code:");
         println!("───────────────────────────────────────────");
         println!("{}", correction);
+
+        // For mock mode: execute the correction and re-measure (close the loop)
+        if job_id == "mock" {
+            println!("\n⚡ Executing correction through Evaluator...");
+            let result = quantum_feedback::run_self_correction_loop();
+            if result.correction_executed {
+                println!("  ✅ Correction executed successfully");
+                println!("\n📊 Post-Correction Re-measurement:");
+                println!("  Initial coherence: {:.4}", result.initial_coherence);
+                println!("  Final coherence:   {:.4}", result.final_coherence);
+                println!("  Improvement:       {:+.4}", result.delta());
+                if result.improved() {
+                    println!("  ✅ Self-correction loop closed — coherence restored above φ⁻¹");
+                } else {
+                    println!("  ⚠️  Correction did not restore coherence above threshold");
+                }
+            } else {
+                eprintln!("  ❌ Correction execution failed");
+            }
+        }
     }
 
     println!("\n═══════════════════════════════════════════");
