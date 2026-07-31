@@ -176,7 +176,7 @@ impl<'a> Evaluator<'a> {
         let mut eval = Self {
             program: program.clone(),
             functions: HashMap::new(),
-            host: Box::new(DefaultHostProvider),
+            host: Box::new(DefaultHostProvider::new()),
             registers: HashMap::new(),
             variables,
             intention_stack: Vec::new(),
@@ -668,20 +668,17 @@ impl<'a> Evaluator<'a> {
             }
 
             PhiIRNode::CoherenceOf(name) => {
-                if let Some(shared) = &self.shared_resonance {
+                // Check shared resonance first (cross-stream), then local field.
+                let val = if let Some(shared) = &self.shared_resonance {
                     let guard = shared.lock().unwrap();
-                    if let Some(vals) = guard.get(name) {
-                        // Return the last resonated value if it's a number
-                        if let Some(PhiIRValue::Number(n)) = vals.last() {
-                            Some(PhiIRValue::Number(*n))
-                        } else {
-                            Some(PhiIRValue::Void)
-                        }
-                    } else {
-                        Some(PhiIRValue::Void)
-                    }
+                    guard.get(name).and_then(|vals| vals.last()).cloned()
                 } else {
-                    Some(PhiIRValue::Void)
+                    self.resonance_field.get(name).and_then(|vals| vals.last()).cloned()
+                };
+                match val {
+                    Some(PhiIRValue::Number(n)) => Some(PhiIRValue::Number(n)),
+                    Some(other) => Some(other),
+                    None => Some(PhiIRValue::Number(self.resolve_coherence())),
                 }
             }
 

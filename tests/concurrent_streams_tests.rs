@@ -43,7 +43,7 @@ async fn test_concurrent_streams_shared_resonance() {
     // Spawn task 1
     let handle1 = tokio::task::spawn_blocking(move || {
         let mut eval = Evaluator::new(program1.clone())
-            .with_host(Box::new(DefaultHostProvider))
+            .with_host(Box::new(DefaultHostProvider::new()))
             .with_shared_resonance(shared1);
         eval.run()
     });
@@ -51,7 +51,7 @@ async fn test_concurrent_streams_shared_resonance() {
     // Spawn task 2
     let handle2 = tokio::task::spawn_blocking(move || {
         let mut eval = Evaluator::new(program2.clone())
-            .with_host(Box::new(DefaultHostProvider))
+            .with_host(Box::new(DefaultHostProvider::new()))
             .with_shared_resonance(shared2);
         eval.run()
     });

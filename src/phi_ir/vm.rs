@@ -322,7 +322,7 @@ impl PhiVm {
             shared_resonance: None,
             current_block,
             instruction_ptr: 0,
-            host: Arc::new(DefaultHostProvider),
+            host: Arc::new(DefaultHostProvider::new()),
             sensor_provider: None,
             coherence_history: Vec::new(),
             witness_log: Vec::new(),
@@ -626,19 +626,16 @@ impl PhiVm {
                 }
             }
             BytecodeNode::CoherenceOf(name) => {
-                if let Some(shared) = &self.shared_resonance {
+                let val = if let Some(shared) = &self.shared_resonance {
                     let guard = shared.lock().unwrap();
-                    if let Some(vals) = guard.get(name) {
-                        if let Some(PhiIRValue::Number(n)) = vals.last() {
-                            Some(PhiIRValue::Number(*n))
-                        } else {
-                            Some(PhiIRValue::Void)
-                        }
-                    } else {
-                        Some(PhiIRValue::Void)
-                    }
+                    guard.get(name).and_then(|vals| vals.last()).cloned()
                 } else {
-                    Some(PhiIRValue::Void)
+                    self.resonance_field.get(name).and_then(|vals| vals.last()).cloned()
+                };
+                match val {
+                    Some(PhiIRValue::Number(n)) => Some(PhiIRValue::Number(n)),
+                    Some(other) => Some(other),
+                    None => Some(PhiIRValue::Number(self.compute_coherence())),
                 }
             }
             BytecodeNode::Resonate {
@@ -721,7 +718,14 @@ impl PhiVm {
             }
             BytecodeNode::Broadcast { channel, value } => {
                 let val = self.get_reg(*value)?;
-                // Broadcast to MQTT for consistency
+                let val_str = match &val {
+                    PhiIRValue::Number(n) => n.to_string(),
+                    PhiIRValue::String(s) => s.clone(),
+                    PhiIRValue::Boolean(b) => b.to_string(),
+                    PhiIRValue::Void => "void".to_string(),
+                };
+                // Store in host channel for local listen, and emit to MQTT for cross-process
+                self.host.broadcast(channel, &val_str);
                 let json_val = match val {
                     PhiIRValue::Number(n) => serde_json::json!(n),
                     PhiIRValue::String(s) => serde_json::json!(s),

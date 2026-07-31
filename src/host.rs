@@ -1,5 +1,6 @@
 use crate::phi_ir::SensorKind;
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 // ---------------------------------------------------------------------------
 // Witness snapshot — the state visible to the host when `witness` fires
@@ -123,11 +124,46 @@ pub trait PhiHostProvider: Send + Sync {
 // ---------------------------------------------------------------------------
 
 /// The default host provider. Uses the internal phi-harmonic formula for
-/// coherence and prints resonance/witness events to stdout.
+/// coherence and provides in-memory stores for `remember`/`recall` and
+/// `broadcast`/`listen` so these constructs work out of the box.
 /// This is what the evaluator uses when no custom host is provided.
-pub struct DefaultHostProvider;
+pub struct DefaultHostProvider {
+    memory: Arc<Mutex<HashMap<String, String>>>,
+    channels: Arc<Mutex<HashMap<String, String>>>,
+}
 
-impl PhiHostProvider for DefaultHostProvider {}
+impl Default for DefaultHostProvider {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl DefaultHostProvider {
+    pub fn new() -> Self {
+        Self {
+            memory: Arc::new(Mutex::new(HashMap::new())),
+            channels: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+}
+
+impl PhiHostProvider for DefaultHostProvider {
+    fn persist(&self, key: &str, value: &str) {
+        self.memory.lock().unwrap().insert(key.to_string(), value.to_string());
+    }
+
+    fn recall(&self, key: &str) -> Option<String> {
+        self.memory.lock().unwrap().get(key).cloned()
+    }
+
+    fn broadcast(&self, channel: &str, message: &str) {
+        self.channels.lock().unwrap().insert(channel.to_string(), message.to_string());
+    }
+
+    fn listen(&self, channel: &str) -> Option<String> {
+        self.channels.lock().unwrap().get(channel).cloned()
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Callback host — for programmatic integration (MCP server, tests, etc.)

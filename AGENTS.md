@@ -47,7 +47,7 @@ When files conflict, lower level wins:
 | Parser | ✅ | Handles 0.4.0 constructs + imports |
 | PhiIR + Lowering | ✅ | `PhiIRValue::String(String)` migration complete |
 | Evaluator / VM | ✅ | Backends unified on String-backed IR |
-| WASM Codegen | ✅ | All 14 phi imports. Three-backend equivalence PARTIAL — core constructs only (10/10 conformance). v0.3+ constructs have 6 known divergences (Codex audit 2026-07-31) |
+| WASM Codegen | ✅ | All 14 phi imports. Three-backend equivalence CONFIRMED — 10/10 core + 8/8 full conformance probe (Codex audit 2026-07-31, all divergences fixed) |
 | OpenQASM 3.0 | ✅ | Native Heron-ISA verified, layout-aware transpilation |
 | SOMA Bridge | ✅ | Live telemetry verified |
 | IBM Live Run | ✅ | Job `d7euddh5a5qc73drdosg` verified |
@@ -113,16 +113,16 @@ cargo run --release --bin phic -- --target quantum examples/quantum_council.phi
 | Bob (Advanced Mode) | Deep Auditor | PF compliance analysis, metric specification, Type 4 roadmap |
 
 ## Test Status
-- `cargo test` — **391 passed**, 0 failed, 4 ignored (verified 2026-07-31)
+- `cargo test` — **392 passed**, 0 failed, 4 ignored (verified 2026-07-31)
 - `cargo build --release` — clean, zero warnings
-- Three-backend equivalence — core constructs only (10/10 conformance). v0.3+ constructs have 6 known divergences. See `tests/phi_ir_full_conformance_probe.rs`. Codex audit 2026-07-31.
+- Three-backend equivalence — CONFIRMED. 10/10 core conformance + 8/8 full conformance probe (0 divergences). Codex audit 2026-07-31 found and fixed all divergences.
 - Integration suites — all green
 
 ## Non-Negotiable Rules
 1. **Read `QSOP/STATE.md` before touching code.**
 2. **0.618 is derived.** Multiplicative coherence is the repo truth.
 3. **No receipt = speculative.** IBM runs must be verified with job IDs.
-4. **Three-backend equivalence is a goal, not a achieved state.** Core constructs agree; v0.3+ constructs do not. Do not claim equivalence without running the full conformance probe.
+4. **Three-backend equivalence must be maintained.** Run `cargo test --test phi_ir_full_conformance_probe -- --nocapture` after any backend change.
 
 ## Jules Configuration
 **Last updated:** 2026-05-21
