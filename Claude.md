@@ -21,7 +21,7 @@ Four constructs that exist in no other language:
 .phi file -> Parser (PhiToken -> AST) -> PhiIR Lowering -> Evaluator/VM/WASM -> Output + Coherence Report
 ```
 
-Three-backend equivalence is sacred: Evaluator == VM == WASM (424 tests, 0 failures).
+Three-backend equivalence is a goal, not a achieved state: Evaluator == VM == WASM for core constructs (10/10 conformance tests), but v0.3+ constructs (`evolve`, `agent`, `remember`/`recall`, `broadcast`/`listen`, `coherence_of`) have 6 known divergences (see `tests/phi_ir_full_conformance_probe.rs`). Codex audit 2026-07-31.
 
 Key files:
 - `src/parser/mod.rs` - Lexer + Parser
@@ -42,7 +42,8 @@ Legacy modules archived in `src/_archive/` (compiler, vm, interpreter, main.rs).
 ```bash
 cargo build --release
 cargo run --release --bin phic -- examples/code_that_resonates.phi
-cargo test                                    # 424 tests, 0 failures
+cargo test                                    # 391 tests, 0 failed, 4 ignored
+cargo test --test phi_ir_full_conformance_probe -- --nocapture  # see known divergences
 cargo run --release --bin phic -- --measure examples/type4_trace_benchmark.phi
 cargo run --release --bin phic -- --sacred-geometry flower_of_life > pattern.svg
 cargo run --release --bin phic -- --consciousness-info | jq .
@@ -68,7 +69,7 @@ Four specialized agents defined in `.claude/agents/`:
 ## What's Done
 
 - ✅ PhiIR (intermediate representation) — lowering, evaluator, VM, WASM codegen
-- ✅ Three-backend equivalence — Evaluator == VM == WASM (424 tests pass)
+- ⚠️ Three-backend equivalence — core constructs only (10/10 conformance tests). v0.3+ constructs have 6 known divergences (Codex audit 2026-07-31)
 - ✅ WASM codegen — all 14 phi namespace imports supported in both Rust host and JS runner
 - ✅ OpenQASM 3.0 codegen — verified on real IBM Quantum hardware (Heron-R2)
 - ✅ Consciousness metrics — L_self, C_PF, R_in, R_out, D_int, C_coh

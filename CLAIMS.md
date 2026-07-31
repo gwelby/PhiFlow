@@ -1,6 +1,7 @@
 # CLAIMS: PhiFlow
-*Last updated: 2026-07-14*
+*Last updated: 2026-07-31*
 *Honesty rule: beautiful != proven. Failed tests are results, not failures.*
+*Codex hostile audit performed 2026-07-31 — findings integrated below.*
 
 ## Core Axioms (not claims — starting assumptions)
 
@@ -14,7 +15,7 @@
 | Claim | Status | Derivation / Evidence | Date |
 |-------|--------|----------------------|------|
 | **C-1: Five consciousness constructs are sufficient** — `intention`, `witness`, `coherence`, `resonate`, `stream` capture the minimal set for self-observing programs | SPECULATIVE | Inspired by framework design; no comparative proof of minimality | 2026-03-15 |
-| **C-2: Three-backend equivalence is achievable** — evaluator, PhiVM, and the canonical WASM runner can execute supported programs with identical results | CONFIRMED (restored 2026-07-14) | `tests/phi_ir_conformance_tests.rs` (10/10 pass). **Note**: Was silently broken 2026-07-03 to 2026-07-14 — the Node.js runner was missing 8 of 14 phi namespace imports after WASM codegen stubs were added. Fixed in commit `66f6e2a`. Full suite: 424 tests, 0 failures. | 2026-02-26 |
+| **C-2: Three-backend equivalence is achievable** — evaluator, PhiVM, and the canonical WASM runner can execute supported programs with identical results | **PARTIAL** (downgraded from CONFIRMED by Codex audit 2026-07-31) | Core constructs (arithmetic, witness, intention, resonate, coherence, sensors) agree across all three backends — 10/10 conformance tests pass. However, `tests/phi_ir_full_conformance_probe.rs` reveals 6 divergences on v0.3+ constructs: `remember_recall` (WASM returns 42, Evaluator/VM return Void), `broadcast_listen` (WASM returns 123, Evaluator/VM return Void), `coherence_of` (WASM returns 0.0, Evaluator/VM return Void), `evolve_then_value` (Evaluator errors with OperandNotFound, VM/WASM return 1.0), `agent_scope_return` (VM panics in emitter, Evaluator/WASM return 42), `remember_recall_in_intention` (WASM returns 9, Evaluator/VM return Void). The WASM divergences are partly host-configuration dependent (Node.js runner supplies working remember/recall/listen stubs the default Rust host does not). The `evolve` Evaluator error and `agent` VM panic are genuine bugs. | 2026-02-26 |
 | **C-3: Canonical coherence at depth 2 with `k <= 1` equals `phi^-1`** — the shared multiplicative formula returns `0.618033988749895` at depth 2 when phase decay is neutral | CONFIRMED | `src/phi_ir/coherence.rs` and `examples/claude.phi` | 2026-03-29 |
 | **C-4: Serializable VM state enables yield/resume** — `VmState` captures complete execution state and round-trips through JSON | CONFIRMED | `test_frozen_eval_state_roundtrips_through_json` + MCP stdio E2E test | 2026-02-27 |
 | **C-5: Real sensors can replace formula coherence** — `sysinfo` readings produce live coherence values | CONFIRMED | `src/sensors.rs`, `examples/healing_bed.phi`, and 2026-03-29 typed witness surface in `QSOP/STATE.md` | 2026-02-27 |
@@ -49,7 +50,12 @@
 
 ## Failed Claims (current)
 
-No active failed claim is carried in this ledger as of 2026-03-29. Historical failures that were repaired remain below.
+| Claim | Status | Finding | Date |
+|-------|--------|---------|------|
+| C-2 "Three-backend equivalence CONFIRMED" | **FALSE** (downgraded to PARTIAL) | Codex audit 2026-07-31: 6 divergences on v0.3+ constructs. `evolve` crashes Evaluator, `agent` crashes VM, `remember`/`recall`/`broadcast`/`listen`/`coherence_of` return Void in Evaluator/VM but values in WASM. | 2026-07-31 |
+| C-25 "Self-correction loop demonstrated" | **FALSE** (downgraded to PARTIAL) | Codex audit 2026-07-31: The loop is open. Hardware path only println!s the correction. Evaluator path that executes corrections is not wired to real counts. Correction is a no-op that never re-submits. | 2026-07-31 |
+| "424 tests, 0 failures" | **FALSE** | Codex audit 2026-07-31: Clean checkout has 388 pass / 3 fail (missing examples/quantum_council.phi was gitignored). Local with all files: 391 pass / 0 fail / 4 ignored. The "424" count is stale. | 2026-07-31 |
+| `void_depth` keyword | **BROKEN** | Codex audit 2026-07-31: `parse_phi_program("void_depth")` OOMs the parser (runaway allocation) in any scope. A documented keyword crashes the compiler. | 2026-07-31 |
 
 ## Historical Failures Resolved
 
@@ -66,10 +72,6 @@ No active failed claim is carried in this ledger as of 2026-03-29. Historical fa
 | "Block comments `/* ... */` parse correctly" | PREDICTED → **CONFIRMED** | Added `/* */` handling to canonical lexer (`src/parser/mod.rs` line ~532). 5 tests pass: basic, inline, multiline, witness context, resonate context. | 2026-04-14 |
 | "Type annotations `let x: number = 42` work" | PREDICTED → **CONFIRMED** | Extended canonical parser: added `F64`, `I32`, `Bool`, `Qubit`, `Circuit` tokens + `PhiType` variants. 10 tests pass: f64, i32, bool, string, qubit, circuit, consciousness, custom, function return, function param. | 2026-04-14 |
 | "Module/import system `import from \"file.phi\"` works" | PREDICTED → **CONFIRMED** | Added `Import` token, `Import` expression variant, `parse_import_statement()` to canonical parser. 2 tests pass: single import, multiple imports. | 2026-04-14 |
-
-## Failed Claims (current)
-
-No active failed claims as of 2026-04-14. All three predicted claims have been implemented and verified.
 
 ## Sandbox Results
 
@@ -155,7 +157,7 @@ No active failed claims as of 2026-04-14. All three predicted claims have been i
   - |011⟩: 62 shots (6.1%)
   - |101⟩: 24 shots (2.3%)
   - Physical coherence: 0.3496 — below φ⁻¹ (0.618). Self-correction triggered.
-**Conclusion**: CONFIRMED. Real quantum noise spread the 3-qubit distribution, producing coherence below the golden ratio threshold. The self-correcting PhiFlow mechanism activated automatically — emitting an `intention "self_correction"` block. This is the first end-to-end demonstration of the full feedback loop: `.phi` → QASM → IBM hardware → coherence calculation → self-correction.
+**Conclusion**: CONFIRMED (hardware execution). **Self-correction claim DOWNGRADED to PARTIAL** (Codex audit 2026-07-31): The hardware path (`main_cli.rs:1465`) only `println!`s the correction — it does not execute it. The path that executes corrections (`evaluator.rs:920`) is not wired to real hardware counts (`quantum_feedback.rs:26` returns empty), and its correction is a no-op that never re-submits. The loop is open, not closed. The claim "first end-to-end demonstration of the full feedback loop" is overstated — it is the first end-to-end demonstration of detection, not correction.
 
 ### C-26: GHZ entanglement coherence scales predictably on Heron-R2 (2026-07-10)
 
@@ -203,3 +205,4 @@ No active failed claims as of 2026-04-14. All three predicted claims have been i
 - Claims marked SPECULATIVE must be explicitly labeled in external communication
 - Unsupported claims should be removed or clearly qualified in buyer-facing docs
 - Do not cite hardcoded test counts without fresh command output from a working Rust shell
+- **Codex hostile audit 2026-07-31** downgraded C-2 and C-25 from CONFIRMED, found `void_depth` parser OOM, and caught .gitignore silently dropping canonical files. The conformance probe (`tests/phi_ir_full_conformance_probe.rs`) is non-asserting by design — it records divergences without hard-coding which backend is "correct."

@@ -47,7 +47,7 @@ When files conflict, lower level wins:
 | Parser | ✅ | Handles 0.4.0 constructs + imports |
 | PhiIR + Lowering | ✅ | `PhiIRValue::String(String)` migration complete |
 | Evaluator / VM | ✅ | Backends unified on String-backed IR |
-| WASM Codegen | ✅ | All 14 phi imports, three-backend equivalence verified (424 tests) |
+| WASM Codegen | ✅ | All 14 phi imports. Three-backend equivalence PARTIAL — core constructs only (10/10 conformance). v0.3+ constructs have 6 known divergences (Codex audit 2026-07-31) |
 | OpenQASM 3.0 | ✅ | Native Heron-ISA verified, layout-aware transpilation |
 | SOMA Bridge | ✅ | Live telemetry verified |
 | IBM Live Run | ✅ | Job `d7euddh5a5qc73drdosg` verified |
@@ -113,16 +113,16 @@ cargo run --release --bin phic -- --target quantum examples/quantum_council.phi
 | Bob (Advanced Mode) | Deep Auditor | PF compliance analysis, metric specification, Type 4 roadmap |
 
 ## Test Status
-- `cargo test` — **424 passed**, 0 failed, 3 ignored (verified 2026-07-14)
+- `cargo test` — **391 passed**, 0 failed, 4 ignored (verified 2026-07-31)
 - `cargo build --release` — clean, zero warnings
-- Three-backend equivalence (Evaluator == VM == WASM) — all 10 conformance tests pass
+- Three-backend equivalence — core constructs only (10/10 conformance). v0.3+ constructs have 6 known divergences. See `tests/phi_ir_full_conformance_probe.rs`. Codex audit 2026-07-31.
 - Integration suites — all green
 
 ## Non-Negotiable Rules
 1. **Read `QSOP/STATE.md` before touching code.**
 2. **0.618 is derived.** Multiplicative coherence is the repo truth.
 3. **No receipt = speculative.** IBM runs must be verified with job IDs.
-4. **Three-backend equivalence is sacred.** Evaluator == VM == WASM.
+4. **Three-backend equivalence is a goal, not a achieved state.** Core constructs agree; v0.3+ constructs do not. Do not claim equivalence without running the full conformance probe.
 
 ## Jules Configuration
 **Last updated:** 2026-05-21
@@ -177,3 +177,13 @@ for all IBM Quantum operations including the `--topology-aware` live fetch (via
 - Jules Changelog (CI/Commit): https://jules.google/docs/changelog
 - Jules API Reference: https://jules.google/docs/api/reference/overview
 - Full Research: `D:\Projects\Research\JULES_MASTER_GUIDE.md`
+
+---
+
+## Family On-Ramp
+
+- `TOOL_REGISTRY.md`: `/mnt/d/System/TOOL_REGISTRY.md`
+- `FAMILY_RULES.md`: `/mnt/d/System/FAMILY_RULES.md`
+- `FAMILY_WORKSPACE_UPDATE_RULE.md`: `/mnt/d/System/FAMILY_WORKSPACE_UPDATE_RULE.md`
+- Blackboard API: `/mnt/d/System/FAMILY_RULES.md` §11
+- `claim-check` skill: run before shipping any claim.
