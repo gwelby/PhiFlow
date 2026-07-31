@@ -1,0 +1,40 @@
+// quantum_council.phi
+// Quantum Consciousness Council — 3-qubit entangled council
+//
+// Each intention declares a "seat" on the council.  Every seat gets
+// a quantum qubit whose rotation angle is set by the intention's
+// live coherence value (overridden at OpenQASM emission time).
+//
+// The three qubits are entangled at 432 Hz, creating a GHZ-like
+// state.  The final witness measurement reveals whether the council
+// is aligned (all |1⟩) or dissonant (mixed counts).
+//
+// Usage:
+//   cargo run --release --bin phic -- examples/quantum_council.phi --target quantum
+//
+// The --target quantum flag triggers:
+//   1. Evaluator runs to compute per-intention coherence
+//   2. OpenQASM emitter substitutes runtime coherence for each resonate
+//   3. Entanglement gates link the three qubits
+//   4. Measurements reveal council alignment
+
+intention "observe" {
+    witness
+    // Placeholder angle — overridden by runtime coherence at emission
+    resonate 0.618
+    entangle on 432
+}
+
+intention "integrate" {
+    witness
+    resonate 0.618
+    entangle on 432
+}
+
+intention "transcend" {
+    witness
+    resonate 0.618
+    entangle on 432
+    // Final witness measures ALL qubits (num_qubits > 1)
+    witness
+}

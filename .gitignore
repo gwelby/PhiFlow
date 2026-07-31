@@ -75,29 +75,28 @@ check_error.txt
 # Test binaries in examples
 *.phivm
 
-# Misc test files at root (not examples/)
-basic_test.phi
-simple_test.phi
-minimal_test.phi
-test_*.phi
-*_test.phi
-for_test.phi
-for_loop_test.phi
-for_loop_simple.phi
-if_test.phi
-let_test.phi
-while_*.phi
-return_test.phi
-number_test.phi
-pattern_test.phi
-print_test.phi
-variable_test.phi
-array_*.phi
-function_*.phi
-biological_interface_test.phi
-quantum_*.phi
-frequency_pattern_test.phi
-consciousness_*.phi
+# Misc test files at root only (not examples/)
+/basic_test.phi
+/simple_test.phi
+/minimal_test.phi
+/test_*.phi
+/*_test.phi
+/for_test.phi
+/for_loop_test.phi
+/for_loop_simple.phi
+/if_test.phi
+/let_test.phi
+/while_*.phi
+/return_test.phi
+/number_test.phi
+/pattern_test.phi
+/print_test.phi
+/variable_test.phi
+/array_*.phi
+/function_*.phi
+/biological_interface_test.phi
+/frequency_pattern_test.phi
+/consciousness_*.phi
 
 # P1 host (separate project)
 p1_host/
@@ -105,18 +104,10 @@ p1_host/
 # IBM Quantum credentials (never commit live keys)
 apikey.json
 
-# Internal workspace files (keep local, not on GitHub)
-BUSINESS.md
-SOUL.md
-AGENTS.md
-TASKS.md
+# Internal workspace files (canonical docs ARE tracked, drafts are local)
 TEAM.md
-CLAUDE.md
-CLAUDE_*.md
 GEMINI.md
 GEMINI_*.md
-CODEX_*.md
-CLAUDE_*.md
 PHIFLOW_*_PLAN.md
 PHIFLOW_*_ROADMAP.md
 PROMPT_*.md
@@ -129,14 +120,10 @@ AGENTS.md.backup
 # which becomes a literal filename here when an example is run).
 /D:*
 
-# Internal QSOP coordination (keep STATE.md and public docs)
-QSOP/CHANGELOG.md
-QSOP/PATTERNS.md
-QSOP/WINS.md
+# Internal QSOP coordination (STATE, README, PATTERNS, CHANGELOG, WINS are tracked)
 QSOP/ACTIVE_PLAN.md
 QSOP/ARCHITECTURE.md
 QSOP/TEAM_*.md
-QSOP/CODEX_*.md
 QSOP/mail/
 
 # Runtime artifacts
