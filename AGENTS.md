@@ -113,10 +113,11 @@ cargo run --release --bin phic -- --target quantum examples/quantum_council.phi
 | Bob (Advanced Mode) | Deep Auditor | PF compliance analysis, metric specification, Type 4 roadmap |
 
 ## Test Status
-- `cargo test` — **399 passed**, 0 failed, 4 ignored (verified 2026-07-31)
+- `cargo test` — **404 passed**, 0 failed, 4 ignored (verified 2026-07-31)
 - `cargo build --release` — clean, zero warnings
 - Three-backend equivalence — CONFIRMED. 10/10 core conformance + 8/8 full conformance probe (0 divergences). Codex audit 2026-07-31 found and fixed all divergences.
 - Self-correction loop — CONFIRMED. `run_self_correction_loop()` closes the detect → correct → execute → re-measure chain. 7 tests in `tests/self_correction_loop_test.rs`.
+- CLI output tests — 5 tests in `tests/cli_output_tests.rs` that run the actual binary and check printed output (not just internal state). Added after discovering that "Final Coherence: 0.0000" was reported for all programs while 399 tests passed green.
 - Integration suites — all green
 
 ## Non-Negotiable Rules

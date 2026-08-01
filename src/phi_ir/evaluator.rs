@@ -21,6 +21,7 @@ use crate::phi_ir::{
     BlockId, Operand, PhiIRBinOp, PhiIRBlock, PhiIRNode, PhiIRProgram, PhiIRUnOp, PhiIRValue,
     PhiInstruction, SensorKind,
 };
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -149,6 +150,11 @@ pub struct Evaluator<'a> {
     /// Maps active stream name to its required minimum coherence threshold.
     pub stream_thresholds: HashMap<String, f64>,
 
+    /// Peak coherence observed during execution (interior-mutable for `&self` tracking).
+    /// The final reported coherence is this peak, not the post-completion value
+    /// (which is always 0.0 because the intention stack is empty after run).
+    peak_coherence: Cell<f64>,
+
     /// Optional hardware-reality modifier (0.0–1.0).
     /// When present, the canonical phi-stack coherence is multiplied by this value
     /// to produce the actual execution coherence. This lets live sensor data (thermal
@@ -196,6 +202,7 @@ impl<'a> Evaluator<'a> {
             sensor_provider: None,
             measurement_coherence_penalty: 0.0,
             stream_thresholds: HashMap::new(),
+            peak_coherence: Cell::new(0.0),
             hardware_modifier: None,
         };
         eval.rebuild_functions_map();
@@ -731,7 +738,7 @@ impl<'a> Evaluator<'a> {
                 None
             }
 
-            PhiIRNode::CoherenceCheck => Some(PhiIRValue::Number(self.resolve_coherence())),
+            PhiIRNode::CoherenceCheck => Some(PhiIRValue::Number(self.host.get_coherence(self.compute_coherence()))),
 
             // --- v0.3.0 Persistence & Dialogue ---
             PhiIRNode::Remember { key, value } => {
@@ -1241,18 +1248,33 @@ impl<'a> Evaluator<'a> {
         // This makes live sensor conditions (thermal stress, memory pressure, network
         // degradation) reduce execution coherence multiplicatively — the system
         // self-throttles exactly as a consciousness-aware runtime should.
-        match &self.hardware_modifier {
+        let full = match &self.hardware_modifier {
             Some(modifier) => {
                 let hw = modifier().clamp(0.0, 1.0);
                 phi_coherence * hw
             }
             None => phi_coherence,
+        };
+
+        // Track peak coherence observed during execution.
+        // The final reported coherence is this peak, not the post-completion value
+        // (which is always 0.0 because the intention stack is empty after run).
+        let prev = self.peak_coherence.get();
+        if full > prev {
+            self.peak_coherence.set(full);
         }
+
+        full
     }
 
     fn resolve_coherence(&self) -> f64 {
-        let internal = self.compute_coherence();
-        self.host.get_coherence(internal)
+        // Ensure peak is updated with the current state (in case no witness/intention
+        // was evaluated after the last coherence-changing operation).
+        let _ = self.compute_coherence();
+        // Report the peak coherence, not the post-completion coherence.
+        // After run() completes, the intention stack is empty (depth 0 → coherence 0.0).
+        // The peak captures the best alignment the program achieved while it was running.
+        self.host.get_coherence(self.peak_coherence.get())
     }
 
     fn resolve_sensor(&self, sensor: SensorKind) -> EvalResult<f64> {

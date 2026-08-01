@@ -21,7 +21,7 @@ Four constructs that exist in no other language:
 .phi file -> Parser (PhiToken -> AST) -> PhiIR Lowering -> Evaluator/VM/WASM -> Output + Coherence Report
 ```
 
-Three-backend equivalence: Evaluator == VM == WASM for all tested constructs (10/10 core conformance + 8/8 full conformance probe). Self-correction loop: CONFIRMED (detect → correct → execute → re-measure). 399 tests, 0 failed. Codex audit 2026-07-31 found and fixed all issues.
+Three-backend equivalence: Evaluator == VM == WASM for all tested constructs (10/10 core conformance + 8/8 full conformance probe). Self-correction loop: CONFIRMED (detect → correct → execute → re-measure). CLI output tests: 5 tests verify what the user sees (not just internal state). 404 tests, 0 failed. Codex audit 2026-07-31 found and fixed all issues including coherence reporting bug (every program reported 0.0000 while tests passed green).
 
 Key files:
 - `src/parser/mod.rs` - Lexer + Parser
