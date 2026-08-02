@@ -1,10 +1,14 @@
-//! C-25: Self-correction loop end-to-end test.
+//! C-25: Self-correction loop structural test.
 //!
-//! Verifies the full loop: detect low coherence → generate correction →
+//! Verifies the loop structure: detect low coherence → generate correction →
 //! execute correction through Evaluator → re-measure → verify improvement.
 //!
-//! The hardware feedback is simulated (mock counts), but the
-//! detect → correct → execute → re-measure chain is real.
+//! NOTE: The hardware feedback is SIMULATED (mock counts). The "improvement"
+//! is hardcoded (decoherent before, coherent after). This test verifies the
+//! loop STRUCTURE, not that the correction actually improves fidelity.
+//!
+//! For real quantum self-correction with actual IBM hardware, run:
+//!   python3.12 scripts/self_correction_real.py <n> <backend> <shots>
 
 use phiflow::quantum_feedback::{
     calculate_coherence, generate_correction_if_needed, poll_ibm_job_mock,
@@ -54,8 +58,8 @@ fn test_correction_generated_for_low_coherence() {
         "Correction should use intention construct"
     );
     assert!(
-        code.contains("resonate"),
-        "Correction should use resonate to stabilize"
+        code.contains("zero_depth_rz"),
+        "Correction should declare the real correction method (zero-depth RZ)"
     );
     assert!(
         code.contains("witness"),

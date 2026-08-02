@@ -128,18 +128,34 @@ pub fn calculate_coherence(counts: &HashMap<String, u64>) -> f64 {
 }
 
 /// Evaluates coherence against the Phi Inverse threshold (0.618).
-/// If physical coherence is lower, generates a self-correcting PhiFlow string.
+/// If physical coherence is lower, generates a correction plan.
 ///
-/// The correction resonates at 432 Hz (the grounding frequency) to stabilize
-/// the system, then witnesses to record the correction event.
+/// The correction is zero-depth RZ correction: shift existing RZ gates
+/// that follow CZ gates by a backend-specific optimal angle. This corrects
+/// coherent Z⊗I over-rotation on CX gates — a real error mechanism proven
+/// on IBM hardware by the Crypto lab (R-35 through R-40).
+///
+/// Key results from the Crypto lab:
+/// - R-36: RZ correction reduces FP rate 65% → 5% on simulator
+/// - R-40: Zero-depth RZ correction reduces FP 10-20pp on real hardware
+/// - Kingston optimal: +0.045 (U-shape confirmed across 9 angles)
+/// - Fez optimal: -0.090 (opposite sign confirms coherent error model)
+/// - Zero new gates, zero depth increase — the correction is free
+///
+/// The actual circuit correction is performed by the Python bridge
+/// (`scripts/self_correction_real.py`) which applies the zero-depth
+/// RZ shift and submits the corrected circuit to IBM Quantum.
 pub fn generate_correction_if_needed(coherence: f64) -> Option<String> {
     if coherence < PHI_INV {
         let correction = format!(
             r#"intention "self_correction" {{
-    let correction_frequency = 432.0
-    resonate correction_frequency
+    let initial_coherence = {coherence}
+    let threshold = {threshold}
+    let correction_method = "zero_depth_rz"
     witness
-}}"#
+}}"#,
+            coherence = coherence,
+            threshold = PHI_INV,
         );
         Some(correction)
     } else {
@@ -172,19 +188,18 @@ impl CorrectionResult {
     }
 }
 
-/// Runs the full self-correction loop using mock counts.
+/// Runs the self-correction loop using mock counts.
 ///
-/// 1. Poll mock hardware (decoherent state)
-/// 2. Calculate coherence
-/// 3. If below φ⁻¹, generate correction code
-/// 4. Execute correction through the Evaluator
-/// 5. Re-poll mock hardware (coherent state)
-/// 6. Calculate improved coherence
+/// This is a STRUCTURAL TEST of the loop, not a real correction.
+/// The mock counts are hardcoded: decoherent before, coherent after.
+/// The "improvement" is simulated.
 ///
-/// This is the canonical demonstration of C-25: the program detects its own
-/// incoherence, generates a correction, executes it, and re-measures to verify
-/// improvement. The hardware feedback is simulated (mock counts), but the
-/// detect → correct → execute → re-measure loop is real.
+/// For real quantum self-correction with actual IBM hardware, use:
+///   python3.12 scripts/self_correction_real.py <n> <backend> <shots>
+///
+/// That script submits a real circuit, gets real counts, detects real
+/// decoherence, re-routes to better qubits, and measures whether fidelity
+/// actually improved.
 pub fn run_self_correction_loop() -> CorrectionResult {
     use crate::parser::parse_phi_program;
     use crate::phi_ir::evaluator::Evaluator;
