@@ -421,19 +421,58 @@ fn compute_from_snapshot(sys: &System, components: &Components, networks: &Netwo
 pub fn compute_coherence_from_sensors() -> f64 {
     let arc = get_live_data();
     let data = arc.read().unwrap();
-    let base_coherence = data.coherence;
 
+    // Start with the system-level coherence (CPU, memory, thermal, network).
+    let mut coherence = data.coherence;
+    let mut total_weight = 1.0;
+
+    // If SOMA is running and fresh, blend its environmental sensors into the
+    // coherence value. This is what makes coherence a *measurement* rather
+    // than a formula — the ring oscillator detects real environmental
+    // conditions (EM noise, presence, vibration) that the CPU/memory sensors
+    // cannot see.
+    if let Some(soma) = &data.soma {
+        if is_soma_state_fresh(soma) {
+            // SOMA presence (0.0–1.0): environmental stability from ring
+            // oscillator timing jitter. High presence = stable environment.
+            let presence = soma.sensors.soma_presence.clamp(0.0, 1.0);
+            coherence += presence * 0.30;
+            total_weight += 0.30;
+
+            // Fan stability: a consistent fan speed indicates thermal
+            // stability. Normalize around 50 Hz (typical fan speed) with
+            // a tolerance window. Sudden changes = instability.
+            let fan_hz = soma.sensors.soma_fan_hz;
+            if fan_hz > 0.0 {
+                let fan_deviation = (fan_hz - 50.0).abs() / 50.0;
+                let fan_stability = (1.0 - fan_deviation).clamp(0.0, 1.0);
+                coherence += fan_stability * 0.10;
+                total_weight += 0.10;
+            }
+
+            // Peak dBc: signal strength from the ring. Higher = stronger
+            // signal = more coherent environment. Normalize 0–30 dBc.
+            let peak_dbc = soma.sensors.soma_peak_dbc.clamp(0.0, 30.0) / 30.0;
+            coherence += peak_dbc * 0.10;
+            total_weight += 0.10;
+        }
+    }
+
+    coherence = (coherence / total_weight).clamp(0.0, 1.0);
+
+    // If quantum hardware metrics are available, apply them as a
+    // multiplicative modifier (hardware reality penalty).
     if let Some(q) = &data.quantum {
         if let Some(m) = &q.metrics {
             let t1_factor = (m.quantum_t1 / 200.0).clamp(0.0, 1.0);
             let t2_factor = (m.quantum_t2 / 100.0).clamp(0.0, 1.0);
             let readout_factor = (1.0 - m.quantum_readout_error * 10.0).clamp(0.0, 1.0);
             let quantum_resonance = t1_factor * 0.4 + t2_factor * 0.4 + readout_factor * 0.2;
-            return base_coherence * quantum_resonance;
+            coherence *= quantum_resonance;
         }
     }
 
-    base_coherence
+    coherence
 }
 
 pub fn read_sensor(sensor: SensorKind) -> Option<f64> {

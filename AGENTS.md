@@ -113,11 +113,13 @@ cargo run --release --bin phic -- --target quantum examples/quantum_council.phi
 | Bob (Advanced Mode) | Deep Auditor | PF compliance analysis, metric specification, Type 4 roadmap |
 
 ## Test Status
-- `cargo test` — **404 passed**, 0 failed, 4 ignored (verified 2026-07-31)
+- `cargo test` — **408 passed**, 0 failed, 4 ignored (verified 2026-08-02)
 - `cargo build --release` — clean, zero warnings
 - Three-backend equivalence — CONFIRMED. 10/10 core conformance + 8/8 full conformance probe (0 divergences). Codex audit 2026-07-31 found and fixed all divergences.
 - Self-correction loop — CONFIRMED. `run_self_correction_loop()` closes the detect → correct → execute → re-measure chain. 7 tests in `tests/self_correction_loop_test.rs`.
 - CLI output tests — 5 tests in `tests/cli_output_tests.rs` that run the actual binary and check printed output (not just internal state). Added after discovering that "Final Coherence: 0.0000" was reported for all programs while 399 tests passed green.
+- SOMA coherence tests — 4 tests in `tests/soma_coherence_test.rs` verify that live SOMA sensor data influences the coherence value. High presence produces higher coherence than low presence; degraded SOMA pulls coherence below 0.85.
+- **SOMA → coherence bridge LIVE** — verified 2026-08-02: running SOMA alongside phic changes the Final Coherence value from the pure formula (0.6180) to a sensor-influenced measurement (0.4734 with presence=0.112). This is the first time coherence has been a measurement instead of a formula.
 - Integration suites — all green
 
 ## Non-Negotiable Rules
