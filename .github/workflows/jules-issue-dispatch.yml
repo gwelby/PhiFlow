@@ -1,0 +1,47 @@
+name: Jules Issue Dispatch
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  dispatch:
+    # Only run when the 'jules' label is added
+    if: github.event.label.name == 'jules'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: write
+
+    steps:
+      - name: Invoke Jules
+        # SECURITY: Only allow Greg (gwelby) to trigger Jules via issue labels
+        if: ${{ contains(fromJSON('["gwelby", "greg"]'), github.event.issue.user.login) }}
+        uses: google-labs-code/jules-invoke@v1
+        with:
+          prompt: |
+            Read AGENTS.md in this repo first for project conventions.
+
+            Tool rules:
+            - Use rg (ripgrep) for text search, not grep. It is installed and faster.
+            - Do NOT attempt to reach any service on localhost or 172.28.x.x — those are unreachable.
+
+            Please implement the following issue:
+
+            ## ${{ github.event.issue.title }}
+
+            ${{ github.event.issue.body }}
+
+            Process:
+            1. Understand the issue — read the relevant source files and tests
+            2. Plan your changes — keep them minimal and targeted
+            3. Implement the fix or feature
+            4. Run the existing test suite to verify nothing breaks
+            5. If the issue asks for tests, add them
+            6. Open a PR that references this issue (use "Fixes #N" in the description)
+
+            Do NOT merge your own PR. Leave it for Greg to review.
+          jules_api_key: ${{ secrets.JULES_API_KEY }}
+          starting_branch: master
+          include_last_commit: true
