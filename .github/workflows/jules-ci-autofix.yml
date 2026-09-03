@@ -41,7 +41,7 @@ jobs:
 
       - name: Invoke Jules to fix CI failure
         if: steps.check-loop.outputs.has_open_jules_pr != 'true'
-        uses: google-labs-code/jules-invoke@v1
+        uses: google-labs-code/jules-action@v1.0.0
         with:
           prompt: |
             The CI workflow "PhiFlow Tests" has failed on the master branch.

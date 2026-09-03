@@ -18,7 +18,7 @@ jobs:
       - name: Invoke Jules
         # SECURITY: Only allow Greg (gwelby) to trigger Jules via issue labels
         if: ${{ contains(fromJSON('["gwelby", "greg"]'), github.event.issue.user.login) }}
-        uses: google-labs-code/jules-invoke@v1
+        uses: google-labs-code/jules-action@v1.0.0
         with:
           prompt: |
             Read AGENTS.md in this repo first for project conventions.
