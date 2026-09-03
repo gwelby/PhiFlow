@@ -1,0 +1,101 @@
+name: Jules PR Quality Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [master]
+
+jobs:
+  review:
+    # Only run on PRs from Jules-created branches
+    if: |
+      startsWith(github.head_ref, 'fix-') ||
+      startsWith(github.head_ref, 'jules-') ||
+      startsWith(github.head_ref, 'fix/') ||
+      contains(github.event.pull_request.title, 'Jules') ||
+      contains(github.event.pull_request.body, 'jules.google.com')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install gh CLI
+        run: |
+          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update && sudo apt install gh -y
+
+      - name: Run PR quality review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Download the review script from the Jules workspace repo
+          gh api repos/gwelby/Jules/contents/scripts/pr_review.py --jq '.content' | base64 -d > pr_review.py
+
+          # Run the review
+          python3 pr_review.py --repo ${{ github.repository }} --pr ${{ github.event.pull_request.number }} --json > review_result.json 2>/dev/null || true
+
+          # Also get markdown output
+          python3 pr_review.py --repo ${{ github.repository }} --pr ${{ github.event.pull_request.number }} > review_result.md 2>/dev/null || true
+
+      - name: Comment on PR with review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Build the comment
+          PR_NUM=${{ github.event.pull_request.number }}
+          VERDICT=$(python3 -c "import json; d=json.load(open('review_result.json')); print(d['verdict'])" 2>/dev/null || echo "ERROR")
+
+          # Find and delete any existing review comment from this bot
+          EXISTING=$(gh pr view $PR_NUM -R ${{ github.repository }} --json comments --jq '.comments[] | select(.author.login == "github-actions[bot]") | .id' 2>/dev/null || echo "")
+          for id in $EXISTING; do
+            gh api -X DELETE repos/${{ github.repository }}/issues/comments/$id 2>/dev/null || true
+          done
+
+          # Post the review as a comment
+          {
+            echo "## 🔍 Jules Quality Gate Review"
+            echo ""
+            cat review_result.md 2>/dev/null || echo "Review failed to generate output."
+            echo ""
+            echo "---"
+            echo "*Automated review by [pr_review.py](https://github.com/gwelby/Jules/blob/master/scripts/pr_review.py) from the Jules workspace.*"
+          } > comment.md
+
+          gh pr comment $PR_NUM -R ${{ github.repository }} --body-file comment.md
+
+      - name: Add label based on verdict
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+          VERDICT=$(python3 -c "import json; d=json.load(open('review_result.json')); print(d['verdict'])" 2>/dev/null || echo "ERROR")
+
+          # Remove old labels
+          gh pr edit $PR_NUM -R ${{ github.repository }} --remove-label "quality:pass" 2>/dev/null || true
+          gh pr edit $PR_NUM -R ${{ github.repository }} --remove-label "quality:warn" 2>/dev/null || true
+          gh pr edit $PR_NUM -R ${{ github.repository }} --remove-label "quality:fail" 2>/dev/null || true
+
+          # Create labels if they don't exist
+          gh label create "quality:pass" -R ${{ github.repository }} --color "0E8A16" --description "Quality gate passed" 2>/dev/null || true
+          gh label create "quality:warn" -R ${{ github.repository }} --color "BFD4F2" --description "Quality gate warnings — review before merge" 2>/dev/null || true
+          gh label create "quality:fail" -R ${{ github.repository }} --color "D93F0B" --description "Quality gate failed — do not merge" 2>/dev/null || true
+
+          # Add label based on verdict
+          case $VERDICT in
+            PASS) gh pr edit $PR_NUM -R ${{ github.repository }} --add-label "quality:pass" ;;
+            WARN) gh pr edit $PR_NUM -R ${{ github.repository }} --add-label "quality:warn" ;;
+            FAIL) gh pr edit $PR_NUM -R ${{ github.repository }} --add-label "quality:fail" ;;
+          esac
