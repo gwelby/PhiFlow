@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import asdict
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -71,7 +72,10 @@ def _load_wasm_input(path: Path) -> str | bytes:
 
 def _resolve_phic_binary(repo_root: Path) -> Path:
     exe_name = "phic.exe" if sys.platform.startswith("win") else "phic"
-    phic_path = repo_root / "target" / "debug" / exe_name
+    target_dir = Path(os.environ.get("CARGO_TARGET_DIR", "target"))
+    if not target_dir.is_absolute():
+        target_dir = repo_root / target_dir
+    phic_path = target_dir / "debug" / exe_name
     if phic_path.exists():
         return phic_path
 
