@@ -12,7 +12,10 @@ from typing import Any
 if __package__ is None or __package__ == "":
     sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from p1_host.host import P1Host
+try:
+    from p1_host.host import P1Host
+except ImportError:
+    P1Host = None
 
 REQUIRED_DIAGNOSTIC_FIELDS = {
     "error_code",
