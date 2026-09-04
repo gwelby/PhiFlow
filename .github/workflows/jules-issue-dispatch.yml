@@ -41,6 +41,14 @@ jobs:
             5. If the issue asks for tests, add them
             6. Open a PR that references this issue (use "Fixes #N" in the description)
 
+            CONSTRAINTS — CRITICAL:
+            - Touch ONLY the files needed to fix the issue. Do NOT touch unrelated files.
+            - Do NOT delete tests. SKIP them with @unittest.skipIf(condition, reason) if a dependency is missing.
+            - Do NOT use sys.exit() in test files. Use pytest.skip() or skipIf().
+            - Do NOT use unconditional @pytest.mark.skip. Always use conditional skip (skipIf).
+            - Keep the PR under 200 lines if possible. Minimal changes only.
+            - Do NOT refactor, reformat, or "clean up" code that isn't directly related to the issue.
+
             Do NOT merge your own PR. Leave it for Greg to review.
           jules_api_key: ${{ secrets.JULES_API_KEY }}
           starting_branch: master
