@@ -941,8 +941,8 @@ fn sacred_geometry_command(pattern: &str) {
 fn consciousness_info_command() {
     use phiflow::consciousness::consciousness_math::{
         BreathingCalibration, CONSCIOUSNESS_FREQUENCIES,
-        GREG_ADHD_FOCUS, GREG_ANXIETY_RELIEF, GREG_DEPRESSION_HEALING,
-        GREG_SEIZURE_ELIMINATION, TRINITY_FIBONACCI_PHI,
+        RESEARCH_ADHD_FOCUS, RESEARCH_ANXIETY_RELIEF, RESEARCH_DEPRESSION_HEALING,
+        RESEARCH_SEIZURE_ELIMINATION, TRINITY_FIBONACCI_PHI,
     };
 
     let freq_table: Vec<serde_json::Value> = CONSCIOUSNESS_FREQUENCIES
@@ -976,11 +976,12 @@ fn consciousness_info_command() {
     let payload = serde_json::json!({
         "trinity_fibonacci_phi_hz": TRINITY_FIBONACCI_PHI,
         "consciousness_frequencies": freq_table,
-        "therapeutic_protocols": {
-            "seizure_elimination": GREG_SEIZURE_ELIMINATION,
-            "adhd_focus": GREG_ADHD_FOCUS,
-            "anxiety_relief": GREG_ANXIETY_RELIEF,
-            "depression_healing": GREG_DEPRESSION_HEALING,
+        "research_frequency_hypotheses": {
+            "disclaimer": "Research hypotheses only — NOT clinically validated. Do not use for medical purposes.",
+            "seizure_elimination": RESEARCH_SEIZURE_ELIMINATION,
+            "adhd_focus": RESEARCH_ADHD_FOCUS,
+            "anxiety_relief": RESEARCH_ANXIETY_RELIEF,
+            "depression_healing": RESEARCH_DEPRESSION_HEALING,
         },
         "breathing_calibrations": breathing,
     });

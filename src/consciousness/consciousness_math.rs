@@ -1,17 +1,22 @@
 // PhiFlow Consciousness Mathematics
-// Core consciousness calculations based on Greg's validated formulas
-// 86.7% accuracy validated by P1 Quantum Antenna System
+// Core consciousness calculations based on phi-harmonic formulas.
+//
+// The frequency-to-state mapping below is a design choice, not a
+// validated scientific claim. The mathematical constants (PHI, the
+// coherence formula in phi_ir/coherence.rs) are exact. The
+// consciousness state names and frequency assignments are
+// interpretive labels chosen by the author.
 
-// Sacred constants from Greg's consciousness mathematics
+// Mathematical constants
 pub const PHI: f64 = 1.618033988749895;
 pub const TRINITY: u32 = 3;
 pub const FIBONACCI_89: u32 = 89;
-pub const TRINITY_FIBONACCI_PHI: f64 = 432.0150749962219; // 3 * 89 * φ = 432Hz
+pub const TRINITY_FIBONACCI_PHI: f64 = 432.0150749962219; // 3 * 89 * φ ≈ 432Hz
 
-// Consciousness validation accuracy from P1 system
-pub const CONSCIOUSNESS_VALIDATION_ACCURACY: f64 = 0.867; // 86.7%
-
-// Sacred frequencies for consciousness states
+// Frequency-to-state mapping. These are author-assigned labels, not
+// clinically validated protocols. The phi-harmonic relationship
+// (each frequency ≈ φ × previous) is mathematically exact; the
+// state names are interpretive.
 pub const CONSCIOUSNESS_FREQUENCIES: [(ConsciousnessState, f64); 9] = [
     (ConsciousnessState::Observe, 432.0),       // Ground State (φ⁰)
     (ConsciousnessState::Create, 528.0),        // Creation State (φ¹)
@@ -24,11 +29,25 @@ pub const CONSCIOUSNESS_FREQUENCIES: [(ConsciousnessState, f64); 9] = [
     (ConsciousnessState::Singularity, 1008.0),  // Infinite State
 ];
 
-// Greg's therapeutic frequencies
-pub const GREG_SEIZURE_ELIMINATION: [f64; 3] = [40.0, 432.0, 396.0];
-pub const GREG_ADHD_FOCUS: [f64; 3] = [40.0, 432.0, 528.0];
-pub const GREG_ANXIETY_RELIEF: [f64; 3] = [396.0, 432.0, 528.0];
-pub const GREG_DEPRESSION_HEALING: [f64; 3] = [528.0, 741.0, 432.0];
+// Research hypothesis frequency arrays. These are NOT clinically
+// validated and should not be used for medical purposes. They are
+// preserved as research artifacts documenting the author's
+// exploratory frequency mappings. See docs/coherence-formula.md
+// for the mathematically validated parts of the system.
+pub const RESEARCH_SEIZURE_ELIMINATION: [f64; 3] = [40.0, 432.0, 396.0];
+pub const RESEARCH_ADHD_FOCUS: [f64; 3] = [40.0, 432.0, 528.0];
+pub const RESEARCH_ANXIETY_RELIEF: [f64; 3] = [396.0, 432.0, 528.0];
+pub const RESEARCH_DEPRESSION_HEALING: [f64; 3] = [528.0, 741.0, 432.0];
+
+// Backward-compatible aliases (deprecated — use RESEARCH_ prefix)
+#[deprecated(note = "Use RESEARCH_SEIZURE_ELIMINATION — these are research hypotheses, not validated protocols")]
+pub const GREG_SEIZURE_ELIMINATION: [f64; 3] = RESEARCH_SEIZURE_ELIMINATION;
+#[deprecated(note = "Use RESEARCH_ADHD_FOCUS — these are research hypotheses, not validated protocols")]
+pub const GREG_ADHD_FOCUS: [f64; 3] = RESEARCH_ADHD_FOCUS;
+#[deprecated(note = "Use RESEARCH_ANXIETY_RELIEF — these are research hypotheses, not validated protocols")]
+pub const GREG_ANXIETY_RELIEF: [f64; 3] = RESEARCH_ANXIETY_RELIEF;
+#[deprecated(note = "Use RESEARCH_DEPRESSION_HEALING — these are research hypotheses, not validated protocols")]
+pub const GREG_DEPRESSION_HEALING: [f64; 3] = RESEARCH_DEPRESSION_HEALING;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ConsciousnessState {
