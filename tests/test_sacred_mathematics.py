@@ -7,11 +7,13 @@ Tests phi-harmonic calculations, sacred geometry, and ancient wisdom systems
 import pytest
 import sys
 import os
-import numpy as np
 from unittest.mock import Mock, patch
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
+
+pytest.importorskip("numpy")
+import numpy as np
 
 @pytest.mark.sacred_math
 @pytest.mark.phi_harmonic
