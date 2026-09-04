@@ -30,6 +30,7 @@ declare -A EXAMPLES=(
     ["adaptive"]="examples/adaptive_witness.phi"
     ["healing"]="examples/healing_bed.phi"
     ["agent"]="examples/autonomous_agent.phi"
+    ["degrading"]="examples/degrading_agent.phi"
 )
 
 TMPDIR=$(mktemp -d)

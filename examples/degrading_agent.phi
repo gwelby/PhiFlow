@@ -1,0 +1,68 @@
+// degrading_agent.phi — The agent that triggers its own emergency stop.
+//
+// This agent does the same data analysis but resonates on EVERY cycle.
+// The key difference from autonomous_agent.phi: no stream. Inside a stream,
+// resonate replaces the field (keeps only latest). Outside a stream,
+// resonate accumulates — so phase decay kicks in.
+//
+// At depth 2 (intention "data_analysis" + intention "monitor"), after 5
+// resonations, phase(k) drops enough that C(2,k) ≤ 0.10. The emergency
+// stop should fire.
+//
+// This is the test: does the agent stop itself when its own coherence
+// degrades from being too noisy?
+
+let safety_floor = 0.10
+let max_cycles = 15.0
+let cycle = 0.0
+let done = 0.0
+
+function fake_reading(n: Number) -> Number {
+    let noise = 1.0 / (n + 1.0)
+    let signal = 0.5 + (n * 0.05)
+    return signal + noise
+}
+
+function confidence(reading: Number, n: Number) -> Number {
+    let expected = 0.5 + (n * 0.05)
+    let diff = reading - expected
+    if diff < 0.0 {
+        diff = 0.0 - diff
+    }
+    let conf = 1.0 - diff
+    if conf < 0.0 {
+        return 0.0
+    }
+    if conf > 1.0 {
+        return 1.0
+    }
+    return conf
+}
+
+intention "data_analysis" {
+    intention "monitor" {
+        // Now at depth 2. Resonances here accumulate (no stream to replace them).
+        while done < 1.0 {
+            cycle = cycle + 1.0
+            let reading = fake_reading(cycle)
+            let conf = confidence(reading, cycle)
+
+            // NOISY: resonate every cycle. Values accumulate outside a stream.
+            resonate conf
+
+            let current_coherence = coherence
+            witness current_coherence
+
+            // Emergency stop: coherence has degraded from too much resonance.
+            if current_coherence <= safety_floor {
+                witness current_coherence
+                done = 1.0
+            }
+
+            // Timeout.
+            if cycle >= max_cycles {
+                done = 1.0
+            }
+        }
+    }
+}

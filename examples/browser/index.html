@@ -431,6 +431,7 @@
                         <button class="example-btn" data-example="adaptive">adaptive_witness.phi</button>
                         <button class="example-btn" data-example="healing">healing_bed.phi</button>
                         <button class="example-btn" data-example="agent">autonomous_agent.phi</button>
+                        <button class="example-btn" data-example="degrading">degrading_agent.phi</button>
                     </div>
 
                     <textarea class="code-editor" id="codeEditor" spellcheck="false"></textarea>
@@ -740,6 +741,64 @@ intention "data_analysis" {
     let final_coherence = coherence
     resonate final_coherence
     witness final_coherence
+}`,
+
+            degrading: `// degrading_agent.phi — The agent that triggers its own emergency stop.
+//
+// This agent resonates on EVERY cycle (noisy). The coherence formula's
+// phase decay means: more resonances = lower coherence. After 5 resonations
+// at depth 2, coherence drops below 0.10 (the safety floor).
+// The agent STOPS ITSELF — not because data is bad, but because ITS OWN
+// coherence has degraded from being too noisy.
+//
+// Without the safety floor, this agent runs all 15 cycles.
+// With the safety floor, it stops after 5. The formula predicted this.
+
+let safety_floor = 0.10
+let max_cycles = 15.0
+let cycle = 0.0
+let done = 0.0
+
+function fake_reading(n: Number) -> Number {
+    let noise = 1.0 / (n + 1.0)
+    let signal = 0.5 + (n * 0.05)
+    return signal + noise
+}
+
+function confidence(reading: Number, n: Number) -> Number {
+    let expected = 0.5 + (n * 0.05)
+    let diff = reading - expected
+    if diff < 0.0 {
+        diff = 0.0 - diff
+    }
+    let conf = 1.0 - diff
+    if conf < 0.0 {
+        return 0.0
+    }
+    if conf > 1.0 {
+        return 1.0
+    }
+    return conf
+}
+
+intention "data_analysis" {
+    intention "monitor" {
+        while done < 1.0 {
+            cycle = cycle + 1.0
+            let reading = fake_reading(cycle)
+            let conf = confidence(reading, cycle)
+            resonate conf
+            let current_coherence = coherence
+            witness current_coherence
+            if current_coherence <= safety_floor {
+                witness current_coherence
+                done = 1.0
+            }
+            if cycle >= max_cycles {
+                done = 1.0
+            }
+        }
+    }
 }`
         };
 

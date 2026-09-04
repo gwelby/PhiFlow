@@ -661,6 +661,298 @@ const WAT_MODULES = {
 )
 `,
 
+  "degrading": `(module
+  (import "phi" "witness" (func \$phi_witness (param i32) (result f64)))
+  (import "phi" "sensor" (func \$phi_sensor (param i32) (result f64)))
+  (import "phi" "resonate" (func \$phi_resonate (param f64)))
+  (import "phi" "coherence" (func \$phi_coherence (result f64)))
+  (import "phi" "intention_push" (func \$phi_intention_push (param i32)))
+  (import "phi" "intention_pop" (func \$phi_intention_pop))
+  (import "phi" "field_coherence" (func \$phi_field_coherence (result f64)))
+  (import "phi" "dissonance" (func \$phi_dissonance (result f64)))
+  (import "phi" "coherence_of" (func \$phi_coherence_of (param i32) (result f64)))
+  (import "phi" "remember" (func \$phi_remember (param i32 f64)))
+  (import "phi" "recall" (func \$phi_recall (param i32) (result f64)))
+  (import "phi" "broadcast" (func \$phi_broadcast (param i32 f64)))
+  (import "phi" "listen" (func \$phi_listen (param i32) (result f64)))
+  (import "phi" "void_depth" (func \$phi_void_depth (result f64)))
+  (memory (export "memory") 1)
+  (global \$intention_depth (mut i32) (i32.const 0))
+  (global \$coherence_score (mut f64) (f64.const 0.618))
+  (global \$string_len (export "string_len") (mut i32) (i32.const 0))
+  (func (export "phi_run") (result f64)
+    (local \$r0 f64)
+    (local \$r1 f64)
+    (local \$r2 f64)
+    (local \$r3 f64)
+    (local \$r4 f64)
+    (local \$r5 f64)
+    (local \$r6 f64)
+    (local \$r7 f64)
+    (local \$r8 f64)
+    (local \$r9 f64)
+    (local \$r10 f64)
+    (local \$r11 f64)
+    (local \$r12 f64)
+    (local \$r13 f64)
+    (local \$r14 f64)
+    (local \$r15 f64)
+    (local \$r16 f64)
+    (local \$r17 f64)
+    (local \$r18 f64)
+    (local \$r19 f64)
+    (local \$r20 f64)
+    (local \$r21 f64)
+    (local \$r22 f64)
+    (local \$r23 f64)
+    (local \$r24 f64)
+    (local \$r25 f64)
+    (local \$r26 f64)
+    (local \$r27 f64)
+    (local \$r28 f64)
+    (local \$r29 f64)
+    (local \$r30 f64)
+    (local \$r31 f64)
+    (local \$r32 f64)
+    (local \$r33 f64)
+    (local \$r34 f64)
+    (local \$r35 f64)
+    (local \$r36 f64)
+    (local \$r37 f64)
+    (local \$r38 f64)
+    (local \$r39 f64)
+    (local \$r40 f64)
+    (local \$r41 f64)
+    (local \$r42 f64)
+    (local \$r43 f64)
+    (local \$r44 f64)
+    (local \$r45 f64)
+    (local \$r46 f64)
+    (local \$r47 f64)
+    (local \$r48 f64)
+    (local \$r49 f64)
+    (local \$r50 f64)
+    (local \$r51 f64)
+    (local \$r52 f64)
+    (local \$r53 f64)
+    (local \$r54 f64)
+    (local \$r55 f64)
+    (local \$r56 f64)
+    (local \$r57 f64)
+    (local \$r58 f64)
+    (local \$r59 f64)
+    (local \$r60 f64)
+    (local \$r61 f64)
+    (local \$r62 f64)
+    (local \$r63 f64)
+    (local \$r64 f64)
+    (local \$r65 f64)
+    (local \$r66 f64)
+    (local \$r67 f64)
+    (local \$r68 f64)
+    (local \$r69 f64)
+    (local \$result f64)
+    ;; Block 0
+    f64.const 0.1
+    local.set \$r0
+    local.get \$r0
+    local.set \$result
+    nop ;; StoreVar \$r0
+    f64.const 15
+    local.set \$r1
+    local.get \$r1
+    local.set \$result
+    nop ;; StoreVar \$r1
+    f64.const 0
+    local.set \$r2
+    local.get \$r2
+    local.set \$result
+    nop ;; StoreVar \$r2
+    f64.const 0
+    local.set \$r3
+    local.get \$r3
+    local.set \$result
+    nop ;; StoreVar \$r3
+    ;; intention "data_analysis" (name len fallback)
+    i32.const 13
+    call \$phi_intention_push
+    ;; intention "monitor" (name len fallback)
+    i32.const 7
+    call \$phi_intention_push
+    ;; Block 16
+    local.get \$r69
+    local.set \$r45
+    local.get \$r45
+    local.set \$result
+    f64.const 1
+    local.set \$r46
+    local.get \$r46
+    local.set \$result
+    local.get \$r45
+        local.get \$r46
+    f64.lt
+    f64.convert_i32_s
+    local.set \$r47
+    local.get \$r47
+    local.set \$result
+    local.get \$r47
+    f64.const 0.0
+    f64.ne
+    (if
+      (then
+        ;; -> block 17
+      )
+      (else
+        ;; -> block 18
+      )
+    )
+    ;; Block 17
+    local.get \$r50
+    local.set \$r48
+    local.get \$r48
+    local.set \$result
+    f64.const 1
+    local.set \$r49
+    local.get \$r49
+    local.set \$result
+    local.get \$r48
+        local.get \$r49
+    f64.add
+    local.set \$r50
+    local.get \$r50
+    local.set \$result
+    nop ;; StoreVar \$r50
+    local.get \$r50
+    local.set \$r51
+    local.get \$r51
+    local.set \$result
+    i64.const 9221120249925992448
+    f64.reinterpret_i64 ;; unresolved call fake_reading
+    local.set \$r52
+    local.get \$r52
+    local.set \$result
+    nop ;; StoreVar \$r52
+    local.get \$r52
+    local.set \$r53
+    local.get \$r53
+    local.set \$result
+    local.get \$r50
+    local.set \$r54
+    local.get \$r54
+    local.set \$result
+    i64.const 9221120249925992448
+    f64.reinterpret_i64 ;; unresolved call confidence
+    local.set \$r55
+    local.get \$r55
+    local.set \$result
+    nop ;; StoreVar \$r55
+    local.get \$r55
+    local.set \$r56
+    local.get \$r56
+    local.set \$result
+    local.get \$r56
+    call \$phi_resonate
+    call \$phi_coherence
+    local.set \$r57
+    local.get \$r57
+    local.set \$result
+    nop ;; StoreVar \$r57
+    local.get \$r57
+    local.set \$r58
+    local.get \$r58
+    local.set \$result
+    i32.const 58
+    call \$phi_witness
+    local.set \$r59
+    local.get \$r59
+    local.set \$result
+    local.get \$r57
+    local.set \$r60
+    local.get \$r60
+    local.set \$result
+    local.get \$r0
+    local.set \$r61
+    local.get \$r61
+    local.set \$result
+    local.get \$r60
+        local.get \$r61
+    f64.le
+    f64.convert_i32_s
+    local.set \$r62
+    local.get \$r62
+    local.set \$result
+    local.get \$r62
+    f64.const 0.0
+    f64.ne
+    (if
+      (then
+        ;; -> block 19
+      )
+      (else
+        ;; -> block 20
+      )
+    )
+    ;; Block 19
+    local.get \$r57
+    local.set \$r63
+    local.get \$r63
+    local.set \$result
+    i32.const 63
+    call \$phi_witness
+    local.set \$r64
+    local.get \$r64
+    local.set \$result
+    f64.const 1
+    local.set \$r65
+    local.get \$r65
+    local.set \$result
+    nop ;; StoreVar \$r65
+    ;; Block 21
+    local.get \$r50
+    local.set \$r66
+    local.get \$r66
+    local.set \$result
+    local.get \$r1
+    local.set \$r67
+    local.get \$r67
+    local.set \$result
+    local.get \$r66
+        local.get \$r67
+    f64.ge
+    f64.convert_i32_s
+    local.set \$r68
+    local.get \$r68
+    local.set \$result
+    local.get \$r68
+    f64.const 0.0
+    f64.ne
+    (if
+      (then
+        ;; -> block 22
+      )
+      (else
+        ;; -> block 23
+      )
+    )
+    ;; Block 22
+    f64.const 1
+    local.set \$r69
+    local.get \$r69
+    local.set \$result
+    nop ;; StoreVar \$r69
+    ;; Block 24
+    ;; Block 23
+    ;; Block 20
+    ;; Block 18
+    call \$phi_intention_pop
+    call \$phi_intention_pop
+    local.get \$r0
+    local.set \$result
+    local.get \$result
+  )
+)
+`,
+
   "agent": `(module
   (import "phi" "witness" (func \$phi_witness (param i32) (result f64)))
   (import "phi" "sensor" (func \$phi_sensor (param i32) (result f64)))

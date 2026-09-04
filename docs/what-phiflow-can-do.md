@@ -90,7 +90,7 @@ In the autonomous agent demo, the agent resonates only when confidence > 0.8 (si
 
 ### 5. A program whose stopping condition is its own structural alignment
 
-**Grade: ARGUED 0.55**
+**Grade: CONDITIONAL 0.70** (upgraded from ARGUED 0.55 — the emergency stop now has empirical evidence)
 
 The autonomous agent has three stopping conditions:
 1. Success (data confidence ≥ threshold) — external
@@ -99,9 +99,11 @@ The autonomous agent has three stopping conditions:
 
 The emergency stop is qualitatively different from any stopping condition in a conventional language. It says: "stop because my own structure has degraded." Not "stop because the data is bad" or "stop because time is up." Stop because *I am no longer aligned enough to continue safely*.
 
+**The evidence:** The degrading agent (`examples/degrading_agent.phi`) triggers the emergency stop after 5 cycles. Without the safety floor, it runs all 15 cycles (verified). With the safety floor, it stops after 5 — the formula predicted this (C(2,5) = 0.618 × 0.124 = 0.077 ≤ 0.10). The agent detected its own coherence degradation from being too noisy and stopped itself. No external monitor told it to stop. No timeout fired.
+
 **Why this is impossible without PhiFlow:** In Python, you can check a variable and break. But the variable is something you defined — it's not a measure of your own structural alignment. In PhiFlow, `coherence` is a measure of the program's own execution structure (depth and resonance cardinality). The program is checking a property of *itself*, not of the data.
 
-**What this enables:** Self-limiting autonomous systems. An agent that stops when its own structure degrades — not when an external monitor says to stop, not when a timeout fires, but when its own alignment state says "I am no longer safe to continue." This is the primitive that matters most for autonomous AI safety, and it is ARGUED 0.55 because it has not been tested in a production system where the guardrail actually prevents harm.
+**What this enables:** Self-limiting autonomous systems. An agent that stops when its own structure degrades — not when an external monitor says to stop, not when a timeout fires, but when its own alignment state says "I am no longer safe to continue." The guardrail fires under conditions the formula predicts (CONDITIONAL 0.70). It has not been tested in a production system where the guardrail prevents a harmful action.
 
 ## What Is NOT Impossible (Honest Contradictions)
 
