@@ -14,7 +14,6 @@ Tests Requirements 3.1-3.5 for the Integration Engine.
 """
 
 import pytest
-pytest.importorskip("integration.rust_python_bridge")
 import asyncio
 import numpy as np
 import time

@@ -4,7 +4,6 @@ Comprehensive test framework for PhiFlow components
 """
 
 import pytest
-pytest.importorskip("phi_quantum_interface")
 import sys
 import os
 import numpy as np

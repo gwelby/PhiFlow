@@ -7,7 +7,6 @@ full CUDA/hardware dependencies. Used for validating Task 4 completion.
 """
 
 import pytest
-pytest.importorskip("integration.rust_python_bridge")
 import numpy as np
 import time
 import json

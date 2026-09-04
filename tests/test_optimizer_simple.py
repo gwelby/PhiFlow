@@ -4,15 +4,16 @@ Simple test for PhiFlow Phi-Quantum Optimizer real algorithms
 Focuses on correctness rather than performance timing
 """
 
+import pytest
+pytest.importorskip("numpy")
 import sys
 import os
-import pytest
-pytest.importorskip("optimization.phi_quantum_optimizer")
 import time
-import numpy as np
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
+pytest.importorskip("optimization.phi_quantum_optimizer")
+import numpy as np
 
 from optimization.phi_quantum_optimizer import (
     PhiQuantumOptimizer, 
