@@ -2,7 +2,18 @@
 
 **Purpose:** Pass forward the one mathematical observation from PhiFlow that is relevant to Fundamentals' open question on self-referential coherence.
 
-**Status:** Candidate formalization, not a claim. Grade: INTUITION 0.35 for "this is the right formalization," DERIVED 0.95 for "the algebra is correct."
+**Status:** **WITHDRAWN as a candidate for Fundamentals layer 4 coherence.** The formula does not meet the canonical coherence definition's requirements (system, relation, metric, window, threshold). The φ⁻¹ "fixed point" is circular (φ baked into the formula produces φ-related outputs). The self-similarity holds at d=2 only, not generally. The bridge is retained as a record of the submission and the Fundamentals assessment.
+
+**Correction (2026-09-04):** This document was submitted to the Fundamentals inbox and assessed by Claude. The assessment found that:
+1. The φ⁻¹ "fixed point" is φ's defining equation rearranged, not a discovery about self-reference
+2. The "self-verification" claim (DERIVED 0.90) does not survive the source — both paths use the same hardcoded φ constant
+3. The formula does not satisfy Fundamentals' canonical coherence definition (no system, relation, metric, window, or threshold for a physical system)
+4. C(d,k) is presented as a universal scalar, which the canonical definition explicitly warns against
+5. Falsification test #1 is unfalsifiable as written (requires an independent measure that test #2 admits may not exist)
+
+The assessment's disposition: file as received, do not promote to CLAIMS.md, do not cite in the manuscript. The transfer contract practice was noted as exemplary. The engineering (mandatory audit trails, noise penalties, self-halting) is real language design worth keeping, but it is not physics.
+
+The original document is retained below for the record.
 
 ## The Open Question in Fundamentals
 

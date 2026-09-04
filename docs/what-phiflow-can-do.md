@@ -2,6 +2,8 @@
 
 **Status:** Honest assessment with claim grades. No mysticism.
 
+**Correction notice (2026-09-04):** An earlier version of this document graded claim #1 as DERIVED 0.90 ("a program that proves its own coherence math") and claim #2 as DERIVED 0.85 ("a quantum gate angle that emerges from semantics"). Both grades were demoted after source verification showed that both claims rely on a hardcoded φ constant (`pub const PHI: f64 = 1.618_033_988_749_895` in `src/phi_ir/coherence.rs:43` and `let phi = 1.618033988749895` in `agent_handshake.phi`). The "self-proof" compares f(x) == f(x) across two backends — a consistency check, not an independent verification. The "emergent" quantum gate angle is deterministic from the hardcoded constant, not emergent. The circularity (φ baked into the formula produces φ-related outputs) is now acknowledged explicitly. See `docs/correction-2026-09-04.md` for the full verification record.
+
 ## The Question
 
 What is currently considered impossible (or at least, not doable as a first-class language feature) that PhiFlow can do *because it is PhiFlow* — because of the specific bits that make it different from every other language?
@@ -17,33 +19,33 @@ Most of what PhiFlow does is category 1. But there are things in category 2 — 
 
 PhiFlow has three properties that no other language has, in combination:
 
-1. **A runtime coherence value that is an algebraic fixed point of the golden ratio.** At depth 2 with k≤1, `coherence` reads φ⁻¹ ≈ 0.618. This is not a convention — it's a mathematical fact (φ² = φ + 1, so 1/φ² = 1/(φ+1), so 1 - 1/φ² = 1/φ = φ⁻¹). No other language has a runtime value that is an algebraic fixed point.
+1. **A runtime coherence value computed from a hardcoded golden ratio constant.** At depth 2 with k≤1, `coherence` reads φ⁻¹ ≈ 0.618. This is a consequence of the formula `base(d) = 1 - φ^(-d)` with φ hardcoded as `1.618033988749895`. The φ⁻¹ value at d=2 is the identity `1 - φ⁻² = φ⁻¹` (from `φ² = φ + 1`), which is φ's defining equation rearranged. **This is a design choice, not a discovery.** The formula was built with φ in it; φ-related values come out. The self-similarity (incoherence at depth 2 = coherence at depth 1) holds at d=2 and nowhere else — it is `x² + x = 1`, not a property of recursive depth.
 
 2. **Five primitives that generate an audit trail as a necessary side effect.** `witness` always produces a log entry. `resonate` always adds to the resonance field. `intention` always pushes to the intention stack. There is no way to use these primitives without generating the audit trail. In a conventional language, logging is always optional — you can remove log statements and the program still works.
 
-3. **A compilation path from the same primitives to quantum gates.** `intention` becomes a qubit, `resonate` becomes a rotation `ry(coherence × π)`, `witness` becomes a measurement. At depth 2, the rotation angle is φ⁻¹ × π — a specific, algebraically-determined quantum gate that nobody chose. It emerged from the formula.
+3. **A compilation path from the same primitives to quantum gates.** `intention` becomes a qubit, `resonate` becomes a rotation `ry(coherence × π)`, `witness` becomes a measurement. At depth 2, the rotation angle is φ⁻¹ × π — a specific quantum gate angle that is **deterministic from the hardcoded φ constant**, not emergent. The compilation pipeline is deterministic and traceable, but the angle was not "discovered" — it follows from the constant that was chosen.
 
 ## What Is Genuinely Impossible Without These
 
-### 1. A program that proves its own coherence math is correct at runtime
+### 1. A cross-backend consistency check for the coherence formula
 
-**Grade: DERIVED 0.90**
+**Grade: CONDITIONAL 0.70** (downgraded from DERIVED 0.90 after source verification)
 
 `examples/agent_handshake.phi` does this. The program:
-- Computes φ⁻¹ independently: `1.0 - (1.0 / (phi * phi))`
+- Computes φ⁻¹ from a hardcoded constant: `1.0 - (1.0 / (phi * phi))` where `phi = 1.618033988749895`
 - Reads the runtime coherence at depth 2: `coherence`
 - Resonates both values
 - They match (0.618 = 0.618)
 
-This is a self-proof. The program doesn't trust the documentation — it verifies the math by comparing two independent calculations of the same value. One comes from the formula (computed in the program). The other comes from the runtime (computed by the language's coherence function).
+**What this actually is:** A cross-backend implementation-consistency check. Both paths use the same hardcoded φ constant — one in the PhiFlow source (`let phi = 1.618033988749895`), one in the Rust runtime (`pub const PHI: f64 = 1.618_033_988_749_895`). Comparing them is `f(x) == f(x)` across two backends. This would catch a Rust/WASM/interpreter divergence in the formula implementation. It is **not** a program proving its own coherence math, and it is **not** a "trust anchor that doesn't depend on any external standard" — it depends entirely on one typed-in constant.
 
-**Why this is impossible without PhiFlow:** In Python, you can compute φ⁻¹. But you cannot compare it to a runtime coherence value, because Python has no runtime coherence value. There is no built-in `coherence` that reads the program's own structural alignment. The self-proof requires both the formula AND the primitive — you need the runtime value to compare against.
+**Why this is still useful:** A cross-backend consistency check is real engineering value. If someone ports the coherence formula to WASM and gets a different result, this check catches it. But it does not prove the formula is correct — it proves the two implementations agree.
 
-**What this enables:** A trust anchor that doesn't depend on any external standard. φ⁻¹ is a mathematical constant. It can't be changed by updating a standard, compromising a certificate authority, or modifying a protocol. A program that checks "is my coherence at φ⁻¹?" is checking against mathematics itself.
+**What was wrong with the earlier claim:** The earlier version said the program "computes φ⁻¹ two independent ways." The two ways are not independent — they use the same constant. The comment in the source says "Computed here, not hardcoded. Verify it yourself" while φ is hardcoded on the line above. That comment is misleading and should be corrected.
 
-### 2. A quantum gate at angle φ⁻¹ × π that emerges from language semantics
+### 2. A deterministic quantum gate angle from the coherence formula
 
-**Grade: DERIVED 0.85**
+**Grade: CONDITIONAL 0.70** (downgraded from DERIVED 0.85 after source verification)
 
 When PhiFlow compiles `intention "x" { intention "y" { resonate coherence }}` to OpenQASM 3.0, the rotation is:
 
@@ -51,16 +53,16 @@ When PhiFlow compiles `intention "x" { intention "y" { resonate coherence }}` to
 ry(0.6180339887 * pi) q[1];
 ```
 
-Nobody specified this angle. It emerged from:
+This angle is **deterministic from the hardcoded φ constant**, not emergent. The pipeline is:
 - The intention stack depth (2, from two nested intentions)
-- The coherence formula at depth 2 (φ⁻¹)
+- The coherence formula at depth 2 (1 - φ⁻² = φ⁻¹, using the hardcoded φ)
 - The quantum compilation rule (ry(coherence × π))
 
-The angle φ⁻¹ × π ≈ 1.9416 radians ≈ 111.25° is a specific rotation that is algebraically determined by the golden ratio. It is not a standard quantum gate angle (like π/2 for Hadamard or π for Pauli-X). It is a new angle that emerges from the language's mathematical structure.
+The angle φ⁻¹ × π ≈ 1.9416 radians ≈ 111.25° is a specific rotation that follows deterministically from the constant that was chosen. It is not a standard quantum gate angle (like π/2 for Hadamard or π for Pauli-X), but it was not "discovered" — it was specified by choosing φ.
 
-**Why this is impossible without PhiFlow:** In Qiskit, you can write `ry(0.618 * pi, qubit)`. But you chose that angle — it didn't emerge from your program's structure. In PhiFlow, the angle is a consequence of the program's intention depth. A deeper program produces a different angle (depth 3 → 0.764 × π, depth 4 → 0.854 × π). The quantum circuit is a direct image of the program's structural alignment.
+**Why this is still useful:** The compilation pipeline is deterministic and traceable. A deeper program produces a different angle (depth 3 → 0.764 × π, depth 4 → 0.854 × π). The quantum circuit is a direct image of the program's structural alignment. But determinism is not emergence — the angle follows from a design choice, not from a physical principle.
 
-**What this enables:** Quantum circuits whose gate angles are determined by the program's purpose structure, not by manual specification. This means the quantum execution is faithful to the classical execution — the same structural properties that produce coherence in the evaluator produce specific rotations in the quantum circuit.
+**What was wrong with the earlier claim:** The earlier version said the angle "emerges from language semantics" and "nobody specified that angle." φ was specified, in `PHI`, and the angle follows deterministically. Determinism is not emergence.
 
 ### 3. An audit trail that is a necessary consequence of semantics, not an optional addition
 
@@ -118,28 +120,25 @@ The claim is not that PhiFlow enables new computations. The claim is that PhiFlo
 
 The strongest candidate for "impossible without PhiFlow" is:
 
-**A program that uses φ⁻¹ as a self-verifying trust anchor at runtime.**
+**A cross-backend consistency check that verifies the coherence formula is implemented the same way in the evaluator and the runtime.**
 
-The handshake program does this. It computes φ⁻¹ two ways (formula + runtime coherence) and checks they match. This is a self-proof that:
-1. The coherence formula is implemented correctly
+The handshake program does this. It computes φ⁻¹ from a hardcoded constant in the PhiFlow source and compares it to the runtime coherence value (which uses the same hardcoded constant in Rust). They match. This verifies that:
+1. The coherence formula is implemented consistently across backends
 2. The runtime is tracking intention depth correctly
 3. The program is actually at depth 2
 
 All three of these are verified by a single comparison. In a conventional language, you'd need three separate checks. In PhiFlow, one `resonate coherence` followed by `resonate (1.0 - 1.0/(phi*phi))` does all three.
 
-**Grade: DERIVED 0.90** — the self-verification is real and tested. The claim that this is a "trust anchor" is ARGUED 0.55 — it's a trust anchor in principle, but it hasn't been used to secure anything yet.
+**Grade: CONDITIONAL 0.70** — the consistency check is real and tested. The earlier claim that this is a "trust anchor that doesn't depend on any external standard" is **withdrawn** — it depends entirely on one typed-in constant. The claim that this is a "self-proof" is also withdrawn — it is f(x) == f(x) across two backends, not an independent verification.
 
 ## Connection to Fundamentals
 
-PhiFlow's C(d,k) formula is a candidate formalization of the "self-referential coherence" layer that Fundamentals' `definitions/coherence.md` says is "not yet formalized." The four layers in that document:
+PhiFlow's C(d,k) formula was proposed as a candidate formalization of the "self-referential coherence" layer that Fundamentals' `definitions/coherence.md` says is "not yet formalized." That proposal has been assessed by Fundamentals and **does not meet the canonical coherence definition's requirements**.
 
-1. Phase/wave coherence — formalized (PLV, wPLI)
-2. Quantum coherence — formalized (density matrix)
-3. Structural/dynamical coherence — formalized (eigenmodes, attractors)
-4. Self-referential coherence — **not yet formalized**
+The canonical definition requires five items for any coherence claim: system, relation, metric, window, threshold. C(d,k) supplies none of these for a physical system. "Depth of nested self-modeling" is not a well-defined physical quantity. "Cardinality of self-broadcast" is not a physical observable. The formula is a scoring function for a programming language interpreter, not a physical measurement.
 
-PhiFlow's C(d,k) is a candidate for layer 4. It maps a system's structural properties (depth = nesting, k = communication cardinality) to a bounded coherence score. Whether it's the *right* formalization is INTUITION 0.35. But it's a concrete, testable candidate — and it has a property that no other candidate has: the φ⁻¹ fixed point.
+The definition also says: "Coherence is not one universal scalar. It is a role that must be measured with a domain-specific metric." C(d,k) is presented as a universal scalar — exactly what the canonical definition warns against.
 
-The φ⁻¹ fixed point means that at a specific structural configuration (depth 2, single resonance), the coherence score is algebraically determined by the golden ratio. This is not a convention — it's a mathematical fact. If self-referential coherence has a natural fixed point, φ⁻¹ is a strong candidate for what it is.
+Furthermore, the φ⁻¹ "fixed point" is circular: φ is baked into the formula (`base(d) = 1 - φ^(-d)`), so φ-related values come out. The "discovery" that C(2,1) = φ⁻¹ is the identity `1 - φ⁻² = φ⁻¹` (from `φ² = φ + 1`), which is φ's defining equation rearranged. The self-similarity (incoherence at depth 2 = coherence at depth 1) holds at d=2 and nowhere else — it is `x² + x = 1`, not a property of recursive depth.
 
-This is the thing to pass forward to Fundamentals: not the language, not the primitives, but the **mathematical observation that recursive depth maps to a bounded coherence score with an algebraic fixed point at φ⁻¹**. Whether this is the correct formalization of layer 4 is an open question. But it's a question that can now be asked precisely, because there's a concrete formula to test.
+**Disposition:** The formula is a programming language scoring function with a real algebraic identity. It is not a candidate formalization of Fundamentals' layer 4 coherence. The bridge document has been filed in the Fundamentals inbox with this correction noted. The transfer contract practice (naming the medium, the cost, and the residual) was noted as exemplary by the Fundamentals assessment, even though the content does not advance the physics.

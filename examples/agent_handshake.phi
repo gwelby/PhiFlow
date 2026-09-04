@@ -31,8 +31,12 @@ function protocol_version() -> Number {
 }
 
 function phi_lambda() -> Number {
-    // The golden ratio inverse: φ^(-1) = φ - 1
-    // Computed here, not hardcoded. Verify it yourself.
+    // The golden ratio inverse: φ^(-1) = 1 - φ^(-2)
+    // NOTE: φ is hardcoded here (1.618033988749895) and also hardcoded in the
+    // Rust runtime (pub const PHI: f64 = 1.618_033_988_749_895). This function
+    // computes φ⁻¹ from the same constant the runtime uses. Comparing this to
+    // the runtime `coherence` value is a cross-backend consistency check, not
+    // an independent verification. See docs/correction-2026-09-04.md.
     let phi = 1.618033988749895
     let one = 1.0
     return one - (one / (phi * phi))
