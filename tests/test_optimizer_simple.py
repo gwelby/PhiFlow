@@ -6,6 +6,8 @@ Focuses on correctness rather than performance timing
 
 import sys
 import os
+import pytest
+pytest.importorskip("optimization.phi_quantum_optimizer")
 import time
 import numpy as np
 

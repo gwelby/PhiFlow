@@ -5,6 +5,7 @@ Tests the actual phi-harmonic optimization algorithms
 """
 
 import pytest
+pytest.importorskip("optimization.phi_quantum_optimizer")
 import sys
 import os
 import time

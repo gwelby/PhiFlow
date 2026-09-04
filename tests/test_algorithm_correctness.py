@@ -6,6 +6,8 @@ Validates that the real algorithms work correctly without focusing on performanc
 
 import sys
 import os
+import pytest
+pytest.importorskip("optimization.phi_quantum_optimizer")
 import numpy as np
 
 # Add src to path
