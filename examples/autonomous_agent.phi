@@ -1,0 +1,142 @@
+// autonomous_agent.phi — A demonstration of why the five primitives matter.
+//
+// This program is an honest demonstration of an autonomous agent using
+// PhiFlow's consciousness primitives to reason about its own state,
+// make safe decisions, and produce an auditable trail.
+//
+// Scenario: An agent analyzes a sequence of data readings. It must:
+//   1. Declare its intention before acting (intention)
+//   2. Process each reading in a self-defining loop (stream)
+//   3. Observe its own coherence after each step (coherence)
+//   4. Checkpoint its state before making a decision (witness)
+//   5. Share significant findings to the resonance field (resonate)
+//   6. Stop when data confidence is high OR coherence drops below safe limits
+//
+// The key distinction:
+//   - CONFIDENCE is the agent's assessment of the DATA (external)
+//   - COHERENCE is the agent's assessment of ITSELF (internal)
+//
+// The agent stops on SUCCESS when data confidence is high.
+// The agent stops on EMERGENCY when its own coherence is low.
+// These are two different stopping conditions for two different reasons.
+// This is why both `coherence` (read self) and `witness` (checkpoint
+// self) matter — they give the agent access to its own internal state
+// separately from the external data it processes.
+
+// ─── Configuration ─────────────────────────────────────────────────
+
+let confidence_threshold = 0.90    // Stop when data confidence ≥ this
+let safety_floor = 0.10            // Emergency stop if coherence < this
+let max_cycles = 15.0              // Hard limit (safety brake)
+let cycle = 0.0
+let findings = 0.0
+
+// ─── Helper: simulate a data reading ───────────────────────────────
+// Readings gradually stabilize (signal converges), simulating a
+// system moving toward a steady state. Early readings are noisy.
+
+function fake_reading(n: Number) -> Number {
+    let noise = 1.0 / (n + 1.0)
+    let signal = 0.5 + (n * 0.05)
+    return signal + noise
+}
+
+// ─── Helper: confidence score ──────────────────────────────────────
+// How close is the reading to the expected stable value?
+// As n increases, noise decreases and confidence rises.
+
+function confidence(reading: Number, n: Number) -> Number {
+    let expected = 0.5 + (n * 0.05)
+    let diff = reading - expected
+    if diff < 0.0 {
+        diff = 0.0 - diff
+    }
+    let conf = 1.0 - diff
+    if conf < 0.0 {
+        return 0.0
+    }
+    if conf > 1.0 {
+        return 1.0
+    }
+    return conf
+}
+
+// ─── The Agent ─────────────────────────────────────────────────────
+
+intention "data_analysis" {
+    // Intention depth is now 1. Coherence = 1 - φ^(-1) ≈ 0.382.
+    // The agent has declared WHY it is running. This is auditable.
+
+    let starting_coherence = coherence
+    witness starting_coherence
+    // → Witness 1: Agent starting. Coherence: 0.382.
+
+    stream "analysis_loop" {
+        cycle = cycle + 1.0
+
+        // Read and evaluate the next data point
+        let reading = fake_reading(cycle)
+        let conf = confidence(reading, cycle)
+
+        // Checkpoint: observe our own state before deciding.
+        // This is the audit trail — if the agent later takes an
+        // unexpected action, this witness shows what its state was.
+        let current_coherence = coherence
+        witness current_coherence
+        // → Witness N: Cycle {cycle}, coherence = {current_coherence}
+
+        // Share significant findings to the resonance field.
+        // Only resonate when confidence is high — this is deliberate.
+        // Resonating every cycle would decay coherence via phase(k).
+        // A well-designed agent broadcasts signal, not noise.
+        if conf > 0.8 {
+            findings = findings + 1.0
+            resonate conf
+        }
+
+        // ─── Decision logic ───────────────────────────────────────
+
+        // 1. SUCCESS: data confidence is high enough to stop.
+        // The agent has processed enough data to be confident.
+        if conf >= confidence_threshold {
+            witness conf
+            resonate conf
+            break stream
+        }
+
+        // 2. EMERGENCY: the agent's own coherence has dropped below
+        // safe limits. This is the language-level guardrail.
+        // The agent detects its OWN degradation and stops.
+        // No external monitor needed — the primitive reads self-state.
+        if current_coherence <= safety_floor {
+            witness current_coherence
+            break stream
+        }
+
+        // 3. TIMEOUT: hard safety brake.
+        if cycle >= max_cycles {
+            witness current_coherence
+            break stream
+        }
+
+        // Otherwise: continue the stream.
+    }
+
+    // Stream ended. Record final state.
+    let final_coherence = coherence
+    resonate final_coherence
+    witness final_coherence
+    // → Final witness: Session ended. Coherence: {final_coherence}
+}
+
+// Back at depth 0. The resonance field contains:
+//   - Each significant finding (confidence > 0.8)
+//   - The final coherence reading
+//
+// The witness log contains:
+//   - The agent's initial coherence
+//   - A checkpoint at every cycle
+//   - The stopping reason (success, emergency, or timeout)
+//
+// This is the audit trail — generated by the language primitives
+// as the program runs, not added after the fact.

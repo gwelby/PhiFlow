@@ -29,6 +29,7 @@ declare -A EXAMPLES=(
     ["stream"]="examples/stream_demo.phi"
     ["adaptive"]="examples/adaptive_witness.phi"
     ["healing"]="examples/healing_bed.phi"
+    ["agent"]="examples/autonomous_agent.phi"
 )
 
 TMPDIR=$(mktemp -d)

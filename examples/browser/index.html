@@ -430,6 +430,7 @@
                         <button class="example-btn" data-example="stream">stream_demo.phi</button>
                         <button class="example-btn" data-example="adaptive">adaptive_witness.phi</button>
                         <button class="example-btn" data-example="healing">healing_bed.phi</button>
+                        <button class="example-btn" data-example="agent">autonomous_agent.phi</button>
                     </div>
 
                     <textarea class="code-editor" id="codeEditor" spellcheck="false"></textarea>
@@ -660,6 +661,85 @@ intention "System_Harmonization" {
             break stream
         }
     }
+}`,
+
+            agent: `// autonomous_agent.phi — Why the five primitives matter.
+//
+// An autonomous agent analyzes data, monitors its own coherence,
+// and stops when confident OR when its own alignment drops.
+//
+// CONFIDENCE = assessment of DATA (external)
+// COHERENCE  = assessment of SELF (internal)
+//
+// The agent stops on SUCCESS when confidence is high.
+// The agent stops on EMERGENCY when coherence is low.
+// Two different stops for two different reasons.
+
+let confidence_threshold = 0.90
+let safety_floor = 0.10
+let max_cycles = 15.0
+let cycle = 0.0
+let findings = 0.0
+
+function fake_reading(n: Number) -> Number {
+    let noise = 1.0 / (n + 1.0)
+    let signal = 0.5 + (n * 0.05)
+    return signal + noise
+}
+
+function confidence(reading: Number, n: Number) -> Number {
+    let expected = 0.5 + (n * 0.05)
+    let diff = reading - expected
+    if diff < 0.0 {
+        diff = 0.0 - diff
+    }
+    let conf = 1.0 - diff
+    if conf < 0.0 {
+        return 0.0
+    }
+    if conf > 1.0 {
+        return 1.0
+    }
+    return conf
+}
+
+intention "data_analysis" {
+    let starting_coherence = coherence
+    witness starting_coherence
+
+    stream "analysis_loop" {
+        cycle = cycle + 1.0
+        let reading = fake_reading(cycle)
+        let conf = confidence(reading, cycle)
+
+        let current_coherence = coherence
+        witness current_coherence
+
+        if conf > 0.8 {
+            findings = findings + 1.0
+            resonate conf
+        }
+
+        if conf >= confidence_threshold {
+            witness conf
+            resonate conf
+            break stream
+        }
+
+        if current_coherence <= safety_floor {
+            witness current_coherence
+            break stream
+        }
+
+        if cycle >= max_cycles {
+            witness current_coherence
+            break stream
+        }
+    }
+
+    let final_coherence = coherence
+    resonate final_coherence
+    witness final_coherence
 }`
         };
 
