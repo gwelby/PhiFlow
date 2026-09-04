@@ -30,48 +30,168 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install gh CLI
+      - name: Create review script
         run: |
-          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-          sudo apt update && sudo apt install gh -y
+          cat > pr_review.py << 'SCRIPT_EOF'
+          import argparse, json, re, subprocess, sys
+          from dataclasses import dataclass, field
+          from typing import List
+
+          def gh_json(cmd):
+              try:
+                  r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
+                  return json.loads(r.stdout) if r.stdout.strip() else {}
+              except Exception:
+                  return {}
+
+          def gh_text(cmd):
+              try:
+                  r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
+                  return r.stdout
+              except Exception:
+                  return ""
+
+          @dataclass
+          class Finding:
+              severity: str
+              check: str
+              message: str
+              file: str = ""
+
+          @dataclass
+          class ReviewResult:
+              repo: str
+              pr_number: int
+              title: str
+              verdict: str
+              findings: List[Finding] = field(default_factory=list)
+              stats: dict = field(default_factory=dict)
+
+              def to_dict(self):
+                  return {"repo": self.repo, "pr": self.pr_number, "title": self.title, "verdict": self.verdict,
+                          "findings": [{"severity": f.severity, "check": f.check, "message": f.message, "file": f.file} for f in self.findings],
+                          "stats": self.stats}
+
+              def to_markdown(self):
+                  lines = [f"# PR Review: #{self.pr_number} — {self.title}", "", f"**Repo:** {self.repo}", f"**Verdict:** {self.verdict}",
+                           f"**Files changed:** {self.stats.get('files_changed', 0)}", f"**Lines:** +{self.stats.get('additions', 0)}/-{self.stats.get('deletions', 0)}", ""]
+                  if not self.findings:
+                      lines.append("No issues found.")
+                  else:
+                      lines.append("## Findings")
+                      lines.append("")
+                      for f in self.findings:
+                          icon = {"FAIL": "❌", "WARN": "⚠️", "INFO": "ℹ️"}.get(f.severity, "?")
+                          loc = f" ({f.file})" if f.file else ""
+                          lines.append(f"- {icon} **[{f.severity}] {f.check}**{loc}: {f.message}")
+                  return "\n".join(lines)
+
+          def review_pr(repo, pr_number):
+              pr = gh_json(f"gh pr view {pr_number} -R {repo} --json title,body,additions,deletions,headRefName,commits")
+              diff = gh_text(f"gh pr diff {pr_number} -R {repo}")
+              result = ReviewResult(repo=repo, pr_number=pr_number, title=pr.get("title", ""), verdict="PASS",
+                                    stats={"additions": pr.get("additions", 0), "deletions": pr.get("deletions", 0), "files_changed": 0, "commits": len(pr.get("commits", []))})
+              files_changed = set()
+              current_file = ""
+              diff_lines = diff.split("\n")
+              for line in diff_lines:
+                  if line.startswith("diff --git"):
+                      parts = line.split(" b/")
+                      if len(parts) >= 2:
+                          current_file = parts[-1].strip()
+                          files_changed.add(current_file)
+              result.stats["files_changed"] = len(files_changed)
+              body = pr.get("body", "") or ""
+
+              if len(files_changed) > 10:
+                  result.findings.append(Finding("WARN", "Scope", f"PR touches {len(files_changed)} files — possible scope creep."))
+              if not body.strip():
+                  result.findings.append(Finding("FAIL", "Description", "PR has no description."))
+              elif len(body.strip()) < 20:
+                  result.findings.append(Finding("WARN", "Description", "PR description is very short."))
+              if not re.search(r'#\d+|Fixes|Closes|Resolves', body, re.I):
+                  result.findings.append(Finding("INFO", "Description", "PR does not reference an issue number."))
+
+              for line in diff_lines:
+                  if line.startswith("+") and "@pytest.mark.skip" in line and "skipIf" not in line and "skipUnless" not in line:
+                      if "reason=" in line:
+                          result.findings.append(Finding("WARN", "Test Quality", "Unconditional @pytest.mark.skip — tests will NEVER run even if dependency is added. Use skipIf(condition) instead.", current_file))
+                          break
+
+              secret_patterns = [(r'(?i)(password|api_key|secret|token)\s*=\s*["\'][^"\']{8,}["\']', "Hardcoded secret"), (r'gho_[a-zA-Z0-9]{36}', "GitHub OAuth token"), (r'sk-[a-zA-Z0-9]{20,}', "OpenAI API key"), (r'AIza[a-zA-Z0-9]{35}', "Google API key")]
+              for line in diff_lines:
+                  if line.startswith("+") and not line.startswith("+++"):
+                      for pattern, name in secret_patterns:
+                          if re.search(pattern, line):
+                              result.findings.append(Finding("FAIL", "Security", f"Possible {name}: {line.strip()[:80]}"))
+                              break
+
+              for line in diff_lines:
+                  if line.startswith("+") and not line.startswith("+++"):
+                      if re.search(r'\beval\s*\(', line) and "literal_eval" not in line:
+                          result.findings.append(Finding("WARN", "Security", f"eval() found: {line.strip()[:80]}"))
+                      if "shell=True" in line and "subprocess" in line:
+                          result.findings.append(Finding("WARN", "Security", f"shell=True in subprocess: {line.strip()[:80]}"))
+
+              deleted_tests = sum(1 for line in diff_lines if line.startswith("-") and not line.startswith("---") and re.match(r'-\s*(def test_|class Test|it\(|describe\()', line))
+              if deleted_tests > 0:
+                  result.findings.append(Finding("WARN", "Test Quality", f"{deleted_tests} test function(s)/class(es) removed. Verify this is intentional — tests should be skipped, not deleted."))
+
+              for line in diff_lines:
+                  if line.startswith("+") and not line.startswith("+++"):
+                      if "sys.exit" in line and "test" in (current_file or "").lower():
+                          result.findings.append(Finding("WARN", "Test Quality", f"sys.exit() in test file — use pytest.skip() instead: {line.strip()[:80]}"))
+
+              total_lines = result.stats["additions"] + result.stats["deletions"]
+              if total_lines > 500:
+                  result.findings.append(Finding("WARN", "Minimality", f"PR is {total_lines} lines. Consider splitting."))
+              elif total_lines > 200:
+                  result.findings.append(Finding("INFO", "Minimality", f"PR is {total_lines} lines. Review carefully."))
+
+              new_file_count = sum(1 for line in diff_lines if line.startswith("---") and "/dev/null" in line)
+              if new_file_count > 3:
+                  result.findings.append(Finding("INFO", "Scope", f"{new_file_count} new file(s) created."))
+
+              has_fail = any(f.severity == "FAIL" for f in result.findings)
+              has_warn = any(f.severity == "WARN" for f in result.findings)
+              result.verdict = "FAIL" if has_fail else ("WARN" if has_warn else "PASS")
+              return result
+
+          parser = argparse.ArgumentParser()
+          parser.add_argument("--repo", required=True)
+          parser.add_argument("--pr", type=int, required=True)
+          parser.add_argument("--json", action="store_true")
+          args = parser.parse_args()
+          r = review_pr(args.repo, args.pr)
+          print(json.dumps(r.to_dict(), indent=2) if args.json else r.to_markdown())
+          SCRIPT_EOF
 
       - name: Run PR quality review
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Download the review script from the Jules workspace repo
-          gh api repos/gwelby/Jules/contents/scripts/pr_review.py --jq '.content' | base64 -d > pr_review.py
-
-          # Run the review
           python3 pr_review.py --repo ${{ github.repository }} --pr ${{ github.event.pull_request.number }} --json > review_result.json 2>/dev/null || true
-
-          # Also get markdown output
           python3 pr_review.py --repo ${{ github.repository }} --pr ${{ github.event.pull_request.number }} > review_result.md 2>/dev/null || true
 
       - name: Comment on PR with review
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Build the comment
           PR_NUM=${{ github.event.pull_request.number }}
           VERDICT=$(python3 -c "import json; d=json.load(open('review_result.json')); print(d['verdict'])" 2>/dev/null || echo "ERROR")
 
-          # Find and delete any existing review comment from this bot
           EXISTING=$(gh pr view $PR_NUM -R ${{ github.repository }} --json comments --jq '.comments[] | select(.author.login == "github-actions[bot]") | .id' 2>/dev/null || echo "")
           for id in $EXISTING; do
             gh api -X DELETE repos/${{ github.repository }}/issues/comments/$id 2>/dev/null || true
           done
 
-          # Post the review as a comment
           {
             echo "## 🔍 Jules Quality Gate Review"
             echo ""
             cat review_result.md 2>/dev/null || echo "Review failed to generate output."
             echo ""
             echo "---"
-            echo "*Automated review by [pr_review.py](https://github.com/gwelby/Jules/blob/master/scripts/pr_review.py) from the Jules workspace.*"
+            echo "*Automated review by pr_review.py (inlined in this workflow).*"
           } > comment.md
 
           gh pr comment $PR_NUM -R ${{ github.repository }} --body-file comment.md
@@ -83,17 +203,14 @@ jobs:
           PR_NUM=${{ github.event.pull_request.number }}
           VERDICT=$(python3 -c "import json; d=json.load(open('review_result.json')); print(d['verdict'])" 2>/dev/null || echo "ERROR")
 
-          # Remove old labels
           gh pr edit $PR_NUM -R ${{ github.repository }} --remove-label "quality:pass" 2>/dev/null || true
           gh pr edit $PR_NUM -R ${{ github.repository }} --remove-label "quality:warn" 2>/dev/null || true
           gh pr edit $PR_NUM -R ${{ github.repository }} --remove-label "quality:fail" 2>/dev/null || true
 
-          # Create labels if they don't exist
           gh label create "quality:pass" -R ${{ github.repository }} --color "0E8A16" --description "Quality gate passed" 2>/dev/null || true
           gh label create "quality:warn" -R ${{ github.repository }} --color "BFD4F2" --description "Quality gate warnings — review before merge" 2>/dev/null || true
           gh label create "quality:fail" -R ${{ github.repository }} --color "D93F0B" --description "Quality gate failed — do not merge" 2>/dev/null || true
 
-          # Add label based on verdict
           case $VERDICT in
             PASS) gh pr edit $PR_NUM -R ${{ github.repository }} --add-label "quality:pass" ;;
             WARN) gh pr edit $PR_NUM -R ${{ github.repository }} --add-label "quality:warn" ;;
