@@ -16,6 +16,7 @@ import threading
 from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
 
+pytest.importorskip("numpy")
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../PhiFlow/src'))
