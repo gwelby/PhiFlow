@@ -1,16 +1,17 @@
 {
   "schema": "phiflow-resonance-v1",
-  "timestamp": "2026-09-04T03:55:09.798883Z",
+  "timestamp": "2026-09-04T03:59:57.312989Z",
   "lambda": 0.618033988749895,
   "formula": "1 - phi^(-depth)",
   "programs": {
     "healing_bed": {
-      "cycles": 2,
-      "final_coherence": 0.6221060394,
+      "cycles": 3,
+      "final_coherence": 0.6453168967,
       "converged": true,
       "resonance_field": [
-        0.5792473392326005,
-        0.622106039415754
+        0.5545043339809816,
+        0.5966541490151835,
+        0.6453168966980045
       ]
     },
     "agent_handshake": {
