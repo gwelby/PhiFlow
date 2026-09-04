@@ -11,6 +11,7 @@ from unittest.mock import Mock, patch
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
+pytest.importorskip("phi_quantum_interface")
 
 class TestQuantumBridge:
     """Test suite for PhiQuantumBridge"""

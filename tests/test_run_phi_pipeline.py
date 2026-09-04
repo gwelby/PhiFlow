@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -6,6 +7,23 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 RUN_PHI = REPO_ROOT / "run_phi.py"
+
+# Skip these tests if run_phi.py's dependencies are missing
+# (run_phi.py imports p1_host which may not be installed in CI)
+def _run_phi_available():
+    try:
+        result = subprocess.run(
+            [sys.executable, "-c", "import p1_host"],
+            capture_output=True, text=True, timeout=5
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
+
+pytestmark = pytest.mark.skipif(
+    not _run_phi_available(),
+    reason="p1_host module not available — run_phi.py cannot run"
+)
 
 def test_stream_output_emits_per_cycle_json(tmp_path):
     phi_file = tmp_path / "test_stream.phi"

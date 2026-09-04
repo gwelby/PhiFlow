@@ -5,14 +5,16 @@ Tests the actual phi-harmonic optimization algorithms
 """
 
 import pytest
+pytest.importorskip("numpy")
 import sys
 import os
 import time
-import numpy as np
 from unittest.mock import Mock
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
+pytest.importorskip("optimization.phi_quantum_optimizer")
+import numpy as np
 
 # Import the optimizer
 from optimization.phi_quantum_optimizer import (

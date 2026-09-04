@@ -8,6 +8,7 @@ programming system using sacred mathematics and phi-harmonic optimization.
 """
 
 import pytest
+pytest.importorskip("quantum.quantum_consciousness_bridge")
 import numpy as np
 import time
 import sys

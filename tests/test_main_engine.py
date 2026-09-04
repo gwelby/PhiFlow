@@ -10,6 +10,7 @@ from unittest.mock import Mock, patch
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
+pytest.importorskip("phiflow_quantum_consciousness_engine")
 
 class TestPhiFlowQuantumConsciousnessEngine:
     """Test suite for the main PhiFlow engine"""

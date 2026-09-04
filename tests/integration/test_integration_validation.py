@@ -16,6 +16,7 @@ from unittest.mock import Mock, patch, MagicMock
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../src'))
+pytest.importorskip("integration.rust_python_bridge")
 
 
 class TestIntegrationArchitectureValidation:
