@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 import pytest
 
 # Add src to path so integration tests can import from src/integration/
@@ -27,3 +28,54 @@ def phi_constants():
         'GOLDEN_RATIO_CONJUGATE': 1 / PHI,
         'CONSCIOUSNESS_STATES': CONSCIOUSNESS_STATES
     }
+
+
+@pytest.fixture
+def performance_timer():
+    """Timer for performance tests"""
+    class PerformanceTimer:
+        def __init__(self):
+            self.start_time = None
+            self.end_time = None
+            self.lap_times = []
+            self.markers = {}
+
+        def start(self):
+            self.start_time = time.time()
+            return self
+
+        def stop(self):
+            self.end_time = time.time()
+            return self.elapsed
+
+        def lap(self, name=None):
+            current_time = time.time()
+            if self.start_time:
+                lap_time = current_time - self.start_time
+                self.lap_times.append(lap_time)
+                if name:
+                    self.markers[name] = lap_time
+                return lap_time
+            return None
+
+        def mark(self, name):
+            if self.start_time:
+                self.markers[name] = time.time() - self.start_time
+
+        @property
+        def elapsed(self):
+            if self.start_time and self.end_time:
+                return self.end_time - self.start_time
+            elif self.start_time:
+                return time.time() - self.start_time
+            return None
+
+        def get_stats(self):
+            return {
+                'total_time': self.elapsed,
+                'lap_times': self.lap_times,
+                'markers': self.markers,
+                'average_lap': sum(self.lap_times) / len(self.lap_times) if self.lap_times else None
+            }
+
+    return PerformanceTimer()
