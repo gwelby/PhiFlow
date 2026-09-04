@@ -21,9 +21,12 @@ async function main() {
   const kvStore = new Map();   // remember/recall key-value store
   const channels = new Map();  // broadcast/listen channels
   const sensorValues = new Map([
-    [0, 12.5],
-    [1, 55.0],
-    [2, 62.0],
+    [0, 12.5],   // default sensor
+    [1, 55.0],   // default sensor
+    [2, 62.0],   // default sensor
+    [3, 7.83],   // soma_schumann (Schumann resonance)
+    [4, 432.0],  // soma_432 (432 Hz tone)
+    [5, 0.75],   // soma_presence (presence detector)
   ]);
 
   function coherence() {
