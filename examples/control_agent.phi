@@ -1,0 +1,62 @@
+// control_agent.phi — The control for the autonomous_agent demo.
+//
+// This program does the SAME data analysis as autonomous_agent.phi
+// but WITHOUT the five consciousness primitives:
+//   - No `intention` (no purpose declaration)
+//   - No `witness` (no checkpoints)
+//   - No `coherence` (no self-assessment)
+//   - No `resonate` (no sharing to a field)
+//   - No `stream` (plain while loop with a flag, since break requires stream)
+//
+// The question: what do the primitives actually change?
+// The answer is in the comparison, not in this file alone.
+
+let confidence_threshold = 0.90
+let max_cycles = 15.0
+let cycle = 0.0
+let findings = 0.0
+let done = 0.0
+
+function fake_reading(n: Number) -> Number {
+    let noise = 1.0 / (n + 1.0)
+    let signal = 0.5 + (n * 0.05)
+    return signal + noise
+}
+
+function confidence(reading: Number, n: Number) -> Number {
+    let expected = 0.5 + (n * 0.05)
+    let diff = reading - expected
+    if diff < 0.0 {
+        diff = 0.0 - diff
+    }
+    let conf = 1.0 - diff
+    if conf < 0.0 {
+        return 0.0
+    }
+    if conf > 1.0 {
+        return 1.0
+    }
+    return conf
+}
+
+// Plain while loop with a done flag. No intention, no stream, no witness,
+// no coherence, no resonate. The agent processes data and stops when
+// confidence is high. It produces no audit trail, no checkpoints, no
+// self-assessment.
+while done < 1.0 {
+    cycle = cycle + 1.0
+    let reading = fake_reading(cycle)
+    let conf = confidence(reading, cycle)
+
+    if conf > 0.8 {
+        findings = findings + 1.0
+    }
+
+    if conf >= confidence_threshold {
+        done = 1.0
+    }
+
+    if cycle >= max_cycles {
+        done = 1.0
+    }
+}
