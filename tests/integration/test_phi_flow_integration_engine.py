@@ -18,7 +18,10 @@ from datetime import datetime, timedelta
 
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../PhiFlow/src'))
+
+pytest.importorskip('numpy')
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../src'))
 
 from integration.phi_flow_integration_engine import (
     PhiFlowIntegrationEngine,

@@ -7,6 +7,9 @@ Tests phi-harmonic calculations, sacred geometry, and ancient wisdom systems
 import pytest
 import sys
 import os
+
+pytest.importorskip('numpy')
+
 import numpy as np
 from unittest.mock import Mock, patch
 
