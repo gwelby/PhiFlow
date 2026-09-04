@@ -26,6 +26,7 @@ import os
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../src'))
+pytest.importorskip("integration.rust_python_bridge")
 
 # Import all integration components
 from integration.rust_python_bridge import RustPythonBridge, QuantumCircuitResult, ConsciousnessMetrics
