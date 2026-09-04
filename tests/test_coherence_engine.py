@@ -4,6 +4,7 @@ Test suite for PhiFlow Coherence Engine
 """
 
 import pytest
+pytest.importorskip("phi_coherence_engine")
 import sys
 import os
 import numpy as np

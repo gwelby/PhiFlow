@@ -4,6 +4,7 @@ Test suite for PhiFlow Quantum Optimizer
 """
 
 import pytest
+pytest.importorskip("phi_quantum_optimizer")
 import sys
 import os
 import numpy as np

@@ -4,6 +4,7 @@ Test suite for PhiFlow Main Engine Integration
 """
 
 import pytest
+pytest.importorskip("phiflow_quantum_consciousness_engine")
 import sys
 import os
 from unittest.mock import Mock, patch
