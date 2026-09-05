@@ -261,12 +261,12 @@ fn get_live_data() -> Arc<RwLock<LiveSensorData>> {
                         None
                     };
 
-                    let soma = match fs::read_to_string(get_soma_state_path()) {
+                    let soma_opt = match fs::read_to_string(get_soma_state_path()) {
                         Ok(content) => serde_json::from_str::<SomaState>(&content).ok(),
                         Err(_) => None,
                     };
 
-                    let quantum = match fs::read_to_string(get_quantum_state_path()) {
+                    let quantum_opt = match fs::read_to_string(get_quantum_state_path()) {
                         Ok(content) => serde_json::from_str::<QuantumState>(&content).ok(),
                         Err(_) => None,
                     };
@@ -276,8 +276,12 @@ fn get_live_data() -> Arc<RwLock<LiveSensorData>> {
                         data.cpu_usage = cpu_usage;
                         data.cpu_temp = cpu_temp;
                         data.memory_usage = memory_usage;
-                        data.soma = soma;
-                        data.quantum = quantum;
+                        if soma_opt.is_some() {
+                            data.soma = soma_opt;
+                        }
+                        if quantum_opt.is_some() {
+                            data.quantum = quantum_opt;
+                        }
                     }
                     
                     thread::sleep(Duration::from_millis(100));
