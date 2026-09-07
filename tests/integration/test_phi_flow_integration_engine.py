@@ -11,6 +11,7 @@ Comprehensive tests for:
 """
 
 import pytest
+pytest.importorskip("numpy")
 import time
 import threading
 from unittest.mock import Mock, patch

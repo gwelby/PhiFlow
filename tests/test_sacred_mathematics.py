@@ -5,6 +5,7 @@ Tests phi-harmonic calculations, sacred geometry, and ancient wisdom systems
 """
 
 import pytest
+pytest.importorskip("numpy")
 import sys
 import os
 import numpy as np
