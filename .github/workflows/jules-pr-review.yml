@@ -3,7 +3,7 @@ name: Jules PR Quality Gate
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: [master]
+    branches: [main]
 
 jobs:
   review:
