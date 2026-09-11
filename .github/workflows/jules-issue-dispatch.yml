@@ -57,4 +57,5 @@ jobs:
             Do NOT merge your own PR. Leave it for Greg to review.
           jules_api_key: ${{ secrets.JULES_API_KEY }}
           starting_branch: master
-          include_last_commit: true
+          include_last_commit: false
+          include_commit_log: false
