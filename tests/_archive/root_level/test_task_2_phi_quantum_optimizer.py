@@ -11,8 +11,8 @@ import numpy as np
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
 from optimization.phi_quantum_optimizer import (
-    PhiQuantumOptimizer, OptimizationLevel, PhiParallelTask, 
-    OptimizationResult, PHI, GOLDEN_ANGLE
+    PhiQuantumOptimizer, OptimizationLevel, PhiParallelTask,
+    PHI
 )
 
 def test_phi_quantum_optimizer():
