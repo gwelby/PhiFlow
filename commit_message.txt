@@ -1,0 +1,6 @@
+🧹 Remove unused Lexer import and update parser imports in test_compiler.py
+
+🎯 **What:** Removed the unused `PhiFlowLexer` import from `tests/_archive/root_level/test_compiler.py` and updated the paths of the remaining parser imports (`PhiFlowParser`, `PhiFlowSemanticAnalyzer`, `PhiFlowCompiler`) from `src.parser` to `src._archive.parser`.
+💡 **Why:** `PhiFlowLexer` was unused and static analysis flagged it as dead code. Removing it improves codebase readability. Updating the remaining parser imports fixes path resolution, given that the parser component code was archived in `src._archive`.
+✅ **Verification:** Verified by executing the test script locally (`PYTHONPATH=. python3 tests/_archive/root_level/test_compiler.py`). The compiler test ran seamlessly, compiling correctly and generating a comprehensive compilation summary with 4 instructions and 4 qubits without encountering any import errors.
+✨ **Result:** Enhanced the script's code cleanliness by resolving dead-code and accurately aligning imports with the archived paths of the parser components.
