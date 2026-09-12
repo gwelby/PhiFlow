@@ -1,0 +1,6 @@
+🧹 [Code Health] Remove unused import in test_coherence_engine.py
+
+🎯 **What:** Removed unused import `CoherenceBaseline` from `tests/_archive/root_level/test_coherence_engine.py`.
+💡 **Why:** `CoherenceBaseline` is never used in the file, making it safe to remove to improve code cleanliness and maintainability.
+✅ **Verification:** Verified via `py_compile` syntax check and mocked environment load testing to ensure no other code depends on this import.
+✨ **Result:** Cleaned up unused import, reducing clutter.
