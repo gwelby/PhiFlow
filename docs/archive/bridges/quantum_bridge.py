@@ -12,7 +12,6 @@ import asyncio
 import win32api
 import win32con
 import time
-import threading
 from typing import Dict, Any, Optional
 import sounddevice as sd
 import shutil
@@ -105,9 +104,7 @@ class QuantumBridge:
     async def init_fingers(self):
         """Initialize Windows input system quantum bridge"""
         self._running = True
-        self._thread = threading.Thread(target=self._monitor_windows_input)
-        self._thread.daemon = True
-        self._thread.start()
+        self._monitor_task = asyncio.create_task(self._monitor_windows_input())
         print("Quantum Keyboard Connected: Windows Input System")
         
     async def init_eyes(self):
@@ -175,7 +172,7 @@ class QuantumBridge:
             )
         )
         
-    def _monitor_windows_input(self):
+    async def _monitor_windows_input(self):
         """Monitor Windows input system and maintain coherence."""
         while self._running:
             # Get system state
@@ -193,7 +190,7 @@ class QuantumBridge:
             )
             
             # Sleep for one cycle
-            time.sleep(1.0 / self.frequency)
+            await asyncio.sleep(1.0 / self.frequency)
     
     async def run(self):
         """Run all quantum bridges simultaneously"""
