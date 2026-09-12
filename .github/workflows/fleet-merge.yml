@@ -51,7 +51,11 @@ jobs:
     steps:
       - name: Merge eligible bot PRs sequentially
         run: |
+          # Actions injects `bash -e`; take explicit error control — every
+          # fallible call below is guarded and a bare non-zero (e.g. `gh pr
+          # checks` on a checkless head) must not kill the whole pass.
           set -uo pipefail
+          set +e
 
           BASE_BRANCH="${{ inputs.base_branch }}"
           [ -z "$BASE_BRANCH" ] && BASE_BRANCH="${{ github.event.repository.default_branch }}"
@@ -90,8 +94,10 @@ jobs:
                 fi
                 FROM=$(echo "$TITLE" | grep -oP 'from \K[^\s]+' | head -1)
                 TO=$(echo "$TITLE" | grep -oP 'to \K[^\s]+' | head -1)
-                if [ -n "$FROM" ] && [ -n "$TO" ] && \
-                   [ "$(semver_major "$TO")" -gt "$(semver_major "$FROM")" ]; then
+                if [ -z "$FROM" ] || [ -z "$TO" ]; then
+                  echo "  cannot parse version bump from title — HOLD"; held=$((held+1)); continue
+                fi
+                if [ "$(semver_major "$TO")" -gt "$(semver_major "$FROM")" ]; then
                   echo "  major bump ${FROM} -> ${TO} — HOLD for human"; held=$((held+1)); continue
                 fi
                 ;;
