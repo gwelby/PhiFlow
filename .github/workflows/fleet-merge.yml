@@ -110,42 +110,61 @@ jobs:
                 ;;
             esac
 
-            # --- update branch from base (REST: `gh pr update-branch` needs gh>=2.46) ---
-            echo "  updating branch from ${BASE_BRANCH}..."
-            UPDATE_OUT=$(gh api -X PUT "repos/${REPO}/pulls/${PR_NUM}/update-branch" \
-              -f expected_head_sha="$HEAD_SHA" 2>&1) || true
-            if echo "$UPDATE_OUT" | grep -qi "conflict"; then
+            pr_state() {
+              gh pr checks "$1" --repo "$REPO" --json name,state \
+                --jq '[.[].state] | if length == 0 then "none" elif all(. == "SUCCESS" or . == "SKIPPED") then "pass" elif any(. == "FAILURE") then "fail" else "pending" end' 2>/dev/null
+            }
+
+            # --- fast path: already green + mergeable -> merge as-is ---
+            # Branch protection "require up to date" is NOT enabled on these
+            # repos, so a green current head is mergeable evidence. Updating
+            # first would orphan the passing checks (new head = no checks
+            # until CI re-runs — the false-"none" this pass first hit).
+            MERGEABLE=$(gh pr view "$PR_NUM" --repo "$REPO" --json mergeable --jq '.mergeable' 2>/dev/null)
+            if [ "$MERGEABLE" = "CONFLICTING" ]; then
               echo "  MERGE CONFLICT — needs human; skipping (left open)"; skipped=$((skipped+1)); continue
             fi
-            # 202 = update queued; "no new commits" = already up to date — either way continue.
-            sleep 5
-
-            # --- wait for CI ---
-            # `gh pr checks` exits non-zero with EMPTY stdout when no checks are
-            # attached — that is NOT pending. Give a short grace window for
-            # checks to attach to the freshly-updated head, then fail closed.
-            echo "  waiting for CI (max ${MAX_CI_WAIT}s)..."
-            ELAPSED=0
-            CHECKS_GRACE=90
-            CI_PASSED=false
-            while [ "$ELAPSED" -lt "$MAX_CI_WAIT" ]; do
-              STATUS=$(gh pr checks "$PR_NUM" --repo "$REPO" --json name,state \
-                --jq '[.[].state] | if length == 0 then "none" elif all(. == "SUCCESS" or . == "SKIPPED") then "pass" elif any(. == "FAILURE") then "fail" else "pending" end' 2>/dev/null)
-              if [ -z "$STATUS" ]; then
-                if [ "$ELAPSED" -lt "$CHECKS_GRACE" ]; then
-                  echo "  no checks attached yet (${ELAPSED}s) — grace period"
-                  sleep 30; ELAPSED=$((ELAPSED + 30)); continue
-                fi
-                STATUS=none
+            PRE=$(pr_state "$PR_NUM")
+            if [ "$PRE" = "pass" ]; then
+              echo "  already green on current head — merging without update"
+              CI_PASSED=true
+            else
+              # --- not green: update branch (rescues stale-base failures) ---
+              echo "  updating branch from ${BASE_BRANCH} (current checks: ${PRE:-none})..."
+              UPDATE_OUT=$(gh api -X PUT "repos/${REPO}/pulls/${PR_NUM}/update-branch" \
+                -f expected_head_sha="$HEAD_SHA" 2>&1) || true
+              if echo "$UPDATE_OUT" | grep -qi "conflict"; then
+                echo "  MERGE CONFLICT — needs human; skipping (left open)"; skipped=$((skipped+1)); continue
               fi
-              case "$STATUS" in
-                pass) CI_PASSED=true; break ;;
-                none)
-                  echo "  NO CI CHECKS — fail-closed skip (unvalidated PRs are never merged)"; break ;;
-                fail) echo "  CI FAILED — skip"; break ;;
-                *) echo "  CI pending... (${ELAPSED}s)"; sleep 30; ELAPSED=$((ELAPSED + 30)) ;;
-              esac
-            done
+              # 202 = update queued; "no new commits" = already up to date — either way continue.
+              sleep 5
+
+              # --- wait for CI ---
+              # `gh pr checks` exits non-zero with EMPTY stdout when no checks
+              # are attached — that is NOT pending. Grace window for checks to
+              # attach to the freshly-updated head, then fail closed.
+              echo "  waiting for CI (max ${MAX_CI_WAIT}s)..."
+              ELAPSED=0
+              CHECKS_GRACE=240
+              CI_PASSED=false
+              while [ "$ELAPSED" -lt "$MAX_CI_WAIT" ]; do
+                STATUS=$(pr_state "$PR_NUM")
+                if [ -z "$STATUS" ]; then
+                  if [ "$ELAPSED" -lt "$CHECKS_GRACE" ]; then
+                    echo "  no checks attached yet (${ELAPSED}s) — grace period"
+                    sleep 30; ELAPSED=$((ELAPSED + 30)); continue
+                  fi
+                  STATUS=none
+                fi
+                case "$STATUS" in
+                  pass) CI_PASSED=true; break ;;
+                  none)
+                    echo "  NO CI CHECKS — fail-closed skip (unvalidated PRs are never merged)"; break ;;
+                  fail) echo "  CI FAILED — skip"; break ;;
+                  *) echo "  CI pending... (${ELAPSED}s)"; sleep 30; ELAPSED=$((ELAPSED + 30)) ;;
+                esac
+              done
+            fi
 
             if [ "$CI_PASSED" != true ]; then
               skipped=$((skipped+1)); continue
