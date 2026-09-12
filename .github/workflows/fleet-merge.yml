@@ -115,12 +115,23 @@ jobs:
             sleep 5
 
             # --- wait for CI ---
+            # `gh pr checks` exits non-zero with EMPTY stdout when no checks are
+            # attached — that is NOT pending. Give a short grace window for
+            # checks to attach to the freshly-updated head, then fail closed.
             echo "  waiting for CI (max ${MAX_CI_WAIT}s)..."
             ELAPSED=0
+            CHECKS_GRACE=90
             CI_PASSED=false
             while [ "$ELAPSED" -lt "$MAX_CI_WAIT" ]; do
               STATUS=$(gh pr checks "$PR_NUM" --repo "$REPO" --json name,state \
-                --jq '[.[].state] | if length == 0 then "none" elif all(. == "SUCCESS" or . == "SKIPPED") then "pass" elif any(. == "FAILURE") then "fail" else "pending" end' 2>/dev/null || echo "pending")
+                --jq '[.[].state] | if length == 0 then "none" elif all(. == "SUCCESS" or . == "SKIPPED") then "pass" elif any(. == "FAILURE") then "fail" else "pending" end' 2>/dev/null)
+              if [ -z "$STATUS" ]; then
+                if [ "$ELAPSED" -lt "$CHECKS_GRACE" ]; then
+                  echo "  no checks attached yet (${ELAPSED}s) — grace period"
+                  sleep 30; ELAPSED=$((ELAPSED + 30)); continue
+                fi
+                STATUS=none
+              fi
               case "$STATUS" in
                 pass) CI_PASSED=true; break ;;
                 none)
