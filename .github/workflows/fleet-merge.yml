@@ -60,12 +60,15 @@ jobs:
 
           echo "Finding open bot PRs targeting ${BASE_BRANCH} on ${REPO}..."
 
-          # Match on head-branch prefix: author login is the PAT owner for
-          # Jules/Devin PRs in this family, not a bot identity.
+          # Match agent branches, not author login — Jules/Devin PRs are
+          # authored by the PAT owner (gwelby), Dependabot is app/dependabot.
+          # Agent branches: jules-*/jules/*, devin/*, dependabot/*, or any
+          # branch ending in a >=13-digit run (Jules session ID suffix, e.g.
+          # fix-witness-sensor-comment-3039070177192173213).
           PRS=$(gh pr list --repo "$REPO" --state open --base "$BASE_BRANCH" \
             --limit 100 \
             --json number,author,title,headRefName,headRefOid \
-            --jq 'sort_by(.number)[] | select(.headRefName | test("^(jules-|devin/|dependabot/)")) | [.number, .author.login, .title, .headRefName, .headRefOid] | @tsv')
+            --jq 'sort_by(.number)[] | select(.headRefName | test("^(jules[-/]|devin/|dependabot/)|-[0-9]{13,}$")) | [.number, .author.login, .title, .headRefName, .headRefOid] | @tsv')
 
           if [ -z "$PRS" ]; then
             echo "No open bot-authored PRs. Nothing to merge."
@@ -81,8 +84,6 @@ jobs:
             echo "=== PR #${PR_NUM} (${AUTHOR}, ${HEAD_REF}): ${TITLE}"
 
             case "$HEAD_REF" in
-              jules-*|devin/*)
-                ;;
               dependabot/*)
                 if [ "$INCLUDE_DEPS" != "true" ]; then
                   echo "  dependabot merge disabled (input) — skip"; skipped=$((skipped+1)); continue
@@ -95,7 +96,11 @@ jobs:
                 fi
                 ;;
               *)
-                echo "  unrecognized agent branch — skip"; skipped=$((skipped+1)); continue
+                # Defense in depth: re-verify the agent-branch rule even though
+                # the list query already filtered — selector and tier must agree.
+                if ! echo "$HEAD_REF" | grep -qP '^(jules[-/]|devin/)|-[0-9]{13,}$'; then
+                  echo "  unrecognized agent branch — skip"; skipped=$((skipped+1)); continue
+                fi
                 ;;
             esac
 
