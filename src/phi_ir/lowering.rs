@@ -118,7 +118,7 @@ impl LoweringContext {
                 | PhiIRNode::CreatePattern { .. }
                 | PhiIRNode::DomainCall { .. }
                 | PhiIRNode::Witness { .. }     // returns coherence score (0.0–1.0)
-                | PhiIRNode::WitnessSensor { .. } // FIX: returns sensor value
+                | PhiIRNode::WitnessSensor { .. } // returns sensor value
                 | PhiIRNode::CoherenceCheck     // returns coherence score (0.0–1.0)
                 | PhiIRNode::Recall(_)
                 | PhiIRNode::Listen(_)
