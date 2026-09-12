@@ -17,39 +17,28 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Check for recent Jules fix PR (prevent loops)
+      - name: Check for existing Jules fix PR on this branch (prevent loops)
         id: check-loop
         uses: actions/github-script@v7
         with:
           script: |
-            // Only block if there's a Jules fix PR opened in the last 24 hours.
-            // Stale PRs (older than 24h) don't block — they may be abandoned.
-            const prs = await github.rest.pulls.list({
+            // An open jules-* PR targeting the FAILED branch is an in-flight
+            // fix for this failure — dispatching again creates a duplicate.
+            // No time window: an unmerged PR blocks re-dispatch while it stays
+            // open (the earlier 24h cap let stale fixes be re-created).
+            const headBranch = context.payload.workflow_run.head_branch;
+            const { data: prs } = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
-              per_page: 30,
-              sort: 'created',
-              direction: 'desc'
+              base: headBranch,
+              per_page: 50
             });
-            const now = Date.now();
-            const oneDayMs = 24 * 60 * 60 * 1000;
-            const recentJulesPRs = prs.data.filter(pr => {
-              const isJules = pr.head.ref.startsWith('fix-ci-') ||
-                              pr.head.ref.startsWith('fix-') ||
-                              pr.head.ref.includes('jules') ||
-                              (pr.title || '').toLowerCase().includes('jules');
-              if (!isJules) return false;
-              const created = new Date(pr.created_at).getTime();
-              return (now - created) < oneDayMs;
-            });
-            core.setOutput('has_open_jules_pr', recentJulesPRs.length > 0);
-            if (recentJulesPRs.length > 0) {
-              console.log(`Found ${recentJulesPRs.length} recent Jules PR(s) (last 24h) — skipping to prevent loop`);
-            } else {
-              console.log('No recent Jules PRs — safe to dispatch');
+            const dup = prs.filter(pr => pr.head.ref.startsWith('jules-'));
+            if (dup.length) {
+              console.log(`Open Jules fix PR(s) for ${headBranch}: ${dup.map(p => '#' + p.number).join(', ')} — skipping dispatch`);
             }
-
+            core.setOutput('has_open_jules_pr', dup.length > 0 ? 'true' : 'false');
       - name: Invoke Jules to fix CI failure
         if: steps.check-loop.outputs.has_open_jules_pr != 'true'
         uses: google-labs-code/jules-action@v1.0.0
