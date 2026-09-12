@@ -3,10 +3,9 @@
 Test PhiFlow Compiler - Task 3.4 Testing
 """
 
-from src.parser.phi_flow_lexer import PhiFlowLexer
-from src.parser.phi_flow_parser import PhiFlowParser
-from src.parser.phi_flow_semantic_analyzer import PhiFlowSemanticAnalyzer
-from src.parser.phi_flow_compiler import PhiFlowCompiler
+from src._archive.parser.phi_flow_parser import PhiFlowParser
+from src._archive.parser.phi_flow_semantic_analyzer import PhiFlowSemanticAnalyzer
+from src._archive.parser.phi_flow_compiler import PhiFlowCompiler
 
 def test_compiler():
     """Test compiler with simple PhiFlow program"""
