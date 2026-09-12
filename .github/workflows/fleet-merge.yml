@@ -5,9 +5,12 @@
 #
 #   1. FAIL-CLOSED on missing CI: a PR with no checks is SKIPPED, never merged
 #      (stock asset merged it — that would rubber-stamp unvalidated work).
-#   2. RISK TIER: only Jules-authored PRs are eligible by default. Dependabot
-#      requires the include_dependabot input AND is held on major bumps
-#      (semver parsed from the PR title). Other bot authors are skipped.
+#   2. RISK TIER: eligible PRs are matched on head-branch prefix, not author
+#      login — in this family Jules/Devin PRs are authored by the PAT owner
+#      (gwelby) with `jules-*` / `devin/*` branches, and Dependabot authenticates
+#      as `app/dependabot`, not a `[bot]` login. Dependabot requires the
+#      include_dependabot input AND is held on major bumps (semver parsed from
+#      the PR title). Other branches are skipped.
 #   3. CONFLICT => SKIP + surface, not close+redispatch. The stock asset closed
 #      the PR and re-dispatched via a bundled SDK; here the conflict is logged
 #      and left for patrol/human handling — nothing is destroyed and no second
@@ -57,10 +60,12 @@ jobs:
 
           echo "Finding open bot PRs targeting ${BASE_BRANCH} on ${REPO}..."
 
+          # Match on head-branch prefix: author login is the PAT owner for
+          # Jules/Devin PRs in this family, not a bot identity.
           PRS=$(gh pr list --repo "$REPO" --state open --base "$BASE_BRANCH" \
             --limit 100 \
-            --json number,author,title,headRefOid \
-            --jq 'sort_by(.number)[] | select(.author.login == "google-labs-jules" or (.author.login | endswith("[bot]"))) | [.number, .author.login, .title, .headRefOid] | @tsv')
+            --json number,author,title,headRefName,headRefOid \
+            --jq 'sort_by(.number)[] | select(.headRefName | test("^(jules-|devin/|dependabot/)")) | [.number, .author.login, .title, .headRefName, .headRefOid] | @tsv')
 
           if [ -z "$PRS" ]; then
             echo "No open bot-authored PRs. Nothing to merge."
@@ -70,15 +75,15 @@ jobs:
           semver_major() { echo "${1#v}" | grep -oP '^\d+' || echo "0"; }
 
           merged=0; skipped=0; held=0
-          while IFS=$'\t' read -r PR_NUM AUTHOR TITLE HEAD_SHA; do
+          while IFS=$'\t' read -r PR_NUM AUTHOR TITLE HEAD_REF HEAD_SHA; do
             [ -z "$PR_NUM" ] && continue
             echo ""
-            echo "=== PR #${PR_NUM} (${AUTHOR}): ${TITLE}"
+            echo "=== PR #${PR_NUM} (${AUTHOR}, ${HEAD_REF}): ${TITLE}"
 
-            case "$AUTHOR" in
-              google-labs-jules)
+            case "$HEAD_REF" in
+              jules-*|devin/*)
                 ;;
-              dependabot\[bot\]|dependabot-preview\[bot\])
+              dependabot/*)
                 if [ "$INCLUDE_DEPS" != "true" ]; then
                   echo "  dependabot merge disabled (input) — skip"; skipped=$((skipped+1)); continue
                 fi
@@ -90,7 +95,7 @@ jobs:
                 fi
                 ;;
               *)
-                echo "  unrecognized bot author — skip"; skipped=$((skipped+1)); continue
+                echo "  unrecognized agent branch — skip"; skipped=$((skipped+1)); continue
                 ;;
             esac
 
