@@ -34,7 +34,10 @@ jobs:
               base: headBranch,
               per_page: 50
             });
-            const dup = prs.filter(pr => pr.head.ref.startsWith('jules-'));
+            // Jules fix branches: jules-*, jules/*, or any ref ending in a
+            // >=13-digit session-id suffix (e.g. fix-foo-3039070177192173213).
+            const isJules = pr => /^(jules[-/])/.test(pr.head.ref) || /-[0-9]{13,}$/.test(pr.head.ref);
+            const dup = prs.filter(isJules);
             if (dup.length) {
               console.log(`Open Jules fix PR(s) for ${headBranch}: ${dup.map(p => '#' + p.number).join(', ')} — skipping dispatch`);
             }
