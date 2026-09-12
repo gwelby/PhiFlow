@@ -1,0 +1,148 @@
+# .github/workflows/fleet-merge.yml
+#
+# Sequential merge gate for bot-authored PRs. Family-adapted from Google's
+# automate-github-issues fleet-merge asset, with three unsafe defaults closed:
+#
+#   1. FAIL-CLOSED on missing CI: a PR with no checks is SKIPPED, never merged
+#      (stock asset merged it — that would rubber-stamp unvalidated work).
+#   2. RISK TIER: eligible PRs are matched on head-branch prefix, not author
+#      login — in this family Jules/Devin PRs are authored by the PAT owner
+#      (gwelby) with `jules-*` / `devin/*` branches, and Dependabot authenticates
+#      as `app/dependabot`, not a `[bot]` login. Dependabot requires the
+#      include_dependabot input AND is held on major bumps (semver parsed from
+#      the PR title). Other branches are skipped.
+#   3. CONFLICT => SKIP + surface, not close+redispatch. The stock asset closed
+#      the PR and re-dispatched via a bundled SDK; here the conflict is logged
+#      and left for patrol/human handling — nothing is destroyed and no second
+#      dispatch path exists.
+#
+# Also fixed: `gh pr update-branch` does not exist in gh < 2.46 — uses the
+# update-branch REST endpoint directly.
+#
+# Requires no checkout, no scripts/, no extra secrets — GH_TOKEN only.
+name: Fleet Sequential Merge
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_branch:
+        description: "Base branch for merge (default: repo default branch)"
+        type: string
+        required: false
+        default: ""
+      include_dependabot:
+        description: "Also merge Dependabot minor/patch bumps (majors always held)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: fleet-merge
+  cancel-in-progress: false
+
+jobs:
+  sequential-merge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Merge eligible bot PRs sequentially
+        run: |
+          set -uo pipefail
+
+          BASE_BRANCH="${{ inputs.base_branch }}"
+          [ -z "$BASE_BRANCH" ] && BASE_BRANCH="${{ github.event.repository.default_branch }}"
+          INCLUDE_DEPS="${{ inputs.include_dependabot }}"
+          MAX_CI_WAIT=600   # 10 minutes per PR
+
+          echo "Finding open bot PRs targeting ${BASE_BRANCH} on ${REPO}..."
+
+          # Match agent branches, not author login — Jules/Devin PRs are
+          # authored by the PAT owner (gwelby), Dependabot is app/dependabot.
+          # Agent branches: jules-*/jules/*, devin/*, dependabot/*, or any
+          # branch ending in a >=13-digit run (Jules session ID suffix, e.g.
+          # fix-witness-sensor-comment-3039070177192173213).
+          PRS=$(gh pr list --repo "$REPO" --state open --base "$BASE_BRANCH" \
+            --limit 100 \
+            --json number,author,title,headRefName,headRefOid \
+            --jq 'sort_by(.number)[] | select(.headRefName | test("^(jules[-/]|devin/|dependabot/)|-[0-9]{13,}$")) | [.number, .author.login, .title, .headRefName, .headRefOid] | @tsv')
+
+          if [ -z "$PRS" ]; then
+            echo "No open bot-authored PRs. Nothing to merge."
+            exit 0
+          fi
+
+          semver_major() { echo "${1#v}" | grep -oP '^\d+' || echo "0"; }
+
+          merged=0; skipped=0; held=0
+          while IFS=$'\t' read -r PR_NUM AUTHOR TITLE HEAD_REF HEAD_SHA; do
+            [ -z "$PR_NUM" ] && continue
+            echo ""
+            echo "=== PR #${PR_NUM} (${AUTHOR}, ${HEAD_REF}): ${TITLE}"
+
+            case "$HEAD_REF" in
+              dependabot/*)
+                if [ "$INCLUDE_DEPS" != "true" ]; then
+                  echo "  dependabot merge disabled (input) — skip"; skipped=$((skipped+1)); continue
+                fi
+                FROM=$(echo "$TITLE" | grep -oP 'from \K[^\s]+' | head -1)
+                TO=$(echo "$TITLE" | grep -oP 'to \K[^\s]+' | head -1)
+                if [ -n "$FROM" ] && [ -n "$TO" ] && \
+                   [ "$(semver_major "$TO")" -gt "$(semver_major "$FROM")" ]; then
+                  echo "  major bump ${FROM} -> ${TO} — HOLD for human"; held=$((held+1)); continue
+                fi
+                ;;
+              *)
+                # Defense in depth: re-verify the agent-branch rule even though
+                # the list query already filtered — selector and tier must agree.
+                if ! echo "$HEAD_REF" | grep -qP '^(jules[-/]|devin/)|-[0-9]{13,}$'; then
+                  echo "  unrecognized agent branch — skip"; skipped=$((skipped+1)); continue
+                fi
+                ;;
+            esac
+
+            # --- update branch from base (REST: `gh pr update-branch` needs gh>=2.46) ---
+            echo "  updating branch from ${BASE_BRANCH}..."
+            UPDATE_OUT=$(gh api -X PUT "repos/${REPO}/pulls/${PR_NUM}/update-branch" \
+              -f expected_head_sha="$HEAD_SHA" 2>&1) || true
+            if echo "$UPDATE_OUT" | grep -qi "conflict"; then
+              echo "  MERGE CONFLICT — needs human; skipping (left open)"; skipped=$((skipped+1)); continue
+            fi
+            # 202 = update queued; "no new commits" = already up to date — either way continue.
+            sleep 5
+
+            # --- wait for CI ---
+            echo "  waiting for CI (max ${MAX_CI_WAIT}s)..."
+            ELAPSED=0
+            CI_PASSED=false
+            while [ "$ELAPSED" -lt "$MAX_CI_WAIT" ]; do
+              STATUS=$(gh pr checks "$PR_NUM" --repo "$REPO" --json name,state \
+                --jq '[.[].state] | if length == 0 then "none" elif all(. == "SUCCESS" or . == "SKIPPED") then "pass" elif any(. == "FAILURE") then "fail" else "pending" end' 2>/dev/null || echo "pending")
+              case "$STATUS" in
+                pass) CI_PASSED=true; break ;;
+                none)
+                  echo "  NO CI CHECKS — fail-closed skip (unvalidated PRs are never merged)"; break ;;
+                fail) echo "  CI FAILED — skip"; break ;;
+                *) echo "  CI pending... (${ELAPSED}s)"; sleep 30; ELAPSED=$((ELAPSED + 30)) ;;
+              esac
+            done
+
+            if [ "$CI_PASSED" != true ]; then
+              skipped=$((skipped+1)); continue
+            fi
+
+            echo "  CI green — squash merging #${PR_NUM}..."
+            if gh pr merge "$PR_NUM" --repo "$REPO" --squash --delete-branch 2>&1; then
+              echo "  merged."
+              merged=$((merged+1))
+            else
+              echo "  merge command failed — leaving open for human"; skipped=$((skipped+1))
+            fi
+            sleep 5
+          done <<< "$PRS"
+
+          echo ""
+          echo "Done: ${merged} merged, ${skipped} skipped, ${held} held (major bump)."
