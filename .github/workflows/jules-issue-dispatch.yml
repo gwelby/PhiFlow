@@ -49,7 +49,13 @@ jobs:
             - Keep the PR under 200 lines if possible. Minimal changes only.
             - Do NOT refactor, reformat, or "clean up" code that isn't directly related to the issue.
 
+            Known failure patterns (Jules PATTERNS.md):
+            - FP-001: You run in a cloud VM with ONLY this repo checked out. /mnt/d/, D:\, and ~ paths do not exist. Use repo-relative paths only.
+            - FP-002: Commit ALL changes in ONE commit on the PR branch. Work split across multiple local branches does not reach the PR.
+            - FP-003: If the issue is a CI failure and the exact error is not in the issue body, fetch the failing step and error text before changing anything. Do NOT assume the workflow file is the problem.
+            - LP-002: A green check proves tests pass, not that the fix is correct. State exactly what you verified.
             Do NOT merge your own PR. Leave it for Greg to review.
           jules_api_key: ${{ secrets.JULES_API_KEY }}
           starting_branch: master
-          include_last_commit: true
+          include_last_commit: false
+          include_commit_log: false
