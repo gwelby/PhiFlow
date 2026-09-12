@@ -1,4 +1,7 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+import os
+import secrets
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Security, HTTPException, status
+from fastapi.security import APIKeyHeader
 from fastapi.responses import HTMLResponse
 import numpy as np
 import torch
@@ -121,6 +124,25 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+# Security
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+def get_api_key(api_key_header: str = Security(api_key_header)):
+    expected_api_key = os.environ.get("QUANTUM_API_KEY")
+    if not expected_api_key:
+        logger.warning("QUANTUM_API_KEY environment variable is not set. All requests will be rejected.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server configuration error"
+        )
+    if not secrets.compare_digest(api_key_header, expected_api_key):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API Key"
+        )
+    return api_key_header
+
+
 # Routes
 @app.get("/")
 async def get():
@@ -238,7 +260,7 @@ async def websocket_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
 
 @app.post("/process_audio")
-async def process_audio(audio_data: bytes):
+async def process_audio(audio_data: bytes, api_key: str = Security(get_api_key)):
     """Process audio through quantum field"""
     try:
         # Convert bytes to numpy array
@@ -250,7 +272,7 @@ async def process_audio(audio_data: bytes):
         return audio_data
 
 @app.post("/process_video")
-async def process_video(video_data: bytes):
+async def process_video(video_data: bytes, api_key: str = Security(get_api_key)):
     """Process video through quantum field"""
     try:
         # Convert bytes to numpy array
