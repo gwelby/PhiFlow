@@ -45,6 +45,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      checks: read
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REPO: ${{ github.repository }}
@@ -110,9 +111,23 @@ jobs:
                 ;;
             esac
 
+            # `gh pr checks --json` does not exist in gh < 2.46 — and it mixes
+            # in non-CI commit statuses anyway. Query check-runs on the head
+            # SHA directly: only GitHub Actions checks count for CI evidence.
             pr_state() {
-              gh pr checks "$1" --repo "$REPO" --json name,state \
-                --jq '[.[].state] | if length == 0 then "none" elif all(. == "SUCCESS" or . == "SKIPPED") then "pass" elif any(. == "FAILURE") then "fail" else "pending" end' 2>/dev/null
+              local sha
+              sha=$(gh pr view "$1" --repo "$REPO" --json headRefOid \
+                --jq '.headRefOid' 2>/dev/null)
+              [ -z "$sha" ] && return
+              gh api "repos/$REPO/commits/$sha/check-runs" --jq '
+                .check_runs as $c |
+                if ($c | length) == 0 then "none"
+                elif ($c | map(select(.status != "completed")) | length) > 0 then "pending"
+                elif ($c | map(select(.conclusion == "failure" or .conclusion == "cancelled"
+                      or .conclusion == "timed_out" or .conclusion == "action_required")) | length) > 0 then "fail"
+                elif ($c | map(select(.conclusion == "success" or .conclusion == "skipped"
+                      or .conclusion == "neutral")) | length) == ($c | length) then "pass"
+                else "pending" end' 2>/dev/null
             }
 
             # --- fast path: already green + mergeable -> merge as-is ---
@@ -140,9 +155,9 @@ jobs:
               sleep 5
 
               # --- wait for CI ---
-              # `gh pr checks` exits non-zero with EMPTY stdout when no checks
-              # are attached — that is NOT pending. Grace window for checks to
-              # attach to the freshly-updated head, then fail closed.
+              # An empty check-runs response means NO checks attached — that
+              # is NOT pending. Grace window for checks to attach to the
+              # freshly-updated head, then fail closed.
               echo "  waiting for CI (max ${MAX_CI_WAIT}s)..."
               ELAPSED=0
               CHECKS_GRACE=240
