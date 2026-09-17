@@ -98,72 +98,30 @@ fn test_dead_code_elimination() {
     // e.g. just `2 + 3;` as a statement.
     // In Lowering, `Block(exprs)` lowers all.
     // If we have `2 + 3` in the middle, its result is unused.
+    //
+    // We expect:
+    // 1. Const(10) -> Used by return.
+    // 2. That's it.
+    // `lower_program` terminates with `Return(last_op)`.
+    // `lower_program` calls `lower_expr` for each.
+    // If the last expression was `10.0`, then `Return(last_op)` uses it.
+    // Anything else should be dead.
 
     let exprs_dce = vec![
         PhiExpression::BinaryOp {
-            // Unused calculation
+            // Unused calculation (Operand 0..2)
             left: Box::new(PhiExpression::Number(2.0)),
             operator: phiflow::parser::BinaryOperator::Add,
             right: Box::new(PhiExpression::Number(3.0)),
         },
-        PhiExpression::Number(10.0), // Return this
+        PhiExpression::Number(10.0), // Return this (Operand 3)
     ];
 
-    let mut prog_dce = lower_program(&exprs_dce);
-    Optimizer::new(phiflow::phi_ir::optimizer::OptimizationLevel::Basic).optimize(&mut prog_dce);
-
-    let block = &prog_dce.blocks[0];
-
-    // The instruction corresponding to `2+3` (BinOp) should be Nop (or Const(5) then Nop).
-    // The inputs Const(2) and Const(3) should be Nop.
-
-    let _active_instructions = block
-        .instructions
-        .iter()
-        .filter(|i| !matches!(i.node, PhiIRNode::Nop))
-        .count();
-
-    // We expect:
-    // 1. Const(10) -> Used by return/fallthrough?
-    // 2. That's it?
-    // `lower_program` terminates with `Return(0)`? No, `Return(last_op)`?
-    // Check `lowering.rs`: `lower_block` returns last result.
-    // `lower_program` calls `lower_expr` for each.
-    // It calls `ctx.terminate(Return(0))` if not terminated.
-    // And `Return(0)` uses Operand 0?
-    // If Operand 0 was the result of `2+3`, then it IS used!
-    // Ah, `lower_program` logic: usage of 0 is just dummy.
-    // But if `2+3` defines Operand 0.
-    // And `Return(0)` uses it.
-    // Then it's NOT dead.
-
-    // I need to check `lower_program` implementation details in `lowering.rs`.
-    // Line 138: `ctx.terminate(PhiIRNode::Return(0));`
-    // Operand(0) is the FIRST instruction.
-    // So the first instruction is ALWAYS kept alive by the default terminator!
-    // This is a bug/feature of the test harness lowering.
-
-    // Fix: We should return the LAST operand, or `Void`.
-    // But the test case `2+3` is first.
-    // I should create a dummy first instruction so `2+3` is not 0.
-
-    let exprs_fixed = vec![
-        PhiExpression::Number(999.0), // Op 0 (kept alive by Return(0))
-        PhiExpression::BinaryOp {
-            // Op 1 (Unused!)
-            left: Box::new(PhiExpression::Number(2.0)),
-            operator: phiflow::parser::BinaryOperator::Add,
-            right: Box::new(PhiExpression::Number(3.0)),
-        },
-        PhiExpression::Number(10.0),
-    ];
-
-    let mut prog = lower_program(&exprs_fixed);
-    // Manually ensure terminator doesn't point to the `2+3` result (which would be op index ~3 after consts).
-    // `lower_program` hardcodes `Return(0)`.
-    // So Ops > 0 should be DCE'able if unused.
+    let mut prog = lower_program(&exprs_dce);
 
     Optimizer::new(phiflow::phi_ir::optimizer::OptimizationLevel::Basic).optimize(&mut prog);
+
+    let _block = &prog.blocks[0];
 
     // Check that `2+3` is gone.
     // 2+3 involves: Const(2), Const(3), BinOp.

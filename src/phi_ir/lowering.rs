@@ -199,10 +199,7 @@ fn lower_program_unchecked(expressions: &[PhiExpression]) -> PhiIRProgram {
 
     // Ensure final block terminates
     if !ctx.is_terminated(ctx.current_block) {
-        let ret_val = match last_result {
-            LowerResult::Value(op) => op,
-            LowerResult::None => 0,
-        };
+        let ret_val = unwrap_val(&mut ctx, last_result);
         ctx.terminate(PhiIRNode::Return(ret_val));
     }
 
