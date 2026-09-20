@@ -1,7 +1,7 @@
 import os
 import json
 import time
-import random
+import secrets
 import threading
 import uuid
 from datetime import datetime
@@ -39,9 +39,9 @@ def get_quantum_metrics():
             "backend": f"{BACKEND_NAME}_mock",
             "updated_at": datetime.now().isoformat(),
             "metrics": {
-                "quantum_t1": round(random.uniform(150.0, 250.0), 2),
-                "quantum_t2": round(random.uniform(80.0, 180.0), 2),
-                "quantum_readout_error": round(random.uniform(0.005, 0.02), 4)
+                "quantum_t1": round(secrets.SystemRandom().uniform(150.0, 250.0), 2),
+                "quantum_t2": round(secrets.SystemRandom().uniform(80.0, 180.0), 2),
+                "quantum_readout_error": round(secrets.SystemRandom().uniform(0.005, 0.02), 4)
             }
         }
 
@@ -166,7 +166,7 @@ def get_job_status_mock(job_id):
             if job["status"] != "COMPLETED":
                 job["status"] = "COMPLETED"
                 # Random bit for mock
-                bit = random.choice(["0", "1"])
+                bit = secrets.choice(["0", "1"])
                 job["result"] = bit
                 print(f"Mock Job {job_id} Completed. Result: {job['result']}")
                 
