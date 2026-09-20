@@ -144,32 +144,16 @@ fn test_dead_code_elimination() {
     // This is a bug/feature of the test harness lowering.
 
     // Fix: We should return the LAST operand, or `Void`.
-    // But the test case `2+3` is first.
-    // I should create a dummy first instruction so `2+3` is not 0.
+    // The previous workaround with `999.0` is no longer needed because
+    // `lower_program` now correctly returns the last expression result.
 
-    let exprs_fixed = vec![
-        PhiExpression::Number(999.0), // Op 0 (kept alive by Return(0))
-        PhiExpression::BinaryOp {
-            // Op 1 (Unused!)
-            left: Box::new(PhiExpression::Number(2.0)),
-            operator: phiflow::parser::BinaryOperator::Add,
-            right: Box::new(PhiExpression::Number(3.0)),
-        },
-        PhiExpression::Number(10.0),
-    ];
-
-    let mut prog = lower_program(&exprs_fixed);
-    // Manually ensure terminator doesn't point to the `2+3` result (which would be op index ~3 after consts).
-    // `lower_program` hardcodes `Return(0)`.
-    // So Ops > 0 should be DCE'able if unused.
-
-    Optimizer::new(phiflow::phi_ir::optimizer::OptimizationLevel::Basic).optimize(&mut prog);
+    Optimizer::new(phiflow::phi_ir::optimizer::OptimizationLevel::Basic).optimize(&mut prog_dce);
 
     // Check that `2+3` is gone.
     // 2+3 involves: Const(2), Const(3), BinOp.
     // They should all be Nop.
 
-    for instr in &prog.blocks[0].instructions {
+    for instr in &prog_dce.blocks[0].instructions {
         if let PhiIRNode::Const(PhiIRValue::Number(n)) = &instr.node {
             if *n == 5.0 {
                 panic!("Found Const(5.0) which should have been DCE'd!");
