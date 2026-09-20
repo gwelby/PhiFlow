@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-from coherence.phi_coherence_engine import PhiCoherenceEngine, CoherenceState
+from coherence.phi_coherence_engine import PhiCoherenceEngine, CoherenceState, CoherenceBaseline
 import time
 
 def test_coherence_engine():
