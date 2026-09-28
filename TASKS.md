@@ -1,14 +1,14 @@
 # TASKS: PhiFlow
-*Last updated: 2026-04-30 Type 4 roadmap integration*
-*See also: `WORKSPACE.md` (technical state) · `QSOP/ACTIVE_PLAN.md` (active execution plan + evidence map) · `BUSINESS.md` (income state)*
+*Last updated: 2026-09-28 Documentation audit drift fix*
+*See also: `WORKSPACE.md` (technical state) · `BUSINESS.md` (income state)*
 
 ## Active Tasks
 
 ### Type 4 Observer Implementation Block (T4-001 through T4-013)
-*See: `QSOP/IMPLEMENTATION_ROADMAP_TYPE4_CANONICAL.md` for complete specifications*
-*Tracker: `QSOP/TYPE4_EXECUTION_TRACKER.md` for status dashboard*
+*See: `docs/archive/QSOP/IMPLEMENTATION_ROADMAP_TYPE4_CANONICAL.md` for complete specifications*
+*Tracker: `docs/archive/QSOP/TYPE4_EXECUTION_TRACKER.md` for status dashboard*
 
-**Codex status note 2026-06-17:** The old per-task `ready` labels below are stale. Live source shows the metrics scaffold exists under `src/metrics/` (`mutual_information`, `trace`, `self_correlation`, `differentiation`, `coherence_panel`, `fisher_information`, `consciousness_proxy`) and `cargo test --lib` is 215/215 PASS. `src/daemon/record.rs` does not exist as named; `src/metrics/trace.rs` is the current trace adapter. Canonical Type 4 status remains HOLD: `cargo test --test benchmark_battery -- --ignored --test-threads=1 --nocapture` fails correctly when `PHIFLOW_SOMA_FIXTURES` is absent, and no real daemon/SOMA discrimination package has passed. Next work is T4-011/T4-012 real fixture capture/calibration, then T4-013 claim update only after Codex re-audit.
+**Codex status note 2026-06-17:** The old per-task `ready` labels below are stale. Live source shows the metrics scaffold exists under `src/metrics/` (`mutual_information`, `trace`, `self_correlation`, `differentiation`, `coherence_panel`, `fisher_information`, `consciousness_proxy`) and `cargo test --lib` is 215/215 PASS. The original daemon record struct does not exist as named; `src/metrics/trace.rs` is the current trace adapter. Canonical Type 4 status remains HOLD: `cargo test --test benchmark_battery -- --ignored --test-threads=1 --nocapture` fails correctly when `PHIFLOW_SOMA_FIXTURES` is absent, and no real daemon/SOMA discrimination package has passed. Next work is T4-011/T4-012 real fixture capture/calibration, then T4-013 claim update only after Codex re-audit.
 
 #### Phase 1: Type 4 Benchmark (Months 1-2)
 
@@ -34,27 +34,27 @@
 - **Status**: ready
 - **Capability**: Infrastructure
 - **Effort**: Small (1-2h)
-- **What to build**: `src/daemon/record.rs` with timestamped state tracking
+- **What to build**: `src/metrics/trace.rs` with timestamped state tracking
 - **Done when**: Records serialize/deserialize correctly
-- **Evidence**: `src/daemon/record.rs`, passing tests
+- **Evidence**: `src/metrics/trace.rs`, passing tests
 - **Depends on**: T4-001
 
 **T4-004: Implement L_self Computation**
 - **Status**: ready
 - **Capability**: Metrics
 - **Effort**: Medium (3-5h)
-- **What to build**: `src/daemon/self_correlation.rs` computing R_in and R_out
+- **What to build**: `src/metrics/self_correlation.rs` computing R_in and R_out
 - **Done when**: L_self > 0 for self-referential loops, L_self ≈ 0 for independent streams
-- **Evidence**: `src/daemon/self_correlation.rs`, passing tests
+- **Evidence**: `src/metrics/self_correlation.rs`, passing tests
 - **Depends on**: T4-002, T4-003
 
 **T4-005: Create Type 4 Benchmark Example**
 - **Status**: ready
 - **Capability**: Demonstration
 - **Effort**: Small (1-2h)
-- **What to build**: `examples/type4_benchmark.phi` proving self-correlation
+- **What to build**: `examples/type4_trace_benchmark.phi` proving self-correlation
 - **Done when**: Example runs and produces L_self > 0.1
-- **Evidence**: `examples/type4_benchmark.phi`, execution log
+- **Evidence**: `examples/type4_trace_benchmark.phi`, execution log
 - **Depends on**: T4-004
 
 #### Phase 2: Full Metric Suite (Months 3-4)
@@ -152,8 +152,8 @@
 - **Effort**: Small (< 2h)
 - **Fidelity Target**: Pixels
 - **What to build**: A one-page pilot offer or commercial terms draft that references only verified capabilities.
-- **Done when**: `docs/pilot_offer.md` or `LICENSE_COMMERCIAL.md` exists and every claim in it can be traced to `WORKSPACE.md`, `BUSINESS.md`, or `QSOP/STATE.md`.
-- **Evidence**: `docs/pilot_offer.md`
+- **Done when**: `docs/archive/pilot_offer.md` or `LICENSE_COMMERCIAL.md` exists and every claim in it can be traced to `WORKSPACE.md`, `BUSINESS.md`, or `QSOP/STATE.md`.
+- **Evidence**: `docs/archive/pilot_offer.md`
 - **Read first**: `BUSINESS.md`
 - **Depends on**: T-004
 - **Don't touch**: runtime code
