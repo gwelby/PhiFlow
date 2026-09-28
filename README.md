@@ -159,7 +159,7 @@ phic examples/8_qubit_entanglement.phi \
 ```
 
 Live execution on `ibm_fez` (IBM Heron r2) has been verified.
-Job receipt: `d7euddh5a5qc73drdosg` (2026-03-29).
+Job receipt: `d7euddh5a5qc73drdosg` (2026-04-14).
 
 ### SOMA bio-sensor bridge
 
