@@ -104,7 +104,22 @@ async function main() {
 
   const { instance } = await WebAssembly.instantiate(buffer, imports);
   const result = instance.exports.phi_run();
-  process.stdout.write(String(result));
+
+  const buf = new ArrayBuffer(8);
+  const f64 = new Float64Array(buf);
+  const i64 = new BigInt64Array(buf);
+  f64[0] = result;
+
+  const TAG_VOID = 0x7FF8000300000000n;
+  if (i64[0] === TAG_VOID) {
+    if (resonanceField.length > 0) {
+      process.stdout.write(String(resonanceField[resonanceField.length - 1]));
+    } else {
+      process.stdout.write(String(coherence()));
+    }
+  } else {
+    process.stdout.write(String(result));
+  }
 }
 
 main().catch((err) => {
