@@ -251,7 +251,7 @@ To make a real ceremony engine, we need:
 
 ```phi
 // A simple grounding ceremony
-// Run: phic --osc 18032 --osc-input 18033 examples/ceremony_grounding.phi
+// Run: phic --osc 18032 --osc-input 18033 ceremony_grounding.phi
 
 intention "opening" {
     // Start with silence, then a low 432 Hz drone
@@ -338,7 +338,7 @@ python3.12 /mnt/d/Projects/PhiFlow/tools/osc_websocket_bridge.py
   --osc 18032 \
   --osc-input 18033 \
   --osc-delay 500 \
-  examples/ceremony_grounding.phi
+  ceremony_grounding.phi
 ```
 
 **Browser — audience view:**
@@ -367,7 +367,7 @@ http://172.28.148.150:8080/ceremony_remote.html
 
 - [ ] Add `--osc-input <port>` to `phic` CLI (`src/main_cli.rs`)
 - [ ] Implement blocking `listen` in a new or extended host provider
-- [ ] Add `examples/ceremony_grounding.phi` as the reference ceremony
+- [ ] Add `ceremony_grounding.phi` as the reference ceremony
 - [ ] Create `tools/ceremony_remote.html` facilitator control page
 - [ ] Document how P1 coherence can be injected into the ceremony
 - [ ] Add MQTT input option for ecosystem-wide ceremonies
@@ -382,7 +382,7 @@ http://172.28.148.150:8080/ceremony_remote.html
 | Sensor | File | Access in PhiFlow | Notes |
 |--------|------|---------------------|-------|
 | SOMA Schumann | `p1_core/p1_controller.py` | `witness sensor("soma_schumann")` | Room ELF coherence |
-| SOMA 432 | `src/p1_core/...` | `witness sensor("soma_432")` | 432 Hz detection |
+| SOMA 432 | `p1_core/...` | `witness sensor("soma_432")` | 432 Hz detection |
 | SOMA Presence | `...` | `witness sensor("soma_presence")` | Human presence |
 | Ring Coherence 432 | `...` | `witness sensor("ring_coherence_432")` | Hardware ring |
 | Ring Coherence 528 | `...` | `witness sensor("ring_coherence_528")` | Hardware ring |
@@ -417,7 +417,7 @@ http://172.28.148.150:8080/ceremony_remote.html
 1. **Close the ceremony engine loop**
    - Implement blocking `listen` + `--osc-input <port>`
    - Build `tools/ceremony_remote.html`
-   - Test with `examples/ceremony_grounding.phi`
+   - Test with `ceremony_grounding.phi`
 
 2. **Expand the experience surface**
    - Add visual themes for healing, quantum, and ritual
