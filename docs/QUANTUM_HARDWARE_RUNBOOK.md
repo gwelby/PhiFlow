@@ -9,20 +9,7 @@ This guide covers the operational steps to run PhiFlow programs on real quantum 
 2.  Navigate to your dashboard to find your **API Token**.
 
 ### Configuration
-Save your token in `apikey.json` in a secure location, or set the `IBM_QUANTUM_APIKEY` environment variable.
-The `quantum_council_vote.py` script looks at `d:\Projects\Claude-Code\apikey.json` by default.
-
-```json
-{
-  "apikey": "YOUR_TOKEN_HERE"
-}
-```
-
-### Dependencies
-Ensure you have the following Python packages installed:
-```bash
-pip install qiskit qiskit-ibm-runtime qiskit-aer mthree
-```
+PhiFlow reads credentials from the CASCADE vault (`~/.cascade_keys`) or the `IBM_QUANTUM_TOKEN` environment variable.
 
 ## 2. Running on Hardware
 
@@ -34,7 +21,7 @@ Current recommended backends:
 
 ### Execution Command
 ```bash
-python3.12 quantum_council_vote.py --no-sim --backend ibm_brisbane --shots 4096
+cargo run --release --bin phic -- --target quantum examples/council_vote.phi
 ```
 
 ## 3. Advanced Features
