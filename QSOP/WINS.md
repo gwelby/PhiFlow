@@ -1,6 +1,6 @@
 # QSOP Wins — Permanent Achievements
 
-*Last updated: 2026-07-30*
+*Last updated: 2026-09-28*
 
 ## Verified Wins
 
@@ -12,3 +12,4 @@
 6. **Real cryptography** — secp256k1 + ML-DSA-65 hybrid signing, 17 tests
 7. **Coherence formula** — depth 2 with k ≤ 1 returns φ⁻¹ = 0.618033988749895
 8. **Integrity cleanup** (2026-07-30) — Archived 8,100 lines of fake/speculative modules
+9. **First reality bridge** (2026-08-02) — SOMA sensors wired into coherence, changing it from formula to measurement
