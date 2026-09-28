@@ -104,7 +104,25 @@ async function main() {
 
   const { instance } = await WebAssembly.instantiate(buffer, imports);
   const result = instance.exports.phi_run();
-  process.stdout.write(String(result));
+
+  // Handle BSEI NaN-boxing for Void type
+  const buffer_arr = new ArrayBuffer(8);
+  const f64_view = new Float64Array(buffer_arr);
+  const u32_view = new Uint32Array(buffer_arr);
+  f64_view[0] = result;
+  // TAG_VOID is 0x7FF80003_00000000 -> little endian uint32s: [0x00000000, 0x7FF80003]
+  if (u32_view[1] === 0x7FF80003 && u32_view[0] === 0) {
+    // If it's a void return, we don't output anything, or we could output 0.0 or whatever the evaluator produces.
+    // The evaluator returns the last resonated value if there's no explicit return!
+    // But since the runner currently prints NaN when it hits this, we'll try pulling from resonanceField
+    if (resonanceField.length > 0) {
+      process.stdout.write(String(resonanceField[resonanceField.length - 1]));
+    } else {
+      process.stdout.write("NaN");
+    }
+  } else {
+    process.stdout.write(String(result));
+  }
 }
 
 main().catch((err) => {
