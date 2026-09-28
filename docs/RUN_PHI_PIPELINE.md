@@ -1,6 +1,6 @@
 # run_phi Diagnostics Pipeline
 
-`p1_host/run_phi.py` executes a two-stage flow for `.phi` sources:
+`run_phi.py` executes a two-stage flow for `.phi` sources:
 
 1. **Diagnostics stage** (`phic --json-errors`)
    - Exit `0`: parse success, continue
