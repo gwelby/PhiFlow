@@ -1,7 +1,7 @@
 # PhiFlow Vision
 
 Status: Living document  
-Last updated: 2026-03-06
+Last updated: 2026-09-28
 
 ## Human Promise
 PhiFlow exists to create software that is not blind while it runs.
@@ -31,14 +31,14 @@ These map directly to QSOP operations:
 - `resonate` -> shared resonance plane
 - `coherence` -> DISTILL signal
 
-## Architecture Reality (2026-03-06)
+## Architecture Reality (2026-09-28)
 
 There are currently two important runtime states:
 
 1. `D:\Projects\PhiFlow\PhiFlow` (master worktree)
 - Documentation/witness lane and currently the most stable directly runnable crate.
-- Verified on 2026-03-06:
-  - `cargo test --quiet` passes with warnings.
+- Verified on 2026-09-28:
+  - `cargo test --quiet` fails on WASM conformance tests due to missing wabt module.
 - Caveat:
   - The outer `master` worktree is dirty with protocol, bridge, and architecture-review files that have not been reconciled into committed branch truth yet.
 
