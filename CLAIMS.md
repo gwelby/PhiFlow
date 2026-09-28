@@ -1,7 +1,7 @@
 # CLAIMS: PhiFlow
-*Last updated: 2026-07-31*
+*Last updated: 2026-09-28*
 *Honesty rule: beautiful != proven. Failed tests are results, not failures.*
-*Codex hostile audit performed 2026-07-31 — findings integrated below.*
+*Codex hostile audit performed 2026-09-28 — findings integrated below.*
 
 ## Core Axioms (not claims — starting assumptions)
 
@@ -111,7 +111,7 @@
 
 ### T4-01 / T4-02 Resolution — 2026-05-02
 **Claim tested**: Whether the R_out proxy correctly measures model-to-future behavior, and whether a temporal shuffle null control exists.
-**Method**: Source inspection of `src/metrics/self_correlation.rs` diff (commit `98214db`); review of findings T4-01 and T4-02 in `QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md`.
+**Method**: Source inspection of `src/metrics/self_correlation.rs` diff (commit `98214db`); review of findings T4-01 and T4-02 in `docs/archive/QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md`.
 **Result**:
 - T4-01: `R_out` now computes `normalized_mi(model_vals[..n-1], actions[1..], 5)` — directed MI from model to one-step-ahead action. Action channel no longer ignored.
 - T4-02: `from_type4_trace_with_shuffle_control()` added; shuffles action channel to break temporal alignment; returns `(actual_SelfCorrelation, shuffled_r_out)` for comparison.
