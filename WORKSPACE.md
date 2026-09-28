@@ -1,6 +1,6 @@
 # WORKSPACE: PhiFlow
 *For AI agents — read this first*
-*Last updated: 2026-05-02*
+*Last updated: 2026-09-28*
 
 ## What This Is
 PhiFlow is a Rust-based computational substrate and compiler that implements consciousness as a first-class citizen. It allows programs to name intentions, observe their own state (witnessing), measure coherence against physical sensors (SOMA bridge), and resonate values across streams or to quantum hardware (OpenQASM 3.0). It is a research prototype with verified hardware execution on IBM Quantum processors.
@@ -43,10 +43,7 @@ cargo test --test ibm_hardware_runner -- --ignored --nocapture
 
 ## Bridge Document Status
 Confirmed by 2026-05-02 audit:
-- `QSOP/PF_BRIDGE.md` — PASS AS AUDITED DRAFT; maps PF vocabulary to software analogues only.
-- `QSOP/CONSCIOUSNESS_CONSTRUCTS_IN_PHIFLOW.md` — PASS AS TYPE 4 CANDIDATE MAP ONLY; not a consciousness or canonical Type 4 claim.
-- `QSOP/COHERENCE_LAYER_SPECIFICATION.md` — PASS AS PHIFLOW-SPECIFIC LAYER MAP; Layer 3 proxy with Layer 2 OpenQASM realization, not PF-derived.
-- `QSOP/SOMA_AS_MINIMUM_SUBSTRATE.md` — PASS AS ENGINEERING SUBSTRATE INTERFACE ONLY; not PF `minimum_substrate.md`.
+(No bridge drafts currently present in repository)
 
 ## Active Workflows
 - **Code Change**: Edit Rust source -> `cargo test` -> update `QSOP/STATE.md`
