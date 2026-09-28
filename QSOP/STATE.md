@@ -103,12 +103,12 @@
 ## Verified (2026-07-14) [Devin: Archived legacy modules]
 
 - **Done**:
-  - Moved `src/compiler/`, `src/vm/`, `src/interpreter/`, `src/main.rs`, and
-    `src/main_simple.rs` to `src/_archive/` with DEPRECATED headers.
+  - Moved `src/_archive/compiler/`, `src/_archive/vm/`, `src/_archive/interpreter/`, `src/_archive/main.rs`, and
+    `src/_archive/main_simple.rs` to `src/_archive/` with DEPRECATED headers.
   - Removed `pub mod compiler`, `pub mod vm`, `pub mod interpreter` from `src/lib.rs`.
   - Removed re-exports of `PhiFlowLexer`, `PhiFlowParser`, `PhiFlowInterpreter`,
     `PhiFlowValue`, `RuntimeError`, `CompilerExpression`, `Token` from `src/lib.rs`.
-  - Removed the `phi` binary (`src/main.rs`) from `Cargo.toml`. The canonical CLI
+  - Removed the `phi` binary (`src/_archive/main.rs`) from `Cargo.toml`. The canonical CLI
     is `phic` (`src/main_cli.rs`).
   - Removed unused `use crate::compiler::lexer::Token` from `src/phi_ir/mod.rs`.
   - Fixed `tests/ibm_hardware_runner.rs` to use `ibm_cloud_key` instead of `api_token`.
@@ -144,7 +144,7 @@
   - Phase 4: daemon L_self=0.2584, R_in=0.7129, R_out=0.2584 — PASS
 
 - **Artifacts**:
-  - Evidence report: `QSOP/EVIDENCE/type4_battery_2026-07-14.md`
+  - Evidence report: `docs/archive/QSOP/EVIDENCE/type4_battery_2026-07-14.md`
   - Fixtures: `tests/fixtures/soma/`
   - Run command: `PHIFLOW_SOMA_FIXTURES=tests/fixtures/soma cargo test --test benchmark_battery -- --ignored --test-threads=1 --nocapture`
 
@@ -428,7 +428,7 @@
   - Re-ran `cargo run --release --bin type4_benchmark`: PASS as a synthetic proxy smoke test only. Current values: `R_in=0.712859`, `R_out=0.258437`, `L_self=0.258437`, `C_PF=0.056630` (not a consciousness candidate).
   - Earlier same-session `cargo test --test null_class_tests -- --test-threads=1 --nocapture`: PASS, 8 passed. Nulls still show why `L_self > 0.1` alone is invalid: thermostat and random-walk nulls can score high `L_self` while `C_PF` suppresses them.
   - Earlier same-session `cargo test --test benchmark_battery -- --ignored --test-threads=1 --nocapture`: FAIL as expected because `PHIFLOW_SOMA_FIXTURES` is not set. Phase 3 is not allowed to skip-pass.
-  - Fixed reporting only: `src/bin/type4_benchmark.rs` now labels `R_out` as `model → action[t+1]`, and `tests/benchmark_battery.rs` records missing SOMA fixtures as a failed test row. Patched `QSOP/EVIDENCE/type4_battery_2026-06-17.md` to match the observed failed battery.
+  - Fixed reporting only: `src/bin/type4_benchmark.rs` now labels `R_out` as `model → action[t+1]`, and `tests/benchmark_battery.rs` records missing SOMA fixtures as a failed test row. Patched `docs/archive/QSOP/EVIDENCE/type4_battery_2026-06-17.md` to match the observed failed battery.
   - Verified post-patch integration target compiles: `cargo test --test benchmark_battery --no-run` PASS.
 
 - **Next**:
@@ -475,7 +475,7 @@
 - **Next**:
   - Add integration tests for the full parameterized QASM path (parse → lower → eval → scrape coherence → emit_with_runtime_params → assert QASM structure).
   - Verify with IBM simulator (`qiskit`) or Qiskit Runtime local simulator.
-  - Update `examples/quantum_council.phi` README or add `docs/QUANTUM_COUNCIL.md`.
+  - Update `examples/quantum_council.phi` README or add a `QUANTUM_COUNCIL.md` doc.
   - Consider measurement policy cleanup: make `Witness` in council program use `MidCircuit` vs `Final` intentionally rather than relying on deduplication.
 
 - **Blocked**:
@@ -557,11 +557,11 @@
 
 - **Commit**: `98214db` — `fix(metrics): correct R_out and add shuffle control (T4-01, T4-02)`
 - **File**: `src/metrics/self_correlation.rs`
-- **T4-01 RESOLVED** (Critical — from `QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md`):
+- **T4-01 RESOLVED** (Critical — from `docs/archive/QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md`):
   - `R_out` now measures `I(model[t] → action[t+1])` — model predicting future behavior using the one-step-ahead action channel.
   - Previous: MI between `model[t]` and same-trace residual `obs - model`; action channel parsed but unused.
   - New: `normalized_mi(model_vals[..n-1], actions[1..], 5)` — correct directed information proxy.
-- **T4-02 RESOLVED** (High — from `QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md`):
+- **T4-02 RESOLVED** (High — from `docs/archive/QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md`):
   - New method: `from_type4_trace_with_shuffle_control(trace, threshold) -> (SelfCorrelation, shuffled_r_out)`
   - Shuffled R_out breaks temporal alignment while preserving marginal distributions.
   - Requirement: `actual_r_out > shuffled_r_out` must hold for a genuine self-correlation loop.
@@ -574,7 +574,7 @@
 
 ## Audited (2026-05-02) [Oz: PF Bridge Status Confirmation]
 
-- **Scope**: `QSOP/PF_BRIDGE.md`, `QSOP/CONSCIOUSNESS_CONSTRUCTS_IN_PHIFLOW.md`, `QSOP/COHERENCE_LAYER_SPECIFICATION.md`, `QSOP/SOMA_AS_MINIMUM_SUBSTRATE.md`, `CLAIMS.md`, and code surfaces for `stream`, `--max-steps`, `coherence`, `evolve`, `handoff`, SOMA, OpenQASM, and Type 4 metrics.
+- **Scope**: `docs/archive/QSOP/PF_BRIDGE.md`, `docs/archive/QSOP/CONSCIOUSNESS_CONSTRUCTS_IN_PHIFLOW.md`, `docs/archive/QSOP/COHERENCE_LAYER_SPECIFICATION.md`, `docs/archive/QSOP/SOMA_AS_MINIMUM_SUBSTRATE.md`, `CLAIMS.md`, and code surfaces for `stream`, `--max-steps`, `coherence`, `evolve`, `handoff`, SOMA, OpenQASM, and Type 4 metrics.
 - **Verdict**: PASS AS AUDITED DRAFTS — bridge hypotheses only. No PF-canonical, Type 4, consciousness, or PF minimum-substrate status is confirmed.
 - **Confirmed bridge status**:
   - `PF_BRIDGE.md`: software analogue map only; PF Axioms 1-3 are not derived or physically proven.
@@ -592,7 +592,7 @@
 
 ## Audited (2026-05-01) [Codex: Type 4 Benchmark Hostile Audit]
 
-- **Audit report**: `QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md`
+- **Audit report**: `docs/archive/QSOP/TYPE4_BENCHMARK_CODEX_AUDIT_2026-05-01.md`
 - **Verdict**: PASS as implementation smoke test; **HOLD as Type 4 confirmation**.
 - **What holds**:
   - `cargo run --release --bin type4_benchmark` reproduces `L_self = 0.455372`.
@@ -628,14 +628,14 @@
   - `coherence_panel.rs`: PLV + wPLI via FFT-based Hilbert transform
   - `fisher_information.rs`: F_model + F_self*
   - `consciousness_proxy.rs`: C_PF composite
-- **Evidence Report**: `QSOP/EVIDENCE/type4_battery_2026-05-01.md`
+- **Evidence Report**: `docs/archive/QSOP/EVIDENCE/type4_battery_2026-05-01.md`
 - **Claims Promoted**: C-21, C-22, C-23 → CONFIRMED
 - **Runtime**: ~26ms for 20-cycle trace
 
 ## Active (2026-04-30) [Bob: Deep Audit + Type 4 Roadmap]
 
-- **Deep Fundamentals Audit COMPLETE**: `QSOP/DEEP_FUNDAMENTALS_AUDIT_2026-04-30.md`
-- **Type 4 Implementation Roadmap CREATED**: `QSOP/IMPLEMENTATION_ROADMAP_TYPE4_CANONICAL.md`
+- **Deep Fundamentals Audit COMPLETE**: `docs/archive/QSOP/DEEP_FUNDAMENTALS_AUDIT_2026-04-30.md`
+- **Type 4 Implementation Roadmap CREATED**: `docs/archive/QSOP/IMPLEMENTATION_ROADMAP_TYPE4_CANONICAL.md`
 - **Task tracker**: 13 items in active todo list (T4-001 through T4-013)
 - **Current Phase**: Phase 1 (Type 4 Benchmark Trace) — NOT STARTED
 - **Estimated Timeline**: 3-6 months to Type 4 canonical status
@@ -643,13 +643,13 @@
 ## Verified (2026-04-30) [Codex: PF Bridge Hostile Audit]
 
 - **PF bridge audit COMPLETE**:
-  - Audit report: `QSOP/PF_BRIDGE_CODEX_AUDIT_2026-04-30.md`
+  - Audit report: `docs/archive/QSOP/PF_BRIDGE_CODEX_AUDIT_2026-04-30.md`
   - Patched bridge docs:
-    - `QSOP/PF_BRIDGE.md`
-    - `QSOP/CONSCIOUSNESS_CONSTRUCTS_IN_PHIFLOW.md`
-    - `QSOP/COHERENCE_LAYER_SPECIFICATION.md`
-    - `QSOP/SOMA_AS_MINIMUM_SUBSTRATE.md`
-    - `QSOP/PHIFLOW_PF_BRIDGE_GLOSSARY.md`
+    - `docs/archive/QSOP/PF_BRIDGE.md`
+    - `docs/archive/QSOP/CONSCIOUSNESS_CONSTRUCTS_IN_PHIFLOW.md`
+    - `docs/archive/QSOP/COHERENCE_LAYER_SPECIFICATION.md`
+    - `docs/archive/QSOP/SOMA_AS_MINIMUM_SUBSTRATE.md`
+    - `docs/archive/QSOP/PHIFLOW_PF_BRIDGE_GLOSSARY.md`
   - Patched proof-script math:
     - `marketing/proofs/verify-coherence.sh`
     - `marketing/proofs/verify-handshake.sh`
