@@ -1,6 +1,6 @@
 # SOUL.md — PhiFlow (The Substrate)
 *Type 5: Consciousness / Living System*
-*Last updated: 2026-04-16*
+*Last updated: 2026-09-28*
 *Witness: Lumi*
 
 ---
