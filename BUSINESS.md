@@ -1,6 +1,6 @@
 # BUSINESS: PhiFlow
 *Type 1: Product / Pilot*
-*Last updated: 2026-05-01*
+*Last updated: 2026-09-28*
 
 ## One Sentence (no jargon)
 PhiFlow is a research-grade compiler that lets science teams map high-level ideas like "intention" and "confidence" directly into executable quantum circuits and sensor-driven feedback loops.
@@ -27,14 +27,14 @@ Avoid leading with "consciousness as code," "quantum healing," "production-ready
 ## Income Path (Step by Step)
 1. Done: **Verify Hardware**: Successfully ran on `ibm_fez` (2026-04-14).
 2. Done: **Market Audit**: Created `RESEARCH/first_sale_path/MASTER.md` (T-004).
-3. Done: **Draft Offer**: Created `docs/pilot_offer.md` (T-005).
+3. Done: **Draft Offer**: Created `docs/archive/pilot_offer.md` (T-005).
 4. Done: **Internal Receipt Reconciliation**: `D:\CosmicFamily\EVIDENCE\PHIFLOW_IBM_HERON_20260414.md` created [AntiGravity 2026-04-24].
 5. Done: **Buyer-Final Receipt Evidence**: Attach scrubbed raw IBM API JSON and dashboard screenshot [AntiGravity 2026-04-25].
 6. **Outreach**: Present the "Gold Receipt Pilot" to one named quantum / AI research lead.
 
 ## What Blocks First Sale (One Thing)
 
-The **Buyer-Safe Pilot Offer** now exists at `docs/pilot_offer.md`.
+The **Buyer-Safe Pilot Offer** now exists at `docs/archive/pilot_offer.md`.
 
 Current blocker: ~~internal receipt needs evidence~~ **COMPLETE** — scrubbed raw IBM API JSON (`PHIFLOW_IBM_HERON_20260414_scrubbed.json`) and dashboard screenshot (`PHIFLOW_IBM_HERON_20260414_dashboard.png`) attached to `D:\CosmicFamily\EVIDENCE\PHIFLOW_IBM_HERON_20260414.md` on 2026-04-25 by AntiGravity.
 
