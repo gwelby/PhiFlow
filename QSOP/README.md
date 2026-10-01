@@ -84,6 +84,7 @@ If you are an execution agent:
 - `COUNCIL_DISPATCH_004.md`  
   Current council-wide gate order and kickoff directive.
 
+
 ## Rule Of Thumb
 
 Chat is for speed.
