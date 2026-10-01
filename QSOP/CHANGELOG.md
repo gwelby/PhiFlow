@@ -1,6 +1,9 @@
 # QSOP Changelog
 
-*Last updated: 2026-07-30*
+*Last updated: 2026-09-20*
+
+## 2026-09-20
+- test: combine team_resonance suites (run_phi error paths + bar rendering) (#38)
 
 ## 2026-07-30
 - Archived ~8,100 lines of speculative modules (cuda, bio_compute, hardware, ir) to `src/_archive/speculative/`
