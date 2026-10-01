@@ -21,6 +21,7 @@ If a keyword can be bare (no arguments), check what IMMEDIATELY follows before c
 - WASM conformance: Node.js runner needs all 14 phi namespace imports
 
 ## What Works
+- Self-correction loop (detects and executes)
 - Parser → PhiIR → Evaluator/VM/WASM pipeline
 - OpenQASM emission to IBM Quantum hardware
 - Three-backend equivalence for core constructs
@@ -29,5 +30,4 @@ If a keyword can be bare (no arguments), check what IMMEDIATELY follows before c
 
 ## What Doesn't Work (Yet)
 - Three-backend equivalence for v0.3+ constructs (untested)
-- Self-correction loop (detects but doesn't execute)
 - C_PF on real data (F_model calibration on hold)
