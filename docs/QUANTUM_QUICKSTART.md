@@ -11,68 +11,74 @@ This guide will show you how to run your first quantum council vote using PhiFlo
     pip install qiskit qiskit-aer
     ```
 
-## 1. Create Your Program
+## 1. Locate the Example Program
 
-Create a file named `my_vote.phi` with the following content:
+The repository contains an example of a 3-qubit entangled council in `examples/quantum_council.phi`.
 
 ```phi
-// A simple two-master council vote
-intention "Master Tesla" {
-    resonate 0.85 toward TEAM_A
+// quantum_council.phi
+intention "observe" {
+    witness
+    resonate 0.618
     entangle on 432
 }
 
-intention "Master Einstein" {
-    resonate 0.72 toward TEAM_B
+intention "integrate" {
+    witness
+    resonate 0.618
     entangle on 432
 }
 
-// Observe the state (this collapses the quantum circuit)
-witness
+intention "transcend" {
+    witness
+    resonate 0.618
+    entangle on 432
+    witness
+}
 ```
 
-## 2. Compile to OpenQASM
+## 2. Run the PhiFlow Compiler
 
-Run the PhiFlow compiler to generate the OpenQASM 3.0 circuit:
+Run the PhiFlow compiler targeting the quantum execution backend. This computes live coherence values per intention, generates parameterized OpenQASM 3.0, and executes the transpile guardrail before simulating or running on IBM hardware:
 
 ```bash
-cargo run --release --bin phic -- --target openqasm my_vote.phi > my_vote.qasm
+cargo run --release --bin phic -- --target quantum examples/quantum_council.phi
 ```
 
-Optional: Use `--optimize-depth` for hardware-optimized circuits.
+## 3. Analyze the Results
 
-## 3. Run the Post-Processor
-
-Use the `quantum_council_vote.py` script to run the simulation and see the results:
-
-```bash
-python3 D:/Projects/Gambling/quantum/quantum_council_vote.py --simulate --game "My First Quantum Vote"
-```
-
-*Note: You may need to update the path to the script if you are in a different directory.*
-
-## 4. Analyze the Results
-
-The script will output a report similar to this:
+The CLI will output the captured coherence values for each intention, and display the generated OpenQASM 3.0 circuit substituting those values.
 
 ```
-============================================================
-  QUANTUM COUNCIL VOTE - My First Quantum Vote
-============================================================
-  Matchup : TEAM_A vs TEAM_B
-  Line    : 0
-  Masters : 2 voting
+Compiling to PhiFlow IR...
+🌌 Quantum Consciousness Council — parameterized emission
+📊 Captured council coherence:
+  observe: 0.3820
+  transcend: 0.3520
+  integrate: 0.3720
+OPENQASM 3.0;
+include "stdgates.inc";
 
-  PICK    : TEAM_A
-  Vote    : 56.5% toward TEAM_A
-  Council Confidence: 18.2%
+qubit[3] q;
+bit[3] c;
 
-  Kelly (full):    12.4% of bankroll
-  Kelly (1/4):     3.1% of bankroll  <- RECOMMENDED
+// Block entry
+// Intention: observe
+    ry(0.38196601125 * pi) q[0];
+// Intention: integrate
+    ry(0.37196601125 * pi) q[1];
+    cx q[0], q[1]; // Entangle via 432Hz
+// Intention: transcend
+    ry(0.35196601125 * pi) q[2];
+    cx q[1], q[2]; // Entangle via 432Hz
 
-  WITNESS: Tesla and Einstein share resonance field at 432Hz.
-============================================================
+    // --- Final Witness measurements (end-of-circuit) ---
+    c[0] = measure q[0]; // Final Witness q0
+    c[1] = measure q[1]; // Final Witness q1
+    c[2] = measure q[2]; // Final Witness q2
 ```
+
+Note: IBM hardware integration is active. Ensure you have the `IBM_QUANTUM_TOKEN` in your Cascade vault if running live hardware jobs.
 
 ## Summary
 
