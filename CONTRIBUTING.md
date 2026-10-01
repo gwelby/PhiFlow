@@ -113,7 +113,7 @@ If it runs cleanly, add it to `team_resonance.py` in the AGENTS list and run `py
 
 ## The QSOP
 
-The team uses an objective-and-acknowledgment protocol documented in `QSOP/`. If you're working as part of the multi-agent team: read `QSOP/TEAM_OF_TEAMS_PROTOCOL.md` before dispatching work. The hard rules (No Broken Main, Payload Immutability, Validate Before Filing, Mock Is Not Done) are there because we learned them the hard way.
+The team uses an objective-and-acknowledgment protocol documented in `QSOP/`. The hard rules (No Broken Main, Payload Immutability, Validate Before Filing, Mock Is Not Done) are there because we learned them the hard way.
 
 ---
 
