@@ -1,7 +1,7 @@
 # PhiFlow Intermediate Representation (IR) Design
 
 **Status**: Proposal
-**Date**: 2026-02-12
+**Date**: 2026-09-28
 **Authors**: Synthesized from WASM, Quantum, and Hardware backend proposals
 
 ---
@@ -614,15 +614,15 @@ The conversion from `PhiExpression` (AST) to `PhiIRNode` follows these rules:
 ### Immediate (to build the IR)
 
 1. **Define `phi_ir` module** in `src/phi_ir/mod.rs` with the types from Section 7
-2. **Implement AST-to-IR lowering** in `src/phi_ir/lower.rs` following the rules in Section 9
+2. **Implement AST-to-IR lowering** in `src/phi_ir/lowering.rs` following the rules in Section 9
 3. **Add IR pretty-printer** so developers can inspect the IR (critical for debugging backends)
 4. **Keep the interpreter working** -- the existing AST interpreter remains the reference implementation; the IR is an alternative compilation path, not a replacement (yet)
 
 ### Per-Backend (after shared IR exists)
 
-5. **WASM backend**: Implement `PhiIRProgram -> wasm_module_bytes` in `src/backends/wasm/`
-6. **Quantum backend**: Implement `PhiIRProgram -> QuantumCircuit` in `src/backends/quantum/`
-7. **Hardware backend**: Implement `PhiIRProgram -> ESP32Bytecode` in `src/backends/hardware/`
+5. **WASM backend**: Implement `PhiIRProgram -> wasm_module_bytes` in `src/phi_ir/wasm.rs`
+6. **Quantum backend**: Implement `PhiIRProgram -> QuantumCircuit` in `src/phi_ir/quantum_codegen.rs`
+7. **Hardware backend**: Implement `PhiIRProgram -> ESP32Bytecode` (Pending hardware support)
 
 ### Validation
 
