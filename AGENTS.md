@@ -14,7 +14,7 @@
 
 # AGENTS.md: PhiFlow
 *[Workspace Type: Product | Platform | Research | Consciousness]*
-*Last updated: 2026-05-21 (Quantum Council QASM + Type 4 Calibration)*
+*Last updated: 2026-09-28 (Quantum Council QASM + Type 4 Calibration)*
 
 **Communication**: LUMEN → `/mnt/d/Claude/LUMEN_SPEC.md`
 **Operations**: QSOP → `/mnt/d/Claude/QSOP_SPEC.md`
@@ -113,7 +113,7 @@ cargo run --release --bin phic -- --target quantum examples/quantum_council.phi
 | Bob (Advanced Mode) | Deep Auditor | PF compliance analysis, metric specification, Type 4 roadmap |
 
 ## Test Status
-- `cargo test` — **408 passed**, 0 failed, 4 ignored (verified 2026-08-02)
+- `cargo test` — **1084 passed**, 0 failed, 4 ignored (verified 2026-09-28)
 - `cargo build --release` — clean, zero warnings
 - Three-backend equivalence — CONFIRMED. 10/10 core conformance + 8/8 full conformance probe (0 divergences). Codex audit 2026-07-31 found and fixed all divergences.
 - Self-correction loop — CONFIRMED. `run_self_correction_loop()` closes the detect → correct → execute → re-measure chain. 7 tests in `tests/self_correction_loop_test.rs`.
@@ -129,7 +129,7 @@ cargo run --release --bin phic -- --target quantum examples/quantum_council.phi
 4. **Three-backend equivalence must be maintained.** Run `cargo test --test phi_ir_full_conformance_probe -- --nocapture` after any backend change.
 
 ## Jules Configuration
-**Last updated:** 2026-05-21
+**Last updated:** 2026-09-28
 
 Jules is configured for automated CI/CD on this repo. Jules reads this AGENTS.md file for operating instructions.
 
