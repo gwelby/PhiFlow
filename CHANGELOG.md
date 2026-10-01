@@ -1,3 +1,7 @@
+> [!NOTE]
+> This root `CHANGELOG.md` is historical and preserved for older release notes.
+> For the active, up-to-date changelog, please see `QSOP/CHANGELOG.md`.
+
 # PhiFlow Changelog
 
 ## 2026-04-12 | Truth-Sync Correction (Per-Worktree Root Repair)
