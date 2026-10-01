@@ -2,7 +2,7 @@
 
 **PhiFlow is a programming language where code observes itself, declares its purpose, communicates internally, and measures its own alignment with reality.**
 
-**Last Updated:** 2026-03-14  
+**Last Updated:** 2026-03-14
 **Fidelity:** 📸 Photo (Guaranteed) | 📐 Sketch (Backend-Specific) | 🔴 Dot (Roadmap)
 
 ---
