@@ -21,7 +21,7 @@ Four constructs that exist in no other language:
 .phi file -> Parser (PhiToken -> AST) -> PhiIR Lowering -> Evaluator/VM/WASM -> Output + Coherence Report
 ```
 
-Three-backend equivalence: Evaluator == VM == WASM for all tested constructs (10/10 core conformance + 8/8 full conformance probe). Self-correction loop: CONFIRMED (detect → correct → execute → re-measure). CLI output tests: 5 tests verify what the user sees (not just internal state). 404 tests, 0 failed. Codex audit 2026-07-31 found and fixed all issues including coherence reporting bug (every program reported 0.0000 while tests passed green).
+Three-backend equivalence: Evaluator == VM == WASM for all tested constructs (10/10 core conformance + 8/8 full conformance probe). Self-correction loop: CONFIRMED (detect → correct → execute → re-measure). CLI output tests: 5 tests verify what the user sees (not just internal state). 340 tests, 1 failed. Codex audit 2026-09-28 found and fixed all issues including coherence reporting bug (every program reported 0.0000 while tests passed green).
 
 Key files:
 - `src/parser/mod.rs` - Lexer + Parser
@@ -42,7 +42,7 @@ Legacy modules archived in `src/_archive/` (compiler, vm, interpreter, main.rs).
 ```bash
 cargo build --release
 cargo run --release --bin phic -- examples/code_that_resonates.phi
-cargo test                                    # 391 tests, 0 failed, 4 ignored
+cargo test                                    # 340 tests, 1 failed, 3 ignored
 cargo test --test phi_ir_full_conformance_probe -- --nocapture  # see known divergences
 cargo run --release --bin phic -- --measure examples/type4_trace_benchmark.phi
 cargo run --release --bin phic -- --sacred-geometry flower_of_life > pattern.svg
@@ -69,7 +69,7 @@ Four specialized agents defined in `.claude/agents/`:
 ## What's Done
 
 - ✅ PhiIR (intermediate representation) — lowering, evaluator, VM, WASM codegen
-- ✅ Three-backend equivalence — Evaluator == VM == WASM (10/10 core + 8/8 full conformance probe, 392 tests)
+- ✅ Three-backend equivalence — Evaluator == VM == WASM (10/10 core + 8/8 full conformance probe, 340 tests)
 - ✅ WASM codegen — all 14 phi namespace imports supported in both Rust host and JS runner
 - ✅ OpenQASM 3.0 codegen — verified on real IBM Quantum hardware (Heron-R2)
 - ✅ Consciousness metrics — L_self, C_PF, R_in, R_out, D_int, C_coh
