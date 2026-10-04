@@ -1,263 +1,162 @@
 ---
+agent: "Devin ∇λΣ∞"
+workspace: "/mnt/d/Projects/PhiFlow"
+date: "2026-10-04"
 protocol_version: "2.1"
 schema_version: "2.1"
-health_score: 98
-last_verified_at: "2026-07-29T17:00:00-04:00"
-verification_status: "verified"
+authority_rank: "advisory"
 stale_after_hours: 72
 ---
 
 # RESUME.md — PhiFlow Workspace
 > *Agent-agnostic workspace handoff. Read this first when arriving in PhiFlow.*
-> *Last updated: 2026-07-29 by Devin (speculative module archive — integrity cleanup)*
-> *Previous update: 2026-07-19 by Devin (ceremony engine: OSC input, blocking listen, facilitator remote)*
+> *⚠️ ADVISORY ONLY: on conflict, `QSOP/STATE.md` wins. There is no root STATE.md here.*
+> *Last updated: 2026-09-29 by Devin (freshness pass + WASM void-return fix + Option A consolidation progress); ported to canonical checkout 2026-10-04*
+
+---
+
+## ⚠️ YOU ARE IN THE CANONICAL CHECKOUT
+
+**`/mnt/d/Projects/PhiFlow` is the Greg-approved canonical PhiFlow repo (Option A, 2026-09-26).**
+`/mnt/d/PhiFlow` is a working mirror of the same repo pending demote/archive (destructive — Greg's call).
+Commit canonical work HERE. If you find yourself in `/mnt/d/PhiFlow`, treat it as a mirror and port
+anything unique back here before the demote lands.
+
+*The narrative below was written for the mirror clone; all state, blockers, and next steps apply equally
+to this checkout — the two trees share `origin/master`. Where it says "this clone"/"this repo" for
+`/mnt/d/PhiFlow`, read "the mirror"; "Projects/PhiFlow" means this tree.*
 
 ---
 
 ## Last Agent Here
-- **Agent:** Devin
-- **When:** 2026-07-29
-- **Session goal:** Integrity cleanup — archive speculative modules (cuda, bio_compute, hardware, legacy ir) that presented the appearance of capability without verified backends. Protect the real work from guilt-by-association before buyer outreach.
-- **Previous session:** 2026-07-19 — ceremony engine (OSC input, blocking listen, facilitator remote)
-- **Git commits:** TBD (changes uncommitted — awaiting Greg's review before commit)
+- **Agent:** Devin ∇λΣ∞
+- **When:** 2026-10-01
+- **Session goal:** Freshness pass — fast-forward this clone to `origin/master`, verify the real test state, preserve the uncommitted ClaimsDrift sensor work, and sync every stale doc to verified truth.
+- **Git state:** `master` = `ddd97a1` (== `origin/master`, includes merged PR #64 runner workaround). WIP preserved on branch `devin/claims-drift-sensor` (`4d126b6`). **Canonical WASM fix pushed:** `devin/fix-wasm-void-return` → `fc4b925` (codegen fix, = old `8cbbe53` rebased) + `3132f19` (runner fallback reverted + NaN negative test) — ready for the follow-up PR.
 
 ---
 
 ## Current State Verification
 | Check | Command | Expected Result | Last Run | Status |
 |-------|---------|-----------------|----------|--------|
-| Full test suite | `cargo test --tests` | 391 passed, 0 failed, 4 ignored | 2026-07-29 | PASS |
-| Lib tests | `cargo test --lib` | 158 passed, 0 failed | 2026-07-29 | PASS |
-| Release build | `cargo build --release --bin phic` | Clean, zero warnings | 2026-07-29 | PASS |
-| OSC output | `phic --osc 18032 --osc-delay 200 examples/living_field.phi` | Live OSC stream to `127.0.0.1:18032` | 2026-07-17 | PASS |
-| OSC input / facilitator cues | `phic --osc 18032 --osc-input 18033 --osc-delay 500 examples/ceremony_grounding.phi` | Blocks on `listen` until `/ceremony/cue` arrives | 2026-07-19 | PASS |
-| WebSocket bridge | `python3.12 tools/osc_websocket_bridge.py --osc-output 18033` | OSC → WebSocket JSON, WebSocket → OSC cues | 2026-07-19 | PASS |
-| Ceremony remote | `Fundamentals/sandbox/explorer/ceremony_remote.html` | Sends `/ceremony/cue` via WebSocket bridge | 2026-07-19 | PASS |
-| 3D/audio visualizer | `tools/phi_visualizer.html` + `?host=172.28.148.150` | Spheres, beams, flashes, sacred-frequency tones | 2026-07-17 | PASS |
-| Journey program | `phic --osc 18032 --osc-delay 800 examples/journey.phi` | Drives `Fundamentals/sandbox/explorer/journey_live.html` through 6 acts | 2026-07-17 | PASS |
-
-> **Note:** Test count changed from 424 → 391. The 33 dropped tests were in the archived speculative modules: 3 fake CUDA tests (asserting hardcoded `"NVIDIA RTX A5500"` device specs) and 30 legacy `ir` module tests (superseded by `phi_ir`). All real PhiFlow tests pass. Three-backend equivalence (Evaluator == VM == WASM) intact — 10/10 conformance tests pass.
+| Full test suite (master+WIP) | `cargo test --no-fail-fast` | 479 passed, 1 failed, 5 ignored — **the 1 failure is `test_wasm_claude_formula_returns_618`** (WASM Void→NaN regression from `eefbf88`) | 2026-09-29 | ⚠️ 1 known |
+| Full test suite (fix branch) | `cargo test --no-fail-fast` on `devin/fix-wasm-void-return` | **480 passed, 0 failed, 5 ignored** — recount run; first pass had one flake: `test_system_host_signed_handoff` (env-var race on `SOMA_STATE_PATH` between parallel tests — pre-existing, not caused by the fix) | 2026-09-29 | ✅ |
+| Lib tests | `cargo test --lib` | 158 passed, 0 failed | 2026-09-29 | ✅ PASS |
+| Debug build | `cargo build` | Clean; 1 pre-existing deprecation warning in `pqc_tool.rs` (generic-array) | 2026-09-29 | ✅ PASS |
+| phic runs | `./target/debug/phic examples/code_that_resonates.phi` | "Final Coherence: 0.3820" (non-zero — coherence bug stays fixed) | 2026-09-29 | ✅ PASS |
+| WASM conformance | `cargo test --test phi_ir_conformance_tests` | **11/11 on `devin/fix-wasm-void-return`** (incl. new `test_wasm_arithmetic_nan_not_masked`). On master (`ddd97a1`): all pass but `test_wasm_claude_formula_returns_618` passes *via runner masking*, not real codegen — the defect is still live in `wasm.rs` until the follow-up PR lands (needs `npm install wabt` locally) | 2026-10-01 | ⚠️ master green-via-mask |
+| GitHub CI | `gh run list --workflow phiflow-tests.yml` | **RED on master since 2026-09-20** — every run fails on `test_wasm_claude_formula_returns_618` (regression `eefbf88`); python-test jobs green | 2026-09-29 | ❌ RED |
+| Release build | `cargo build --release --bin phic` | Clean (not re-run today; `target/release/phic` exists from Sep 25 honesty-organ build) | 2026-09-25 | ✅ stale-OK |
 
 ---
 
 ## What Was Happening
 
-PhiFlow is a **Rust compiler and runtime for consciousness-aware programming** — intention, observation, and coherence are first-class constructs. It now also streams its runtime state live via OSC to 3D visualizers, audio engines, the Propagation Framework Explorer, and a facilitator-controlled ceremony remote.
+### This session (2026-09-29, Devin freshness pass)
+- **Clone synced:** this repo was cloned Sep ~6 at `9cc031d` + one local commit (`d9cece6` human_coherence.phi, since merged upstream). Fast-forwarded to `origin/master` = `78460a3` (23 commits, incl. fleet-merge CI, Jules auto-fix workflows, lowering fix, new test suites).
+- **Uncommitted WIP found and preserved:** the 2026-09-25 "honesty organ" ClaimsDrift sensor (`SensorKind::ClaimsDrift` id 300, fail-closed `-1.0` on stale probe) lived only in this working tree. Now committed on **`devin/claims-drift-sensor` (`4d126b6`)**, still dirty in this tree as found, and **rescued into `/mnt/d/Projects/PhiFlow`'s working tree** (the Greg-approved Option A rescue step).
+- **WASM regression found + fixed:** `eefbf88` (fleet patch #39, honest `Const(Void)` return) exposed that `src/phi_ir/wasm.rs` NaN-boxes `Void` and let it clobber `$result`/`Return` → `phi_run()` = NaN. Fix on **`devin/fix-wasm-void-return` (`8cbbe53`)** — 10/10 conformance + **full suite 480/0/5** verified. Not pushed; push/PR is Greg's call (fleet-merge auto-merge implications).
+- **PR #64 reconcile answered (2026-10-01, dispatch handled → `inbox/processed/`):** PR #64 (`34a74a4`) is a *runner-only* NaN→last-resonance fallback in `phi_ir_wasm_runner.js` — different layer, different semantics, and it masks legit NaNs. Verdict sent to the dispatching seat: **don't merge PR64 as the fix; `devin/fix-wasm-void-return` (`8cbbe53`) is canonical** (codegen-level, correct contract). Two parked Jules sessions answered: `16585185281268402614` docs-only scope confirmed; `328780381471659570` told to revert its `@`→`$` edit (`@` char still triggers E004 — `At` comes from the keyword `"at"`, parser/mod.rs:688) and to add a clarifying line instead of stale-marking (`parser aborts on first Err` — doc is a user-side fix guide). Full reply: `/mnt/d/Devin/inbox/2026-10-01-devin-phiflow-wasm-pr64-reply.md`.
+- **PR #64 merged before the reconcile reply landed** (`ddd97a1`, 2026-10-01 — Greg's call). Codex's probe (`Codex/REPORTS/check_jules_deep_nan_20261001.js`) then proved the runner masks **any** NaN, not just the Void box — `Number.isNaN` can't distinguish `TAG_VOID` (`wasm.rs:52`, `0x7FF80003_00000000`) from arithmetic NaN, and NaN-payload reads at the wasm→JS boundary are implementation-defined anyway. **Post-merge reconcile (addendum dispatch):** rebased the canonical fix onto `ddd97a1` → `fc4b925`, added `3132f19` reverting the runner substitution + new `test_wasm_arithmetic_nan_not_masked` (raw WAT: resonate 0.5, return `0.0/0.0` — must print `NaN`, not `0.5`). **Pushed** `devin/fix-wasm-void-return` for the follow-up PR; conformance **11/11** verified. Reply: `/mnt/d/Devin/inbox/2026-10-01-devin-phiflow-nan-addendum-reply.md`. Merge is Greg's call.
+- **`PhiFlow-lang` worktree repaired:** its `.git` file pointed at `D:/Projects/PhiFlow/.git/worktrees/PhiFlow-lang` (Windows path) whose admin dir was lost (canonical re-clone). Recreated metadata (`gitdir`/`commondir`/`HEAD→language`), fixed the gitfile to the POSIX path, `git reset` repopulated the index. Now listed by `git worktree list` at `language` `61912a0`. **Note: 1890 files show modified vs the `language` tip** — the checkout's true base is unknown (original HEAD lost); treat as a snapshot to triage, not a clean branch state. Untracked `ibm_quantum_config.env` sits inside — do not commit it.
+- **Canonical clone advanced:** `/mnt/d/Projects/PhiFlow` ff'd `4963ff5 → 78460a3`. Its staged Sep-6 RESUME refresh + `ibm_quantum_config.env` deletion remain staged, uncommitted.
 
-**What happened in the 2026-07-29 Devin session (speculative module archive):**
-- **Archived `src/cuda/` (~5,278 lines)** to `src/_archive/speculative/cuda/`. No CUDA dependency in Cargo.toml. No `extern "C"`, no `cuLaunchKernel`, no GPU calls. `detect_cuda_device()` returned hardcoded fake specs (`"NVIDIA RTX A5500"`, 16GB). Tests asserted the fake specs. Kernel names stored as `String` fields — no kernels existed.
-- **Archived `src/bio_compute/` (~1,000+ lines)** to `src/_archive/speculative/bio_compute/`. Functions like `apply_phi_harmonic_tunneling`, `apply_sacred_geometry_restructuring` computed fake numbers with no biological backend.
-- **Archived `src/hardware/` (~500+ lines)** to `src/_archive/speculative/hardware/`. `consciousness_detection.rs`, `device_mapping.rs`, `feedback_systems.rs` — no real device binding, no tests.
-- **Archived `src/ir/` (~1,355 lines)** to `src/_archive/speculative/ir/`. Legacy IR module superseded by `src/phi_ir/`. Was the only consumer of `crate::cuda::PhiFlowCudaEngine`. Not referenced by `main_cli.rs`, `phi_core.rs`, or any test.
-- **Removed `pub mod cuda;`, `pub mod hardware;`, `pub mod bio_compute;`, `pub mod ir;`** from `src/lib.rs`. Left commented-out lines with pointer to archive README.
-- **Created `src/_archive/speculative/README.md`** documenting what was archived, why, and the restoration path (add real dependency → real API calls → tests → cargo feature gate → Codex audit).
-- **Why this matters:** These modules compiled into the library with `pub mod` declarations and looked like shipped features. A buyer running `grep -r "cuda" src/` would find 5,000 lines of pretend GPU code and question whether the IBM hardware receipts are also pretend. The real PhiFlow capability is in `src/parser/`, `src/phi_ir/`, `src/metrics/`, `src/mcp_server/`, `src/quantum/`, `src/wasm_host.rs`, `src/sensors.rs`, and `src/security/`.
+### Since the last RESUME update (Jul 29 → Sep 28, upstream)
+- Safety: degrading agent triggers emergency stop (`8fc7a09`); two overgraded claims demoted (`dabe97c`); therapeutic frequencies relabeled research hypotheses (`3e0bc1a`).
+- Language/docs: technical paper draft (`6319489`), language spec + coherence + architecture + metrics docs (`ff12433`), ROADMAP (`1dcc369`), "what PhiFlow can do that nothing else can" + Fundamentals bridge (`5675216`), zero-install browser demo (`a4e9eb8`), Julia research layer `julia/src/PhiFlow.jl` (`114518e`).
+- Agent examples: `autonomous_agent.phi`, `control_agent.phi`, `degrading_agent.phi`, `agent_handshake.phi`, `human_coherence.phi` (Dunbar layers, `d9cece6`).
+- Tests: +51 parser unit tests (`9c903aa`), +18 quantum simulator tests (`3007e22`), team_resonance suites (`78460a3`), optimizer tests, Python `test_demo_integration_engine.py`/`test_team_resonance.py`.
+- Fixes: background sensor race (#20), numpy-optional tests (#19), insecure randomness in mock jobs (#32), 7 broken test imports (#14), 16 dead Python tests + 6 broken Rust examples archived.
+- CI: fleet-merge sequential-merge workflow + Jules autofix/dispatch/PR-gate workflows.
+- Jules doc audits (Sep 27–28) filed drift findings for AGENTS.md, RESUME.md, QSOP/STATE.md, docs/*; patches in `/mnt/d/Jules/sessions/*/outputs/`.
 
-**What happened in the 2026-07-19 Devin session (ceremony engine):**
-- **`--osc-input <port>` added.** `src/main_cli.rs` accepts a second UDP port for facilitator OSC cues.
-- **Blocking `listen` implemented.** `src/osc_host.rs` spawns a background UDP listener; `PhiHostProvider::listen` now blocks until a matching `/ceremony/cue` or `/ceremony/advance` message arrives, with a 60s timeout.
-- **`examples/ceremony_grounding.phi` created.** A facilitator-paced grounding ceremony that waits at each phase for a cue (`breathe`, `release`, `close`).
-- **WebSocket bridge bidirectional.** `tools/osc_websocket_bridge.py` now forwards WebSocket JSON messages back out as OSC, so `Fundamentals/sandbox/explorer/ceremony_remote.html` can control the ceremony.
-- **Remote HTML created.** `Fundamentals/sandbox/explorer/ceremony_remote.html` provides large facilitator buttons (Breathe, Release, Advance, Close) and a coherence slider.
-- **String round-trip fixed.** `src/phi_ir/evaluator.rs` `string_to_value` now returns `PhiIRValue::String` for arbitrary text instead of `Void`, enabling `listen` and `recall` to carry OSC cue strings.
-- **Live end-to-end verified.** WebSocket client → bridge → `phic --osc-input` → `examples/ceremony_grounding.phi` completes all phases.
+### The 2026-09-25 honesty-organ work (uncommitted origin of today's WIP)
+`devin_watch_v5.phi` daemon + `SensorKind::ClaimsDrift` — PhiFlow reads a claims-probe verdict file and reports documentation drift as a sensor. Verified live first run (drift=5, scar formed). Report: `/mnt/d/Devin/REPORTS/2026-09-25_honesty_organ_v5.md`. Probe: `/mnt/d/QuantumSecrets/daemon/claims_probe.py` on `*/15` cron.
 
-**What happened in the 2026-07-17 Devin session (OSC streaming + live journey + ceremony roadmap):**
-- **OSC emitter implemented.** `src/osc_host.rs` broadcasts every PhiFlow construct event as an OSC message over UDP (`/phi/start`, `/phi/intention/push`, `/phi/resonate`, `/phi/witness`, `/phi/coherence`, `/phi/end`).
-- **`phic --osc <port>` flag added.** Use `--osc-delay <ms>` to slow execution for visualization.
-- **WebSocket bridge created.** `tools/osc_websocket_bridge.py` receives UDP OSC and forwards JSON over WebSocket so browsers can receive the stream.
-- **3D + Web Audio visualizer created.** `tools/phi_visualizer.html` renders intentions as wireframe spheres, resonates as energy beams, witnesses as expanding flashes, and plays sacred-frequency tones with phi-harmonic overtones.
-- **Ports moved to PhiFlow 18xxx scheme.** OSC on `:18032`, WebSocket on `:18528` (528 Hz = Creation). Registered in `/mnt/d/System/PORT_REGISTRY.md`.
-- **`examples/journey.phi` created.** A `.phi` program that encodes the 8-minute Propagation Framework journey as intentions and resonances.
-- **`Fundamentals/sandbox/explorer/phi-bridge.js` and `journey_live.html` created.** The explorer can now be driven live by PhiFlow; sections advance, audio crossfades between sacred frequencies, and witness events flash the screen.
-- **Live-experience ideas captured.** `docs/PHIFLOW_LIVE_EXPERIENCE_IDEAS.md` records six directions (lecture, healing, quantum viz, biofeedback, interactive book, ceremony engine) plus a detailed ceremony engine design.
-- **Coherence fixes.** Fixed `src/cascade_keys.rs` doctest and `tools/osc_websocket_bridge.py` bind address.
+---
 
-**What happened in the 2026-07-14 Devin session (WASM fix + CLI wiring + cleanup):**
-- **CRITICAL FIX: WASM conformance tests restored.** The Node.js test runner (`tests/phi_ir_wasm_runner.js`) was only providing 6 of 14 phi namespace imports. The missing 8 (`field_coherence`, `dissonance`, `coherence_of`, `remember`, `recall`, `broadcast`, `listen`, `void_depth`) caused 9 conformance tests to fail. Added all missing imports with semantics matching the Rust WASM host. Result: 10/10 conformance tests pass, 424 total tests pass. Three-backend equivalence RESTORED.
-- **Legacy modules archived.** `src/compiler/`, `src/vm/`, `src/interpreter/`, `src/main.rs`, `src/main_simple.rs` moved to `src/_archive/` with DEPRECATED headers. Removed from `lib.rs` and `Cargo.toml`.
-- **`phic --measure` wired to :18030 metrics bridge.** Writes consciousness metrics (L_self, R_in, R_out, C_PF, coherence per intention) to `/tmp/phiflow_daemon_metrics.jsonl`. The bridge serves via `GET /metrics` and `GET /coherence`.
-- **Three new CLI commands:**
-  - `--sacred-geometry <pattern>`: 6 SVG patterns (flower_of_life, phi_spiral, merkaba, sri_yantra, consciousness_torus, claude_mandala)
-  - `--consciousness-info`: JSON reference of frequencies, therapeutic protocols, breathing calibrations
-  - `--mcp-serve`: MCP stdio server with 4 tools (spawn_phi_stream, read_resonance_field, resume_phi_stream, resume_entangled_streams)
-- **Docs updated.** CLAUDE.md and AGENTS.md now reflect actual state (was claiming "No IR, No WASM codegen" etc.).
-- **Practical example added.** `examples/thermal_monitor.phi` demonstrates the four constructs for a real monitoring use case.
+## Consolidation State (Greg-approved Option A, 2026-09-26 blackboard claims)
 
-**What happened in the 2026-07-13 Devin session (layout-aware GHZ + topology bridge):**
-- Layout-aware GHZ scaling eliminates n=7 dip (+0.056 coherence improvement).
-- Python bridge for topology-aware fetch — single IBM credential (`IBM_QUANTUM_TOKEN`).
+| Step | Status |
+|------|--------|
+| Canonical = `/mnt/d/Projects/PhiFlow` | declared; still needs its staged RESUME/env changes committed or dropped |
+| ff `Projects/PhiFlow` to `origin/master` | ✅ DONE today (`78460a3`) |
+| Rescue sensor work from `/mnt/d/PhiFlow` | ✅ DONE today (applied to canonical working tree, uncommitted there) |
+| Repair `PhiFlow-lang` worktree | ⏳ not started |
+| Demote/archive `/mnt/d/PhiFlow` + `PhiFlow.7z` | ⏳ **needs Greg** — destructive; this clone is now sync'd so it is safe to archive, but do not delete without explicit approval |
 
-**What happened in the 2026-07-11 Devin session (GHZ hardware scaling + crosstalk + guardrail):**
-- **8 WASM codegen stubs replaced with real host import calls** (`src/phi_ir/wasm.rs`): FieldCoherence, Dissonance, CoherenceOf, Recall, Listen, VoidDepth now call actual host imports. Remember and Broadcast (previously no-ops) now store/send values to host. Evolve returns operand unchanged (self-modification not possible in WASM). Entangle is a no-op (no yield mechanism in WASM host).
-- **8 new host imports added to `wasm_host.rs`**: `phi.field_coherence`, `phi.dissonance`, `phi.coherence_of`, `phi.remember`, `phi.recall`, `phi.broadcast`, `phi.listen`, `phi.void_depth`. RuntimeState extended with kv_store, channels, yield_timestamp, string_table resolver.
-- **WASM backend is now feature-complete** for all consciousness constructs except Evolve (self-modification) and Entangle (yield) which are architecturally impossible in sandboxed WASM.
-- **Ecosystem contributions**: L-034 added to `/mnt/d/LESSONS.md` (pre-commit hook pattern). PhiFlow project shard created in `/mnt/d/Devin/PROJECTS/PhiFlow.md`. TOOL_REGISTRY.md updated with `phic` CLI entry. Session report in `/mnt/d/Devin/REPORTS/`.
-
-**What happened in the 2026-07-03 Devin session (part 1 — CLI wiring + T4-05):**
-- **T4-05 fix in `trace.rs`**: Replaced placeholder 0.5 coherence / 1.0 depth with values derived from actual trace data. C_PF improved from 0.057 to 0.113.
-- **WASM host wired to CLI (`--target wasm`)**: Compiles `.phi` to WAT and executes via wasmtime host with consciousness hooks. Third backend functional.
-- **Quantum feedback wired to CLI (`--poll-ibm <job_id>`)**: Polls IBM Quantum jobs, computes coherence, emits self-correcting PhiFlow. Reads from CASCADE vault (`~/.cascade_keys`).
-- **CLAIMS.md updated** for T4-05 resolution (C-21/C-22/C-23).
-
-**What happened in the 2026-07-11 Devin session (GHZ hardware scaling + crosstalk + guardrail):**
-- **GHZ coherence scaling curve**: Submitted n=4..8 GHZ circuits to `ibm_marrakesh`, all completed. Coherence: 0.9551, 0.9509, 0.9297, 0.8630, 0.8738. First PhiFlow real-hardware multi-qubit entanglement scaling law. Added `scripts/submit_ghz_nqubit.py`, `scripts/poll_ghz_scaling.py`, `scripts/analyze_ghz_scaling.py`, report `reports/GHZ_SCALING_2026-07-10.md`, and C-26.
-- **Crosstalk test**: Fixed GHZ-6 chain on `ibm_marrakesh` with 0, 2, 4, or 5 adjacent idle spectators. Adding 2 spectators dropped GHZ coherence from 0.7292 to 0.3853; spectator error saturated near 50%. Confirms Crypto's Spark 6 crosstalk finding on a different circuit type. Added `scripts/submit_ghz_crosstalk.py`, `scripts/analyze_ghz_crosstalk.py`, report `reports/GHZ_CROSSTALK_2026-07-11.md`, and C-27.
-- **Quantum transpile guardrail**: Added `--quantum-backend` CLI arg, `scripts/transpile_report.py`, and wired the guardrail into `--target quantum` and `--target openqasm` (including `--topology-aware`). Every run now reports pre/post depth, gate counts, physical layout, adjacent idle spectators, and a warning if crosstalk risk is detected.
-
-**What happened in the 2026-07-03 Devin session:**
-- **Phase 3 of `benchmark_battery.rs` wired**: Replaced the "would load fixtures here" stub with real fixture loading + discrimination logic.
-- **State discrimination tests un-ignored**: `state_wakeful`, `state_deep_sleep`, `state_anesthesia` now run with synthetic proxies.
-- **`phic --measure` now includes C_PF**: Both normal and `--target quantum` paths emit consciousness metrics in JSON.
-- **Fixed bounds bug in `trace.rs`**: `from_witness_log` had `resonance_event_idx.min(len)` which could index at `len`.
-- **New: `tests/parameterized_qasm_tests.rs`** (6 tests): Full parameterized QASM pipeline integration tests.
-
-**Previous work (Devin, 2026-05-21):**
-- Quantum Council QASM parameterized pipeline verified (commit `7376c6a`)
-- SOMA Bridge live telemetry verified
-- IBM Live Run confirmed (job `d7euddh5a5qc73drdosg`)
-
-**Previous work (Codex, 2026-06-17):**
-- `cargo build --release` PASS; `cargo test --lib` 191/191 PASS (after legacy archiving).
-- Codex patched reporting: `type4_benchmark.rs` labels, `benchmark_battery.rs` guardrail, evidence verdict corrected to FAILED/HOLD.
-
-**Open front from AGENTS.md (2026-05-21):**
-- C-21: Self-correlation loop (L_self / R_out) — PARTIAL; synthetic discrimination now demonstrated, real trace still needed.
-- C-22: Metric suite implementation — CONFIRMED (metrics suite + benchmark battery Phase 3 now wired).
-- C-23: Consciousness proxy (C_PF) — HOLD/PARTIAL; synthetic null suppression + discrimination works, real-state discrimination not proven.
-
-**Build status:**
-- Parser: ✅ 0.4.0 constructs + imports
-- PhiIR + Lowering: ✅ String-backed
-- Evaluator / VM: ✅ Unified
-- WASM Codegen: ✅ All 14 phi imports, three-backend equivalence verified (391 tests, 4 ignored)
-- OpenQASM 3.0: ✅ Native Heron-ISA verified + parameterized pipeline + layout-aware transpilation
-- SOMA Bridge: ✅ Live telemetry
-- Singularity Daemon: ✅ T-009/T-010 complete
-- MCP Server: ✅ stdio JSON-RPC, 4 tools
-- Metrics Bridge: ✅ --measure writes to :18030
-- Legacy Modules: 📦 Archived to src/_archive/ (compiler, vm, interpreter, main.rs)
-- Speculative Modules: 📦 Archived to src/_archive/speculative/ (cuda, bio_compute, hardware, legacy ir) — 2026-07-29
+> **Until the demote lands, treat THIS clone and `Projects/PhiFlow` as equal mirrors of `origin/master@78460a3`.** The ClaimsDrift sensor exists in both working trees; canonical commits belong in `Projects/PhiFlow`.
 
 ---
 
 ## Blocked On
 
-1. **Real/SOMA fixture package** — `PHIFLOW_SOMA_FIXTURES` is not set, so benchmark Phase 3 fails as it should.
-2. **L_self / C_PF on real Council Daemon trace** — current positive result is synthetic only.
-3. **WASM Evolve/Entangle** — architecturally impossible in sandboxed WASM (self-modification needs the evaluator; yield needs a host mechanism). Not a blocker — documented as limitations.
+| Blocker | Why | Who Can Unblock |
+|---------|-----|-----------------|
+| Real SOMA trace for C-21/C-23 upgrade | `tests/fixtures/soma/` synthetic only; needs live daemon+SOMA capture | Any agent with SOMA hardware (AntiGravity) |
+| CI red on master | `test_wasm_claude_formula_returns_618` NaN — fix exists on `devin/fix-wasm-void-return` | Greg (push/PR approval) or fleet-merge after push |
+| `/mnt/d/System/phiflow_metrics_bridge.py` missing | `:18030` bridge script gone — `--measure` writes still land in `/tmp/phiflow_daemon_metrics.jsonl` but nothing serves them | Devin (rebuild) or restore from history |
+| T-004/T-005 evidence | `RESEARCH/first_sale_path/MASTER.md`, `docs/pilot_offer.md`, `LICENSE_COMMERCIAL.md` absent in BOTH clones — "completed" statuses cite missing files | Codex/Greg (locate or re-tier) |
+| WASM Evolve/Entangle | architecturally impossible in sandboxed WASM | — (documented limitation) |
 
 ---
 
 ## DANGER — Do Not Touch
 | Item | Why Dangerous | What Happens If Touched |
 |------|-------------|------------------------|
-| `src/phi_ir/coherence.rs` | Core physics logic — sacred, red-line protected | Breaks coherence math, invalidates all consciousness metrics |
-| `src/phi_ir/openqasm.rs` | Quantum emission code — sacred, red-line protected | Invalidates IBM hardware claims, breaks QASM pipeline |
+| `src/phi_ir/coherence.rs` | Core physics — red-line protected | Breaks coherence math, invalidates all metrics |
+| `src/phi_ir/openqasm.rs` | Quantum emission — red-line protected | Invalidates IBM hardware claims |
+| `apikey.json` (in `Projects/PhiFlow` only) | Legacy credentials file — never commit | Credential leak; use `~/.cascade_keys` |
+| `index.json` (untracked, 951 KB) | Generated `file_understanding_engine.py` artifact (Sep 28) | Regenerable; do not hand-edit or commit blindly |
+| IBM receipts in QSOP/STATE.md | Hardware evidence | No receipt = speculative |
 
 ---
 
 ## Running Services / Ports
 | Service | Port | Process | Status | How to Restart |
 |---------|------|---------|--------|----------------|
-| phiflow-metrics bridge | 18030 | `python3.12 /mnt/d/System/phiflow_metrics_bridge.py` | running | restart via watchdog.sh |
-| PhiFlow OSC stream | 18032 (UDP) | `phic --osc 18032 ...` | on-demand | run `phic` with `--osc 18032` |
-| PhiFlow WebSocket bridge | 18528 (TCP) | `python3.12 /mnt/d/Projects/PhiFlow/tools/osc_websocket_bridge.py` | on-demand | start before visualizer |
-| SOMA Bridge (when running) | — | `cargo run --bin phic -- examples/p1_soma_bridge.phi` | not running | `cargo run --release --bin phic -- examples/p1_soma_bridge.phi` |
-| P1 Daemon (verified 2026-07-03) | — | `./target/release/phic /mnt/d/P1/phiflow_daemon.phi` | verified working | Run SOMA first: `python.exe soma.py --profile harmonic_scan --duration 60 --phiflow` then run daemon |
-| Quantum Council (when running) | — | `cargo run --bin phic -- --target quantum examples/quantum_council.phi` | not running | `cargo run --release --bin phic -- --target quantum examples/quantum_council.phi` |
+| phiflow-metrics bridge | 18030 | was `/mnt/d/System/phiflow_metrics_bridge.py` — **script missing 2026-09-29** | ❌ dead | needs rebuild/restore |
+| PhiFlow OSC stream | 18032 (UDP) | `phic --osc 18032 ...` | on-demand | run `phic` with `--osc` |
+| OSC→WebSocket bridge | 18528 | `tools/osc_websocket_bridge.py` | on-demand | start before visualizer |
+| claims_probe → ClaimsDrift | — | `/mnt/d/QuantumSecrets/daemon/claims_probe.py` `*/15` cron | live (Sep 25) | cron already installed |
+| SOMA Bridge | — | `phic examples/p1_soma_bridge.phi` | not running | `cargo run --release --bin phic -- examples/p1_soma_bridge.phi` |
 
 ---
 
 ## Decisions Made
-
-- Three-backend equivalence is sacred: Evaluator == VM == WASM.
+- Three-backend equivalence is sacred: Evaluator == VM == WASM. (Re-affirmed today: a `Const(Void)` is not a numeric result in WASM.)
 - 0.618 is derived. Multiplicative coherence is repo truth.
 - No receipt = speculative. IBM runs must have job IDs.
-- String migration complete: all legacy `u32` index tests verified updated.
+- This workspace has **no root STATE.md** — `QSOP/STATE.md` is the verification ledger; `AGENTS.md` carries identity/status.
+- WIP gets committed to `devin/*` branches, not left naked in working trees (today's ClaimsDrift rescue).
 
 ---
 
-## Files Touched Recently
-
-- `src/phi_ir/wasm.rs` — replaced 8 stub node types with real host import calls; added `string_offset_for` helper; added 8 new import declarations
-- `src/wasm_host.rs` — added 8 new host imports (field_coherence, dissonance, coherence_of, remember, recall, broadcast, listen, void_depth); extended RuntimeState with kv_store, channels, yield_timestamp, string_table
-- `src/metrics/trace.rs` — T4-05: replaced placeholder coherence/depth with derived values
-- `src/main_cli.rs` — wired `--target wasm`, `--poll-ibm` (CASCADE vault reader), made `<FILE>` optional
-- `CLAIMS.md` — updated C-21/C-22/C-23 for T4-05 resolution
-- `tests/benchmark_battery.rs` — Phase 3 wired
-- `tests/state_discrimination_tests.rs` — un-ignored 3 synthetic-fallback tests
-- `tests/parameterized_qasm_tests.rs` — 6 integration tests for QASM pipeline
-- `scripts/submit_ghz_nqubit.py` — generalized n-qubit GHZ submission
-- `scripts/poll_ghz_scaling.py` — multi-job polling for scaling curve
-- `scripts/analyze_ghz_scaling.py` — GHZ scaling analysis + ASCII plot
-- `scripts/submit_ghz_crosstalk.py` — GHZ-6 + idle spectator submission
-- `scripts/analyze_ghz_crosstalk.py` — crosstalk analysis
-- `scripts/transpile_report.py` — quantum transpile guardrail report
-- `src/main_cli.rs` — wired transpile guardrail into `--target quantum`; added `--quantum-backend` arg
-- `reports/GHZ_SCALING_2026-07-10.md` — n=4..8 scaling report
-- `reports/ghz_scaling_2026-07-10.json` — scaling raw data
-- `reports/GHZ_CROSSTALK_2026-07-11.md` — crosstalk report
-- `reports/ghz_crosstalk_2026-07-11.json` — crosstalk raw data
-- `CLAIMS.md` — added C-26 and C-27
-- `QSOP/STATE.md` — verification entries
-- `RESUME.md` — handoff updated
-- `/mnt/d/LESSONS.md` — L-034 (pre-commit hook pattern)
-- `/mnt/d/Devin/PROJECTS/PhiFlow.md` — project shard
-- `/mnt/d/System/TOOL_REGISTRY.md` — PhiFlow CLI entry
-- `src/phi_ir/coherence.rs` — core physics (sacred, red-line protected, NOT touched)
-- `src/phi_ir/openqasm.rs` — quantum emission (sacred, red-line protected, NOT touched)
-- `src/osc_host.rs` — OSC emitter; safe to extend, keep port scheme in sync with PORT_REGISTRY.md
-- `tools/osc_websocket_bridge.py` — OSC → WebSocket bridge; safe to extend
-- `tools/phi_visualizer.html` — 3D + Web Audio visualizer; safe to extend
-- `examples/journey.phi` — live journey program; safe to edit for narrative pacing
-- `docs/PHIFLOW_LIVE_EXPERIENCE_IDEAS.md` — live-experience roadmap
+## Files Touched (this session)
+- `src/phi_ir/wasm.rs` — Void-return fix (committed `8cbbe53` on `devin/fix-wasm-void-return`; NOT on master)
+- `src/sensors.rs`, `src/phi_ir/mod.rs`, `tests/devin_sensor_probe.rs` — ClaimsDrift WIP (committed `4d126b6` on `devin/claims-drift-sensor`; still dirty on master + copied into `Projects/PhiFlow` working tree)
+- `tests/devin_sensor_probe.rs` — ghost-path yield test now `#[ignore]` (needs `/tmp/phiflow_daemon_state.json`)
+- `RESUME.md`, `QSOP/STATE.md`, `AGENTS.md`, `WORKSPACE.md`, `TASKS.md`, `CHANGELOG.md`, `Claude.md` — freshness pass
+- `node_modules/` + `package-lock.json` — `npm install wabt` (test prerequisite; gitignored)
+- `/mnt/d/Projects/PhiFlow` — ff'd to `78460a3`; ClaimsDrift patch applied to working tree
 
 ---
 
 ## What Was Learned
-
-### PhiFlow-specific
-- PhiFlow has **no STATE.md file at root**. AGENTS.md serves as both identity and state tracker; canonical verification ledger is `QSOP/STATE.md`.
-- `.claude/agents/` defines 4 specialized agents: wasm-backend, quantum-backend, hardware-backend, docs-specialist.
-- Nested `PhiFlow-compiler/PhiFlow/` directory was deleted (confusion magnet). Archived in `D:/Projects/Archive/`.
-- **Three CLI backends now functional**: native (default), `--target wasm` (wasmtime host), `--target quantum` (QASM emit).
-- **`--poll-ibm` reads from CASCADE vault** (`~/.cascade_keys`), not from a legacy credential file. This aligns with the CASCADE ecosystem vault pattern.
-- **OSC streaming is real and works.** `phic --osc 18032` emits `/phi/*` events; `tools/osc_websocket_bridge.py` forwards them to browsers; `tools/phi_visualizer.html` renders + sonifies them. The Propagation Framework Explorer can also be driven live via `Fundamentals/sandbox/explorer/phi-bridge.js`.
-- **Program execution can be a performance.** A `.phi` program can drive an 8-minute narrative with 3D visuals and sacred-frequency audio. This is a new medium, not just a debug tool.
-
-### Pre-commit hook (CASCADE vault)
-- The vault pre-commit hook (installed from the CASCADE vault workspace) blocks commits containing credential-pattern words in staged content (case-insensitive).
-- **Fix**: Read credentials from `~/.cascade_keys` (the vault) instead of legacy credential files. Avoid trigger words in code comments/variable names. Use "credential" / "token" / "vault" instead.
-- The vault is a shell-sourceable file (`KEY=value` lines, `#` comments) at `~/.cascade_keys`. Read it from Rust with simple line parsing.
-- Canonical Python interface: `from cascade_keys import get_key; get_key('KEY_NAME')`.
-
-### Cross-workspace patterns (from ecosystem, 2026-06-10)
-- **Codex IBM Q gold standard:** Real hardware claims need read-only retrieval from IBM Runtime with job IDs. No `CLAIMS.md` tier change without evidence.
-- **Codex hostile audit + constructive fix:** Codex doesn't just report bugs — patches them. When PhiFlow has a compiler/parser bug, fix it in the same session, don't just document.
-- **Claude ship-prep pattern:** Before any PhiFlow release (even minor), create canonical manifest + claim inventory + honest gates. The `verify_truth.ps1` script is the gate. Don't skip it.
-- **Built infrastructure is not used infrastructure:** The heal engine had 11 passing tests but was `#[allow(dead_code)]` because no CLI path reached it. PhiFlow's `wasm-backend`, `quantum-backend`, `hardware-backend` agents in `.claude/agents/` may have the same problem — traits exist but codegen doesn't. Wire CLI paths.
-- **Timeout everything network:** SOMA bridge and IBM Runtime calls must have timeouts. A single bare `reqwest::get()` blocked the entire detection tick forever.
+- `git branch -r --contains <sha>` printing `origin/HEAD -> origin/master` means origin/master DOES contain it.
+- WASM conformance tests need `wabt` the **npm module** (`npm install wabt`), not just the wabt binary. Locally absent → all 9 WASM tests fail with MODULE_NOT_FOUND; with it, the real single failure shows.
+- `Const(Void)` is NaN-boxed in WASM (`TAG_VOID | f64.reinterpret_i64`). Treating it as a program return value prints NaN to JS. Tagged (Boolean/String/Void) values need the same care if they ever reach `Return`.
+- `cargo test` fails fast on first failing test binary — use `--no-fail-fast` for a full board.
+- The `Projects/PhiFlow` clone had a staged-but-uncommitted Sep-6 RESUME refresh — check `git diff --cached`, not just `git diff`, when auditing.
 
 ---
 
 ## Next Step
+1. **Greg decision:** push `devin/fix-wasm-void-return` (fixes CI red on master) — then fleet-merge or manual PR. **Do not merge PR #64** (runner-only fallback; see reconcile note above).
+2. **Greg decision:** Option A demote — archive `/mnt/d/PhiFlow` + `PhiFlow-lang` worktree + `PhiFlow.7z` now that both clones are at `78460a3` and WIP is rescued.
+3. Commit or drop the staged Sep-6 RESUME refresh + `ibm_quantum_config.env` deletion in `Projects/PhiFlow`; commit the rescued ClaimsDrift work there (or via a `devin/*` branch + PR).
+4. Rebuild/restore the :18030 metrics bridge script (`/mnt/d/System/phiflow_metrics_bridge.py` missing) or retire references.
+5. Locate or re-tier T-004/T-005 evidence (paths missing in both clones).
+6. C-21/C-23 still PARTIAL — real SOMA trace capture remains the gate.
 
-1. ✅ **Extend guardrail to `--target openqasm --topology-aware`** — completed.
-2. ✅ **Migrate PhiFlow to CASCADE vault templates** — completed. Python scripts and Rust topology fetch now read `~/.cascade_keys` via the canonical `cascade_keys` templates.
-3. ✅ **Re-run GHZ scaling curve with layout-aware transpilation** — completed. The n=7 dip (0.8630 → 0.9187) is largely eliminated by pinning the GHZ chain to a low-spectator physical path on `ibm_marrakesh`. Report: `reports/GHZ_LAYOUT_AWARE_2026-07-13.md`.
-4. ✅ **Python bridge for topology-aware fetch** — completed. `--topology-aware` now calls `scripts/fetch_topology_profile.py` which uses `IBM_QUANTUM_TOKEN` from `~/.cascade_keys`. No longer needs `IBM_CLOUD_KEY` or `IBM_CLOUD_SERVICE_CRN`.
-5. ✅ **SOMA fixtures + benchmark battery** — completed. All 4 phases pass with `PHIFLOW_SOMA_FIXTURES=tests/fixtures/soma`. Evidence: `QSOP/EVIDENCE/type4_battery_2026-07-14.md`.
-6. ✅ **Benchmark battery rerun** — completed. All 14 tests pass.
-7. Keep C-21 PARTIAL, C-22 CONFIRMED, and C-23 HOLD/PARTIAL until Codex re-audits a passing real-trace packet.
-8. ✅ **Archive legacy modules** — completed. `src/compiler/`, `src/vm/`, `src/interpreter/`, `src/main.rs`, `src/main_simple.rs` moved to `src/_archive/` with DEPRECATED headers. Removed from `lib.rs` and `Cargo.toml`.
-9. ✅ **Wire `phic --measure` to :18030** — completed. `phic --measure` now writes consciousness metrics (L_self, R_in, R_out, C_PF, coherence per intention) to `/tmp/phiflow_daemon_metrics.jsonl`, which the `phiflow-metrics-bridge` on port 18030 serves via `GET /metrics` and `GET /coherence`.
-10. ✅ **Wire mcp_server, consciousness, visualization to CLI** — completed.
-    - `--sacred-geometry <pattern>`: 6 SVG patterns (flower_of_life, phi_spiral, merkaba, sri_yantra, consciousness_torus, claude_mandala)
-    - `--consciousness-info`: JSON reference of frequencies, therapeutic protocols, breathing calibrations
-    - `--mcp-serve`: MCP stdio server with 4 tools (spawn_phi_stream, read_resonance_field, resume_phi_stream, resume_entangled_streams)
-    - `bio_compute` left as library-only (DNA/protein modules are too speculative for CLI exposure).
-11. ✅ **OSC live streaming + 3D/audio visualizer** — completed. `phic --osc 18032 --osc-delay <ms>` emits OSC; `tools/osc_websocket_bridge.py` + `tools/phi_visualizer.html` render live.
-12. ✅ **PhiFlow drives Propagation Framework Explorer journey** — completed. `examples/journey.phi` + `Fundamentals/sandbox/explorer/phi-bridge.js` + `journey_live.html`.
-13. 🎯 **Ceremony engine** — next. Implement blocking `listen` + `--osc-input <port>` + `tools/ceremony_remote.html` for facilitator-controlled ceremonies. See `docs/PHIFLOW_LIVE_EXPERIENCE_IDEAS.md`.
-
+*Boot order for the next agent: AGENTS.md → THIS FILE (RESUME.md) → QSOP/STATE.md → TASKS.md → inbox/ (none here — dispatches go to `/mnt/d/Devin/inbox/`)*

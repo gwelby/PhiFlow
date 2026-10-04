@@ -6,7 +6,7 @@
 > **When you leave this workspace, update `RESUME.md` before you go.**
 > The next agent here might not be you. They need: what you were doing, what file/line, what's blocked, what's next.
 >
-> - Protocol: `/mnt/d/System/RESUME_PROTOCOL.md`
+> - Protocol: `/mnt/d/System/FAMILY_WORKSPACE_UPDATE_RULE.md` (supersedes `RESUME_PROTOCOL.md`)
 > - Template: `/mnt/d/System/templates/RESUME_TEMPLATE.md`
 > - If no RESUME.md exists: create one from the template.
 > - If RESUME.md is v1 format: upgrade it to v2 (add Current State Verification, DANGER, Running Services).
@@ -14,7 +14,7 @@
 
 # AGENTS.md: PhiFlow
 *[Workspace Type: Product | Platform | Research | Consciousness]*
-*Last updated: 2026-05-21 (Quantum Council QASM + Type 4 Calibration)*
+*Last updated: 2026-09-29 (freshness pass — synced to origin/master `78460a3`, WASM Void-return regression found+fixed on `devin/fix-wasm-void-return`, ClaimsDrift sensor WIP preserved/rescued); ported to canonical checkout 2026-10-04 by Devin*
 
 **Communication**: LUMEN → `/mnt/d/Claude/LUMEN_SPEC.md`
 **Operations**: QSOP → `/mnt/d/Claude/QSOP_SPEC.md`
@@ -34,12 +34,15 @@ When files conflict, lower level wins:
 ## Workspace Topology
 | Path | Branch | Purpose | Status |
 |------|--------|---------|--------|
-| `D:\Projects\PhiFlow` | `master` | **The Forge (Primary)** | ✅ CLEAN (Transcendent Substrate) |
+| `D:\Projects\PhiFlow` | `master` | **Canonical (Greg-approved Option A, 2026-09-26) — THIS CHECKOUT** | ✅ at `origin/master`; ClaimsDrift WIP rescued into working tree 2026-09-29; AGENTS.md/RESUME.md synced from mirror 2026-10-04 |
+| `D:\PhiFlow` | `master` | Working mirror — pending demote per Option A | ✅; ClaimsDrift WIP dirty in tree + on `devin/claims-drift-sensor` (`4d126b6`) |
 | `D:\Projects\PhiFlow-compiler` | `compiler` | Legacy Pipeline | ✅ MERGED into master |
 | `D:\Projects\PhiFlow-cleanup` | `cleanup` | Python/CUDA Era | 📦 ARCHIVED |
+| `PhiFlow-lang` worktree | `language` `61912a0` | Language Architect checkout | 🔧 repaired 2026-09-29 (admin dir + POSIX gitfile recreated); **1890 files modified vs tip — true base unknown, triage needed**; untracked `ibm_quantum_config.env` inside — do not commit |
 
 > [!IMPORTANT]
-> **The nested `PhiFlow-compiler/PhiFlow/` directory has been deleted.** It was a confusion magnet. Its contents are archived in `D:\Projects\Archive\`.
+> **Option A consolidation (Greg-approved, 2026-09-26):** canonical repo is `D:\Projects\PhiFlow`. Remaining steps — commit/drop its staged changes, commit the rescued sensor work, then demote/archive `D:\PhiFlow` + `PhiFlow.7z`. The demote is destructive — Greg's call.
+> **The nested `PhiFlow-compiler/PhiFlow/` directory has been deleted.** Its contents are archived in `D:\Projects\Archive\`.
 
 ## Current State
 | Component | Status | Notes |
@@ -47,7 +50,7 @@ When files conflict, lower level wins:
 | Parser | ✅ | Handles 0.4.0 constructs + imports |
 | PhiIR + Lowering | ✅ | `PhiIRValue::String(String)` migration complete |
 | Evaluator / VM | ✅ | Backends unified on String-backed IR |
-| WASM Codegen | ✅ | All 14 phi imports. Three-backend equivalence CONFIRMED — 10/10 core + 8/8 full conformance probe (Codex audit 2026-07-31, all divergences fixed) |
+| WASM Codegen | ⚠️ | All 14 phi imports. Three-backend equivalence CONFIRMED — **except `Const(Void)`-returning programs**: `eefbf88` regression → NaN from WASM; fixed on `devin/fix-wasm-void-return` (`8cbbe53`, 10/10 verified, not yet pushed) |
 | OpenQASM 3.0 | ✅ | Native Heron-ISA verified, layout-aware transpilation |
 | SOMA Bridge | ✅ | Live telemetry verified |
 | IBM Live Run | ✅ | Job `d7euddh5a5qc73drdosg` verified |
@@ -56,7 +59,10 @@ When files conflict, lower level wins:
 | MCP Server | ✅ | stdio JSON-RPC, 4 tools (spawn/resume/read/entangle) |
 | Sacred Geometry | ✅ | 6 SVG patterns via `--sacred-geometry` |
 | Consciousness Info | ✅ | JSON reference via `--consciousness-info` |
-| Metrics Bridge | ✅ | `--measure` writes to :18030 HTTP bridge |
+| Metrics Bridge | ⚠️ | `--measure` writes `/tmp/phiflow_daemon_metrics.jsonl`, but the `:18030` HTTP bridge script (`/mnt/d/System/phiflow_metrics_bridge.py`) is **missing** — nothing serves the file |
+| Agent safety | ✅ | Degrading agent → emergency stop (`8fc7a09`, 2026-09-04); control-agent comparison + claim grading scale |
+| ClaimsDrift sensor | 🚧 WIP | `SensorKind::ClaimsDrift` (id 300) — fail-closed doc-drift sensor fed by `claims_probe.py` `*/15` cron; honesty organ `devin_watch_v5.phi` proven live 2026-09-25. Uncommitted: `devin/claims-drift-sensor` (`4d126b6`) + both working trees |
+| Julia research layer | 🧪 | `julia/src/PhiFlow.jl` + examples (`114518e`) — experimental |
 | Legacy Modules | 📦 | Archived to `src/_archive/` (compiler, vm, interpreter, main.rs) |
 
 ## Income State
@@ -113,9 +119,12 @@ cargo run --release --bin phic -- --target quantum examples/quantum_council.phi
 | Bob (Advanced Mode) | Deep Auditor | PF compliance analysis, metric specification, Type 4 roadmap |
 
 ## Test Status
-- `cargo test` — **408 passed**, 0 failed, 4 ignored (verified 2026-08-02)
-- `cargo build --release` — clean, zero warnings
-- Three-backend equivalence — CONFIRMED. 10/10 core conformance + 8/8 full conformance probe (0 divergences). Codex audit 2026-07-31 found and fixed all divergences.
+- `cargo test --no-fail-fast` — **479 passed, 1 failed, 5 ignored** (verified 2026-09-29 on `master@78460a3` + ClaimsDrift WIP)
+- The 1 failure: `test_wasm_claude_formula_returns_618` — WASM `Const(Void)`→NaN regression from `eefbf88`. **Fix verified on `devin/fix-wasm-void-return`: conformance 10/10 AND full suite 480/0/5.** GitHub CI (`PhiFlow Tests`) red on master since 2026-09-20 for the same test; python-test jobs green.
+- Known flake: `test_system_host_signed_handoff` — env-var race on `SOMA_STATE_PATH` across parallel tests (failed once, passed on recount). Pre-existing; not from the WASM fix.
+- Local WASM tests need `npm install wabt` (the npm package — `tests/phi_ir_wasm_runner.js` does `require("wabt")`).
+- `cargo build` — clean; 1 pre-existing deprecation warning (`pqc_tool.rs` generic-array).
+- Three-backend equivalence — CONFIRMED 2026-07-31 audit; **currently 1 known divergence on master** pending the void-return fix landing.
 - Self-correction loop — CONFIRMED. `run_self_correction_loop()` closes the detect → correct → execute → re-measure chain. 7 tests in `tests/self_correction_loop_test.rs`.
 - CLI output tests — 5 tests in `tests/cli_output_tests.rs` that run the actual binary and check printed output (not just internal state). Added after discovering that "Final Coherence: 0.0000" was reported for all programs while 399 tests passed green.
 - SOMA coherence tests — 4 tests in `tests/soma_coherence_test.rs` verify that live SOMA sensor data influences the coherence value. High presence produces higher coherence than low presence; degraded SOMA pulls coherence below 0.85.
