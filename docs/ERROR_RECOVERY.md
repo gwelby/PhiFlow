@@ -1,5 +1,7 @@
 # PhiFlow Error Recovery Guide
 
+> **Status: Stale (2026-09-28)**
+
 ## E001_UNEXPECTED_TOKEN
 **What it means:** The parser found a token that is not valid at the current expression or statement boundary.
 **Common causes:** Starting a statement with a keyword that only works in another context, or malformed expression ordering.
@@ -62,7 +64,7 @@ function f(x: Number) -> Number {
 
 ```phi
 // before
-let x = 5 @ 3
+let x = 5 $ 3
 
 // after
 let x = 5.0 + 3.0
