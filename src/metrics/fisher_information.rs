@@ -281,7 +281,8 @@ mod tests {
     fn test_noisy_future() {
         // Model is uncorrelated with future
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        use rand::SeedableRng;
+        let mut rng = rand::rngs::StdRng::seed_from_u64(42);
 
         let models: Vec<Vec<f64>> = (0..10).map(|_| vec![rng.gen::<f64>()]).collect();
         let futures: Vec<Vec<f64>> = (0..10).map(|_| vec![rng.gen::<f64>()]).collect();
@@ -394,7 +395,8 @@ mod tests {
     fn test_fisher_type4_no_relationship() {
         // Build a Type 4 trace where action is random, unrelated to model
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        use rand::SeedableRng;
+        let mut rng = rand::rngs::StdRng::seed_from_u64(42);
 
         let mut trace = Trace::new();
         for i in 1..=20 {
