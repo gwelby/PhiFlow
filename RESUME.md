@@ -17,14 +17,15 @@ stale_after_hours: 72
 
 ## ⚠️ YOU ARE IN THE CANONICAL CHECKOUT
 
-**`/mnt/d/Projects/PhiFlow` is the Greg-approved canonical PhiFlow repo (Option A, 2026-09-26).**
-`/mnt/d/PhiFlow` is a working mirror of the same repo pending demote/archive (destructive — Greg's call).
-Commit canonical work HERE. If you find yourself in `/mnt/d/PhiFlow`, treat it as a mirror and port
-anything unique back here before the demote lands.
+**`/mnt/d/Projects/PhiFlow` is the SOLE canonical PhiFlow repo (Option A, Greg-approved 2026-09-26).**
+The `/mnt/d/PhiFlow` mirror was demoted and **removed 2026-10-05** — preserved in `Archive/` as a git
+bundle + worktree patch + untracked set, not a full tar (all committed history was on origin). Same for
+`PhiFlow-lang` (tar'd, worktree removed; its `language` branch survives in this repo's refs) and
+`PhiFlow.7z` (moved to Archive). Credentials preserved under `Archive/preserved_credentials_20261004/`.
+See CHANGELOG 2026-10-05 for the full demote ledger.
 
-*The narrative below was written for the mirror clone; all state, blockers, and next steps apply equally
-to this checkout — the two trees share `origin/master`. Where it says "this clone"/"this repo" for
-`/mnt/d/PhiFlow`, read "the mirror"; "Projects/PhiFlow" means this tree.*
+*The narrative below was written for the mirror clone; where it says "this clone"/"this repo" for
+`/mnt/d/PhiFlow`, that path no longer exists — everything applies to THIS checkout.*
 
 ---
 

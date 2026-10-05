@@ -1,5 +1,15 @@
 # PhiFlow Changelog
 
+## 2026-10-05 | Mirror Demotion Complete (Option A final step)
+
+The stale mirror checkout `/mnt/d/PhiFlow` was demoted and removed. Canonical = this tree.
+
+- Mirror preserved as `Archive/PhiFlow_mirror_20261004.bundle` (all refs/objects, 52 MB) + `PhiFlow_mirror_worktree_20261004.patch` (878 lines of uncommitted doc/source edits) + `phiflow_mirror_untracked_20261004/` — not a full 22 GB tar since committed history is on origin.
+- `devin/claims-drift-sensor` rescued from the mirror (was local-only at `4d126b6`), pushed to origin, then extended here with `da3a5f1` (honest_witness.phi + PL_THEORY_SELF_VERIFICATION.md).
+- `PhiFlow-lang` worktree removed: 4 diverged local commits on `language` (incl. `8b50e5c` Fresh Start) remain on `refs/heads/language` in this repo + full tree in `Archive/PhiFlow-lang_worktree_20261004.tar.gz` (660 MB). **Blocked:** pushing `language` upstream — secret_guard found real `~/.cascade_keys` values in `src/_archive/` deploy scripts at `8b50e5c`. Needs scrub/rotate or Greg's call.
+- `PhiFlow.7z` (2.84 GB) moved to `Archive/PhiFlow_20261004.7z`.
+- Credentials preserved in `Archive/preserved_credentials_20261004/` (mirror env, worktree env, apikey.json — never committed).
+
 ## 2026-04-12 | Truth-Sync Correction (Per-Worktree Root Repair)
 
 This correction supersedes only the stale status surfaces layered on top of the 2026-03-29 note below. The 2026-03-29 browser warning remains true in this checkout.

@@ -35,13 +35,13 @@ When files conflict, lower level wins:
 | Path | Branch | Purpose | Status |
 |------|--------|---------|--------|
 | `D:\Projects\PhiFlow` | `master` | **Canonical (Greg-approved Option A, 2026-09-26) — THIS CHECKOUT** | ✅ at `origin/master`; ClaimsDrift WIP rescued into working tree 2026-09-29; AGENTS.md/RESUME.md synced from mirror 2026-10-04 |
-| `D:\PhiFlow` | `master` | Working mirror — pending demote per Option A | ✅; ClaimsDrift WIP dirty in tree + on `devin/claims-drift-sensor` (`4d126b6`) |
+| `D:\PhiFlow` | — | **REMOVED 2026-10-05** (demoted per Option A; bundle+patch in `Archive/`) | — |
 | `D:\Projects\PhiFlow-compiler` | `compiler` | Legacy Pipeline | ✅ MERGED into master |
 | `D:\Projects\PhiFlow-cleanup` | `cleanup` | Python/CUDA Era | 📦 ARCHIVED |
-| `PhiFlow-lang` worktree | `language` `61912a0` | Language Architect checkout | 🔧 repaired 2026-09-29 (admin dir + POSIX gitfile recreated); **1890 files modified vs tip — true base unknown, triage needed**; untracked `ibm_quantum_config.env` inside — do not commit |
+| `PhiFlow-lang` worktree | `language` `61912a0` | **REMOVED 2026-10-05** — branch ref kept in this repo; tree in `Archive/PhiFlow-lang_worktree_20261004.tar.gz`. Push upstream BLOCKED: real `~/.cascade_keys` values in `8b50e5c` (`src/_archive/`) — needs scrub/rotate or Greg's call | — |
 
 > [!IMPORTANT]
-> **Option A consolidation (Greg-approved, 2026-09-26):** canonical repo is `D:\Projects\PhiFlow`. Remaining steps — commit/drop its staged changes, commit the rescued sensor work, then demote/archive `D:\PhiFlow` + `PhiFlow.7z`. The demote is destructive — Greg's call.
+> **Option A consolidation COMPLETE (2026-10-05):** canonical repo is `D:\Projects\PhiFlow`; mirror, `PhiFlow-lang` worktree, and `PhiFlow.7z` demoted to `Archive/` and removed. ClaimsDrift sensor work lives on `devin/claims-drift-sensor` (pushed through `da3a5f1`).
 > **The nested `PhiFlow-compiler/PhiFlow/` directory has been deleted.** Its contents are archived in `D:\Projects\Archive\`.
 
 ## Current State
