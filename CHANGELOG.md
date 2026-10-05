@@ -1,6 +1,5 @@
 > [!NOTE]
-> This root `CHANGELOG.md` is historical and preserved for older release notes.
-> For the active, up-to-date changelog, please see `QSOP/CHANGELOG.md`.
+> The active project changelog has been moved to [QSOP/CHANGELOG.md](QSOP/CHANGELOG.md). This file is preserved for historical reference.
 
 # PhiFlow Changelog
 
