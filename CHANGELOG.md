@@ -1,5 +1,14 @@
 # PhiFlow Changelog
 
+## 2026-10-06 | `language` branch secrets scrubbed + preserved upstream
+
+Resolved yesterday's secret_guard block on the diverged local `language` line (4 commits: `8b50e5c` Fresh Start root → `61912a0` tip, unrelated to `origin/language` history).
+
+- Method: single-branch clone → `git filter-repo --replace-text` with all 909 non-trivial `~/.cascade_keys` values → push as **`origin/language-local-backup`** (scrubbed tip `e63242b`).
+- Verification: walked every blob in the scrubbed history against 916 candidate values — **0 residual hits**. Temp replace-file + scrub clone shredded/deleted.
+- The original unscrubbed history remains local-only by design: `refs/heads/language` in this repo + `Archive/` bundle/tar. Do NOT push `language` itself upstream — only `language-local-backup` carries the scrubbed line.
+- If any of those key values were ever pushed elsewhere, rotation is still the real fix — the scrub only stops *this* leak.
+
 ## 2026-10-05 | Mirror Demotion Complete (Option A final step)
 
 The stale mirror checkout `/mnt/d/PhiFlow` was demoted and removed. Canonical = this tree.

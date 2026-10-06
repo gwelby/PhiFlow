@@ -38,7 +38,7 @@ When files conflict, lower level wins:
 | `D:\PhiFlow` | — | **REMOVED 2026-10-05** (demoted per Option A; bundle+patch in `Archive/`) | — |
 | `D:\Projects\PhiFlow-compiler` | `compiler` | Legacy Pipeline | ✅ MERGED into master |
 | `D:\Projects\PhiFlow-cleanup` | `cleanup` | Python/CUDA Era | 📦 ARCHIVED |
-| `PhiFlow-lang` worktree | `language` `61912a0` | **REMOVED 2026-10-05** — branch ref kept in this repo; tree in `Archive/PhiFlow-lang_worktree_20261004.tar.gz`. Push upstream BLOCKED: real `~/.cascade_keys` values in `8b50e5c` (`src/_archive/`) — needs scrub/rotate or Greg's call | — |
+| `PhiFlow-lang` worktree | `language` `61912a0` | **REMOVED 2026-10-05** — original ref kept in this repo + `Archive/PhiFlow-lang_worktree_20261004.tar.gz`. 2026-10-06: scrubbed copy pushed upstream as **`origin/language-local-backup`** (tip `e63242b`) — all `~/.cascade_keys` values redacted via filter-repo, 916-value sweep verified 0 residual | — |
 
 > [!IMPORTANT]
 > **Option A consolidation COMPLETE (2026-10-05):** canonical repo is `D:\Projects\PhiFlow`; mirror, `PhiFlow-lang` worktree, and `PhiFlow.7z` demoted to `Archive/` and removed. ClaimsDrift sensor work lives on `devin/claims-drift-sensor` (pushed through `da3a5f1`).
