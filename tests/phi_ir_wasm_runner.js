@@ -104,11 +104,7 @@ async function main() {
 
   const { instance } = await WebAssembly.instantiate(buffer, imports);
   const result = instance.exports.phi_run();
-  if (Number.isNaN(result) && resonanceField.length > 0) {
-    process.stdout.write(String(resonanceField[resonanceField.length - 1]));
-  } else {
-    process.stdout.write(String(result));
-  }
+  process.stdout.write(String(result));
 }
 
 main().catch((err) => {
