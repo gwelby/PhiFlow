@@ -102,25 +102,9 @@ async function main() {
     },
   };
 
-
   const { instance } = await WebAssembly.instantiate(buffer, imports);
   const result = instance.exports.phi_run();
-
-  const buf = new ArrayBuffer(8);
-  const f64 = new Float64Array(buf);
-  const i64 = new BigInt64Array(buf);
-  f64[0] = result;
-
-  let finalResult = result;
-  if (Number.isNaN(result) && i64[0].toString(16) === "7ff8000300000000") {
-    // If the return value is Void, try to grab the last resonated value (like evaluator does)
-    if (resonanceField.length > 0) {
-      finalResult = resonanceField[resonanceField.length - 1];
-    }
-  }
-
-  process.stdout.write(String(finalResult));
-
+  process.stdout.write(String(result));
 }
 
 main().catch((err) => {
