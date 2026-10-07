@@ -103,15 +103,7 @@ async function main() {
   };
 
   const { instance } = await WebAssembly.instantiate(buffer, imports);
-  let result = instance.exports.phi_run();
-
-  // If the program returned Void (NaN), check if there are resonated values
-  if (Number.isNaN(result)) {
-    if (resonanceField.length > 0) {
-      result = resonanceField[resonanceField.length - 1];
-    }
-  }
-
+  const result = instance.exports.phi_run();
   process.stdout.write(String(result));
 }
 

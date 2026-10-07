@@ -2,7 +2,7 @@
 
 **PhiFlow is a programming language where code observes itself, declares its purpose, communicates internally, and measures its own alignment with reality.**
 
-**Last Updated:** 2026-03-14
+**Last Updated:** 2026-09-28
 **Fidelity:** 📸 Photo (Guaranteed) | 📐 Sketch (Backend-Specific) | 🔴 Dot (Roadmap)
 
 ---
@@ -171,7 +171,7 @@ intention "calibration" {
 }
 ```
 
-**Design Doc:** `QSOP/COHERENCE_FEEDBACK_DESIGN.md` (in progress)
+**Design Doc:** `docs/archive/QSOP/COHERENCE_FEEDBACK_DESIGN.md` (in progress)
 
 **Dependencies:** T-002 (IBM hardware verification)
 
