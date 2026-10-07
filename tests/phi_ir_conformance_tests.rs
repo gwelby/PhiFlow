@@ -387,7 +387,6 @@ fn conformance_nested_function_regression() {
 }
 
 #[test]
-#[ignore = "Pre-existing failure on master"]
 fn test_wasm_claude_formula_returns_618() {
     // Phase 10 Lane C fail-first: WASM backend must agree with evaluator path.
     let source = include_str!("../examples/claude.phi");
