@@ -293,17 +293,17 @@ impl<'a> WatEmitter<'a> {
                 self.line("(then");
                 self.indent += 1;
                 self.line(&format!(";; -> block {}", then_b));
-                self.emit_block(then_b, visited);
                 self.indent -= 1;
                 self.line(")");
                 self.line("(else");
                 self.indent += 1;
                 self.line(&format!(";; -> block {}", else_b));
+                self.indent -= 1;
+                self.line(")");
+                self.indent -= 1;
+                self.line(")");
+                self.emit_block(then_b, visited);
                 self.emit_block(else_b, visited);
-                self.indent -= 1;
-                self.line(")");
-                self.indent -= 1;
-                self.line(")");
             }
             PhiIRNode::Fallthrough => {}
             _ => {}
