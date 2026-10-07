@@ -276,7 +276,9 @@ fn get_live_data() -> Arc<RwLock<LiveSensorData>> {
                         data.cpu_usage = cpu_usage;
                         data.cpu_temp = cpu_temp;
                         data.memory_usage = memory_usage;
-                        data.soma = soma_opt;
+                        if soma_opt.is_some() {
+                            data.soma = soma_opt;
+                        }
                         if quantum_opt.is_some() {
                             data.quantum = quantum_opt;
                         }

@@ -81,7 +81,7 @@ fn test_coherence_with_high_presence_is_higher_than_low_presence() {
 
     // Wait for the sensor thread to pick up the new file.
     // The thread polls every 100ms.
-    std::thread::sleep(std::time::Duration::from_millis(500));
+    std::thread::sleep(std::time::Duration::from_millis(300));
     let coherence_high = compute_coherence_from_sensors();
 
     // Write a SOMA state with low presence (noisy environment)
@@ -89,7 +89,7 @@ fn test_coherence_with_high_presence_is_higher_than_low_presence() {
     write_soma_state(tmp_low.to_str().unwrap(), 0.05, 50.0, 5.0);
     std::env::set_var("SOMA_STATE_PATH", tmp_low.to_str().unwrap());
 
-    std::thread::sleep(std::time::Duration::from_millis(500));
+    std::thread::sleep(std::time::Duration::from_millis(300));
     let coherence_low = compute_coherence_from_sensors();
 
     // The high-presence coherence should be higher than low-presence.
