@@ -387,7 +387,6 @@ fn conformance_nested_function_regression() {
 }
 
 #[test]
-#[ignore = "Pre-existing failure on master"]
 fn test_wasm_claude_formula_returns_618() {
     // Phase 10 Lane C fail-first: WASM backend must agree with evaluator path.
     let source = include_str!("../examples/claude.phi");
@@ -420,5 +419,27 @@ fn test_wasm_claude_formula_returns_618() {
         (wasm_result - 0.618).abs() < 0.001,
         "WASM path returned {} not 0.618",
         wasm_result
+    );
+}
+
+#[test]
+fn test_wasm_arithmetic_nan_not_masked() {
+    // Guard for the PR #64 regression class: a module that returns a genuine
+    // arithmetic NaN (0.0/0.0 via f64.div) must surface NaN to the host, even
+    // when the resonance field is populated. The runner must never substitute
+    // the last resonated value for NaN — Void-terminal programs are handled at
+    // codegen (Const(Void) never satisfies Return), not by NaN-sniffing in JS.
+    let wat = r#"
+(module
+  (import "phi" "resonate" (func $phi_resonate (param f64)))
+  (func (export "phi_run") (result f64)
+    (call $phi_resonate (f64.const 0.5))
+    (f64.div (f64.const 0.0) (f64.const 0.0))))
+"#;
+    let result = run_wat_with_node(wat);
+    assert!(
+        result.is_nan(),
+        "WASM runner must return arithmetic NaN honestly, got {}",
+        result
     );
 }
