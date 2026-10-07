@@ -1,7 +1,7 @@
 # CLAIMS: PhiFlow
-*Last updated: 2026-09-28*
+*Last updated: 2026-10-07*
 *Honesty rule: beautiful != proven. Failed tests are results, not failures.*
-*Codex hostile audit performed 2026-09-28 — findings integrated below.*
+*Codex hostile audit performed 2026-07-31 — findings integrated below.*
 
 ## Core Axioms (not claims — starting assumptions)
 
