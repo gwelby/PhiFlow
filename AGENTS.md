@@ -50,7 +50,7 @@ When files conflict, lower level wins:
 | Parser | ✅ | Handles 0.4.0 constructs + imports |
 | PhiIR + Lowering | ✅ | `PhiIRValue::String(String)` migration complete |
 | Evaluator / VM | ✅ | Backends unified on String-backed IR |
-| WASM Codegen | ⚠️ | All 14 phi imports. Three-backend equivalence CONFIRMED — **except `Const(Void)`-returning programs**: `eefbf88` regression → NaN from WASM; fixed on `devin/fix-wasm-void-return` (`8cbbe53`, 10/10 verified, not yet pushed) |
+| WASM Codegen | ⚠️ | All 14 phi imports. **PR #65 open, all checks green** — `devin/fix-wasm-void-return` (`fc4b925`+`3132f19`) fixes `Const(Void)`→NaN at codegen, reverts the #64 runner mask, adds `test_wasm_arithmetic_nan_not_masked`. Master is green-via-mask until merged |
 | OpenQASM 3.0 | ✅ | Native Heron-ISA verified, layout-aware transpilation |
 | SOMA Bridge | ✅ | Live telemetry verified |
 | IBM Live Run | ✅ | Job `d7euddh5a5qc73drdosg` verified |
@@ -59,7 +59,7 @@ When files conflict, lower level wins:
 | MCP Server | ✅ | stdio JSON-RPC, 4 tools (spawn/resume/read/entangle) |
 | Sacred Geometry | ✅ | 6 SVG patterns via `--sacred-geometry` |
 | Consciousness Info | ✅ | JSON reference via `--consciousness-info` |
-| Metrics Bridge | ⚠️ | `--measure` writes `/tmp/phiflow_daemon_metrics.jsonl`, but the `:18030` HTTP bridge script (`/mnt/d/System/phiflow_metrics_bridge.py`) is **missing** — nothing serves the file |
+| Metrics Bridge | ✅ | `:18030` FastAPI bridge **live** — script at `/mnt/d/System/tools/phiflow_metrics_bridge.py`; verified 2026-10-07 end-to-end (`--measure` → jsonl → `/metrics`). Only 503s when no metrics producer has run |
 | Agent safety | ✅ | Degrading agent → emergency stop (`8fc7a09`, 2026-09-04); control-agent comparison + claim grading scale |
 | ClaimsDrift sensor | 🚧 WIP | `SensorKind::ClaimsDrift` (id 300) — fail-closed doc-drift sensor fed by `claims_probe.py` `*/15` cron; honesty organ `devin_watch_v5.phi` proven live 2026-09-25. Uncommitted: `devin/claims-drift-sensor` (`4d126b6`) + both working trees |
 | Julia research layer | 🧪 | `julia/src/PhiFlow.jl` + examples (`114518e`) — experimental |
