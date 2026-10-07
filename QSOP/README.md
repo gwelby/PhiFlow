@@ -20,8 +20,7 @@ If you are new to the project, read in this order:
 3. `D:\Projects\PhiFlow\QSOP\STATE.md`
 4. `D:\Projects\PhiFlow\QSOP\TEAM_OF_TEAMS_PROTOCOL.md`
 5. current active dispatch in `D:\Projects\PhiFlow\QSOP\`
-6. your assigned payload in `D:\Projects\PhiFlow\QSOP\mail\payloads\` if you have one
-7. `D:\Projects\PhiFlow\QSOP\COUNCIL_EXECUTION_STANDARD.md`
+6. `D:\Projects\PhiFlow\QSOP\COUNCIL_EXECUTION_STANDARD.md`
 
 ## Core Files
 
@@ -42,25 +41,6 @@ If you are new to the project, read in this order:
 
 - `DISPATCH-*.md` and `COUNCIL_DISPATCH_*.md`  
   Active gate order or council decisions. These are the live campaign directives.
-
-## Mail System
-
-Use `QSOP/mail/` for objective traffic and durable handoff:
-
-- `payloads/`
-  Human-readable task contracts.
-
-- `objectives/`
-  Structured objective envelopes.
-
-- `acks/`
-  Completion, blocked, or failed responses with evidence.
-
-- `dead_letter/`
-  Unreconciled or failed message traffic.
-
-- `templates/`
-  Starting points for payloads and packet schemas.
 
 ## Supporting Directories
 
@@ -98,23 +78,12 @@ If you are an execution agent:
 
 - Execution standard: `D:\Projects\PhiFlow\QSOP\COUNCIL_EXECUTION_STANDARD.md`
 - Active dispatch: `D:\Projects\PhiFlow\QSOP\COUNCIL_DISPATCH_004.md`
-- Active Gate 0 payload: `D:\Projects\PhiFlow\QSOP\mail\payloads\OBJ-20260307-001.md`
-- Active Gate 0 envelope: `D:\Projects\PhiFlow\QSOP\mail\objectives\OBJ-20260307-001.json`
-- Payload template: `D:\Projects\PhiFlow\QSOP\mail\templates\OBJECTIVE_PAYLOAD_TEMPLATE.md`
 
 ## Current Artifact Roles
 
 - `COUNCIL_DISPATCH_004.md`  
   Current council-wide gate order and kickoff directive.
 
-- `mail/payloads/OBJ-20260307-001.md`
-  Canonical Gate 0 task contract for Codex.
-
-- `mail/objectives/OBJ-20260307-001.json`
-  Packet envelope for the active Gate 0 dispatch.
-
-- `mail/payloads/GATE-0-KICKOFF.md` and `mail/payloads/OBJ-20260307-GATE0-CODEX.md`
-  Supplemental briefing notes. Helpful context, but not the canonical payload contract.
 
 ## Rule Of Thumb
 
