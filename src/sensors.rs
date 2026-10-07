@@ -276,9 +276,10 @@ fn get_live_data() -> Arc<RwLock<LiveSensorData>> {
                         data.cpu_usage = cpu_usage;
                         data.cpu_temp = cpu_temp;
                         data.memory_usage = memory_usage;
-                        if soma_opt.is_some() {
-                            data.soma = soma_opt;
-                        }
+                        // Clear-stale: a failed SOMA read writes None rather than
+                        // retaining the last-good reading — a dead sensor must not
+                        // keep reporting presence into coherence computations.
+                        data.soma = soma_opt;
                         if quantum_opt.is_some() {
                             data.quantum = quantum_opt;
                         }
