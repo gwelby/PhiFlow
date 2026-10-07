@@ -64,7 +64,7 @@ function f(x: Number) -> Number {
 
 ```phi
 // before
-let x = 5 $ 3
+let x = 5 @ 3
 
 // after
 let x = 5.0 + 3.0
