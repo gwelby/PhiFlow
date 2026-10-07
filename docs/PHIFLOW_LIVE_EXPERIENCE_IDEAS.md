@@ -251,7 +251,7 @@ To make a real ceremony engine, we need:
 
 ```phi
 // A simple grounding ceremony
-// Run: phic --osc 18032 --osc-input 18033 ceremony_grounding.phi
+// Run: phic --osc 18032 --osc-input 18033 DEAD_REFERENCE: examples/ceremony_grounding.phi
 
 intention "opening" {
     // Start with silence, then a low 432 Hz drone
@@ -338,7 +338,7 @@ python3.12 /mnt/d/Projects/PhiFlow/tools/osc_websocket_bridge.py
   --osc 18032 \
   --osc-input 18033 \
   --osc-delay 500 \
-  ceremony_grounding.phi
+  DEAD_REFERENCE: examples/ceremony_grounding.phi
 ```
 
 **Browser — audience view:**
@@ -367,7 +367,7 @@ http://172.28.148.150:8080/ceremony_remote.html
 
 - [ ] Add `--osc-input <port>` to `phic` CLI (`src/main_cli.rs`)
 - [ ] Implement blocking `listen` in a new or extended host provider
-- [ ] Add `ceremony_grounding.phi` as the reference ceremony
+- [ ] Add `DEAD_REFERENCE: examples/ceremony_grounding.phi` as the reference ceremony
 - [ ] Create `tools/ceremony_remote.html` facilitator control page
 - [ ] Document how P1 coherence can be injected into the ceremony
 - [ ] Add MQTT input option for ecosystem-wide ceremonies
@@ -417,7 +417,7 @@ http://172.28.148.150:8080/ceremony_remote.html
 1. **Close the ceremony engine loop**
    - Implement blocking `listen` + `--osc-input <port>`
    - Build `tools/ceremony_remote.html`
-   - Test with `ceremony_grounding.phi`
+   - Test with `DEAD_REFERENCE: examples/ceremony_grounding.phi`
 
 2. **Expand the experience surface**
    - Add visual themes for healing, quantum, and ritual
