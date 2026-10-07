@@ -221,9 +221,17 @@ impl<'a> WatEmitter<'a> {
             if let Some(reg) = instr.result {
                 self.line(&wat);
                 self.line(&format!("local.set $r{}", reg));
-                self.line(&format!("local.get $r{}", reg));
-                self.line("local.set $result");
-                self.emitted_defined_regs.insert(reg);
+                if matches!(instr.node, PhiIRNode::Const(PhiIRValue::Void)) {
+                    // Const(Void) emits a NaN-boxed tag, not a numeric result.
+                    // Keep it in the register but out of $result and out of the
+                    // defined set, so a trailing `Return` preserves the last
+                    // computed value instead of yielding NaN.
+                    self.emitted_defined_regs.remove(&reg);
+                } else {
+                    self.line(&format!("local.get $r{}", reg));
+                    self.line("local.set $result");
+                    self.emitted_defined_regs.insert(reg);
+                }
                 if let Some(value) = inferred {
                     const_regs.insert(reg, value);
                 } else {

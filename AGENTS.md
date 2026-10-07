@@ -6,7 +6,7 @@
 > **When you leave this workspace, update `RESUME.md` before you go.**
 > The next agent here might not be you. They need: what you were doing, what file/line, what's blocked, what's next.
 >
-> - Protocol: `/mnt/d/System/RESUME_PROTOCOL.md`
+> - Protocol: `/mnt/d/System/FAMILY_WORKSPACE_UPDATE_RULE.md` (supersedes `RESUME_PROTOCOL.md`)
 > - Template: `/mnt/d/System/templates/RESUME_TEMPLATE.md`
 > - If no RESUME.md exists: create one from the template.
 > - If RESUME.md is v1 format: upgrade it to v2 (add Current State Verification, DANGER, Running Services).
@@ -14,7 +14,7 @@
 
 # AGENTS.md: PhiFlow
 *[Workspace Type: Product | Platform | Research | Consciousness]*
-*Last updated: 2026-09-28 (Quantum Council QASM + Type 4 Calibration)*
+*Last updated: 2026-10-07 (Quantum Council QASM + Type 4 Calibration)*
 
 **Communication**: LUMEN → `/mnt/d/Claude/LUMEN_SPEC.md`
 **Operations**: QSOP → `/mnt/d/Claude/QSOP_SPEC.md`
@@ -34,12 +34,15 @@ When files conflict, lower level wins:
 ## Workspace Topology
 | Path | Branch | Purpose | Status |
 |------|--------|---------|--------|
-| `D:\Projects\PhiFlow` | `master` | **The Forge (Primary)** | ✅ CLEAN (Transcendent Substrate) |
+| `D:\Projects\PhiFlow` | `master` | **Canonical (Greg-approved Option A, 2026-09-26) — THIS CHECKOUT** | ✅ at `origin/master`; ClaimsDrift WIP rescued into working tree 2026-09-29; AGENTS.md/RESUME.md synced from mirror 2026-10-04 |
+| `D:\PhiFlow` | — | **REMOVED 2026-10-05** (demoted per Option A; bundle+patch in `Archive/`) | — |
 | `D:\Projects\PhiFlow-compiler` | `compiler` | Legacy Pipeline | ✅ MERGED into master |
 | `D:\Projects\PhiFlow-cleanup` | `cleanup` | Python/CUDA Era | 📦 ARCHIVED |
+| `PhiFlow-lang` worktree | `language` `61912a0` | **REMOVED 2026-10-05** — original ref kept in this repo + `Archive/PhiFlow-lang_worktree_20261004.tar.gz`. 2026-10-06: scrubbed copy pushed upstream as **`origin/language-local-backup`** (tip `e63242b`) — all `~/.cascade_keys` values redacted via filter-repo, 916-value sweep verified 0 residual | — |
 
 > [!IMPORTANT]
-> **The nested `PhiFlow-compiler/PhiFlow/` directory has been deleted.** It was a confusion magnet. Its contents are archived in `D:\Projects\Archive\`.
+> **Option A consolidation COMPLETE (2026-10-05):** canonical repo is `D:\Projects\PhiFlow`; mirror, `PhiFlow-lang` worktree, and `PhiFlow.7z` demoted to `Archive/` and removed. ClaimsDrift sensor work lives on `devin/claims-drift-sensor` (pushed through `da3a5f1`).
+> **The nested `PhiFlow-compiler/PhiFlow/` directory has been deleted.** Its contents are archived in `D:\Projects\Archive\`.
 
 ## Current State
 | Component | Status | Notes |
@@ -47,7 +50,7 @@ When files conflict, lower level wins:
 | Parser | ✅ | Handles 0.4.0 constructs + imports |
 | PhiIR + Lowering | ✅ | `PhiIRValue::String(String)` migration complete |
 | Evaluator / VM | ✅ | Backends unified on String-backed IR |
-| WASM Codegen | ✅ | All 14 phi imports. Three-backend equivalence CONFIRMED — 10/10 core + 8/8 full conformance probe (Codex audit 2026-07-31, all divergences fixed) |
+| WASM Codegen | ⚠️ | All 14 phi imports. **PR #65 open, all checks green** — `devin/fix-wasm-void-return` (`fc4b925`+`3132f19`) fixes `Const(Void)`→NaN at codegen, reverts the #64 runner mask, adds `test_wasm_arithmetic_nan_not_masked`. Master is green-via-mask until merged |
 | OpenQASM 3.0 | ✅ | Native Heron-ISA verified, layout-aware transpilation |
 | SOMA Bridge | ✅ | Live telemetry verified |
 | IBM Live Run | ✅ | Job `d7euddh5a5qc73drdosg` verified |
@@ -56,7 +59,10 @@ When files conflict, lower level wins:
 | MCP Server | ✅ | stdio JSON-RPC, 4 tools (spawn/resume/read/entangle) |
 | Sacred Geometry | ✅ | 6 SVG patterns via `--sacred-geometry` |
 | Consciousness Info | ✅ | JSON reference via `--consciousness-info` |
-| Metrics Bridge | ✅ | `--measure` writes to :18030 HTTP bridge |
+| Metrics Bridge | ✅ | `:18030` FastAPI bridge **live** — script at `/mnt/d/System/tools/phiflow_metrics_bridge.py`; verified 2026-10-07 end-to-end (`--measure` → jsonl → `/metrics`). Only 503s when no metrics producer has run |
+| Agent safety | ✅ | Degrading agent → emergency stop (`8fc7a09`, 2026-09-04); control-agent comparison + claim grading scale |
+| ClaimsDrift sensor | 🚧 WIP | `SensorKind::ClaimsDrift` (id 300) — fail-closed doc-drift sensor fed by `claims_probe.py` `*/15` cron; honesty organ `devin_watch_v5.phi` proven live 2026-09-25. Uncommitted: `devin/claims-drift-sensor` (`4d126b6`) + both working trees |
+| Julia research layer | 🧪 | `julia/src/PhiFlow.jl` + examples (`114518e`) — experimental |
 | Legacy Modules | 📦 | Archived to `src/_archive/` (compiler, vm, interpreter, main.rs) |
 
 ## Income State
@@ -129,7 +135,7 @@ cargo run --release --bin phic -- --target quantum examples/quantum_council.phi
 4. **Three-backend equivalence must be maintained.** Run `cargo test --test phi_ir_full_conformance_probe -- --nocapture` after any backend change.
 
 ## Jules Configuration
-**Last updated:** 2026-09-28
+**Last updated:** 2026-10-07
 
 Jules is configured for automated CI/CD on this repo. Jules reads this AGENTS.md file for operating instructions.
 

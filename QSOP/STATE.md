@@ -1,3 +1,55 @@
+## Verified (2026-10-07) [Devin Projects-seat: void-return reconciled, fleet PR triage, metrics bridge LIVE]
+
+*Ledger gap note: no entries 2026-07-14 → 2026-10-07. Three months of verification
+(WASM void-return saga, PR #64 runner mask, ClaimsDrift sensor, Option A consolidation,
+honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
+
+- **WASM Void regression — full chain verified end to end.** `eefbf88` (honest
+  `Const(Void)` return) exposed `wasm.rs` NaN-boxing Void into `phi_run()`. PR #64
+  (merged `ddd97a1`) patched the JS runner: Void→last-resonance. Master today:
+  **conformance 10/10 locally — green-via-mask, not fixed.** The mask converts ANY
+  NaN (including real arithmetic NaN) to last-resonance; `Number.isNaN` cannot
+  distinguish `TAG_VOID` (`0x7FF80003_00000000`) from NaN (Codex probe). Canonical
+  fix = **PR #65** (`devin/fix-wasm-void-return`, `fc4b925`+`3132f19`): codegen fix
+  + runner revert + `test_wasm_arithmetic_nan_not_masked`. Open, all checks green.
+  Verified live 2026-10-07: `cargo test --test phi_ir_conformance_tests` = 10/10.
+- **Doc-drift fleet close pass (21 PRs, #46–66).** Six sessions independently
+  rediscovered the Void defect *inside* doc-drift PRs. #55/#56/#57/#61 contain
+  **zero doc changes** under doc titles; #54 adds `is_nan()` tolerance, #57 flips
+  the assert to expect NaN, #62 adds `#[ignore]` — three forms of test-loosening
+  (L-086 class). #46/#62 falsify the Codex audit date to 2026-09-28. #47 claims
+  archived QSOP docs "not present" — they exist at `docs/archive/QSOP/`. #58
+  re-paths to `ceremony_grounding.phi` which exists nowhere. Clean merges: #51,
+  #52, #63 (file existence verified). Full verdict table dispatched to Jules seat:
+  `/mnt/d/Jules/inbox/2026-10-07-devin-phiflow-pr-triage-verdicts.md`.
+- **Metrics bridge :18030 — ALIVE, was never missing.** Script moved to
+  `/mnt/d/System/tools/phiflow_metrics_bridge.py` (uvicorn, FastAPI). Verified live
+  2026-10-07: `phic --measure examples/type4_trace_benchmark.phi` →
+  `/tmp/phiflow_daemon_metrics.jsonl` → `GET :18030/metrics` returns
+  `{"ok":true, l_self:0.2584, r_in:0.7129, r_out:0.2584, c_pf:0.1133}`.
+  Contract: jsonl only written when `consciousness_metrics` AND `self_correlation`
+  are non-null (`src/main_cli.rs:298`); one-shot `--measure` on programs without
+  metrics writes nothing → bridge 503 is "no producer", not "no bridge".
+- **ClaimsDrift sensor safe but UNWIRED:** `devin/claims-drift-sensor` @ `da3a5f1`
+  pushed to origin (includes `honest_witness.phi` + `PL_THEORY_SELF_VERIFICATION.md`).
+  Verified 2026-10-07: `/mnt/d/QuantumSecrets/daemon/claims_probe.py` exists but is
+  absent from greg's crontab — no ClaimsDrift verdict file is produced, so the
+  sensor stays fail-closed `unavailable`. Wiring it is a deferred item, not a bug.
+- **Local master = origin/master + 3** (docs-only Option-A consolidation commits
+  `810c882`, `98c9cbe`, `c4c651c` — unpushed at write time).
+- **T-005 evidence partially found:** `docs/archive/pilot_offer.md` EXISTS (moved
+  to archive — RESUME blocker stale). `RESEARCH/first_sale_path/MASTER.md` and
+  `LICENSE_COMMERCIAL.md` still absent.
+- **`apikey.json` security exposure (corrected 2026-10-07 second pass):** the file
+  on disk is UNTRACKED+IGNORED (`.gitignore:105`, removed from index in `58d40ee`) —
+  it cannot be committed. BUT it was tracked from the initial commit through
+  `58d40ee` and the repo is **PUBLIC** → the IBM credential values are exposed in
+  public git history. **The IBM key in that file must be rotated** (Greg action).
+  Full history scrub is optional post-rotation since the key will be dead.
+  No code reads the file — IBM auth uses `IBM_QUANTUM_TOKEN` from `~/.cascade_keys`.
+
+---
+
 ## Verified (2026-07-14) [Devin: WASM conformance restored — three-backend equivalence]
 
 - **CRITICAL FIX**: The Node.js WASM test runner (`tests/phi_ir_wasm_runner.js`) was
