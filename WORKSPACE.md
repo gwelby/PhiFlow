@@ -43,7 +43,10 @@ cargo test --test ibm_hardware_runner -- --ignored --nocapture
 
 ## Bridge Document Status
 Confirmed by 2026-05-02 audit:
-(No bridge drafts currently present in repository)
+- `docs/archive/QSOP/PF_BRIDGE.md` — PASS AS AUDITED DRAFT; maps PF vocabulary to software analogues only.
+- `docs/archive/QSOP/CONSCIOUSNESS_CONSTRUCTS_IN_PHIFLOW.md` — PASS AS TYPE 4 CANDIDATE MAP ONLY; not a consciousness or canonical Type 4 claim.
+- `docs/archive/QSOP/COHERENCE_LAYER_SPECIFICATION.md` — PASS AS PHIFLOW-SPECIFIC LAYER MAP; Layer 3 proxy with Layer 2 OpenQASM realization, not PF-derived.
+- `docs/archive/QSOP/SOMA_AS_MINIMUM_SUBSTRATE.md` — PASS AS ENGINEERING SUBSTRATE INTERFACE ONLY; not PF `minimum_substrate.md`.
 
 ## Active Workflows
 - **Code Change**: Edit Rust source -> `cargo test` -> update `QSOP/STATE.md`
