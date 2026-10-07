@@ -1,3 +1,24 @@
+## Verified (2026-10-07, later same day) [Devin: fleet resolved — ZERO open PRs]
+
+- **PR #65 MERGED** (squash `b8bdcf7`, ~16:35Z). Post-merge master verified REAL
+  green: `cargo test --test phi_ir_conformance_tests` → 11/11 (incl.
+  `test_wasm_arithmetic_nan_not_masked`). First genuine green since `eefbf88`.
+- **Doc fleet resolved:** 21 open PRs → 0. Jules seat closed 8 wrong-scope PRs,
+  then all 10 merge-mangled branches (sessions resolved "rebase" as merge-in —
+  duplicated commits, upstream code inside diffs). Merged clean: #45, #51, #52,
+  #66 (squashes `87ce18a`–`a545915`). #67 closed/folded (stale-branch doc fix
+  superseded by same-day RESUME updates on master).
+- **PR #68 MERGED** (`513d32d`): `sensors.rs` clear-stale SOMA semantics +
+  soma_coherence_test 300→500ms margin — extracted from closed doc-PR #48.
+- **One consolidated docs session in flight** (Jules `16994120002327118879`,
+  fresh-master mandate) covering the doc intents of the closed fleet.
+- **IBM credential rotated** by Greg (was exposed in public git history via the
+  formerly-tracked `apikey.json`; file itself untracked+ignored since `58d40ee`,
+  harmless disk leftover).
+- **Fleet lessons banked by Jules:** (1) sessions comply on text, not diff scope;
+  (2) bare "rebase on master" resolves as merge-in — git-reshaping instructions
+  must name the mechanism ("fresh branch + re-apply" / "hard reset + cherry-pick").
+
 ## Verified (2026-10-07) [Devin Projects-seat: void-return reconciled, fleet PR triage, metrics bridge LIVE]
 
 *Ledger gap note: no entries 2026-07-14 → 2026-10-07. Three months of verification
