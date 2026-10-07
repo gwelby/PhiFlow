@@ -40,8 +40,13 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
 - **T-005 evidence partially found:** `docs/archive/pilot_offer.md` EXISTS (moved
   to archive — RESUME blocker stale). `RESEARCH/first_sale_path/MASTER.md` and
   `LICENSE_COMMERCIAL.md` still absent.
-- **`apikey.json` still tracked in tree** (348 B, last touched `58d40ee`) —
-  legacy credential file, use `~/.cascade_keys`. Removal is Greg's call.
+- **`apikey.json` security exposure (corrected 2026-10-07 second pass):** the file
+  on disk is UNTRACKED+IGNORED (`.gitignore:105`, removed from index in `58d40ee`) —
+  it cannot be committed. BUT it was tracked from the initial commit through
+  `58d40ee` and the repo is **PUBLIC** → the IBM credential values are exposed in
+  public git history. **The IBM key in that file must be rotated** (Greg action).
+  Full history scrub is optional post-rotation since the key will be dead.
+  No code reads the file — IBM auth uses `IBM_QUANTUM_TOKEN` from `~/.cascade_keys`.
 
 ---
 
