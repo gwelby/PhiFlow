@@ -1,7 +1,7 @@
 ---
 agent: "Devin ∇λΣ∞"
 workspace: "/mnt/d/Projects/PhiFlow"
-date: "2026-10-04"
+date: "2026-10-07"
 protocol_version: "2.1"
 schema_version: "2.1"
 authority_rank: "advisory"
@@ -11,7 +11,7 @@ stale_after_hours: 72
 # RESUME.md — PhiFlow Workspace
 > *Agent-agnostic workspace handoff. Read this first when arriving in PhiFlow.*
 > *⚠️ ADVISORY ONLY: on conflict, `QSOP/STATE.md` wins. There is no root STATE.md here.*
-> *Last updated: 2026-09-29 by Devin (freshness pass + WASM void-return fix + Option A consolidation progress); ported to canonical checkout 2026-10-04*
+> *Last updated: 2026-10-07 by Jules (freshness pass + WASM void-return fix + Option A consolidation progress); ported to canonical checkout 2026-10-04*
 
 ---
 
@@ -40,13 +40,13 @@ See CHANGELOG 2026-10-05 for the full demote ledger.
 ## Current State Verification
 | Check | Command | Expected Result | Last Run | Status |
 |-------|---------|-----------------|----------|--------|
-| Full test suite (master+WIP) | `cargo test --no-fail-fast` | 479 passed, 1 failed, 5 ignored — **the 1 failure is `test_wasm_claude_formula_returns_618`** (WASM Void→NaN regression from `eefbf88`) | 2026-09-29 | ⚠️ 1 known |
+| Full test suite (master+WIP) | `cargo test --no-fail-fast` | 479 passed, 1 failed, 5 ignored — **the 1 failure is `test_wasm_claude_formula_returns_618`** (fails on master pending PR #65 merge) | 2026-10-07 | ⚠️ 1 known |
 | Full test suite (fix branch) | `cargo test --no-fail-fast` on `devin/fix-wasm-void-return` | **480 passed, 0 failed, 5 ignored** — recount run; first pass had one flake: `test_system_host_signed_handoff` (env-var race on `SOMA_STATE_PATH` between parallel tests — pre-existing, not caused by the fix) | 2026-09-29 | ✅ |
-| Lib tests | `cargo test --lib` | 158 passed, 0 failed | 2026-09-29 | ✅ PASS |
-| Debug build | `cargo build` | Clean; 1 pre-existing deprecation warning in `pqc_tool.rs` (generic-array) | 2026-09-29 | ✅ PASS |
-| phic runs | `./target/debug/phic examples/code_that_resonates.phi` | "Final Coherence: 0.3820" (non-zero — coherence bug stays fixed) | 2026-09-29 | ✅ PASS |
-| WASM conformance | `cargo test --test phi_ir_conformance_tests` | **11/11 on `devin/fix-wasm-void-return`** (incl. new `test_wasm_arithmetic_nan_not_masked`). On master (`ddd97a1`): all pass but `test_wasm_claude_formula_returns_618` passes *via runner masking*, not real codegen — the defect is still live in `wasm.rs` until the follow-up PR lands (needs `npm install wabt` locally) | 2026-10-01 | ⚠️ master green-via-mask |
-| GitHub CI | `gh run list --workflow phiflow-tests.yml` | **RED on master since 2026-09-20** — every run fails on `test_wasm_claude_formula_returns_618` (regression `eefbf88`); python-test jobs green | 2026-09-29 | ❌ RED |
+| Lib tests | `cargo test --lib` | 158 passed, 0 failed | 2026-10-07 | ✅ PASS |
+| Debug build | `cargo build` | Clean; 1 pre-existing deprecation warning in `pqc_tool.rs` (generic-array) | 2026-10-07 | ✅ PASS |
+| phic runs | `./target/debug/phic examples/code_that_resonates.phi` | "Final Coherence: 0.3820" (non-zero — coherence bug stays fixed) | 2026-10-07 | ✅ PASS |
+| WASM conformance | `cargo test --test phi_ir_conformance_tests` | **11/11 on `devin/fix-wasm-void-return`** (incl. new `test_wasm_arithmetic_nan_not_masked`). On master (`ddd97a1`): all pass but `test_wasm_claude_formula_returns_618` passes *via runner masking*, not real codegen — the defect is still live in `wasm.rs` until the follow-up PR #65 merge lands (needs `npm install wabt` locally) | 2026-10-01 | ⚠️ master green-via-mask |
+| GitHub CI | `gh run list --workflow phiflow-tests.yml` | **RED on master since 2026-09-20** — every run fails on `test_wasm_claude_formula_returns_618` (fails pending PR #65 merge); python-test jobs green | 2026-10-07 | ❌ RED |
 | Release build | `cargo build --release --bin phic` | Clean (not re-run today; `target/release/phic` exists from Sep 25 honesty-organ build) | 2026-09-25 | ✅ stale-OK |
 
 ---
@@ -95,9 +95,9 @@ See CHANGELOG 2026-10-05 for the full demote ledger.
 | Blocker | Why | Who Can Unblock |
 |---------|-----|-----------------|
 | Real SOMA trace for C-21/C-23 upgrade | `tests/fixtures/soma/` synthetic only; needs live daemon+SOMA capture | Any agent with SOMA hardware (AntiGravity) |
-| CI red on master | `test_wasm_claude_formula_returns_618` NaN — fix exists on `devin/fix-wasm-void-return` | Greg (push/PR approval) or fleet-merge after push |
-| `/mnt/d/System/phiflow_metrics_bridge.py` missing | `:18030` bridge script gone — `--measure` writes still land in `/tmp/phiflow_daemon_metrics.jsonl` but nothing serves them | Devin (rebuild) or restore from history |
-| T-004/T-005 evidence | `RESEARCH/first_sale_path/MASTER.md`, `docs/pilot_offer.md`, `LICENSE_COMMERCIAL.md` absent in BOTH clones — "completed" statuses cite missing files | Codex/Greg (locate or re-tier) |
+| CI red on master | `test_wasm_claude_formula_returns_618` NaN — fix exists on `devin/fix-wasm-void-return` (blocked pending PR #65 merge) | Greg (push/PR approval) or fleet-merge after push |
+| `/mnt/d/System/phiflow_metrics_bridge.py` missing | `:18030` bridge script gone (confirmed deleted) — `--measure` writes still land in `/tmp/phiflow_daemon_metrics.jsonl` but nothing serves them | Devin (rebuild) or restore from history |
+| T-004/T-005 evidence | `RESEARCH/first_sale_path/MASTER.md`, `docs/pilot_offer.md`, `LICENSE_COMMERCIAL.md` absent in BOTH clones (confirmed deleted) — "completed" statuses cite missing files | Codex/Greg (locate or re-tier) |
 | WASM Evolve/Entangle | architecturally impossible in sandboxed WASM | — (documented limitation) |
 
 ---
