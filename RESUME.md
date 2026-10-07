@@ -11,7 +11,7 @@ stale_after_hours: 72
 # RESUME.md — PhiFlow Workspace
 > *Agent-agnostic workspace handoff. Read this first when arriving in PhiFlow.*
 > *⚠️ ADVISORY ONLY: on conflict, `QSOP/STATE.md` wins. There is no root STATE.md here.*
-> *Last updated: 2026-09-29 by Devin (freshness pass + WASM void-return fix + Option A consolidation progress); ported to canonical checkout 2026-10-04*
+> *Last updated: 2026-09-29 by Devin (freshness pass + WASM void-return fix + Option A consolidation progress); ported to canonical checkout 2026-10-04; **2026-10-07 Devin Projects-seat pass**: metrics bridge LIVE (was marked missing — script moved to `System/tools/`), master confirmed green-via-mask, 21-PR doc-drift fleet triaged → verdicts dispatched to Jules (`/mnt/d/Jules/inbox/2026-10-07-devin-phiflow-pr-triage-verdicts.md`), T-005 `pilot_offer.md` found in `docs/archive/`. Full entry at top of `QSOP/STATE.md`.*
 
 ---
 
@@ -96,8 +96,9 @@ See CHANGELOG 2026-10-05 for the full demote ledger.
 |---------|-----|-----------------|
 | Real SOMA trace for C-21/C-23 upgrade | `tests/fixtures/soma/` synthetic only; needs live daemon+SOMA capture | Any agent with SOMA hardware (AntiGravity) |
 | CI red on master | `test_wasm_claude_formula_returns_618` NaN — fix exists on `devin/fix-wasm-void-return` | Greg (push/PR approval) or fleet-merge after push |
-| `/mnt/d/System/phiflow_metrics_bridge.py` missing | `:18030` bridge script gone — `--measure` writes still land in `/tmp/phiflow_daemon_metrics.jsonl` but nothing serves them | Devin (rebuild) or restore from history |
-| T-004/T-005 evidence | `RESEARCH/first_sale_path/MASTER.md`, `docs/pilot_offer.md`, `LICENSE_COMMERCIAL.md` absent in BOTH clones — "completed" statuses cite missing files | Codex/Greg (locate or re-tier) |
+| ~~metrics bridge~~ | RESOLVED 2026-10-07 — script lives at `System/tools/phiflow_metrics_bridge.py`, service live, verified serving real metrics | — |
+| T-004/T-005 evidence | `docs/pilot_offer.md` **found at `docs/archive/pilot_offer.md`** (moved). Still absent: `RESEARCH/first_sale_path/MASTER.md`, `LICENSE_COMMERCIAL.md` | Codex/Greg (locate or re-tier) |
+| Master is green-via-mask | `phi_ir_conformance_tests` passes on master (10/10 local 2026-10-07) only because PR #64's runner fallback converts ANY NaN→last-resonance. `wasm.rs` defect still live until **PR #65** merges | Greg (merge call on #65) |
 | WASM Evolve/Entangle | architecturally impossible in sandboxed WASM | — (documented limitation) |
 
 ---
@@ -116,7 +117,7 @@ See CHANGELOG 2026-10-05 for the full demote ledger.
 ## Running Services / Ports
 | Service | Port | Process | Status | How to Restart |
 |---------|------|---------|--------|----------------|
-| phiflow-metrics bridge | 18030 | was `/mnt/d/System/phiflow_metrics_bridge.py` — **script missing 2026-09-29** | ❌ dead | needs rebuild/restore |
+| phiflow-metrics bridge | 18030 | `/mnt/d/System/tools/phiflow_metrics_bridge.py` (moved from System root) | ✅ **LIVE** — verified end-to-end 2026-10-07 (`--measure` → jsonl → `/metrics` returns data; 503 only when no producer has run) | uvicorn, running |
 | PhiFlow OSC stream | 18032 (UDP) | `phic --osc 18032 ...` | on-demand | run `phic` with `--osc` |
 | OSC→WebSocket bridge | 18528 | `tools/osc_websocket_bridge.py` | on-demand | start before visualizer |
 | claims_probe → ClaimsDrift | — | `/mnt/d/QuantumSecrets/daemon/claims_probe.py` `*/15` cron | live (Sep 25) | cron already installed |
