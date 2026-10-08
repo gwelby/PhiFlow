@@ -1,5 +1,9 @@
 # PhiFlow Changelog
 
+## 2026-10-06 | Live credential exposure closed at tip (`5c8cd2e`)
+
+Full-history secrets audit (all 6,482 pushed blobs vs every `~/.cascade_keys` value + entropy scan): the leak was already public — `ibm_quantum_config.env` (live `IBM_QUANTUM_TOKEN`), `_archive` deploy/SOP files carrying `NETWORK_SONICWALL_PASSWORD`, `NETWORK_PROXMOX_PASSWORD`, `ESXI_PASSWORD`, `SECURITY_ALERT_SMTP_HOST`, plus `deploy_password.ps1` (plaintext password, not in cascade_keys — caught by shape scan). Removed from tip and pushed `5c8cd2e`. `.gitignore` already covered the env/key files. History still contains the values — **rotation is the fix** (IBM token rotated same day; network passwords Greg's call). Also surfaced: `docs/fonts/*.ttf` files that are actually saved GitHub HTML pages (dead CSRF tokens — cosmetic oddity, not a leak).
+
 ## 2026-10-06 | `language` branch secrets scrubbed + preserved upstream
 
 Resolved yesterday's secret_guard block on the diverged local `language` line (4 commits: `8b50e5c` Fresh Start root → `61912a0` tip, unrelated to `origin/language` history).
