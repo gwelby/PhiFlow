@@ -15,13 +15,13 @@ This file is an index, not the contract. If anything here conflicts with a deepe
 
 If you are new to the project, read in this order:
 
-1. `D:\Projects\PhiFlow\AGENTS.md`
-2. `D:\Projects\PhiFlow\QSOP\README.md`
-3. `D:\Projects\PhiFlow\QSOP\STATE.md`
-4. `D:\Projects\PhiFlow\QSOP\TEAM_OF_TEAMS_PROTOCOL.md`
-5. current active dispatch in `D:\Projects\PhiFlow\QSOP\`
-6. your assigned payload in `D:\Projects\PhiFlow\QSOP\mail\payloads\` if you have one
-7. `D:\Projects\PhiFlow\QSOP\COUNCIL_EXECUTION_STANDARD.md`
+1. `AGENTS.md`
+2. `QSOP/README.md`
+3. `QSOP/STATE.md`
+4. `QSOP/TEAM_OF_TEAMS_PROTOCOL.md`
+5. current active dispatch in `QSOP/`
+6. your assigned payload in `QSOP/mail/payloads/` if you have one
+7. `QSOP/COUNCIL_EXECUTION_STANDARD.md`
 
 ## Core Files
 
@@ -96,11 +96,11 @@ If you are an execution agent:
 
 ## Current Council Entry Points
 
-- Execution standard: `D:\Projects\PhiFlow\QSOP\COUNCIL_EXECUTION_STANDARD.md`
-- Active dispatch: `D:\Projects\PhiFlow\QSOP\COUNCIL_DISPATCH_004.md`
-- Active Gate 0 payload: `D:\Projects\PhiFlow\QSOP\mail\payloads\OBJ-20260307-001.md`
-- Active Gate 0 envelope: `D:\Projects\PhiFlow\QSOP\mail\objectives\OBJ-20260307-001.json`
-- Payload template: `D:\Projects\PhiFlow\QSOP\mail\templates\OBJECTIVE_PAYLOAD_TEMPLATE.md`
+- Execution standard: `QSOP/COUNCIL_EXECUTION_STANDARD.md`
+- Active dispatch: `QSOP/COUNCIL_DISPATCH_004.md`
+- Active Gate 0 payload: `QSOP/mail/payloads/OBJ-20260307-001.md`
+- Active Gate 0 envelope: `QSOP/mail/objectives/OBJ-20260307-001.json`
+- Payload template: `QSOP/mail/templates/OBJECTIVE_PAYLOAD_TEMPLATE.md`
 
 ## Current Artifact Roles
 

@@ -198,7 +198,7 @@
 
 - **Status**: completed[verified on 2026-04-14 with Heron native ISA decomposition]
 - **What changed**: `phi_ir/openqasm.rs` performs `[rz, sx]` native transposition. `tests/ibm_hardware_runner.rs` bypassed 403 authorization blocker with appropriate HTTP headers and captured scrubbed receipt.
-- **Evidence**: `D:\CosmicFamily\EVIDENCE\ANTIGRAVITY_PIPE2_20260329.md`
+- **Evidence**: `docs/archive/QSOP/EVIDENCE/ANTIGRAVITY_PIPE2_20260329.md`
 
 ### T-007: Canonicalize the browser host and document manual prerequisites
 - **Status**: completed[verified on 2026-04-14]

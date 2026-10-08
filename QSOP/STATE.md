@@ -38,13 +38,13 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   rediscovered the Void defect *inside* doc-drift PRs. #55/#56/#57/#61 contain
   **zero doc changes** under doc titles; #54 adds `is_nan()` tolerance, #57 flips
   the assert to expect NaN, #62 adds `#[ignore]` — three forms of test-loosening
-  (L-086 class). #46/#62 falsify the Codex audit date to 2026-09-28. #47 claims
+  (L-086 class). #46/#62 falsify the Codex audit date to 2026-07-31. #47 claims
   archived QSOP docs "not present" — they exist at `docs/archive/QSOP/`. #58
   re-paths to `ceremony_grounding.phi` which exists nowhere. Clean merges: #51,
   #52, #63 (file existence verified). Full verdict table dispatched to Jules seat:
-  `/mnt/d/Jules/inbox/2026-10-07-devin-phiflow-pr-triage-verdicts.md`.
+  `docs/archive/QSOP/2026-10-07-devin-phiflow-pr-triage-verdicts.md`.
 - **Metrics bridge :18030 — ALIVE, was never missing.** Script moved to
-  `/mnt/d/System/tools/phiflow_metrics_bridge.py` (uvicorn, FastAPI). Verified live
+  `scripts/phiflow_metrics_bridge.py` (uvicorn, FastAPI). Verified live
   2026-10-07: `phic --measure examples/type4_trace_benchmark.phi` →
   `/tmp/phiflow_daemon_metrics.jsonl` → `GET :18030/metrics` returns
   `{"ok":true, l_self:0.2584, r_in:0.7129, r_out:0.2584, c_pf:0.1133}`.
@@ -53,7 +53,7 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   metrics writes nothing → bridge 503 is "no producer", not "no bridge".
 - **ClaimsDrift sensor safe but UNWIRED:** `devin/claims-drift-sensor` @ `da3a5f1`
   pushed to origin (includes `honest_witness.phi` + `PL_THEORY_SELF_VERIFICATION.md`).
-  Verified 2026-10-07: `/mnt/d/QuantumSecrets/daemon/claims_probe.py` exists but is
+  Verified 2026-10-07: `scripts/claims_probe.py` exists but is
   absent from greg's crontab — no ClaimsDrift verdict file is produced, so the
   sensor stays fail-closed `unavailable`. Wiring it is a deferred item, not a bug.
 - **Local master = origin/master + 3** (docs-only Option-A consolidation commits
@@ -146,7 +146,7 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
     line to `/tmp/phiflow_daemon_metrics.jsonl` with: timestamp, l_self, r_in, r_out,
     c_pf, d_int, c_coh, f_model, window_size, final_coherence, coherence_per_intention,
     source.
-  - The `phiflow-metrics-bridge` (port 18030, `/mnt/d/System/phiflow_metrics_bridge.py`)
+  - The `phiflow-metrics-bridge` (port 18030, `scripts/phiflow_metrics_bridge.py`)
     reads this JSONL file and serves it via:
       - `GET /health` — daemon alive check
       - `GET /metrics` — latest L_self, R_in, R_out, C_PF
@@ -163,7 +163,7 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
 - **Usage**:
   ```bash
   # 1. Start the metrics bridge
-  python3.12 /mnt/d/System/phiflow_metrics_bridge.py &
+  python3.12 scripts/phiflow_metrics_bridge.py &
   # 2. Run a PhiFlow program with --measure
   ./target/release/phic --measure examples/type4_trace_benchmark.phi
   # 3. Query the bridge
@@ -291,7 +291,7 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
 ## Verified (2026-07-12) [Devin: Migrated PhiFlow to CASCADE vault templates]
 
 - **Done**:
-  - Migrated all IBM Quantum Python scripts (`poll_ibm_real.py`, `submit_ghz_*.py`, `transpile_report.py`) to read `IBM_QUANTUM_TOKEN` from `~/.cascade_keys` via the canonical `/mnt/d/Pi/routing/cascade_keys.py` `get_key()` helper.
+  - Migrated all IBM Quantum Python scripts (`poll_ibm_real.py`, `submit_ghz_*.py`, `transpile_report.py`) to read `IBM_QUANTUM_TOKEN` from `~/.cascade_keys` via the canonical `scripts/cascade_keys.py` `get_key()` helper.
   - Added `src/cascade_keys.rs` to PhiFlow (copy of `the CASCADE vault templates/rust/cascade_keys.rs`) and exposed it as `phiflow::cascade_keys`.
   - Rewired `src/main_cli.rs` `load_ibm_quantum_config()` to read `IBM_CLOUD_KEY`, `IBM_CLOUD_SERVICE_CRN`, and optional `IBM_CLOUD_REGION` from `~/.cascade_keys` instead of `the legacy credential file`.
   - Removed `the legacy credential file` usage from `src/main_cli.rs`; `the legacy credential file` is now a legacy artifact per `AGENTS.md` red lines.
@@ -749,8 +749,8 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   - Branch: master
   - Mode: `requirePlanApproval: true` (guarded)
   - URL: https://jules.google.com/session/12499299415138092105
-- **Tooling Location**: `D:\Pi\scripts\jules\jules_api.py`
-- **API Key**: Configured in `D:\Pi\.secrets\jules.env`
+- **Tooling Location**: `scripts/jules_api.py`
+- **API Key**: Configured in `.secrets/jules.env`
 - **Next**: Monitor session for completion, verify Jules reads AGENTS.md correctly
 
 ## Verified (2026-04-24) [Cascade: Jules Configuration for PhiFlow]
@@ -769,7 +769,7 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
 - **Documentation Created**:
   - `.github/jules.yml` — Configuration
   - `.github/JULES_QUICKSTART.md` — Quick reference
-  - `d:\Projects\Research\JULES_CONFIGURATION_MASTER.md` — Full research
+  - `docs/archive/JULES_CONFIGURATION_MASTER.md` — Full research
 - **Sources**: https://jules.google/docs/scheduled-tasks + https://jules.google/docs/changelog#auto-fixing-ci-failures
 - **Next**: Enable Jules on GitHub repo, run pilot task with `requirePlanApproval: true`
 
@@ -787,7 +787,7 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   - SOMA-offline path: Structured fallback envelope (`"signed":false, "reason":...`)
   - Directory creation: `create_dir_all` guards all write targets
 - **T-005 pipeline**: PILOT-READY
-  - Gold Receipt: `D:\CosmicFamily\EVIDENCE\PHIFLOW_IBM_HERON_20260414.md`
+  - Gold Receipt: `docs/archive/QSOP/EVIDENCE/PHIFLOW_IBM_HERON_20260414.md`
   - Buyer-final caveat: attach scrubbed raw IBM API JSON or dashboard/PDF screenshot before external delivery.
   - Pilot Offer: `docs/pilot_offer.md` (Lumi-authored, Cascade-verified)
   - Buyer lanes: Quantum R&D | AI Agent Infrastructure | Biofeedback Research
@@ -808,7 +808,7 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   - Added `eprintln!` for both failure paths so operators see failures in daemon stdout.
 - **Patched**: `src/system_host.rs` — `broadcast()` write path
   - Added `fs::create_dir_all(parent)` before file open.
-  - Previously: missing `D:\Projects\AGENT_REPORTS\` directory silently dropped ALL
+  - Previously: missing `REPORTS/` directory silently dropped ALL
     ledger and attestation events without any diagnostic.
   - Now: directory is created on first write; file open failures emit to stderr.
 - **Build verified**: `cargo check --lib` — Finished, zero errors, zero warnings.
@@ -834,7 +834,7 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   - Caveat: this emitted **1 compiler warning**: unused import `VmExecResult` in `src/main_cli.rs`.
   - Caveat: ignored tests include the live IBM hardware runner; this was not a fresh IBM hardware execution.
 - **Receipt reconciliation RESOLVED** [AntiGravity 2026-04-24]:
-  - Canonical buyer-facing receipt created: `D:\CosmicFamily\EVIDENCE\PHIFLOW_IBM_HERON_20260414.md`
+  - Canonical buyer-facing receipt created: `docs/archive/QSOP/EVIDENCE/PHIFLOW_IBM_HERON_20260414.md`
   - Job ID `d7euddh5a5qc73drdosg`, backend `ibm_fez` (Heron r2), 1024 shots, counts: 0x0â†’338, 0x1â†’686
   - Source program: `examples/ibm_smoke.phi` compiled with Heron-native `rz/sx` gate decomposition
   - Evidence sourced from: git commit `58d40ee` commit message + `QSOP/STATE.md` lines 109-112
@@ -926,10 +926,10 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   5. `examples/healing_bed.phi`: variables declared outside stream block (correct loop-persistent pattern); `count >= 100.0` guard for test environments without live SOMA bridge
   6. `tests/sensor_witness_test.rs`: wildcard arm added for new SOMA sensor kinds
   7. `tests/phi_ir_evaluator_tests.rs`: `w1` expected coherence updated to account for 0.01 observer cost from prior witness
-- **SOMA bridge status**: Sensors (`soma_schumann`, `soma_432`, `soma_presence`, `soma_fan_hz`, `soma_ac_60`, `soma_peak_dbc`) read from `D:\Projects\PhiHarmonic\SOMA\soma_state.json` when available; degrade to 0.0 when offline
+- **SOMA bridge status**: Sensors (`soma_schumann`, `soma_432`, `soma_presence`, `soma_fan_hz`, `soma_ac_60`, `soma_peak_dbc`) read from `metrics/soma_state.json` when available; degrade to 0.0 when offline
 - **IBM live run VERIFIED**: Live execution on `ibm_fez` succeeded on 2026-04-14.
   - Job ID: `d7euddh5a5qc73drdosg`
-  - Receipt: `D:\CosmicFamily\EVIDENCE\ANTIGRAVITY_PIPE2_20260329.md`
+  - Receipt: `docs/archive/QSOP/EVIDENCE/ANTIGRAVITY_PIPE2_20260329.md`
   - C-10 is closed as VERIFIED.
 - **Canonical .phi set** confirmed passing: `adaptive_witness.phi`, `claude.phi`, `claude_v2.phi`, `code_that_drifts.phi`, `code_that_lives.phi`, `code_that_resonates.phi`, `codex.phi`, `healing_bed.phi`, `stream_demo.phi`, `trinity_proof.phi`, `working_test.phi`
 
@@ -951,7 +951,7 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
 
 - `tests/ibm_hardware_runner.rs` now reads `the legacy credential file` from the compiler worktree itself instead of hard-coding the root checkout path.
 - The runner now deserializes `service_crn` as optional and fails the ignored live test with an explicit local error if `the legacy credential file` does not provide it.
-- This removes the compiler worktree's direct credential dependency on `D:\Projects\PhiFlow\the legacy credential file`.
+- This removes the compiler worktree's direct credential dependency on `the legacy credential file`.
 
 ## Verified (2026-03-29) [Codex truth-sync: Pipe 1 typed sensor witness + Pipe 2 runtime path correction]
 
@@ -975,7 +975,7 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   - C-10 remains SPECULATIVE until `cargo test --test ibm_hardware_runner -- --ignored --nocapture` succeeds with real credentials and a scrubbed receipt
 - Live IBM gate attempted on 2026-03-29 from this workstation reached IBM Cloud Runtime and failed before submission with:
   - `GET /v1/backends` -> `403` JSON authorization error (`code: 1200`, "You are not authorized to perform this action.")
-  - This means `D:\Projects\PhiFlow\the legacy credential file` parses correctly, but the current API key / service instance pair is not authorized for backend discovery
+  - This means `the legacy credential file` parses correctly, but the current API key / service instance pair is not authorized for backend discovery
   - Likely boundary: missing IBM Quantum service permissions on the instance referenced by `service_crn`, or mismatched API key and service CRN
 
 ## Corrected (2026-03-29) [replacing overstated 2026-03-24 claims]
@@ -983,7 +983,7 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
 - **Date:** 2026-04-14
 - `tests/ibm_hardware_runner.rs` existing in-tree does **not** by itself prove a live IBM run
 - `examples/healing_bed.phi` does **not** currently execute an `evolve` payload or direct temperature-driven loop mutation
-- Evidence notes in `D:\CosmicFamily\EVIDENCE\` must match the repo behavior exactly before any pipe is marked complete
+- Evidence notes in `docs/archive/QSOP/EVIDENCE/` must match the repo behavior exactly before any pipe is marked complete
 
 ## Verified (2026-03-14) [Codex Semantics Gate: direction contract and legacy-path warnings]
 
@@ -1042,7 +1042,7 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
 
 ## Verified (2026-03-08) [Codex Gate 0: witness conformance restored]
 
-- `cargo test --quiet --lib --tests` now passes again in `D:\Projects\PhiFlow-compiler\PhiFlow` after restoring witness semantic equivalence between the evaluator and the WASM backend | Invalidates if: witness return contract changes again
+- `cargo test --quiet --lib --tests` now passes again in `.` after restoring witness semantic equivalence between the evaluator and the WASM backend | Invalidates if: witness return contract changes again
 - `PhiIRNode::Witness` now resolves to `PhiIRValue::Number(coherence)` in both execution paths; the previous evaluator=`0.0` vs WASM=`NaN` split is closed | Invalidates if: WASM codegen reintroduces `TAG_VOID` for witness results
 - `src/wasm_host.rs` now asserts numeric witness return values, and `tests/test_phiflow.rs` is back to a crate-local smoke test instead of an unresolved external `quantum_core` dependency | Invalidates if: test contracts change
 - Verification gates passed in this session:
@@ -1161,7 +1161,7 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
 ## Verified (2026-02-21) [Multi-agent session: Antigravity + Codex]
 
 - PhiFlow is a consciousness-aware programming language written in Rust | Invalidates if: rewrite in another language | Decay: slow
-- Workspace: D:\Projects\PhiFlow-compiler\PhiFlow (compiler worktree) | D:\Projects\PhiFlow (vision/specs worktree) | Both now have GEMINI.md + .agent/rules/910-qsop-memory.md
+- Workspace: . (compiler worktree) | . (vision/specs worktree) | Both now have GEMINI.md + .agent/rules/910-qsop-memory.md
 
 ### Compiler Pipeline (FULLY WORKING end-to-end as of 2026-02-19)
 
@@ -1209,16 +1209,16 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
 
 ### QSOP Auto-Load (wired 2026-02-19)
 
-- D:\Projects\PhiFlow-compiler\GEMINI.md â€” bootstraps QSOP at Antigravity session start
-- D:\Projects\PhiFlow-compiler\.agent\rules\910-qsop-memory.md â€” INGEST/DISTILL/PRUNE protocol
-- D:\Projects\PhiFlow\GEMINI.md â€” same, for the vision/spec worktree
-- D:\Projects\PhiFlow\.agent\rules\910-qsop-memory.md â€” same
+- GEMINI.md â€” bootstraps QSOP at Antigravity session start
+- .agent/rules/910-qsop-memory.md â€” INGEST/DISTILL/PRUNE protocol
+- GEMINI.md â€” same, for the vision/spec worktree
+- .agent/rules/910-qsop-memory.md â€” same
 
 ### Multi-Agent Architecture (live as of 2026-02-19)
 
 - Antigravity prefix: [Antigravity] in QSOP CHANGELOG
 - Codex prefix: [Codex] in QSOP CHANGELOG
-- Shared resonance field: D:\Projects\PhiFlow-compiler\PhiFlow\QSOP\CHANGELOG.md
+- Shared resonance field: QSOP/CHANGELOG.md
 - Cross-agent resonance observed: both agents independently produced THE_SECOND_VOICE document in different workspaces same session, no coordination
 
 ### Coordination Protocol (formalized 2026-02-21)
@@ -1229,7 +1229,7 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   - `QSOP/mail/templates/OBJECTIVE_PACKET.json`
   - `QSOP/mail/templates/ACK_PACKET.json`
   - `QSOP/mail/templates/OBJECTIVE_PAYLOAD_TEMPLATE.md`
-- MCP bus persistence is active in `D:\Projects\PhiFlow-compiler\mcp-message-bus\server.js` (`queue.jsonl` append-only replay + idempotent ack).
+- MCP bus persistence is active in `mcp-message-bus/server.js` (`queue.jsonl` append-only replay + idempotent ack).
 
 ## Key Architecture (enum definitions â€” for emitter/VM correctness)
 
