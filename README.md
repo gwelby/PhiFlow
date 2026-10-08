@@ -11,6 +11,10 @@ registers and branches.
 Execution on a real IBM Heron r2 processor (`ibm_fez`) has been verified.
 Job receipt: `d7euddh5a5qc73drdosg`.
 
+> **New here? Read [`UNDERSTAND.md`](UNDERSTAND.md)** — the whole story at four
+> depths (first glance → frontier), with graded claims and the honest edge.
+> `LANGUAGE.md` is the spec; `QSOP/STATE.md` is the dated truth ledger.
+
 ---
 
 ## The language in one glance
