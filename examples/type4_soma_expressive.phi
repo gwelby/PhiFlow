@@ -1,0 +1,68 @@
+// type4_soma_expressive.phi
+// Type-4 round 3 — EXPRESSIVE-ACTION variant.
+//
+// Single declared change vs type4_soma_daemon.phi:
+//   action = model_mean   (the program acts by publishing its prediction)
+// not sign(obs - model). Hypothesis: R_out starved because a binary branch
+// carries ~1 bit of model-dependence per cycle.
+//
+// Everything else identical: obs channel, running-mean model, ~100k-spin
+// pacing gate (~1.16Hz — slower than SOMA's 5Hz fusion), 600 samples,
+// canonical from_type4_trace scoring, threshold L_self > 0.1.
+//
+// Preregistration: QSOP/EVIDENCE/type4_expressive_prereg_2026-10-09.md
+// Scope caveat: actions never perturb the sensor — a PASS certifies
+// "behavior expresses the model" (observable self-model), not full
+// sensorimotor closure.
+
+agent "T4Expressive" version "1.0.0" {
+    let step      = 0.0
+    let model_sum = 0.0
+    let model_n   = 0.0
+    let gate      = 0.0
+
+    stream "soma_expressive" {
+        // OBS: live sensor read every spin
+        let obs = witness sensor("soma_presence")
+        if obs <= 0.0 {
+            let dbc = witness sensor("soma_peak_dbc")
+            obs = dbc * 0.05
+            if obs > 1.0 {
+                obs = 1.0
+            }
+        }
+
+        // PACING GATE: ~1Hz — same as round 2 v4
+        gate = gate + 1.0
+        if gate >= 100000.0 {
+            gate = 0.0
+            step = step + 1.0
+
+            // MODEL: program-carried running mean (pre-update view)
+            let model_mean = 0.5
+            if model_n > 0.0 {
+                model_mean = model_sum / model_n
+            }
+
+            // ACTION: emit the model's prediction itself — behavior IS the
+            // belief state, made observable before this cycle's obs lands.
+            let action = model_mean
+
+            // R_in closes: model absorbs the live observation
+            model_sum = model_sum + obs
+            model_n   = model_n   + 1.0
+
+            // Canonical 4-tuple: STEP | OBS | MODEL(at decision) | ACTION
+            resonate step
+            resonate obs
+            resonate model_mean
+            resonate action
+        }
+
+        if step >= 600.0 {
+            break stream
+        }
+    }
+
+    resonate step as "samples_taken"
+}
