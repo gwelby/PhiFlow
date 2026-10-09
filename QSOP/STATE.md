@@ -1,3 +1,13 @@
+## Verified (2026-10-07, same day cont.) [Devin: FIRST REAL SOMA TRACE — Type-4 loop does NOT close]
+
+- Live capture via `collect_soma_trace.py` → `soma.py --phiflow` (CPU ring, 575 real
+  samples): L_self 0.058, F_model 0.003 → **FAIL** even on simple metrics; canonical
+  path on 147-sample run: L_self 0.0286 → **FAIL**. Synthetic wakeful fixture
+  (L_self 0.438) overstated reality ~7–15×. Evidence: `QSOP/EVIDENCE/type4_real_trace_2026-10-07.md`,
+  fresh trace in `tests/fixtures/soma_live_trace.txt`. C-21/C-23 HOLD is now a
+  **negative data point**, not missing evidence. Next: richer self-model or
+  daemon-coupled trace — do not tune to pass.
+
 ## Verified (2026-10-07, later same day) [Devin: fleet resolved — ZERO open PRs]
 
 - **PR #65 MERGED** (squash `b8bdcf7`, ~16:35Z). Post-merge master verified REAL
