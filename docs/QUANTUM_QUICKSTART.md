@@ -46,7 +46,7 @@ Optional: Use `--optimize-depth` for hardware-optimized circuits.
 Use the `quantum_council_vote.py` script to run the simulation and see the results:
 
 ```bash
-python3 D:/Projects/Gambling/quantum/quantum_council_vote.py --simulate --game "My First Quantum Vote"
+python3 scripts/quantum_council_vote.py --simulate --game "My First Quantum Vote"
 ```
 
 *Note: You may need to update the path to the script if you are in a different directory.*
