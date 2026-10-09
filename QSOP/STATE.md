@@ -61,6 +61,19 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   Contract: jsonl only written when `consciousness_metrics` AND `self_correlation`
   are non-null (`src/main_cli.rs:298`); one-shot `--measure` on programs without
   metrics writes nothing → bridge 503 is "no producer", not "no bridge".
+- **Type-4 daemon-coupled round 2 — OPEN (2026-10-09):** `type4_soma_daemon.phi`
+  puts the self-model in the program's own state under live SOMA (600 clean
+  samples, 1.16Hz, 600/600 unique obs). Canonical `from_type4_trace`:
+  L_self=0.076 ≤ 0.1 — third real-trace negative. R_out doubled vs collector
+  (0.029→0.076): coupling direction right, insufficient. Bottleneck localized
+  to the ACTION CLASS, not model location or sensor surface. Next run must be
+  a new preregistered experiment changing action/model class — no tuning to
+  pass. Evidence: `QSOP/EVIDENCE/type4_daemon_trace_2026-10-09.md`.
+- **Daemon defects found (recorded, unfixed):** hypervisor wedges ~2 council
+  cycles in (1 core, zero I/O — not ledger contention); evaluator 1e9 step
+  ceiling kills long spins and `--max-steps 0` does not lift it;
+  RESONANCE.jsonl unbounded at 43.6GB; `--measure` l_self disagrees with
+  canonical path 11× (0.71 vs 0.064 on same trace — canonical is authority).
 - **ClaimsDrift sensor WIRED 2026-10-07 (later same day):** `claims_probe.py`
   installed at `*/15` in greg's crontab; verdict file
   `~/.local/share/phiflow/claims_verdict.json` now refreshes — freshness-gated

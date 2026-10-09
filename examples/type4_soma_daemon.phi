@@ -10,10 +10,10 @@
 // obs channel contract matches collect_soma_trace.py for comparability:
 //   primary: soma_presence · fallback: soma_peak_dbc * 0.05 (capped 1.0)
 //
-// Run:
-//   cargo run --release --bin phic -- --daemon --with-soma --measure \
-//       --state-path /tmp/t4_daemon_state.json --max-steps 650 \
-//       examples/type4_soma_daemon.phi
+// Run (evaluator path — the hypervisor wedges after ~2 council cycles, defect
+// under investigation; semantics identical: program-carried model + live SOMA):
+//   SOMA_STATE_PATH=/mnt/d/Projects/PhiHarmonic/SOMA/soma_state.json \
+//   cargo run --release --bin phic -- examples/type4_soma_daemon.phi
 //
 // Preregistered criteria: QSOP/EVIDENCE/type4_daemon_prereg_2026-10-09.md
 // Canonical verdict: Trace::from_type4_trace (same path as the FAIL).
@@ -23,12 +23,10 @@ agent "T4SomaDaemon" version "1.0.0" {
     let step      = 0.0
     let model_sum = 0.0
     let model_n   = 0.0
+    let gate      = 0.0
 
     stream "soma_self_model" {
-        step = step + 1.0
-
-        // OBS: live sensor read. Each witness yields to the daemon host —
-        // SOMA is sampled fresh per cycle.
+        // OBS: live sensor read on every spin of the language loop.
         let obs = witness sensor("soma_presence")
         if obs <= 0.0 {
             // mic-absent hosts (WSL): presence is dead — use ring/audio floor
@@ -39,38 +37,47 @@ agent "T4SomaDaemon" version "1.0.0" {
             }
         }
 
-        // MODEL: program-carried running mean. Empty until first obs.
-        let model_mean = 0.5
-        if model_n > 0.0 {
-            model_mean = model_sum / model_n
-        }
+        // PACING GATE: the loop spins at ~10-50k instructions/sec — far
+        // faster than SOMA's ~5Hz fusion. Emit one sample per ~100k spins
+        // ≈ 1Hz — slower than the collector's 5Hz, so conservative
+        // (slower sampling can't inflate autocorrelation the way
+        // faster-than-fusion polling would). Effective rate is measured
+        // externally and recorded in the evidence file.
+        gate = gate + 1.0
+        if gate >= 100000.0 {
+            gate = 0.0
+            step = step + 1.0
 
-        // ACTION: the program's own branch. Grace window — the first 5
-        // cycles are listen-only so actions carry signal, not cold-start noise.
-        let action = 0.0
-        if model_n >= 5.0 {
-            if obs < model_mean {
-                action = 1.0
+            // MODEL: program-carried running mean. Empty until first obs.
+            let model_mean = 0.5
+            if model_n > 0.0 {
+                model_mean = model_sum / model_n
             }
+
+            // ACTION: the program's own branch. Grace window — the first 5
+            // samples are listen-only so actions carry signal.
+            let action = 0.0
+            if model_n >= 5.0 {
+                if obs < model_mean {
+                    action = 1.0
+                }
+            }
+
+            // R_in closes: model absorbs the live observation
+            model_sum = model_sum + obs
+            model_n   = model_n   + 1.0
+
+            // Canonical 4-tuple: STEP | OBS | MODEL(at decision) | ACTION
+            resonate step
+            resonate obs
+            resonate model_mean
+            resonate action
         }
-
-        // R_in closes: model absorbs the live observation
-        model_sum = model_sum + obs
-        model_n   = model_n   + 1.0
-
-        // Canonical 4-tuple: STEP | OBS | MODEL(at decision) | ACTION
-        resonate step
-        resonate obs
-        resonate model_mean
-        resonate action
-
-        // Daemon yield point — snapshot state, breathe, next cycle reads
-        // fresh sensors. This is what "daemon-coupled" means: the outer
-        // loop is the persistent runtime, not a Python for-loop.
-        witness coherence
 
         if step >= 600.0 {
             break stream
         }
     }
+
+    resonate step as "samples_taken"
 }

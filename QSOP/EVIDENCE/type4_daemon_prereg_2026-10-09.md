@@ -39,3 +39,22 @@ class (or obs surface richness).
 - Trace saved to `tests/fixtures/soma_daemon_trace_<date>.txt`
 - Synthetic fixtures stay labeled synthetic; this run supersedes nothing until
   its result is recorded
+
+## Amendment 1 (2026-10-09, mid-session — declared before result known)
+
+**Pacing methodology changed; claim targets unchanged.** The hypervisor
+(`phic --daemon`) wedges ~2 cycles into any council stream — burns ~1 CPU core
+with zero I/O and zero stream progress (defect recorded for investigation;
+ledger stream ruled out — solo council wedges identically). Round 2 therefore
+runs on the evaluator path: same program-carried model, same live sensors,
+witness recorded not yielded.
+
+Pacing iterations (all recorded, all scored by the canonical path):
+- v1 value-gate (emit on obs change): starved — presence is smoothed, only 16
+  fresh values in 40s. Value-gating the wrong channel's dynamics.
+- v2 spin-gate 2k: overshot — 600 samples in 10.5s (~57/s ≫ 5Hz fusion),
+  42/600 unique obs → sub-fusion resampling artifact. Canonical still scored
+  L_self = 0.064 OPEN (robust to the inflation — good property; built-in
+  --measure path reported 0.71 on the same trace — **metric-path discrepancy
+  flagged**, canonical `from_type4_trace` remains the authority).
+- v3 spin-gate 100k ≈ 1Hz: the preregistered-pace run. ~10min for 600 samples.
