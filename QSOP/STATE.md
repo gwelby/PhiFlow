@@ -61,11 +61,13 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   Contract: jsonl only written when `consciousness_metrics` AND `self_correlation`
   are non-null (`src/main_cli.rs:298`); one-shot `--measure` on programs without
   metrics writes nothing → bridge 503 is "no producer", not "no bridge".
-- **ClaimsDrift sensor safe but UNWIRED:** `devin/claims-drift-sensor` @ `da3a5f1`
-  pushed to origin (includes `honest_witness.phi` + `PL_THEORY_SELF_VERIFICATION.md`).
-  Verified 2026-10-07: `/mnt/d/QuantumSecrets/daemon/claims_probe.py` exists but is
-  absent from greg's crontab — no ClaimsDrift verdict file is produced, so the
-  sensor stays fail-closed `unavailable`. Wiring it is a deferred item, not a bug.
+- **ClaimsDrift sensor WIRED 2026-10-07 (later same day):** `claims_probe.py`
+  installed at `*/15` in greg's crontab; verdict file
+  `~/.local/share/phiflow/claims_verdict.json` now refreshes — freshness-gated
+  sensor has live input. **First run found 5 real DRIFTs:** quarantine 144 vs doc's
+  "12" · empty `authorized_keys` · `.env` still tracked in `Projects/Audio` ·
+  daily-audit cron absent (the 6 AM audit is dead) · pre-commit hook missing in
+  19/20 sampled repos. Sensor branch `devin/claims-drift-sensor` @ `da3a5f1` pushed.
 - **Local master = origin/master + 3** (docs-only Option-A consolidation commits
   `810c882`, `98c9cbe`, `c4c651c` — unpushed at write time).
 - **T-005 evidence partially found:** `docs/archive/pilot_offer.md` EXISTS (moved
