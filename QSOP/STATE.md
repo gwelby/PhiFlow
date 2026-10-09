@@ -69,6 +69,13 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   to the ACTION CLASS, not model location or sensor surface. Next run must be
   a new preregistered experiment changing action/model class — no tuning to
   pass. Evidence: `QSOP/EVIDENCE/type4_daemon_trace_2026-10-09.md`.
+- **Type-4 round 3 — CLOSED on scope-limited reading (2026-10-09):**
+  `type4_soma_expressive.phi` (`action = model_mean`, preregistered) on 600
+  clean live samples: **L_self=0.170 > 0.1, R_out=0.899, C_PF=0.137 vs null
+  0.0021**. Hypothesis confirmed — the bottleneck WAS action expressiveness.
+  Caveat per prereg: certifies observable self-model, NOT sensorimotor
+  closure (action never perturbs SOMA). C-21 → PARTIAL-POSITIVE; C-23 →
+  PARTIAL-POSITIVE. Round-4 candidate: environment-coupled action.
 - **Daemon defects found (recorded, unfixed):** hypervisor wedges ~2 council
   cycles in (1 core, zero I/O — not ledger contention); evaluator 1e9 step
   ceiling kills long spins and `--max-steps 0` does not lift it;

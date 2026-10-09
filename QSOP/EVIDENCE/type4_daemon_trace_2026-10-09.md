@@ -56,8 +56,26 @@ preregistered experiment; tuning within this design is forbidden.
 4. Presence channel is smoothed — value-gated sampling starves (16 unique
    reads in 40s); time-gating is the right method for this channel.
 
-## Status
+## Round 3 — expressive-action variant (prereg: `type4_expressive_prereg_2026-10-09.md`)
 
-- C-21/C-23 remain **HOLD** — three independent real-trace negatives, bottleneck
-  localized to R_out (action class), not model location or sensor surface.
-- The 600-sample trace is durable: `tests/fixtures/soma_daemon_trace.txt`.
+Single declared change: `action = model_mean` (program publishes its belief
+state as behavior) instead of binary `obs < model`.
+
+**600/600 clean samples · 850s · 0.71Hz · 600/600 unique obs · range 0.386–0.600**
+Canonical `from_type4_trace`:
+
+- R_in  = **0.170** · R_out = **0.899** · L_self = **0.1699 > 0.1 → CLOSED**
+- F_model = 0.994 · C_PF = 0.137 vs calibrated null 0.0021 (**65× over null**)
+
+The bottleneck hypothesis confirmed: R_out moved 0.076→0.899 when action
+carried model state; L_self is now bound by R_in (the model's grip on the obs
+stream), which is the honest constraint.
+
+**Claim precision (per prereg):** this certifies *observable self-model* —
+program behavior is a faithful function of its evolving internal state under
+live sensation. Actions never perturbed the sensor; full sensorimotor closure
+(action → environment → obs) remains untested and is the round-4 candidate.
+C-21 moves from HOLD to **PARTIAL-POSITIVE** on this scope-limited reading;
+C-23 gains a real C_PF discrimination (0.137 vs null 0.0021 — well above the
+μ+2σ calibrated threshold, though under the claim's full reading it needs the
+environment-coupled variant too).
