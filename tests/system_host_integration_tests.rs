@@ -1,6 +1,8 @@
 use std::fs;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use phiflow::host::PhiHostProvider;
+
+static SYSTEM_HOST_TEST_MUTEX: Mutex<()> = Mutex::new(());
 use phiflow::system_host::SystemHostProvider;
 use phiflow::security::anchor::AnchorSigningKey;
 
@@ -42,6 +44,7 @@ fn setup_soma_mock(dir: &std::path::Path) {
 
 #[test]
 fn test_system_host_signed_handoff() {
+    let _guard = SYSTEM_HOST_TEST_MUTEX.lock().unwrap();
     let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
     let base_path = temp_dir.path().to_path_buf();
     setup_soma_mock(&base_path);
@@ -79,6 +82,7 @@ fn test_system_host_signed_handoff() {
 
 #[test]
 fn test_system_host_ledger_requires_system_intent() {
+    let _guard = SYSTEM_HOST_TEST_MUTEX.lock().unwrap();
     let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
     let base_path = temp_dir.path().to_path_buf();
     setup_soma_mock(&base_path);
