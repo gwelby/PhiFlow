@@ -38,7 +38,22 @@ pub fn get_quantum_state_path() -> std::path::PathBuf {
         .unwrap_or_else(|_| get_phiflow_data_dir().join("quantum_state.json"))
 }
 
+/// Path to the claims-probe verdict file (written by an external claims
+/// auditor, e.g. QuantumSecrets/daemon/claims_probe.py). The sensor reads
+/// documentation-drift counts — how many workspace claims currently disagree
+/// with the world.
+pub fn get_claims_state_path() -> std::path::PathBuf {
+    std::env::var("PHIFLOW_CLAIMS_STATE_PATH")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|_| get_phiflow_data_dir().join("claims_verdict.json"))
+}
+
 const SOMA_FRESHNESS_THRESHOLD_MS: u64 = 5000;
+
+/// Claims verdicts go stale much slower than sensor data — the probe runs on
+/// a schedule (15min cadence assumed); allow ~3 missed runs before the sensor
+/// reports silence rather than a trusting a dead probe's last word.
+const CLAIMS_FRESHNESS_THRESHOLD_MS: u64 = 45 * 60 * 1000;
 
 fn parse_updated_at_timestamp(updated_at: &str) -> Option<std::time::SystemTime> {
     if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(updated_at) {
@@ -198,6 +213,28 @@ impl SensorSampler {
     }
 }
 
+/// Verdict file written by an external claims auditor (claims_probe.py).
+/// `drift` = count of doc claims that currently disagree with the world.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClaimsVerdict {
+    pub drift: u64,
+    #[serde(default)]
+    pub refused: u64,
+    pub probe_run_at: String,
+}
+
+/// Freshness gate: a claims verdict only counts if the probe ran recently.
+/// A dead probe leaves a stale file behind — stale reads as silent, never
+/// as "zero drift" (fail-closed on documentation claims too).
+pub fn is_claims_fresh(state: &ClaimsVerdict) -> bool {
+    if let Some(t) = parse_updated_at_timestamp(&state.probe_run_at) {
+        if let Ok(age) = t.elapsed() {
+            return (age.as_millis() as u64) < CLAIMS_FRESHNESS_THRESHOLD_MS;
+        }
+    }
+    false
+}
+
 pub struct LiveSensorData {
     pub coherence: f64,
     pub cpu_usage: f64,
@@ -205,6 +242,7 @@ pub struct LiveSensorData {
     pub memory_usage: Option<f64>,
     pub soma: Option<SomaState>,
     pub quantum: Option<QuantumState>,
+    pub claims: Option<ClaimsVerdict>,
 }
 
 static LIVE_DATA: OnceLock<Arc<RwLock<LiveSensorData>>> = OnceLock::new();
@@ -217,6 +255,11 @@ fn get_live_data() -> Arc<RwLock<LiveSensorData>> {
                 Err(_) => None,
             };
 
+            let initial_claims = match fs::read_to_string(get_claims_state_path()) {
+                Ok(content) => serde_json::from_str::<ClaimsVerdict>(&content).ok(),
+                Err(_) => None,
+            };
+
             let initial_data = Arc::new(RwLock::new(LiveSensorData {
                 coherence: 1.0,
                 cpu_usage: 0.0,
@@ -224,6 +267,7 @@ fn get_live_data() -> Arc<RwLock<LiveSensorData>> {
                 memory_usage: None,
                 soma: initial_soma,
                 quantum: None,
+                claims: initial_claims,
             }));
 
             let thread_data = Arc::clone(&initial_data);
@@ -271,6 +315,11 @@ fn get_live_data() -> Arc<RwLock<LiveSensorData>> {
                         Err(_) => None,
                     };
 
+                    let claims_opt = match fs::read_to_string(get_claims_state_path()) {
+                        Ok(content) => serde_json::from_str::<ClaimsVerdict>(&content).ok(),
+                        Err(_) => None,
+                    };
+
                     if let Ok(mut data) = thread_data.write() {
                         data.coherence = coherence;
                         data.cpu_usage = cpu_usage;
@@ -282,6 +331,9 @@ fn get_live_data() -> Arc<RwLock<LiveSensorData>> {
                         data.soma = soma_opt;
                         if quantum_opt.is_some() {
                             data.quantum = quantum_opt;
+                        }
+                        if claims_opt.is_some() {
+                            data.claims = claims_opt;
                         }
                     }
                     
@@ -501,6 +553,14 @@ pub fn read_sensor(sensor: SensorKind) -> Option<f64> {
         SensorKind::QuantumT1 => data.quantum.as_ref().and_then(|q| q.metrics.as_ref()).map(|m| m.quantum_t1),
         SensorKind::QuantumT2 => data.quantum.as_ref().and_then(|q| q.metrics.as_ref()).map(|m| m.quantum_t2),
         SensorKind::QuantumReadoutError => data.quantum.as_ref().and_then(|q| q.metrics.as_ref()).map(|m| m.quantum_readout_error),
+        // ClaimsDrift never returns None: an absent or stale verdict reads as
+        // -1.0 ("untrusted") rather than 0.0. Degrading a dead probe to "zero
+        // drift" would make the sensor fail-open — a probe that stops running
+        // must report distrust, not health.
+        SensorKind::ClaimsDrift => Some(match &data.claims {
+            Some(c) if is_claims_fresh(c) => c.drift as f64,
+            _ => -1.0,
+        }),
     }
 }
 
