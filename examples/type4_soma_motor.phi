@@ -1,0 +1,72 @@
+// type4_soma_motor.phi
+// Type-4 round 4 — SENSORIMOTOR-COUPLED variant.
+//
+// Change vs type4_soma_expressive.phi (declared in prereg):
+//   - obs := soma_peak_dbc (ring-spectrum peak amplitude — load-sensitive)
+//   - each cycle ends with a real CPU burst sized by the model's state —
+//     the action perturbs the same host the ring oscillator measures.
+//     action[t] -> environment -> obs[t+1] becomes a physical link.
+//
+// Held constant: running-mean model, action trace = model_mean, ~1Hz
+// spin-gate pacing, 600 samples, canonical from_type4_trace scoring.
+//
+// Preregistration: QSOP/EVIDENCE/type4_motor_prereg_2026-10-10.md
+//
+// Run:
+//   SOMA_STATE_PATH=/mnt/d/Projects/PhiHarmonic/SOMA/soma_state.json \
+//   cargo run --release --bin phic -- --measure --max-steps 15000000000 \
+//       examples/type4_soma_motor.phi
+
+agent "T4Sensorimotor" version "1.0.0" {
+    let step      = 0.0
+    let model_sum = 0.0
+    let model_n   = 0.0
+    let gate      = 0.0
+    let work_acc  = 0.0
+
+    stream "soma_motor" {
+        // OBS: ring-spectrum peak amplitude — the channel a CPU burst can move
+        let obs = witness sensor("soma_peak_dbc")
+
+        // PACING GATE: ~1Hz between emitted samples
+        gate = gate + 1.0
+        if gate >= 100000.0 {
+            gate = 0.0
+            step = step + 1.0
+
+            // MODEL: program-carried running mean (pre-update view)
+            let model_mean = 0.5
+            if model_n > 0.0 {
+                model_mean = model_sum / model_n
+            }
+
+            // ACTION: publish the belief state (trace value) AND burn CPU
+            // proportional to it — the environment coupling.
+            let action = model_mean
+            let burst  = action * 5000.0
+            let i      = 0.0
+            work_acc   = 0.0
+            while i < burst {
+                work_acc = work_acc + i * 0.0001 - work_acc * 0.0000001
+                i = i + 1.0
+            }
+
+            // R_in closes: model absorbs the live observation
+            model_sum = model_sum + obs
+            model_n   = model_n   + 1.0
+
+            // Canonical 4-tuple: STEP | OBS | MODEL(at decision) | ACTION
+            resonate step
+            resonate obs
+            resonate model_mean
+            resonate action
+        }
+
+        if step >= 600.0 {
+            break stream
+        }
+    }
+
+    resonate step as "samples_taken"
+    resonate work_acc as "work_checksum"
+}
