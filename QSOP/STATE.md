@@ -91,6 +91,16 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   Full sensorimotor closure needs an actuator that reaches the observable —
   none exists in-language today. Per prereg: recorded, tuning stops.
   Evidence: `QSOP/EVIDENCE/type4_motor_trace_2026-10-10.md`.
+- **Coupling probe — closure falsified at max load (2026-10-10):** 20-core
+  sustained burn ×40s, all SOMA channels sampled live. `soma_peak_dbc` Δ -0.93
+  (inside channel noise); `soma_presence` Δ -0.02; `soma_fan_hz` Δ +3.9 with
+  correct burn/recovery shape but sd≈15.8 (SNR too poor to exploit); all
+  others flat. Even maximum saturation produces no usable action→sensor
+  signal. **Verdict: Type-4 sensorimotor closure is not reachable at this
+  stack.** The arc closes: observable self-model CONFIRMED (R3), actuator→
+  sensor coupling absent at every scale tested. Reopening requires a designed
+  actuator surface (e.g., a SOMA channel written to be perturbed) — a hardware
+  feature, not a run.
 - **Daemon defects found (recorded, unfixed):** hypervisor wedges ~2 council
   cycles in (1 core, zero I/O — not ledger contention); evaluator 1e9 step
   ceiling kills long spins and `--max-steps 0` does not lift it;

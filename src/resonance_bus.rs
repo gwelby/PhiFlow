@@ -14,6 +14,60 @@ use uuid::Uuid;
 
 static MQTT_CLIENT: OnceLock<Mutex<Client>> = OnceLock::new();
 
+/// Default cap for the live RESONANCE.jsonl before rotation (64 MiB).
+/// Override with PHIFLOW_RESONANCE_MAX_BYTES.
+const DEFAULT_MAX_BUS_BYTES: u64 = 64 * 1024 * 1024;
+/// Default number of auto-rotation files kept (RESONANCE.rot-*).
+/// Operator archives (RESONANCE.archive-*) are never touched.
+/// Override with PHIFLOW_RESONANCE_MAX_ARCHIVES; 0 keeps every rotation.
+const DEFAULT_MAX_ARCHIVES: usize = 16;
+
+fn max_bus_bytes() -> u64 {
+    std::env::var("PHIFLOW_RESONANCE_MAX_BYTES")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(DEFAULT_MAX_BUS_BYTES)
+}
+
+fn max_archives() -> usize {
+    std::env::var("PHIFLOW_RESONANCE_MAX_ARCHIVES")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(DEFAULT_MAX_ARCHIVES)
+}
+
+/// Rotates the live bus file to `RESONANCE.rot-<ts>.jsonl` when it has
+/// reached the size cap, then prunes old rotations past the archive bound.
+/// Best-effort: any failure falls through to a normal append.
+fn rotate_bus_if_full(path: &Path) {
+    let Ok(meta) = std::fs::metadata(path) else { return };
+    if meta.len() < max_bus_bytes() {
+        return;
+    }
+    let Some(parent) = path.parent() else { return };
+    let stamp = Utc::now().format("%Y%m%dT%H%M%S%.3f");
+    let rotated = parent.join(format!("RESONANCE.rot-{}-{}.jsonl", stamp, std::process::id()));
+    if std::fs::rename(path, &rotated).is_err() {
+        return;
+    }
+    let keep = max_archives();
+    if keep == 0 {
+        return;
+    }
+    let mut rotations: Vec<_> = std::fs::read_dir(parent)
+        .map(|rd| {
+            rd.flatten()
+                .map(|e| e.file_name().to_string_lossy().into_owned())
+                .filter(|n| n.starts_with("RESONANCE.rot-") && n.ends_with(".jsonl"))
+                .collect()
+        })
+        .unwrap_or_default();
+    rotations.sort();
+    for name in rotations.iter().take(rotations.len().saturating_sub(keep)) {
+        let _ = std::fs::remove_file(parent.join(name));
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResonanceEvent {
     #[serde(rename = "type")]
@@ -54,6 +108,9 @@ pub fn emit_resonance(value: Value, intention: &str, source: &str) -> Result<()>
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
+
+    // Bound the live bus: rotate before it grows past the cap
+    rotate_bus_if_full(path);
 
     // Append to the file, create if it doesn't exist
     let mut file = OpenOptions::new().create(true).append(true).open(path)?;
