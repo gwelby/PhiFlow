@@ -76,6 +76,21 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   Caveat per prereg: certifies observable self-model, NOT sensorimotor
   closure (action never perturbs SOMA). C-21 → PARTIAL-POSITIVE; C-23 →
   PARTIAL-POSITIVE. Round-4 candidate: environment-coupled action.
+- **Type-4 round 4 — FAIL, coupling absent (2026-10-10):**
+  `type4_soma_motor.phi` (preregistered `a31ca65` before run): obs switched to
+  `soma_peak_dbc`, each cycle ends with a real CPU burst ∝ model state —
+  first run where `action → environment → obs` is physically possible.
+  600 clean samples, ~0.75Hz, 600/600 unique. Canonical:
+  **L_self=0.096 ≤ 0.1 — OPEN.** R_in collapsed (0.170→0.096 — running mean
+  can't track volatile peak_dbc, range 0.09–46.9); R_out=1.0 (action
+  perfectly model-expressive and still failed); preregistered diagnostic
+  `corr(action[t],obs[t+1]) = -0.005` — **the CPU-burst actuator does not
+  reach the GPU-resident ring sensor.** Construction family mapped: 1 pass
+  (observable self-model), 3 negatives each localizing a different joint
+  (sensor structure, action expressiveness, actuator→sensor coupling).
+  Full sensorimotor closure needs an actuator that reaches the observable —
+  none exists in-language today. Per prereg: recorded, tuning stops.
+  Evidence: `QSOP/EVIDENCE/type4_motor_trace_2026-10-10.md`.
 - **Daemon defects found (recorded, unfixed):** hypervisor wedges ~2 council
   cycles in (1 core, zero I/O — not ledger contention); evaluator 1e9 step
   ceiling kills long spins and `--max-steps 0` does not lift it;
