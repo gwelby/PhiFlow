@@ -11,6 +11,9 @@
 
 use phiflow::sensors::{compute_coherence_from_sensors, is_soma_state_fresh, SomaState};
 use std::fs;
+use std::sync::Mutex;
+
+static TEST_MUTEX: Mutex<()> = Mutex::new(());
 
 fn write_soma_state(path: &str, presence: f64, fan_hz: f64, peak_dbc: f64) {
     let content = format!(
@@ -50,6 +53,7 @@ fn write_soma_state(path: &str, presence: f64, fan_hz: f64, peak_dbc: f64) {
 
 #[test]
 fn test_soma_state_parses_and_is_fresh() {
+    let _lock = TEST_MUTEX.lock().unwrap();
     let tmp = std::env::temp_dir().join("soma_test_parse.json");
     write_soma_state(tmp.to_str().unwrap(), 0.5, 50.0, 15.0);
     let content = fs::read_to_string(&tmp).unwrap();
@@ -62,6 +66,7 @@ fn test_soma_state_parses_and_is_fresh() {
 
 #[test]
 fn test_coherence_without_soma_is_in_valid_range() {
+    let _lock = TEST_MUTEX.lock().unwrap();
     // Point SOMA_STATE_PATH to a non-existent file.
     std::env::set_var("SOMA_STATE_PATH", "/tmp/nonexistent_soma_test_12345.json");
     let coherence = compute_coherence_from_sensors();
@@ -74,6 +79,7 @@ fn test_coherence_without_soma_is_in_valid_range() {
 
 #[test]
 fn test_coherence_with_high_presence_is_higher_than_low_presence() {
+    let _lock = TEST_MUTEX.lock().unwrap();
     // Write a SOMA state with high presence (stable environment)
     let tmp_high = std::env::temp_dir().join("soma_test_high_presence.json");
     write_soma_state(tmp_high.to_str().unwrap(), 0.95, 50.0, 25.0);
@@ -111,6 +117,7 @@ fn test_coherence_with_high_presence_is_higher_than_low_presence() {
 
 #[test]
 fn test_coherence_drops_with_degraded_soma() {
+    let _lock = TEST_MUTEX.lock().unwrap();
     // Write a SOMA state with very low presence (degraded environment)
     let tmp = std::env::temp_dir().join("soma_test_degraded_presence.json");
     write_soma_state(tmp.to_str().unwrap(), 0.01, 0.0, 1.0);
