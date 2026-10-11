@@ -107,9 +107,13 @@ impl Trace {
     fn from_resonance_events_only(events: &[(String, PhiIRValue)]) -> Self {
         let mut trace = Trace::new();
 
-        // Extract numeric values from resonance events
+        // Extract numeric values from resonance events.
+        // `_`-prefixed scopes are internal evaluator telemetry (e.g.
+        // `_quantum_evolution`, `_handoff`, `_evolution`) — including them
+        // corrupts the 4-tuple alignment and produces phantom scores.
         let values: Vec<f64> = events
             .iter()
+            .filter(|(scope, _)| !scope.starts_with('_'))
             .filter_map(|(_, value)| match value {
                 PhiIRValue::Number(n) => Some(*n),
                 PhiIRValue::String(s) => s.parse::<f64>().ok(),
@@ -161,6 +165,8 @@ impl Trace {
     pub fn from_witness_log(log: &[VmWitnessEvent], events: &[(String, PhiIRValue)]) -> Self {
         let mut trace = Trace::new();
 
+        // `resonance_event_idx` indexes into the raw event list — keep ALL
+        // events here for index alignment.
         let resonance_values: Vec<(String, f64)> = events
             .iter()
             .filter_map(|(scope, value)| match value {
@@ -168,6 +174,15 @@ impl Trace {
                 PhiIRValue::String(s) => s.parse::<f64>().ok().map(|n| (scope.clone(), n)),
                 _ => None,
             })
+            .collect();
+
+        // raw_events feeds SelfCorrelation::from_type4_trace's 4-tuple
+        // chunker — internal `_`-prefixed system events would corrupt the
+        // alignment and produce phantom scores; keep only user scopes.
+        let user_events: Vec<(String, f64)> = resonance_values
+            .iter()
+            .filter(|(scope, _)| !scope.starts_with('_'))
+            .cloned()
             .collect();
 
         for (i, witness) in log.iter().enumerate() {
@@ -191,7 +206,7 @@ impl Trace {
             trace.timestamps.push(timestamp);
         }
 
-        trace.raw_events = resonance_values;
+        trace.raw_events = user_events;
         trace
     }
 
@@ -410,5 +425,32 @@ mod tests {
         assert_eq!(sliced.len(), 4);
         assert_eq!(sliced.coherence.values[0], 3.0);
         assert_eq!(sliced.coherence.values[3], 6.0);
+    }
+
+    /// Regression: internal `_`-prefixed evaluator events (e.g.
+    /// `_quantum_evolution`, pushed as Numbers mid-stream) must not corrupt
+    /// the 4-tuple alignment — the pre-filter path hallucinated L_self=0.71
+    /// on a trace the canonical file path scored 0.064.
+    #[test]
+    fn test_system_events_do_not_corrupt_tuples() {
+        let mut events: Vec<(String, PhiIRValue)> = Vec::new();
+        // 6 clean type4 cycles
+        for i in 1..=6u32 {
+            events.push(("soma".to_string(), PhiIRValue::Number(i as f64)));       // step
+            events.push(("soma".to_string(), PhiIRValue::Number(0.4 + i as f64 * 0.01))); // obs
+            events.push(("soma".to_string(), PhiIRValue::Number(0.45)));         // model
+            events.push(("soma".to_string(), PhiIRValue::Number(0.45)));         // action
+            if i == 3 {
+                // internal telemetry lands mid-stream in real runs
+                events.push(("_quantum_evolution".to_string(), PhiIRValue::Number(0.99)));
+                events.push(("_evolution".to_string(), PhiIRValue::Void));
+            }
+        }
+
+        let trace = Trace::from_resonance_events_only(&events);
+        assert_eq!(trace.len(), 6, "system events must be filtered, not chunked");
+        // Steps should be 1..=6 in order — a misalignment would shift values
+        let steps: Vec<f64> = trace.raw_events.iter().step_by(4).map(|(_, v)| *v).collect();
+        assert_eq!(steps, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
     }
 }

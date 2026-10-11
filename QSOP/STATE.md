@@ -111,6 +111,15 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   ceiling kills long spins and `--max-steps 0` does not lift it;
   RESONANCE.jsonl unbounded at 43.6GB; `--measure` l_self disagrees with
   canonical path 11× (0.71 vs 0.064 on same trace — canonical is authority).
+- **--measure phantom-score bug FIXED (2026-10-11):** root cause found —
+  `resonance_events` carries internal evaluator telemetry (`_quantum_evolution`
+  numbers, `_handoff`, `_evolution`) interleaved with user tuples. The VM-state
+  trace builders chunked ALL numeric events into 4-tuples → one internal event
+  mid-stream shifts every subsequent tuple → hallucinated L_self (the 0.71).
+  Fix: `_`-prefixed scopes filtered in `from_resonance_events_only` and in
+  `from_witness_log`'s `raw_events` (observed-index list kept full for
+  `resonance_event_idx` alignment). Regression test:
+  `test_system_events_do_not_corrupt_tuples`.
 - **ClaimsDrift sensor WIRED 2026-10-07 (later same day):** `claims_probe.py`
   installed at `*/15` in greg's crontab; verdict file
   `~/.local/share/phiflow/claims_verdict.json` now refreshes — freshness-gated
