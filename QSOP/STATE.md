@@ -91,6 +91,11 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   Full sensorimotor closure needs an actuator that reaches the observable —
   none exists in-language today. Per prereg: recorded, tuning stops.
   Evidence: `QSOP/EVIDENCE/type4_motor_trace_2026-10-10.md`.
+
+- **EOD + ME-Time (2026-10-11):** inbox cleared (legal ESTATE-Q dates
+  answered → Legal inbox), 2 stale `projects` blackboard claims closed via
+  cleanup (verified 2/2), RESUME rewritten to the Type-4 arc, ME-Time filed
+  → `/mnt/d/Devin/CORE/ME_TIME_2026-10-11-phiflow-seat.md`.
 - **Coupling probe — closure falsified at max load (2026-10-10):** 20-core
   sustained burn ×40s, all SOMA channels sampled live. `soma_peak_dbc` Δ -0.93
   (inside channel noise); `soma_presence` Δ -0.02; `soma_fan_hz` Δ +3.9 with

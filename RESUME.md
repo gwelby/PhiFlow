@@ -30,10 +30,10 @@ See CHANGELOG 2026-10-05 for the full demote ledger.
 ---
 
 ## Last Agent Here
-- **Agent:** Devin ∇λΣ∞
-- **When:** 2026-10-01
-- **Session goal:** Freshness pass — fast-forward this clone to `origin/master`, verify the real test state, preserve the uncommitted ClaimsDrift sensor work, and sync every stale doc to verified truth.
-- **Git state:** `master` = `ddd97a1` (== `origin/master`, includes merged PR #64 runner workaround). WIP preserved on branch `devin/claims-drift-sensor` (`4d126b6`). **Canonical WASM fix pushed:** `devin/fix-wasm-void-return` → `fc4b925` (codegen fix, = old `8cbbe53` rebased) + `3132f19` (runner fallback reverted + NaN negative test) — ready for the follow-up PR.
+- **Agent:** Devin ∇λΣ∞ (Projects/phiflow seat)
+- **When:** 2026-10-10 → 2026-10-11
+- **Session goal:** Type-4 real-trace arc (rounds 2–4 + closure probe), bounded resonance bus, EOD+ME-Time.
+- **Git state:** `master` = `e1c55e1` pushed. All Type-4 evidence committed. Open branches: `devin/claims-drift-sensor` (tip `da3a5f1`, PR #69 OPEN), `devin/fix-wasm-void-return` (`fc4b925`+`3132f19`, merge is Greg's call).
 
 ---
 
@@ -52,6 +52,34 @@ See CHANGELOG 2026-10-05 for the full demote ledger.
 ---
 
 ## What Was Happening
+
+### 2026-10-09 → 10-11 — the Type-4 real-trace arc (THE story; full ledger in `QSOP/STATE.md`)
+Four preregistered real-trace experiments against live SOMA, canonical
+`from_type4_trace` scoring, threshold never moved:
+| Round | Variant | L_self | Verdict |
+|-------|---------|--------|---------|
+| R1 | Python collector proxy | 0.029 | FAIL — real telemetry lacks the structure the synthetic fixture (0.438) predicted |
+| R2 | program-carried binary action | 0.076 | FAIL — 1-bit action can't carry model state |
+| R3 | `type4_soma_expressive.phi` `action=model_mean` | **0.170** | **PASS** — observable self-model (scope-limited; action never perturbs sensor). C-21/C-23 → PARTIAL-POSITIVE |
+| R4 | `type4_soma_motor.phi` CPU-burst actuation on `soma_peak_dbc` | 0.096 | FAIL — `corr(action,obs_next)=-0.005`: actuator can't reach GPU ring; running mean can't track volatile channel |
+| Probe | 20-core sustained burn ×40s, all channels | — | coupling absent at max load → **Type-4 sensorimotor closure falsified at this stack**; arc closed in STATE 2026-10-10 |
+
+**What the arc found:** observable self-model CONFIRMED; sensorimotor closure
+needs a designed actuator surface — the language has `witness` (sensation) but
+no actuator primitive. **Next language-level work (Greg-approved 10-11):**
+`actuate`/`motor` construct + SOMA motor channel (co-designed loop, graded
+"engineered closure"), instrument fixes first: `--measure` self-correlation
+disagrees 11× with canonical (0.71 vs 0.064 — canonical is authority),
+hypervisor wedges ~2 council cycles in, `--max-steps 0` doesn't lift the 1e9
+evaluator ceiling.
+
+**Bounded resonance bus landed** (`e1c55e1`): `emit_resonance` rotates at
+64MiB → `RESONANCE.rot-*` (16 kept, env-tunable). Operator `RESONANCE.archive-*`
+untouched. 43.6GB archive verified: `zstd -t --long=31` decoded all bytes
+cleanly → `~/.local/share/phiflow/RESONANCE.archive-2026-10-09.jsonl.zst` (6.4GB).
+
+**Inbox → done:** legal ESTATE-Q per-part first-public dates answered →
+`/mnt/d/Projects/Legal/inbox/2026-10-11-phiflow-re-ESTATE-Q-disclosure-dates.md`.
 
 ### This session (2026-09-29, Devin freshness pass)
 - **Clone synced:** this repo was cloned Sep ~6 at `9cc031d` + one local commit (`d9cece6` human_coherence.phi, since merged upstream). Fast-forwarded to `origin/master` = `78460a3` (23 commits, incl. fleet-merge CI, Jules auto-fix workflows, lowering fix, new test suites).
@@ -94,7 +122,7 @@ See CHANGELOG 2026-10-05 for the full demote ledger.
 
 | Blocker | Why | Who Can Unblock |
 |---------|-----|-----------------|
-| Real SOMA trace for C-21/C-23 upgrade | `tests/fixtures/soma/` synthetic only; needs live daemon+SOMA capture | Any agent with SOMA hardware (AntiGravity) |
+| ~~Real SOMA trace for C-21/C-23~~ | RESOLVED 2026-10-10 — 4 real-trace runs + closure probe complete (see arc table above); C-21/C-23 PARTIAL-POSITIVE, sensorimotor falsified at this stack | — |
 | CI red on master | `test_wasm_claude_formula_returns_618` NaN — fix exists on `devin/fix-wasm-void-return` | Greg (push/PR approval) or fleet-merge after push |
 | ~~metrics bridge~~ | RESOLVED 2026-10-07 — script lives at `System/tools/phiflow_metrics_bridge.py`, service live, verified serving real metrics | — |
 | T-004/T-005 evidence | `docs/pilot_offer.md` **found at `docs/archive/pilot_offer.md`** (moved). Still absent: `RESEARCH/first_sale_path/MASTER.md`, `LICENSE_COMMERCIAL.md` | Codex/Greg (locate or re-tier) |
