@@ -111,6 +111,17 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   ceiling kills long spins and `--max-steps 0` does not lift it;
   RESONANCE.jsonl unbounded at 43.6GB; `--measure` l_self disagrees with
   canonical path 11× (0.71 vs 0.064 on same trace — canonical is authority).
+- **Post-reboot integrity sweep (2026-10-13):** Lenovo rebooted mid-commit.
+  PhiFlow was the only casualty on /mnt/d — 6 torn loose objects + zeroed
+  refs (classic drvfs torn write). The `actuate` commit `da61589` had already
+  reached origin intact; local refs repaired to full SHAs and objects
+  re-fetched — `git fsck` clean, tree clean, no work lost. All other /mnt/d
+  repos (Devin, Jules, System, Crypto, Tools, Pi, Hermes, Claude, Codex,
+  Domains) fsck-verified clean. **Services after reboot:** blackboard :18005,
+  daemon :50051, WOW :18001, metrics bridge :18030 all alive. **Crystal
+  :18004 DOWN; SOMA daemon DOWN** — no soma_state.json anywhere, no producer
+  process. The SOMA producer is AntiGravity-side (GPU ring bridge) and needs
+  its own restart — live sensor experiments are blocked until it returns.
 - **actuate — the efferent limb LANDED (2026-10-11):** the missing half of
   the sensorimotor pair, identified by the R4 falsification. New language
   construct `actuate motor("channel", expr)` — afferent `witness sensor()`
