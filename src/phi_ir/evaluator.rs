@@ -760,6 +760,26 @@ impl<'a> Evaluator<'a> {
                 self.host.broadcast(channel, &val_str);
                 None
             }
+            PhiIRNode::Actuate { channel, value } => {
+                let val = self.get_reg(*value)?;
+                let commanded = match val {
+                    PhiIRValue::Number(n) => *n,
+                    _ => {
+                        return Err(EvalError::InvalidOperation(format!(
+                            "actuate motor(\"{}\") requires a numeric value",
+                            channel
+                        )))
+                    }
+                };
+                let source = self
+                    .agent_name
+                    .clone()
+                    .unwrap_or_else(|| "phic".to_string());
+                crate::motor_bus::emit_actuate(channel, commanded, &source).map_err(|e| {
+                    EvalError::InvalidOperation(format!("actuate bus write failed: {}", e))
+                })?;
+                Some(PhiIRValue::Number(commanded))
+            }
             PhiIRNode::Listen(channel) => {
                 if let Some(val_str) = self.host.listen(channel) {
                     Some(self.string_to_value(&val_str))

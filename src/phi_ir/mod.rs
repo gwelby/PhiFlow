@@ -333,6 +333,12 @@ pub enum PhiIRNode {
     /// Witness a physical or system sensor by name (e.g. "cpu_temp").
     WitnessSensor { sensor: SensorKind },
 
+    /// Write a value to a named motor channel (efferent pair of WitnessSensor).
+    /// The event leaves the process through the bounded actuate bus so an
+    /// external system can observe the commanded value. Returns the value
+    /// that was commanded.
+    Actuate { channel: String, value: Operand },
+
     /// Enter an intention scope. Pushes intention name onto the stack.
     /// WASM: runtime stack. Quantum: register allocation. Hardware: sensor reconfig.
     IntentionPush {

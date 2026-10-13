@@ -111,6 +111,25 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   ceiling kills long spins and `--max-steps 0` does not lift it;
   RESONANCE.jsonl unbounded at 43.6GB; `--measure` l_self disagrees with
   canonical path 11× (0.71 vs 0.064 on same trace — canonical is authority).
+- **actuate — the efferent limb LANDED (2026-10-11):** the missing half of
+  the sensorimotor pair, identified by the R4 falsification. New language
+  construct `actuate motor("channel", expr)` — afferent `witness sensor()`
+  now has its efferent pair. Full three-backend parity: parser token+AST+
+  `parse_actuate_statement`, `PhiExpression::Actuate`, `PhiIRNode::Actuate`
+  (returns the commanded value), evaluator + VM (`OP_ACTUATE=0x56`,
+  `BytecodeNode::Actuate`) + WASM (`phi_actuate(i32,f64)->f64` import in
+  wasm.rs, wasmtime host in wasm_host.rs, JS runner stub). New
+  `src/motor_bus.rs`: bounded `MOTOR.jsonl` bus (`MOTOR_BUS_PATH`,
+  `PHIFLOW_MOTOR_MAX_BYTES/MAX_ARCHIVES`, `MOTOR.rot-*` rotations, operator
+  `MOTOR.archive-*` never pruned) + MQTT `cosmic/actuate` mirror.
+  `rotate_bus_if_full` generalized to param+stem-derived prefixes — now
+  serves both buses. Tests: `tests/actuate_test.rs` (bus write, return value,
+  class rejection — env-var serialized). Docs: LANGUAGE.md construct §5,
+  `examples/type4_soma_actuate.phi` (R5-shaped probe). Contract: program
+  commands the value; what the environment *felt* must return through a
+  sensor — the program does not grade its own effect. Next: SOMA-side
+  consumer producing `soma_motor_report`, then a proper R5 prereg —
+  explicitly *engineered* closure, not natural coupling (proven absent).
 - **--measure phantom-score bug FIXED (2026-10-11):** root cause found —
   `resonance_events` carries internal evaluator telemetry (`_quantum_evolution`
   numbers, `_handoff`, `_evolution`) interleaved with user tuples. The VM-state

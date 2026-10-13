@@ -41,6 +41,7 @@ pub enum PhiToken {
     Frequency,
     Intention,
     Witness,
+    Actuate,
     State,
     Hardware,
     Emergency,
@@ -297,6 +298,13 @@ pub enum PhiExpression {
     },
     Recall(String),
     Broadcast {
+        channel: String,
+        value: Box<PhiExpression>,
+    },
+    // ACTUATE: the efferent pair of `witness sensor()` — writes a value to a
+    // named motor channel on the actuate bus, where an external system can
+    // observe it. `actuate motor("channel", expr)` returns the commanded value.
+    Actuate {
         channel: String,
         value: Box<PhiExpression>,
     },
@@ -713,6 +721,7 @@ impl PhiLexer {
             "frequency" => PhiToken::Frequency,
             "intention" => PhiToken::Intention,
             "witness" => PhiToken::Witness,
+            "actuate" => PhiToken::Actuate,
             "resonate" => PhiToken::Resonate,
             "state" => PhiToken::State,
             "hardware" => PhiToken::Hardware,
@@ -948,6 +957,7 @@ impl PhiParser {
             PhiToken::Validate => self.parse_validation_statement(),
             PhiToken::Return => self.parse_return_statement(),
             PhiToken::Witness => self.parse_witness_statement(),
+            PhiToken::Actuate => self.parse_actuate_statement(),
             PhiToken::Resonate => self.parse_resonate_statement(),
             PhiToken::Intention => self.parse_intention_block(),
             PhiToken::Consciousness => self.parse_consciousness_declaration(),
@@ -1096,6 +1106,7 @@ impl PhiParser {
             | PhiToken::Zone
             | PhiToken::Intention
             | PhiToken::Witness
+            | PhiToken::Actuate
             | PhiToken::Resonate
             | PhiToken::Sequence => {
                 let var_name = format!("{:?}", self.current_token).to_lowercase();
@@ -1265,6 +1276,28 @@ impl PhiParser {
         let channel = self.expect_string()?;
         let value = Box::new(self.parse_expression()?);
         Ok(PhiExpression::Broadcast { channel, value })
+    }
+
+    /// Parse actuate statement:
+    ///   actuate motor("channel", expression)
+    /// The efferent pair of `witness sensor("name")` — writes the evaluated
+    /// value to a named motor channel on the actuate bus. `motor` is the
+    /// actuator class; other classes (relay, servo...) may follow.
+    fn parse_actuate_statement(&mut self) -> Result<PhiExpression, String> {
+        self.expect(PhiToken::Actuate)?;
+        let class = self.expect_identifier()?;
+        if class != "motor" {
+            return Err(format!(
+                "actuate requires motor(\"channel\", value) — unknown actuator class \"{}\"",
+                class
+            ));
+        }
+        self.expect(PhiToken::LeftParen)?;
+        let channel = self.expect_string()?;
+        self.expect(PhiToken::Comma)?;
+        let value = Box::new(self.parse_expression()?);
+        self.expect(PhiToken::RightParen)?;
+        Ok(PhiExpression::Actuate { channel, value })
     }
 
     fn parse_listen_expression(&mut self) -> Result<PhiExpression, String> {
@@ -1605,6 +1638,7 @@ impl PhiParser {
             PhiToken::Evolve => self.parse_evolve_expression()?,
             PhiToken::Entangle => self.parse_entangle_expression()?,
             PhiToken::Witness => self.parse_witness_statement()?,
+            PhiToken::Actuate => self.parse_actuate_statement()?,
             PhiToken::Create => {
                 // Handle create statements as expressions
                 self.parse_create_statement()?
@@ -2238,6 +2272,7 @@ impl PhiParser {
             PhiToken::Consciousness => Ok("consciousness".to_string()),
             PhiToken::Frequency => Ok("frequency".to_string()),
             PhiToken::Witness => Ok("witness".to_string()),
+            PhiToken::Actuate => Ok("actuate".to_string()),
             PhiToken::Resonate => Ok("resonate".to_string()),
             PhiToken::State => Ok("state".to_string()),
             PhiToken::Coherence => Ok("coherence".to_string()),

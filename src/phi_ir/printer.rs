@@ -82,6 +82,9 @@ fn format_instr(node: &PhiIRNode) -> String {
         PhiIRNode::WitnessSensor { sensor } => {
             format!("WitnessSensor \"{}\"", sensor.as_name())
         }
+        PhiIRNode::Actuate { channel, value } => {
+            format!("Actuate \"{}\" %{}", channel, value)
+        }
         PhiIRNode::IntentionPush { name, .. } => format!("IntentionPush \"{}\"", name),
         PhiIRNode::IntentionPop => "IntentionPop".to_string(),
         PhiIRNode::Resonate {

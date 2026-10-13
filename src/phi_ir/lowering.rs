@@ -247,6 +247,7 @@ fn validate_sensor_witness(expr: &PhiExpression) -> Result<(), LoweringError> {
         }
         | PhiExpression::Remember { value: body, .. }
         | PhiExpression::Broadcast { value: body, .. }
+        | PhiExpression::Actuate { value: body, .. }
         | PhiExpression::IntentionBlock { body, .. }
         | PhiExpression::StreamBlock { body, .. }
         | PhiExpression::AgentBlock { body, .. }
@@ -651,6 +652,15 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
                 value: val_op,
             });
             LowerResult::None
+        }
+        PhiExpression::Actuate { channel, value } => {
+            let res = lower_expr(ctx, value);
+            let val_op = unwrap_val(ctx, res);
+            let op = ctx.emit(PhiIRNode::Actuate {
+                channel: channel.clone(),
+                value: val_op,
+            });
+            LowerResult::Value(op)
         }
         PhiExpression::Listen(channel) => {
             let op = ctx.emit(PhiIRNode::Listen(channel.clone()));

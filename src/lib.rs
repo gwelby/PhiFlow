@@ -26,6 +26,7 @@ pub mod phi_ir;
 pub mod visualization;
 
 pub mod quantum_feedback;
+pub mod motor_bus;
 pub mod resonance_bus;
 pub mod sensors;
 pub mod system_host;

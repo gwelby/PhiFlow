@@ -20,6 +20,7 @@ async function main() {
   const witnessLog = [];       // coherence values from witness calls
   const kvStore = new Map();   // remember/recall key-value store
   const channels = new Map();  // broadcast/listen channels
+  const motorChannels = new Map();  // actuate motor channels
   const sensorValues = new Map([
     [0, 12.5],   // default sensor
     [1, 55.0],   // default sensor
@@ -94,6 +95,10 @@ async function main() {
       },
       broadcast: (channelIdx, value) => {
         channels.set(channelIdx, value);
+      },
+      actuate: (channelIdx, value) => {
+        motorChannels.set(channelIdx, value);
+        return value;
       },
       listen: (channelIdx) => {
         return channels.has(channelIdx) ? channels.get(channelIdx) : 0.0;

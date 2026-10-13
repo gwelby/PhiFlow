@@ -65,13 +65,25 @@ Four preregistered real-trace experiments against live SOMA, canonical
 | Probe | 20-core sustained burn ×40s, all channels | — | coupling absent at max load → **Type-4 sensorimotor closure falsified at this stack**; arc closed in STATE 2026-10-10 |
 
 **What the arc found:** observable self-model CONFIRMED; sensorimotor closure
-needs a designed actuator surface — the language has `witness` (sensation) but
-no actuator primitive. **Next language-level work (Greg-approved 10-11):**
-`actuate`/`motor` construct + SOMA motor channel (co-designed loop, graded
-"engineered closure"), instrument fixes first: `--measure` self-correlation
-disagrees 11× with canonical (0.71 vs 0.064 — canonical is authority),
-hypervisor wedges ~2 council cycles in, `--max-steps 0` doesn't lift the 1e9
-evaluator ceiling.
+needs a designed actuator surface — the language had `witness` (sensation) but
+no actuator primitive.
+
+**2026-10-11 (later): the efferent limb landed — `actuate` is real.** New
+language construct `actuate motor("channel", expr)` — full three-backend
+parity (evaluator + VM opcode 0x56 + WASM `phi_actuate` import incl.
+wasmtime host + JS runner), bounded `MOTOR.jsonl` bus with same rotation
+discipline as RESONANCE, MQTT `cosmic/actuate` mirror, `tests/actuate_test.rs`
+green 3/3, LANGUAGE.md construct §5, `examples/type4_soma_actuate.phi`
+(R5-shaped probe). The bus records the *commanded* value; the program does
+not grade its own effect. **Same session:** `--measure` phantom-score bug
+fixed — `_`-prefixed internal evaluator telemetry was chunking into Type-4
+4-tuples (the fake 0.71); filtered in both trace builders +
+`test_system_events_do_not_corrupt_tuples` regression.
+**Remaining for a real R5:** SOMA-side consumer that reads MOTOR.jsonl and
+reports `soma_motor_report` (what the environment actually felt), then a
+proper prereg — graded *engineered* closure, not natural coupling.
+Daemon defects still open: hypervisor wedge ~2 council cycles,
+`--max-steps 0` doesn't lift the 1e9 evaluator ceiling.
 
 **Bounded resonance bus landed** (`e1c55e1`): `emit_resonance` rotates at
 64MiB → `RESONANCE.rot-*` (16 kept, env-tunable). Operator `RESONANCE.archive-*`

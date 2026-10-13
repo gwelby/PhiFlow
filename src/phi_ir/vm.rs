@@ -45,6 +45,7 @@ const OP_BROADCAST: u8 = 0x52;
 const OP_LISTEN: u8 = 0x53;
 const OP_AGENT_DECL: u8 = 0x54;
 const OP_VOID_DEPTH: u8 = 0x55;
+const OP_ACTUATE: u8 = 0x56;
 const OP_EVOLVE: u8 = 0x60;
 const OP_ENTANGLE: u8 = 0x61;
 const OP_HANDOFF: u8 = 0x70;
@@ -249,6 +250,10 @@ pub enum BytecodeNode {
     },
     Recall(String),
     Broadcast {
+        channel: String,
+        value: Operand,
+    },
+    Actuate {
         channel: String,
         value: Operand,
     },
@@ -735,6 +740,22 @@ impl PhiVm {
                 let _ = crate::resonance_bus::emit_resonance(json_val, channel, "phivm");
                 None
             }
+            BytecodeNode::Actuate { channel, value } => {
+                let val = self.get_reg(*value)?;
+                let commanded = match val {
+                    PhiIRValue::Number(n) => *n,
+                    _ => {
+                        return Err(VmError::InvalidOperation(format!(
+                            "actuate motor(\"{}\") requires a numeric value",
+                            channel
+                        )))
+                    }
+                };
+                crate::motor_bus::emit_actuate(channel, commanded, "phivm").map_err(|e| {
+                    VmError::InvalidOperation(format!("actuate bus write failed: {}", e))
+                })?;
+                Some(PhiIRValue::Number(commanded))
+            }
             BytecodeNode::Listen(channel) => {
                 if let Some(val_str) = self.host.listen(channel) {
                     if let Ok(n) = val_str.parse::<f64>() {
@@ -1147,6 +1168,10 @@ fn parse_node(reader: &mut ByteReader<'_>, string_table: &[String]) -> VmResult<
         },
         OP_RECALL => BytecodeNode::Recall(read_string_ref(reader, string_table)?),
         OP_BROADCAST => BytecodeNode::Broadcast {
+            channel: read_string_ref(reader, string_table)?,
+            value: reader.read_u32()?,
+        },
+        OP_ACTUATE => BytecodeNode::Actuate {
             channel: read_string_ref(reader, string_table)?,
             value: reader.read_u32()?,
         },

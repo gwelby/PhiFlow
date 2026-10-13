@@ -36,21 +36,29 @@ fn max_archives() -> usize {
         .unwrap_or(DEFAULT_MAX_ARCHIVES)
 }
 
-/// Rotates the live bus file to `RESONANCE.rot-<ts>.jsonl` when it has
+/// Rotates a live bus file to `<STEM>.rot-<ts>-<pid>.jsonl` when it has
 /// reached the size cap, then prunes old rotations past the archive bound.
+/// The rotation prefix derives from the file stem, so RESONANCE.jsonl rotates
+/// to RESONANCE.rot-* and MOTOR.jsonl to MOTOR.rot-*; operator archives
+/// (`<STEM>.archive-*`) use a different prefix and are never touched.
 /// Best-effort: any failure falls through to a normal append.
-fn rotate_bus_if_full(path: &Path) {
+pub(crate) fn rotate_bus_if_full(path: &Path, max_bytes: u64, max_archives: usize) {
     let Ok(meta) = std::fs::metadata(path) else { return };
-    if meta.len() < max_bus_bytes() {
+    if meta.len() < max_bytes {
         return;
     }
     let Some(parent) = path.parent() else { return };
+    let stem = path
+        .file_stem()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "BUS".to_string());
+    let rot_prefix = format!("{}.rot-", stem);
     let stamp = Utc::now().format("%Y%m%dT%H%M%S%.3f");
-    let rotated = parent.join(format!("RESONANCE.rot-{}-{}.jsonl", stamp, std::process::id()));
+    let rotated = parent.join(format!("{}{}-{}.jsonl", rot_prefix, stamp, std::process::id()));
     if std::fs::rename(path, &rotated).is_err() {
         return;
     }
-    let keep = max_archives();
+    let keep = max_archives;
     if keep == 0 {
         return;
     }
@@ -58,13 +66,23 @@ fn rotate_bus_if_full(path: &Path) {
         .map(|rd| {
             rd.flatten()
                 .map(|e| e.file_name().to_string_lossy().into_owned())
-                .filter(|n| n.starts_with("RESONANCE.rot-") && n.ends_with(".jsonl"))
+                .filter(|n| n.starts_with(&rot_prefix) && n.ends_with(".jsonl"))
                 .collect()
         })
         .unwrap_or_default();
     rotations.sort();
     for name in rotations.iter().take(rotations.len().saturating_sub(keep)) {
         let _ = std::fs::remove_file(parent.join(name));
+    }
+}
+
+/// Publishes a bus payload on the global MQTT client when one is installed
+/// (via `subscribe_resonance_mqtt`). No-op otherwise.
+pub(crate) fn publish_mqtt(topic: &str, payload: String) {
+    if let Some(client_mutex) = MQTT_CLIENT.get() {
+        if let Ok(mut client) = client_mutex.lock() {
+            let _ = client.publish(topic, QoS::AtMostOnce, false, payload);
+        }
     }
 }
 
@@ -110,20 +128,16 @@ pub fn emit_resonance(value: Value, intention: &str, source: &str) -> Result<()>
     }
 
     // Bound the live bus: rotate before it grows past the cap
-    rotate_bus_if_full(path);
+    rotate_bus_if_full(path, max_bus_bytes(), max_archives());
 
     // Append to the file, create if it doesn't exist
     let mut file = OpenOptions::new().create(true).append(true).open(path)?;
 
-    writeln!(file, "{}", json_line)?;
+    writeln!(file, "{}", &json_line)?;
 
     // Fallback: also try to push to MQTT if a global client exists
-    if let Some(client_mutex) = MQTT_CLIENT.get() {
-        if let Ok(mut client) = client_mutex.lock() {
-            let topic = std::env::var("RESONANCE_MQTT_TOPIC").unwrap_or_else(|_| "cosmic/resonance".into());
-            let _ = client.publish(topic, QoS::AtMostOnce, false, json_line);
-        }
-    }
+    let topic = std::env::var("RESONANCE_MQTT_TOPIC").unwrap_or_else(|_| "cosmic/resonance".into());
+    publish_mqtt(&topic, json_line);
 
     Ok(())
 }

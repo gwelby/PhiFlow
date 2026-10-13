@@ -58,6 +58,7 @@ const OP_BROADCAST: u8 = 0x52;
 const OP_LISTEN: u8 = 0x53;
 const OP_AGENT_DECL: u8 = 0x54;
 const OP_VOID_DEPTH: u8 = 0x55;
+const OP_ACTUATE: u8 = 0x56;
 const OP_EVOLVE: u8 = 0x60;
 const OP_ENTANGLE: u8 = 0x61;
 const OP_HANDOFF: u8 = 0x70;
@@ -237,6 +238,7 @@ fn collect_node_strings(node: &PhiIRNode, interner: &mut StringInterner) {
         | PhiIRNode::Remember { key: name, .. }
         | PhiIRNode::Recall(name)
         | PhiIRNode::Broadcast { channel: name, .. }
+        | PhiIRNode::Actuate { channel: name, .. }
         | PhiIRNode::Listen(name)
         | PhiIRNode::CoherenceOf(name) => {
             interner.intern(name);
@@ -527,6 +529,12 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
 
         PhiIRNode::Broadcast { channel, value } => {
             out.push(OP_BROADCAST);
+            emit_string_ref(out, channel, ctx);
+            emit_u32(out, *value);
+        }
+
+        PhiIRNode::Actuate { channel, value } => {
+            out.push(OP_ACTUATE);
             emit_string_ref(out, channel, ctx);
             emit_u32(out, *value);
         }

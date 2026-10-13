@@ -323,6 +323,9 @@ impl Optimizer {
             PhiIRNode::Broadcast { value, .. } => {
                 used.insert(*value);
             }
+            PhiIRNode::Actuate { value, .. } => {
+                used.insert(*value);
+            }
             PhiIRNode::Evolve(op) => {
                 used.insert(*op);
             }
@@ -347,6 +350,7 @@ impl Optimizer {
             | PhiIRNode::DomainCall { .. }
             | PhiIRNode::Witness { .. }
             | PhiIRNode::WitnessSensor { .. }
+            | PhiIRNode::Actuate { .. }
             | PhiIRNode::IntentionPush { .. }
             | PhiIRNode::IntentionPop
             | PhiIRNode::Resonate { .. }

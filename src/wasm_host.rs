@@ -427,6 +427,20 @@ pub fn run_wat_with_host(
         },
     )?;
 
+    // phi.actuate(i32, f64) -> f64
+    // Writes a value to a named motor channel on the actuate bus — the
+    // efferent pair of phi.sensor. The i32 is a string-table index for the
+    // channel name. Returns the commanded value.
+    linker.func_wrap(
+        "phi",
+        "actuate",
+        |caller: Caller<'_, RuntimeState>, channel_idx: i32, value: f64| -> f64 {
+            let channel = caller.data().resolve_string(channel_idx);
+            let _ = crate::motor_bus::emit_actuate(&channel, value, "wasm");
+            value
+        },
+    )?;
+
     // phi.listen(i32) -> f64
     // Retrieves the latest value on a named channel. Returns 0.0 if no message.
     linker.func_wrap(

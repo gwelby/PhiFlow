@@ -1,0 +1,38 @@
+# Type-4 sensorimotor probe — engineered actuator surface
+#
+# Loop: witness sensor() reads SOMA -> running-mean model -> actuate motor()
+# writes the model value to the "soma_motor" channel on MOTOR.jsonl ->
+# an external system (SOMA bridge consumer) observes the command and reports
+# what it actually felt back through a sensor channel.
+#
+# This is DESIGNED closure: the actuator surface is co-built, not natural
+# coupling (proven absent by the 20-core coupling probe, 2026-10-11).
+# Telemetry still flows through resonate for --measure scoring.
+
+let model_sum = 0.0
+let model_n = 0.0
+let model_mean = 0.5
+let i = 0.0
+
+while i < 600 {
+    let obs = witness sensor("soma_presence")
+
+    # running-mean model update
+    model_sum = model_sum + obs
+    model_n = model_n + 1.0
+    model_mean = model_sum / model_n
+
+    # the model acts: publish its prediction to the motor channel
+    let action = model_mean
+    actuate motor("soma_motor", action)
+
+    # telemetry tuple for canonical Type-4 scoring (step, obs, model, action)
+    resonate i as "step"
+    resonate obs as "obs"
+    resonate model_mean as "model"
+    resonate action as "action"
+
+    i = i + 1.0
+}
+
+witness

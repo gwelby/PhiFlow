@@ -18,6 +18,7 @@
 //! | `Resonate`      | Import fn `phi_resonate(value: f64)` — host handles resonance field |
 //! | `CoherenceCheck`| Import fn `phi_coherence() -> f64` — host returns 0.0-1.0 score |
 //! | `WitnessSensor` | Import fn `phi_sensor(sensor_id: i32) -> f64` — host returns raw sensor |
+//! | `Actuate`       | Import fn `phi_actuate(offset: i32, value: f64) -> f64` — host writes motor channel |
 //!
 //! The host (browser JS / wasmtime) provides implementations.
 //! This keeps the WASM module pure and host-observable.
@@ -171,6 +172,7 @@ impl<'a> WatEmitter<'a> {
         self.line(r#"(import "phi" "remember" (func $phi_remember (param i32 f64)))"#);
         self.line(r#"(import "phi" "recall" (func $phi_recall (param i32) (result f64)))"#);
         self.line(r#"(import "phi" "broadcast" (func $phi_broadcast (param i32 f64)))"#);
+        self.line(r#"(import "phi" "actuate" (func $phi_actuate (param i32 f64) (result f64)))"#);
         self.line(r#"(import "phi" "listen" (func $phi_listen (param i32) (result f64)))"#);
         self.line(r#"(import "phi" "void_depth" (func $phi_void_depth (result f64)))"#);
     }
@@ -247,6 +249,7 @@ impl<'a> WatEmitter<'a> {
                         | PhiIRNode::LoadVar(_)
                         | PhiIRNode::Witness { .. }
                         | PhiIRNode::WitnessSensor { .. }
+                        | PhiIRNode::Actuate { .. }
                         | PhiIRNode::CoherenceCheck
                         | PhiIRNode::CreatePattern { .. }
                         | PhiIRNode::Recall(_)
@@ -483,6 +486,16 @@ impl<'a> WatEmitter<'a> {
                 let chan_idx = self.string_offset_for(channel);
                 format!(
                     ";; broadcast \"{}\"\ni32.const {}\nlocal.get $r{}\ncall $phi_broadcast",
+                    channel, chan_idx, value
+                )
+            }
+
+            // Actuate: write value to a host motor channel (efferent pair of
+            // sensor witness); the import returns the commanded value.
+            PhiIRNode::Actuate { channel, value } => {
+                let chan_idx = self.string_offset_for(channel);
+                format!(
+                    ";; actuate \"{}\"\ni32.const {}\nlocal.get $r{}\ncall $phi_actuate",
                     channel, chan_idx, value
                 )
             }

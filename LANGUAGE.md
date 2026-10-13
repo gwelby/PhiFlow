@@ -207,7 +207,7 @@ intention "historical_bias" {
 
 ## What Makes PhiFlow Different
 
-## The Four Constructs
+## The Constructs
 
 ### 1. `witness` - Self-Observation
 
@@ -320,6 +320,39 @@ Three possible states:
 - **ALIGNED** (0.8 - 1.0): The program stayed true to its purpose
 - **DRIFTING** (0.5 - 0.8): The program introduced incoherence
 - **MISALIGNED** (below 0.5): The program contradicted itself
+
+### 5. `actuate` - Action on the World (v0.4.1)
+
+`witness sensor("name")` is afferent: the program reads the world. `actuate`
+is its efferent pair: the program writes to the world.
+
+```phi
+let action = model_mean
+actuate motor("soma_motor", action)   // writes to the actuate bus
+let sent = actuate motor("soma_motor", action)  // returns the commanded value
+```
+
+Each `actuate` appends an event to the bounded motor bus
+(`~/.local/share/phiflow/MOTOR.jsonl`, `MOTOR_BUS_PATH` to override; rotates at
+64 MiB into `MOTOR.rot-*`, `PHIFLOW_MOTOR_MAX_BYTES` / `PHIFLOW_MOTOR_MAX_ARCHIVES`
+to tune) and mirrors to MQTT `cosmic/actuate` (`MOTOR_MQTT_TOPIC`) when a
+subscriber client is installed.
+
+The contract is deliberately asymmetric with sensors:
+
+- `witness sensor("name")` reads a **closed set** of hardware/system channels.
+- `actuate motor("name", v)` writes an **open set** — the program names the
+  motor surface it acts on. The bus records the *commanded* value; what the
+  environment *actually felt* must come back through a sensor channel
+  (e.g. a `soma_motor_report` produced by an external consumer). The program
+  controls the command; it does not get to grade its own effect.
+
+`actuate` returns the commanded value so it can feed model state and
+telemetry (`resonate action`). On the WASM target it lowers to the host
+import `phi_actuate(offset: i32, value: f64) -> f64`.
+
+Only `motor` is a valid actuator class today; the syntax leaves room for
+future classes (`actuate relay(...)`, `actuate servo(...)`).
 
 ## Comparison With Other Languages
 
