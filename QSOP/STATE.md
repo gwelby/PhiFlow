@@ -141,6 +141,31 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   sensor — the program does not grade its own effect. Next: SOMA-side
   consumer producing `soma_motor_report`, then a proper R5 prereg —
   explicitly *engineered* closure, not natural coupling (proven absent).
+- **WASM string-resolution defect found + fixed (2026-10-13, post-impl
+  review):** self-review after `da61589` caught a real semantic bug the
+  tests missed: `actuate`'s channel (a node-field string, not a literal)
+  was never interned into `program.string_table`, AND `RuntimeState.
+  string_table` was constructed empty — `run_wat_with_host` had no access
+  to the program's strings at all (a code comment admitted it). Under
+  wasmtime the channel resolved to `_key_*`/`string_table[0]` fallback —
+  same `.phi`, different channel name across backends; a silent
+  three-backend divergence in exactly the construct whose semantic
+  identity matters (the bus channel IS the actuator address). Fix:
+  lowering interns the channel; WAT emits the direct string-table index
+  (< `STRING_BASE`, collision-free — all legacy emissions are memory
+  offsets ≥ `0x100`); `resolve_string` gained a direct-index branch;
+  `run_wat_with_host` now takes `string_table: &[String]` and the
+  result unboxes against the real table. New test
+  `test_actuate_wasm_host_writes_real_channel_name` runs the full
+  wasmtime path and asserts the bus receives `soma_motor` — 6/6 actuate
+  tests + 159/159 lib green. **Deferred debt (same bug family,
+  pre-existing):** `broadcast`/`remember`/`listen`/`intention` still
+  emit `string_offset_for` memory offsets that misresolve under
+  wasmtime for any string that isn't table[0] — the infrastructure
+  now exists to fix them the same way, but each needs its own
+  verification pass. Also: string tables >256 entries would push a
+  direct index into the memory-offset range — the two-convention
+  design has an inherent boundary ambiguity worth normalizing later.
 - **--measure phantom-score bug FIXED (2026-10-11):** root cause found —
   `resonance_events` carries internal evaluator telemetry (`_quantum_evolution`
   numbers, `_handoff`, `_evolution`) interleaved with user tuples. The VM-state

@@ -492,11 +492,20 @@ impl<'a> WatEmitter<'a> {
 
             // Actuate: write value to a host motor channel (efferent pair of
             // sensor witness); the import returns the commanded value.
+            // The channel is passed as its string-table INDEX (not a memory
+            // offset): resolve_string treats values < STRING_BASE as table
+            // indexes, which is the only path that yields the real name on
+            // the wasmtime host.
             PhiIRNode::Actuate { channel, value } => {
-                let chan_idx = self.string_offset_for(channel);
+                let chan_idx = self
+                    .program
+                    .string_table
+                    .iter()
+                    .position(|s| s == channel)
+                    .unwrap_or(0);
                 format!(
-                    ";; actuate \"{}\"\ni32.const {}\nlocal.get $r{}\ncall $phi_actuate",
-                    channel, chan_idx, value
+                    ";; actuate \"{}\" (str idx {})\ni32.const {}\nlocal.get $r{}\ncall $phi_actuate",
+                    channel, chan_idx, chan_idx, value
                 )
             }
 

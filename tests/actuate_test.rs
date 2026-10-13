@@ -6,6 +6,7 @@ use phiflow::parser::parse_phi_program;
 use phiflow::phi_ir::{
     emitter, evaluator::Evaluator, lowering::lower_program, vm::PhiVm, wasm::emit_wat,
 };
+use phiflow::wasm_host::{run_source_with_host, WasmHostHooks};
 use std::sync::Mutex;
 
 // MOTOR_BUS_PATH is process-global; serialize every test in this file so
@@ -112,6 +113,34 @@ fn test_actuate_wasm_wat_uses_phi_actuate() {
     let wat = emit_wat(&program);
     assert!(wat.contains("phi_actuate"), "WAT must use the phi_actuate import");
     assert!(wat.contains("\"actuate\""), "WAT must import \"actuate\"");
+}
+
+#[test]
+fn test_actuate_wasm_host_writes_real_channel_name() {
+    let _guard = BUS_ENV_LOCK.lock().unwrap();
+    let dir = std::env::temp_dir().join(format!("phiflow-actuate-wasm-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let bus = dir.join("MOTOR.jsonl");
+    std::env::set_var("MOTOR_BUS_PATH", &bus);
+
+    // Full wasmtime path: .phi -> IR -> WAT -> wasm module -> phi_actuate host
+    // import -> motor bus. The channel name must resolve to the real string —
+    // this is what the string-table plumbing in run_source_with_host provides.
+    run_source_with_host(
+        r#"actuate motor("soma_motor", 0.618)"#,
+        WasmHostHooks::new(),
+    )
+    .expect("wasm host run failed");
+
+    let content = std::fs::read_to_string(&bus).expect("motor bus should exist");
+    let event: serde_json::Value = serde_json::from_str(content.lines().next().unwrap()).unwrap();
+    assert_eq!(event["channel"], "soma_motor");
+    assert_eq!(event["value"], 0.618);
+    assert_eq!(event["source"], "wasm");
+
+    let _ = std::fs::remove_dir_all(&dir);
+    std::env::remove_var("MOTOR_BUS_PATH");
 }
 
 #[test]

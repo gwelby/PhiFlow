@@ -179,7 +179,7 @@ struct RuntimeState {
 }
 
 impl RuntimeState {
-    fn new(hooks: WasmHostHooks) -> Self {
+    fn new(hooks: WasmHostHooks, string_table: Vec<String>) -> Self {
         Self {
             hooks,
             coherence: crate::LAMBDA,
@@ -189,12 +189,16 @@ impl RuntimeState {
             kv_store: std::collections::HashMap::new(),
             channels: std::collections::HashMap::new(),
             yield_timestamp: None,
-            string_table: Vec::new(),
+            string_table,
         }
     }
 
-    /// Resolve a string-table index (≥ STRING_BASE) to a string key.
-    /// Returns a synthetic name if the index is out of range.
+    /// Resolve a string reference to a key. Two conventions coexist:
+    /// values ≥ STRING_BASE are linear-memory offsets (historical; the
+    /// offset→index mapping only holds for the first string), while values
+    /// < STRING_BASE are direct string-table indexes — the convention
+    /// `phi.actuate` uses so channel names resolve exactly.
+    /// Returns a synthetic name if the reference is out of range.
     fn resolve_string(&self, idx: i32) -> String {
         if idx >= STRING_BASE {
             let real_idx = (idx - STRING_BASE) as usize;
@@ -202,6 +206,8 @@ impl RuntimeState {
                 return self.string_table[real_idx].clone();
             }
             format!("_str_{}", real_idx)
+        } else if idx >= 0 && (idx as usize) < self.string_table.len() {
+            self.string_table[idx as usize].clone()
         } else {
             format!("_key_{}", idx)
         }
@@ -218,25 +224,34 @@ impl RuntimeState {
 }
 
 pub fn compile_source_to_wat(source: &str) -> Result<String, WasmHostError> {
+    let program = compile_source_to_program(source)?;
+    Ok(emit_wat(&program))
+}
+
+fn compile_source_to_program(
+    source: &str,
+) -> Result<crate::phi_ir::PhiIRProgram, WasmHostError> {
     let expressions = parse_phi_program(source).map_err(WasmHostError::Parse)?;
     let mut program =
         lower_program_checked(&expressions).map_err(|e| WasmHostError::Parse(e.to_string()))?;
     let mut optimizer = Optimizer::new(OptimizationLevel::Basic);
     optimizer.optimize(&mut program);
-    Ok(emit_wat(&program))
+    Ok(program)
 }
 
 pub fn run_source_with_host(
     source: &str,
     hooks: WasmHostHooks,
 ) -> Result<WasmRunResult, WasmHostError> {
-    let wat = compile_source_to_wat(source)?;
-    run_wat_with_host(&wat, hooks)
+    let program = compile_source_to_program(source)?;
+    let wat = emit_wat(&program);
+    run_wat_with_host(&wat, hooks, &program.string_table)
 }
 
 pub fn run_wat_with_host(
     wat_source: &str,
     hooks: WasmHostHooks,
+    string_table: &[String],
 ) -> Result<WasmRunResult, WasmHostError> {
     let wasm_bytes = wat::parse_str(wat_source)?;
     let engine = Engine::default();
@@ -472,7 +487,7 @@ pub fn run_wat_with_host(
         },
     )?;
 
-    let mut store = Store::new(&engine, RuntimeState::new(hooks));
+    let mut store = Store::new(&engine, RuntimeState::new(hooks, string_table.to_vec()));
     let instance = linker.instantiate(&mut store, &module)?;
     let func = instance
         .get_func(&mut store, "phi_run")
@@ -482,12 +497,7 @@ pub fn run_wat_with_host(
 
     // NaN-boxing means result can be NaN and valid.
     // We rely on unbox_f64 to decode it later.
-    let expressions = parse_phi_program(wat_source).unwrap_or_default(); // Actually wat_source is compiled already. We need the string_table.
-                                                                         // Wait, run_wat_with_host signature doesn't pass string_table.
-                                                                         // We can just keep it as f64 in run_wat_with_host or change the signature to take string_table.
-                                                                         // Or we return a PhiIRValue with String(index) which doesn't need string_table itself.
-                                                                         // Since PhiIRValue::String holds an index (u32), we can just build that.
-    let result = unbox_f64(raw_result, &[]); // Empty slice since we just return String(index)
+    let result = unbox_f64(raw_result, &store.data().string_table);
 
     let snapshot = store.data().snapshot();
     Ok(WasmRunResult { result, snapshot })

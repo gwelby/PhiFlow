@@ -73,17 +73,27 @@ language construct `actuate motor("channel", expr)` — full three-backend
 parity (evaluator + VM opcode 0x56 + WASM `phi_actuate` import incl.
 wasmtime host + JS runner), bounded `MOTOR.jsonl` bus with same rotation
 discipline as RESONANCE, MQTT `cosmic/actuate` mirror, `tests/actuate_test.rs`
-green 3/3, LANGUAGE.md construct §5, `examples/type4_soma_actuate.phi`
+green 6/6, LANGUAGE.md construct §5, `examples/type4_soma_actuate.phi`
 (R5-shaped probe). The bus records the *commanded* value; the program does
 not grade its own effect. **Same session:** `--measure` phantom-score bug
 fixed — `_`-prefixed internal evaluator telemetry was chunking into Type-4
 4-tuples (the fake 0.71); filtered in both trace builders +
 `test_system_events_do_not_corrupt_tuples` regression.
+**2026-10-13 post-impl review fix:** WASM channel resolution was silently
+divergent — node-field channels weren't in `program.string_table` and the
+wasmtime host's `RuntimeState.string_table` was empty (no API carried it).
+Fixed: channel interned at lowering, WAT emits direct table index (<
+`STRING_BASE`), `run_wat_with_host` takes the table, result unboxes against
+it. `test_actuate_wasm_host_writes_real_channel_name` proves the real name
+lands on the bus. **Same bug family still open:** broadcast/remember/
+listen/intention emit memory offsets that misresolve under wasmtime for
+non-table[0] strings — infrastructure now exists, needs its own pass.
 **Remaining for a real R5:** SOMA-side consumer that reads MOTOR.jsonl and
 reports `soma_motor_report` (what the environment actually felt), then a
 proper prereg — graded *engineered* closure, not natural coupling.
 Daemon defects still open: hypervisor wedge ~2 council cycles,
-`--max-steps 0` doesn't lift the 1e9 evaluator ceiling.
+`--max-steps 0` doesn't lift the 1e9 evaluator ceiling. **SOMA + Crystal
+still down post-reboot** — needs AntiGravity-side producer restart.
 
 **Bounded resonance bus landed** (`e1c55e1`): `emit_resonance` rotates at
 64MiB → `RESONANCE.rot-*` (16 kept, env-tunable). Operator `RESONANCE.archive-*`

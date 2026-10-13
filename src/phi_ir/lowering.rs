@@ -656,6 +656,12 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
         PhiExpression::Actuate { channel, value } => {
             let res = lower_expr(ctx, value);
             let val_op = unwrap_val(ctx, res);
+            // Channel names are node-field strings, not literals — intern them
+            // so the WASM backend's string_offset_for resolves the real name
+            // instead of falling back to string_table[0].
+            if !ctx.program.string_table.contains(channel) {
+                ctx.program.string_table.push(channel.clone());
+            }
             let op = ctx.emit(PhiIRNode::Actuate {
                 channel: channel.clone(),
                 value: val_op,
