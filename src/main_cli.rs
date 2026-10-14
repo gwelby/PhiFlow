@@ -702,7 +702,11 @@ async fn run(
     if max_steps > 0 {
         evaluator.max_steps = Some(max_steps);
     } else {
-        evaluator.max_steps = Some(1_000_000_000);
+        // 0 = infinite per the flag's doc. usize::MAX rather than None:
+        // the evaluator treats None as "user set no limit" and applies a
+        // 100k-per-invocation safety brake — a smaller, silent cap than the
+        // 1e9 this replaces. MAX is the honest "no reachable ceiling."
+        evaluator.max_steps = Some(usize::MAX);
     }
 
     let _result = evaluator.run().map_err(|e| CliError::Eval(e.to_string()))?;
@@ -813,6 +817,7 @@ async fn fetch_live_topology_profile(
 #[derive(Debug, Clone, PartialEq)]
 enum StreamStatus {
     Ready,
+    Complete,
     AwaitingQuantumCollapse(String), // The IBM job_id from the Python execution bridge
 }
 
@@ -1177,27 +1182,64 @@ async fn daemon_run(
     let mqtt_rx = resonance_bus::subscribe_resonance_mqtt(config)
         .map_err(|e| CliError::Io(format!("MQTT Error: {}", e)))?;
 
-    let client = reqwest::Client::new();
+    // Bounded client: the scheduler loop is single-threaded, so one hung
+    // connection to the quantum bridge would stall every stream.
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+        .unwrap_or_else(|_| reqwest::Client::new());
     let mut snapshot_timer = tokio::time::interval(std::time::Duration::from_secs(60));
+    // Per-stream bridge cooldowns. When :18081 is unreachable we back off
+    // instead of retrying every pass (which live-locks a yielded stream), and
+    // a stream already AwaitingQuantumCollapse falls back after a sustained
+    // outage rather than freezing forever.
+    let mut bridge_cooldown: HashMap<String, std::time::Instant> = HashMap::new();
+    let mut bridge_down_since: HashMap<String, std::time::Instant> = HashMap::new();
+    const BRIDGE_COOLDOWN: std::time::Duration = std::time::Duration::from_secs(5);
+    const BRIDGE_FALLBACK_AFTER: std::time::Duration = std::time::Duration::from_secs(60);
 
     loop {
         // 1. Progress each stream by a small budget
         for (id, (status, evaluator)) in &mut hypervisor.streams {
+            if *status == StreamStatus::Complete {
+                continue;
+            }
+
             if let StreamStatus::AwaitingQuantumCollapse(job_id) = status {
+                if bridge_cooldown.get(id).is_some_and(|until| std::time::Instant::now() < *until) {
+                    continue;
+                }
                 let url = format!("http://127.0.0.1:18081/status/{}", job_id);
-                if let Ok(res) = client.get(&url).send().await {
-                    if let Ok(json) = res.json::<serde_json::Value>().await {
-                        if json["status"] == "COMPLETED" {
-                            if let Some(result_str) = json["result"].as_str() {
-                                let bit = if result_str == "1" { 1.0 } else { 0.0 };
-                                evaluator.inject_variable("quantum_collapse", phiflow::phi_ir::PhiIRValue::Number(bit));
-                                println!("🌌 Stream '{}' quantum collapse resolved: {}", id, bit);
+                match client.get(&url).send().await {
+                    Ok(res) => {
+                        bridge_cooldown.remove(id);
+                        bridge_down_since.remove(id);
+                        if let Ok(json) = res.json::<serde_json::Value>().await {
+                            if json["status"] == "COMPLETED" {
+                                if let Some(result_str) = json["result"].as_str() {
+                                    let bit = if result_str == "1" { 1.0 } else { 0.0 };
+                                    evaluator.inject_variable("quantum_collapse", phiflow::phi_ir::PhiIRValue::Number(bit));
+                                    println!("🌌 Stream '{}' quantum collapse resolved: {}", id, bit);
+                                    *status = StreamStatus::Ready;
+                                }
+                            } else if json["status"] == "ERROR" {
+                                eprintln!("❌ Stream '{}' quantum job failed, falling back.", id);
+                                evaluator.inject_variable("quantum_collapse", phiflow::phi_ir::PhiIRValue::Number(0.0));
                                 *status = StreamStatus::Ready;
                             }
-                        } else if json["status"] == "ERROR" {
-                            eprintln!("❌ Stream '{}' quantum job failed, falling back.", id);
+                        }
+                    }
+                    Err(_) => {
+                        let since = bridge_down_since
+                            .entry(id.clone())
+                            .or_insert_with(std::time::Instant::now);
+                        if since.elapsed() > BRIDGE_FALLBACK_AFTER {
+                            eprintln!("⚠️ Stream '{}' quantum bridge unreachable >60s — classical fallback.", id);
                             evaluator.inject_variable("quantum_collapse", phiflow::phi_ir::PhiIRValue::Number(0.0));
                             *status = StreamStatus::Ready;
+                            bridge_down_since.remove(id);
+                        } else {
+                            bridge_cooldown.insert(id.clone(), std::time::Instant::now() + BRIDGE_COOLDOWN);
                         }
                     }
                 }
@@ -1208,22 +1250,33 @@ async fn daemon_run(
             evaluator.max_steps = Some(evaluator.step_count + 1000);
             match evaluator.run_or_yield() {
                 Ok(phiflow::phi_ir::evaluator::VmExecResult::Complete(_)) => {
-                    // We let it finish quietly (in daemon mode streams usually block on Witness)
+                    // Mark finished streams so later passes don't re-evaluate
+                    // them forever (the pre-fix daemon spun a full core on this).
+                    *status = StreamStatus::Complete;
                 }
                 Ok(phiflow::phi_ir::evaluator::VmExecResult::Yielded { snapshot, .. }) => {
                     // Trigger Condition: Coherence < 0.99 (Dissonance)
-                    if snapshot.coherence < 0.99 {
+                    let cooling = bridge_cooldown.get(id).is_some_and(|until| std::time::Instant::now() < *until);
+                    if snapshot.coherence < 0.99 && !cooling {
                         println!("⚖️ Stream '{}' dissonant ({:.2}). Triggering Quantum Witness...", id, snapshot.coherence);
                         let payload = serde_json::json!({
                             "qasm": "OPENQASM 3.0;\ninclude \"stdgates.inc\";\nqubit[1] q;\nbit[1] c;\nh q[0];\nmeasure q[0] -> c[0];\n"
                         });
-                        
-                        if let Ok(res) = client.post("http://127.0.0.1:18081/execute").json(&payload).send().await {
-                            if let Ok(json) = res.json::<serde_json::Value>().await {
-                                if let Some(job_id) = json["job_id"].as_str() {
-                                    println!("⏳ Queued for Physical Collapse (Job: {})", job_id);
-                                    *status = StreamStatus::AwaitingQuantumCollapse(job_id.to_string());
+
+                        match client.post("http://127.0.0.1:18081/execute").json(&payload).send().await {
+                            Ok(res) => {
+                                bridge_cooldown.remove(id);
+                                if let Ok(json) = res.json::<serde_json::Value>().await {
+                                    if let Some(job_id) = json["job_id"].as_str() {
+                                        println!("⏳ Queued for Physical Collapse (Job: {})", job_id);
+                                        *status = StreamStatus::AwaitingQuantumCollapse(job_id.to_string());
+                                    }
                                 }
+                            }
+                            Err(_) => {
+                                // Bridge unreachable — hold the yield (the stream
+                                // stays at its threshold) but stop retrying every pass.
+                                bridge_cooldown.insert(id.clone(), std::time::Instant::now() + BRIDGE_COOLDOWN);
                             }
                         }
                     }
@@ -1237,19 +1290,20 @@ async fn daemon_run(
             evaluator.max_steps = None; // Reset for next slice
         }
 
-        // 2. Poll for events (MQTT + Control)
+        // 2. Drain pending bus events (std::sync::mpsc — non-blocking).
+        // NOTE: `try_recv` must NOT be a select! branch — it is always ready,
+        // which starves the sleep/timer branches and spins the loop at 100% CPU.
+        while let Ok(event) = mqtt_rx.try_recv() {
+            handle_daemon_event(&mut hypervisor, event);
+        }
+
+        // 3. Sleep until the next snapshot tick or the throttle interval —
+        //    whichever comes first. This is what actually paces the loop.
         tokio::select! {
             _ = snapshot_timer.tick() => {
                 hypervisor.save_state();
             }
-            event_opt = async { mqtt_rx.try_recv().ok() } => {
-                if let Some(event) = event_opt {
-                    handle_daemon_event(&mut hypervisor, event);
-                }
-            }
-            _ = tokio::time::sleep(std::time::Duration::from_millis(100)) => {
-                // Throttle the loop slightly if no events
-            }
+            _ = tokio::time::sleep(std::time::Duration::from_millis(100)) => {}
         }
     }
 }
@@ -1264,11 +1318,13 @@ fn handle_daemon_event(hypervisor: &mut DaemonHypervisor, event: ResonanceEvent)
                 &event.intention
             };
 
-            if let Some((_, evaluator)) = hypervisor.streams.get_mut(target_stream) {
+            if let Some((status, evaluator)) = hypervisor.streams.get_mut(target_stream) {
                 match phiflow::parser::parse_phi_program(source) {
                     Ok(ast) => {
                         let ir = lower_program(&ast);
                         evaluator.evolve(ir);
+                        // An evolved stream must run again even if it had completed.
+                        *status = StreamStatus::Ready;
                         println!("✨ Stream '{}' evolved via MQTT bus.", target_stream);
                     }
                     Err(e) => {

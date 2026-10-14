@@ -94,9 +94,16 @@ back UP, SOMA still down. drvfs made this build+test cycle ~2.5h wall.
 **Remaining for a real R5:** SOMA-side consumer that reads MOTOR.jsonl and
 reports `soma_motor_report` (what the environment actually felt), then a
 proper prereg — graded *engineered* closure, not natural coupling.
-Daemon defects still open: hypervisor wedge ~2 council cycles,
-`--max-steps 0` doesn't lift the 1e9 evaluator ceiling. **SOMA + Crystal
-still down post-reboot** — needs AntiGravity-side producer restart.
+Daemon defects — BOTH FIXED (2026-10-14): (1) the "~2 council cycles" wedge
+was a broken `tokio::select!` — `async { mqtt_rx.try_recv().ok() }` is always
+instantly ready so the sleep branch starved and the loop spun a full core;
+finished streams re-evaluated forever. Fixed: `StreamStatus::Complete` skip,
+mqtt drained outside select!, 5s reqwest timeout, per-stream bridge cooldown
+(5s backoff on `:18081` failures, `AwaitingQuantumCollapse` classical
+fallback after 60s outage). (2) `--max-steps 0` now = `usize::MAX` (documented
+infinite); `None` keeps the 100k evaluator brake. `tests/step_limit_test.rs`
+3/3. **SOMA still down** — AntiGravity-side producer restart needed; Crystal
+was warming under load ~300 last check (resurrect.sh STARTING path holds).
 
 **Bounded resonance bus landed** (`e1c55e1`): `emit_resonance` rotates at
 64MiB → `RESONANCE.rot-*` (16 kept, env-tunable). Operator `RESONANCE.archive-*`

@@ -106,11 +106,27 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   sensor coupling absent at every scale tested. Reopening requires a designed
   actuator surface (e.g., a SOMA channel written to be perturbed) — a hardware
   feature, not a run.
-- **Daemon defects found (recorded, unfixed):** hypervisor wedges ~2 council
-  cycles in (1 core, zero I/O — not ledger contention); evaluator 1e9 step
-  ceiling kills long spins and `--max-steps 0` does not lift it;
-  RESONANCE.jsonl unbounded at 43.6GB; `--measure` l_self disagrees with
-  canonical path 11× (0.71 vs 0.064 on same trace — canonical is authority).
+- **Daemon defects — diagnosed and FIXED (2026-10-14):** the "~2 council
+  cycles in, 1 core, zero I/O" wedge was a broken `tokio::select!`: the mqtt
+  branch wrapped synchronous `std::sync::mpsc::try_recv()` in `async {}` —
+  always instantly ready, so the 100ms sleep branch never won and the daemon
+  loop spun unthrottled. Once the council program reached `Complete` (~2
+  slices in) every pass returned instantly: a finished stream re-evaluated
+  forever at full core. Fix in `main_cli.rs`: (1) new `StreamStatus::Complete`
+  — finished streams are skipped; (2) mqtt drained synchronously outside
+  `select!`, which now holds only the snapshot timer + a real 100ms sleep;
+  (3) `reqwest` client bounded at 5s timeout (single-threaded loop — one hung
+  connection would have stalled every stream); (4) bridge-failure cooldown:
+  `:18081` unreachable → per-stream 5s backoff instead of retry-every-pass
+  live-lock on threshold yields, and `AwaitingQuantumCollapse` falls back to
+  classical 0.0 after 60s of sustained outage instead of freezing forever.
+  Also fixed: `--max-steps 0` now maps to `usize::MAX` (true infinite per the
+  documented flag semantics) — was `Some(1_000_000_000)`, a finite ceiling
+  pretending to be none; `None` keeps the 100k-per-invocation evaluator brake
+  intentionally. Regression: `tests/step_limit_test.rs` 3/3.
+  RESONANCE.jsonl unbounded was fixed earlier (rotation); `--measure` l_self
+  11× discrepancy fixed (`6cc11c1` — internal `_`-scoped events no longer
+  corrupt tuple grouping).
 - **Post-reboot integrity sweep (2026-10-13):** Lenovo rebooted mid-commit.
   PhiFlow was the only casualty on /mnt/d — 6 torn loose objects + zeroed
   refs (classic drvfs torn write). The `actuate` commit `da61589` had already
