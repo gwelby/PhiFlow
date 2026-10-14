@@ -144,6 +144,42 @@ fn test_actuate_wasm_host_writes_real_channel_name() {
 }
 
 #[test]
+fn test_wasm_host_resolves_real_names() {
+    // Cross-construct semantic identity through the full wasmtime path:
+    // remember/recall/broadcast/intention all carry node-field names that must
+    // resolve to the real strings, not _key_*/intent_N synthetics.
+    let run = run_source_with_host(
+        r#"
+        remember "alpha_key" 0.42
+        broadcast "beta_chan" 0.77
+        intention probe_name {
+            witness coherence
+        }
+        recall "alpha_key"
+        "#,
+        WasmHostHooks::new(),
+    )
+    .expect("wasm host run failed");
+
+    // recall returns the remembered value only if both sides resolved the
+    // same real key into the host kv_store.
+    assert_eq!(
+        run.result,
+        phiflow::phi_ir::PhiIRValue::Number(0.42),
+        "recall must find alpha_key's value"
+    );
+
+    // The witness inside the intention block recorded the real intention
+    // name (was intent_N before the string-table fix).
+    let evt = run
+        .snapshot
+        .witness_log
+        .last()
+        .expect("a witness event");
+    assert_eq!(evt.intention.as_deref(), Some("probe_name"));
+}
+
+#[test]
 fn test_actuate_rejects_unknown_class() {
     let result = parse_phi_program(
         r#"

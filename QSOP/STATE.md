@@ -166,6 +166,25 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   verification pass. Also: string tables >256 entries would push a
   direct index into the memory-offset range — the two-convention
   design has an inherent boundary ambiguity worth normalizing later.
+- **Same-family fix COMPLETED (2026-10-14, second reboot):** the whole
+  bug family is now fixed, not just actuate. `intern_string()` helper
+  in lowering.rs interns node-field names for Remember/Recall/
+  Broadcast/Listen/CoherenceOf/IntentionPush (sensor() unaffected —
+  numeric enum id). New `string_index_for()` in wasm.rs emits direct
+  table indexes (< STRING_BASE) for all six name-only imports;
+  `string_offset_for` remains only for NaN-boxed string VALUES (real
+  bytes in linear memory — the legitimate use). `phi_intention_push`
+  host handler now resolves real names via resolve_string instead of
+  fabricating `intent_N` — intention names reach hooks/witness_log
+  identically to native. New cross-construct regression test
+  `test_wasm_host_resolves_real_names` asserts: recall finds
+  alpha_key's value AND a witness inside `intention probe_name`
+  records the literal name. JS runner unaffected (opaque map keys,
+  consistent since same name → same index). Note: reboot #2 hit
+  post-push — repo fsck-clean, `66ffe58` intact; Crystal :18004 is
+  back UP (was down); SOMA producer still absent. Post-reboot drvfs
+  made this compile+test cycle ~2.5h of wall clock — IO-bound
+  p9_client_rpc throughout, not a defect.
 - **--measure phantom-score bug FIXED (2026-10-11):** root cause found —
   `resonance_events` carries internal evaluator telemetry (`_quantum_evolution`
   numbers, `_handoff`, `_evolution`) interleaved with user tuples. The VM-state

@@ -332,6 +332,18 @@ impl<'a> WatEmitter<'a> {
             .unwrap_or(STRING_BASE)
     }
 
+    /// Direct string-table index for a name. Host imports that only need the
+    /// *name* (not the bytes in linear memory) take this: resolve_string maps
+    /// values < STRING_BASE to table entries, which yields the real name on
+    /// the wasmtime host. Memory offsets only resolve correctly for table[0].
+    fn string_index_for(&self, name: &str) -> u32 {
+        self.program
+            .string_table
+            .iter()
+            .position(|s| s == name)
+            .unwrap_or(0) as u32
+    }
+
     fn emit_node_wat(&self, node: &PhiIRNode, inferred: Option<&PhiIRValue>) -> String {
         match node {
             PhiIRNode::Nop => String::new(),
@@ -398,22 +410,11 @@ impl<'a> WatEmitter<'a> {
             }
 
             PhiIRNode::IntentionPush { name, .. } => {
-                let mem_ref = self
-                    .program
-                    .string_table
-                    .iter()
-                    .position(|s| s == name)
-                    .and_then(|i| self.string_offsets.get(i).copied());
-                match mem_ref {
-                    Some(offset) => format!(
-                        ";; intention \"{}\" at memory[{}]\ni32.const {}\ncall $phi_intention_push",
-                        name, offset, offset
-                    ),
-                    None => format!(
-                        ";; intention \"{}\" (name len fallback)\ni32.const {}\ncall $phi_intention_push",
-                        name, name.len()
-                    ),
-                }
+                let name_idx = self.string_index_for(name);
+                format!(
+                    ";; intention \"{}\" (str idx {})\ni32.const {}\ncall $phi_intention_push",
+                    name, name_idx, name_idx
+                )
             }
 
             PhiIRNode::IntentionPop => "call $phi_intention_pop".to_string(),
@@ -474,7 +475,7 @@ impl<'a> WatEmitter<'a> {
 
             // Remember: store value in host kv_store
             PhiIRNode::Remember { key, value } => {
-                let key_idx = self.string_offset_for(key);
+                let key_idx = self.string_index_for(key);
                 format!(
                     ";; remember \"{}\"\ni32.const {}\nlocal.get $r{}\ncall $phi_remember",
                     key, key_idx, value
@@ -483,7 +484,7 @@ impl<'a> WatEmitter<'a> {
 
             // Broadcast: send value to host channel
             PhiIRNode::Broadcast { channel, value } => {
-                let chan_idx = self.string_offset_for(channel);
+                let chan_idx = self.string_index_for(channel);
                 format!(
                     ";; broadcast \"{}\"\ni32.const {}\nlocal.get $r{}\ncall $phi_broadcast",
                     channel, chan_idx, value
@@ -511,13 +512,13 @@ impl<'a> WatEmitter<'a> {
 
             // Recall: retrieve value from host kv_store
             PhiIRNode::Recall(key) => {
-                let key_idx = self.string_offset_for(key);
+                let key_idx = self.string_index_for(key);
                 format!(";; recall \"{}\"\ni32.const {}\ncall $phi_recall", key, key_idx)
             }
 
             // Listen: retrieve latest message from host channel
             PhiIRNode::Listen(channel) => {
-                let chan_idx = self.string_offset_for(channel);
+                let chan_idx = self.string_index_for(channel);
                 format!(";; listen \"{}\"\ni32.const {}\ncall $phi_listen", channel, chan_idx)
             }
 
@@ -532,7 +533,7 @@ impl<'a> WatEmitter<'a> {
 
             // CoherenceOf: last resonated value for a named stream
             PhiIRNode::CoherenceOf(name) => {
-                let name_idx = self.string_offset_for(name);
+                let name_idx = self.string_index_for(name);
                 format!(";; coherence_of \"{}\"\ni32.const {}\ncall $phi_coherence_of", name, name_idx)
             }
 

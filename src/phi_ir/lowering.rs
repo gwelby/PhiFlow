@@ -417,6 +417,7 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
         PhiExpression::FunctionCall { name, arguments } => {
             if name == "coherence_of" && arguments.len() == 1 {
                 if let PhiExpression::String(target) = &arguments[0] {
+                    intern_string(ctx, target);
                     let op = ctx.emit(PhiIRNode::CoherenceOf(target.clone()));
                     return LowerResult::Value(op);
                 }
@@ -561,6 +562,7 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
 
         PhiExpression::IntentionBlock { intention, body } => {
             ctx.program.intentions_declared.push(intention.clone());
+            intern_string(ctx, intention);
             ctx.emit(PhiIRNode::IntentionPush {
                 name: intention.clone(),
                 frequency_hint: None,
@@ -634,6 +636,7 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
         PhiExpression::Remember { key, value } => {
             let res = lower_expr(ctx, value);
             let val_op = unwrap_val(ctx, res);
+            intern_string(ctx, key);
             ctx.emit(PhiIRNode::Remember {
                 key: key.clone(),
                 value: val_op,
@@ -641,12 +644,14 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             LowerResult::None
         }
         PhiExpression::Recall(key) => {
+            intern_string(ctx, key);
             let op = ctx.emit(PhiIRNode::Recall(key.clone()));
             LowerResult::Value(op)
         }
         PhiExpression::Broadcast { channel, value } => {
             let res = lower_expr(ctx, value);
             let val_op = unwrap_val(ctx, res);
+            intern_string(ctx, channel);
             ctx.emit(PhiIRNode::Broadcast {
                 channel: channel.clone(),
                 value: val_op,
@@ -656,12 +661,7 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
         PhiExpression::Actuate { channel, value } => {
             let res = lower_expr(ctx, value);
             let val_op = unwrap_val(ctx, res);
-            // Channel names are node-field strings, not literals — intern them
-            // so the WASM backend's string_offset_for resolves the real name
-            // instead of falling back to string_table[0].
-            if !ctx.program.string_table.contains(channel) {
-                ctx.program.string_table.push(channel.clone());
-            }
+            intern_string(ctx, channel);
             let op = ctx.emit(PhiIRNode::Actuate {
                 channel: channel.clone(),
                 value: val_op,
@@ -669,6 +669,7 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
             LowerResult::Value(op)
         }
         PhiExpression::Listen(channel) => {
+            intern_string(ctx, channel);
             let op = ctx.emit(PhiIRNode::Listen(channel.clone()));
             LowerResult::Value(op)
         }
@@ -843,5 +844,14 @@ fn unwrap_val(ctx: &mut LoweringContext, res: LowerResult) -> Operand {
     match res {
         LowerResult::Value(op) => op,
         LowerResult::None => ctx.emit(PhiIRNode::Const(PhiIRValue::Void)),
+    }
+}
+
+/// Node-field names (channels, keys, intention names) are not string
+/// literals — intern them so the WASM backend resolves the real name
+/// instead of falling back to string_table[0].
+fn intern_string(ctx: &mut LoweringContext, s: &str) {
+    if !ctx.program.string_table.iter().any(|x| x == s) {
+        ctx.program.string_table.push(s.to_string());
     }
 }

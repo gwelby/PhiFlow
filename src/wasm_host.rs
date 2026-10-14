@@ -325,12 +325,8 @@ pub fn run_wat_with_host(
     linker.func_wrap(
         "phi",
         "intention_push",
-        |mut caller: Caller<'_, RuntimeState>, offset_or_len: i32| {
-            let name = if offset_or_len >= STRING_BASE {
-                format!("intent_{}", offset_or_len)
-            } else {
-                format!("intent_{}", offset_or_len.max(0))
-            };
+        |mut caller: Caller<'_, RuntimeState>, name_ref: i32| {
+            let name = caller.data().resolve_string(name_ref);
 
             let (depth, callback) = {
                 let data = caller.data_mut();

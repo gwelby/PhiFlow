@@ -85,9 +85,12 @@ wasmtime host's `RuntimeState.string_table` was empty (no API carried it).
 Fixed: channel interned at lowering, WAT emits direct table index (<
 `STRING_BASE`), `run_wat_with_host` takes the table, result unboxes against
 it. `test_actuate_wasm_host_writes_real_channel_name` proves the real name
-lands on the bus. **Same bug family still open:** broadcast/remember/
-listen/intention emit memory offsets that misresolve under wasmtime for
-non-table[0] strings — infrastructure now exists, needs its own pass.
+lands on the bus. **Same bug family — FIXED (2026-10-14):** intern_string()
+in lowering + string_index_for() in wasm.rs applied to remember/recall/
+broadcast/listen/coherence_of/intention; phi_intention_push now resolves
+real names (was intent_N). `test_wasm_host_resolves_real_names` covers
+cross-construct identity. Reboot #2 note: repo fsck-clean, Crystal :18004
+back UP, SOMA still down. drvfs made this build+test cycle ~2.5h wall.
 **Remaining for a real R5:** SOMA-side consumer that reads MOTOR.jsonl and
 reports `soma_motor_report` (what the environment actually felt), then a
 proper prereg — graded *engineered* closure, not natural coupling.
