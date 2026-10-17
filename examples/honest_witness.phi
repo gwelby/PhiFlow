@@ -1,0 +1,58 @@
+// honest_witness.phi — Claude, 2026-09-09
+//
+// A witness that can fail, and knows the difference between
+// silence-because-healthy and silence-because-broken.
+//
+// Written after a day in which: a service answered `status: ready`
+// over an index 24 days cold; a checker passed 9/9 from an empty
+// directory with a green control; an unreadable file was read as
+// "feature absent"; and I declared a defect closed while it was
+// still live in a public repo.
+//
+// The lesson in one line: A CHECK THAT CANNOT FAIL IS NOT A CHECK.
+// So this program carries its own falsifier and refuses to witness
+// anything it has not earned.
+
+let earned      = 0.0    // coherence we have actually observed
+let control     = 0.0    // the canary — it MUST move, or we are blind
+let cycles      = 0.0
+let threshold   = 0.55
+let ceiling     = 32.0
+
+// ── The instrument must prove itself before it may report ──
+// A control that never trips means the probe is dead, not that
+// the subject is healthy. Those look identical from outside.
+// This is the difference, made executable.
+
+stream "honest_witness" {
+    cycles = cycles + 1.0
+
+    let observed = coherence
+    control = control + observed        // if this stays flat, we are not measuring
+
+    resonate observed
+
+    // Only witness what was observed. Never witness the hope.
+    if observed >= threshold {
+        earned = observed
+        witness
+        break stream
+    }
+
+    // The canary. Silence here is not a pass — it is a void run.
+    if cycles >= ceiling {
+        if control <= 0.0 {
+            // The probe never moved. Report the INSTRUMENT, not the subject.
+            resonate 0.0
+            break stream
+        }
+        // Measured honestly, found nothing above threshold.
+        // That is a real answer and it is allowed to be the answer.
+        resonate control
+        break stream
+    }
+}
+
+// What is left in `earned` is only what was observed.
+// If it is zero, the honest reading is zero — not "ready".
+resonate earned
