@@ -213,12 +213,12 @@ cleanly → `~/.local/share/phiflow/RESONANCE.archive-2026-10-09.jsonl.zst` (6.4
 
 ---
 
-## Next Step
-1. **Greg decision:** push `devin/fix-wasm-void-return` (fixes CI red on master) — then fleet-merge or manual PR. **Do not merge PR #64** (runner-only fallback; see reconcile note above).
-2. **Greg decision:** Option A demote — archive `/mnt/d/PhiFlow` + `PhiFlow-lang` worktree + `PhiFlow.7z` now that both clones are at `78460a3` and WIP is rescued.
-3. Commit or drop the staged Sep-6 RESUME refresh + `ibm_quantum_config.env` deletion in `Projects/PhiFlow`; commit the rescued ClaimsDrift work there (or via a `devin/*` branch + PR).
-4. Rebuild/restore the :18030 metrics bridge script (`/mnt/d/System/phiflow_metrics_bridge.py` missing) or retire references.
-5. Locate or re-tier T-004/T-005 evidence (paths missing in both clones).
-6. C-21/C-23 still PARTIAL — real SOMA trace capture remains the gate.
+## Next Step  *(day-end refresh 2026-10-20 — supersedes the stale list above; repo now at `31f56bf`)*
+1. **PR #75 (Jules) needs a verdict before merge:** it `#[ignore]`s `test_soma_live_trace_type4`, which is a *designed falsification gate* asserting `l_self > 0.1` on the real SOMA trace (documented result ~0.03 — natural coupling FALSIFIED). Merge-as-is is defensible (cites the evidence file) but silences the gate. Devin's recommendation: flip the assertion to `l_self <= 0.1` so the falsification stays *enforced* — a future change that spuriously "closes" the same trace then fires red. Deeper-checker review pending; Greg decides.
+2. **PR #74** (Jules harvest — archive root-level test file): routine, likely mergeable.
+3. **PR #69** (`devin/claims-drift-sensor`, mine, open since Oct 8): honesty-organ sensor suite — merge is Greg's call; needs CI re-verify post-`31f56bf`.
+4. SOMA `motor_report` consumer: BLOCKED on AntiGravity-side producer (`soma_state.json` stale since Oct 18).
+5. C-21/C-23 still PARTIAL — real SOMA trace capture remains the gate.
+6. Deferred debt: `>256` string-table ambiguity in the direct-index convention (documented in QSOP/STATE.md).
 
 *Boot order for the next agent: AGENTS.md → THIS FILE (RESUME.md) → QSOP/STATE.md → TASKS.md → inbox/ (none here — dispatches go to `/mnt/d/Devin/inbox/`)*
