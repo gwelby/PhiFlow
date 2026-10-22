@@ -179,9 +179,14 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   emit `string_offset_for` memory offsets that misresolve under
   wasmtime for any string that isn't table[0] — the infrastructure
   now exists to fix them the same way, but each needs its own
-  verification pass. Also: string tables >256 entries would push a
+  verification pass. ~~Also: string tables >256 entries would push a
   direct index into the memory-offset range — the two-convention
-  design has an inherent boundary ambiguity worth normalizing later.
+  design has an inherent boundary ambiguity worth normalizing later.~~
+  **RESOLVED 2026-10-21 (`55c3cfe`):** `string_index_for` now emits
+  `-(idx+1)` — negatives are unambiguous at any table size and never
+  alias memory offsets. `resolve_string` resolves negatives first;
+  legacy bare-index/offset branches retained for old .wat. Test:
+  `test_wasm_host_resolves_names_beyond_256` (recall of entry #300).
 - **Same-family fix COMPLETED (2026-10-14, second reboot):** the whole
   bug family is now fixed, not just actuate. `intern_string()` helper
   in lowering.rs interns node-field names for Remember/Recall/
