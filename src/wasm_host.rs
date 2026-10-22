@@ -193,20 +193,28 @@ impl RuntimeState {
         }
     }
 
-    /// Resolve a string reference to a key. Two conventions coexist:
-    /// values ≥ STRING_BASE are linear-memory offsets (historical; the
-    /// offset→index mapping only holds for the first string), while values
-    /// < STRING_BASE are direct string-table indexes — the convention
-    /// `phi.actuate` uses so channel names resolve exactly.
+    /// Resolve a string reference to a key. Three conventions coexist:
+    /// negative values are direct string-table indexes encoded as `-(idx+1)`
+    /// (canonical — unambiguous at any table size); values ≥ STRING_BASE are
+    /// linear-memory offsets (historical; the offset→index mapping only
+    /// holds for the first string); values in [0, STRING_BASE) are legacy
+    /// bare table indexes — correct only while the table has ≤256 entries.
     /// Returns a synthetic name if the reference is out of range.
     fn resolve_string(&self, idx: i32) -> String {
+        if idx < 0 {
+            let real_idx = (-(idx + 1)) as usize;
+            if real_idx < self.string_table.len() {
+                return self.string_table[real_idx].clone();
+            }
+            return format!("_str_{}", real_idx);
+        }
         if idx >= STRING_BASE {
             let real_idx = (idx - STRING_BASE) as usize;
             if real_idx < self.string_table.len() {
                 return self.string_table[real_idx].clone();
             }
             format!("_str_{}", real_idx)
-        } else if idx >= 0 && (idx as usize) < self.string_table.len() {
+        } else if (idx as usize) < self.string_table.len() {
             self.string_table[idx as usize].clone()
         } else {
             format!("_key_{}", idx)

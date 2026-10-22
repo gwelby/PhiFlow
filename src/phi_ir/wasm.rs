@@ -332,16 +332,19 @@ impl<'a> WatEmitter<'a> {
             .unwrap_or(STRING_BASE)
     }
 
-    /// Direct string-table index for a name. Host imports that only need the
-    /// *name* (not the bytes in linear memory) take this: resolve_string maps
-    /// values < STRING_BASE to table entries, which yields the real name on
-    /// the wasmtime host. Memory offsets only resolve correctly for table[0].
-    fn string_index_for(&self, name: &str) -> u32 {
+    /// Direct string-table index for a name, emitted as `-(idx+1)`. Host
+    /// imports that only need the *name* (not the bytes in linear memory)
+    /// take this: resolve_string maps negative values to table entries
+    /// without aliasing memory offsets (which live at ≥ STRING_BASE).
+    /// The negative encoding is unambiguous at any table size — a bare
+    /// index ≥ STRING_BASE would collide with the offset convention.
+    fn string_index_for(&self, name: &str) -> i32 {
         self.program
             .string_table
             .iter()
             .position(|s| s == name)
-            .unwrap_or(0) as u32
+            .map(|i| -((i as i32) + 1))
+            .unwrap_or(-1)
     }
 
     fn emit_node_wat(&self, node: &PhiIRNode, inferred: Option<&PhiIRValue>) -> String {

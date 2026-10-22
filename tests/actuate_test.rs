@@ -180,6 +180,27 @@ fn test_wasm_host_resolves_real_names() {
 }
 
 #[test]
+fn test_wasm_host_resolves_names_beyond_256() {
+    // Regression for the >256 string-table ambiguity: a bare direct index
+    // ≥ STRING_BASE (0x100) aliases as a linear-memory offset under the old
+    // two-convention resolve_string. Direct indexes are now emitted as
+    // -(idx+1), so entry #300 resolves to the real name, not "_str_44".
+    let mut src = String::new();
+    for i in 0..301 {
+        src.push_str(&format!("remember \"key_{}\" {}\n", i, i));
+    }
+    src.push_str("recall \"key_300\"\n");
+
+    let run = run_source_with_host(&src, WasmHostHooks::new())
+        .expect("wasm host run failed");
+    assert_eq!(
+        run.result,
+        phiflow::phi_ir::PhiIRValue::Number(300.0),
+        "recall key_300 must resolve table index ≥ 256, not alias a memory offset"
+    );
+}
+
+#[test]
 fn test_actuate_rejects_unknown_class() {
     let result = parse_phi_program(
         r#"
