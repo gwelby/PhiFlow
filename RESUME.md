@@ -213,12 +213,13 @@ cleanly → `~/.local/share/phiflow/RESONANCE.archive-2026-10-09.jsonl.zst` (6.4
 
 ---
 
-## Next Step  *(day-end refresh 2026-10-20 — supersedes the stale list above; repo now at `31f56bf`)*
-1. **PR #75 (Jules) needs a verdict before merge:** it `#[ignore]`s `test_soma_live_trace_type4`, which is a *designed falsification gate* asserting `l_self > 0.1` on the real SOMA trace (documented result ~0.03 — natural coupling FALSIFIED). Merge-as-is is defensible (cites the evidence file) but silences the gate. Devin's recommendation: flip the assertion to `l_self <= 0.1` so the falsification stays *enforced* — a future change that spuriously "closes" the same trace then fires red. Deeper-checker review pending; Greg decides.
-2. **PR #74** (Jules harvest — archive root-level test file): routine, likely mergeable.
-3. **PR #69** (`devin/claims-drift-sensor`, mine, open since Oct 8): honesty-organ sensor suite — merge is Greg's call; needs CI re-verify post-`31f56bf`.
-4. SOMA `motor_report` consumer: BLOCKED on AntiGravity-side producer (`soma_state.json` stale since Oct 18).
-5. C-21/C-23 still PARTIAL — real SOMA trace capture remains the gate.
-6. Deferred debt: `>256` string-table ambiguity in the direct-index convention (documented in QSOP/STATE.md).
+## Next Step  *(EOD refresh 2026-10-22 — repo at `9ecd3a8`)*
+1. **PR #75 — VERIFIED, awaiting Greg merge.** Jules flipped the gate per Devin's comment: `#[ignore]` removed, assertion inverted to `l_self <= 0.1` with the falsification documented inline. Verified locally against the real fixture: `L_self = 0.0043` — gate now *enforces* the negative. LGTM posted.
+2. **PR #69 (`devin/claims-drift-sensor`) — AUDITED mergeable, awaiting Greg.** Dependency chain live: `claims_probe.py` on `*/15` cron writes `~/.local/share/phiflow/claims_verdict.json` (`probe_run_at` field matches sensor; 45min freshness gate vs 15min cadence). Fail-closed verified. Self-audit comment on the PR.
+3. **PR #74** (Jules harvest): trivial unused-import removal in an archived file. Harmless.
+4. **`>256` string-table debt — RESOLVED `55c3cfe`:** `string_index_for` emits `-(idx+1)`; `resolve_string` resolves negatives first. Regression test `test_wasm_host_resolves_names_beyond_256`.
+5. SOMA `motor_report` consumer: BLOCKED on AntiGravity-side producer (`soma_state.json` stale since Oct 18).
+6. C-21/C-23 still PARTIAL — real SOMA trace capture remains the gate.
+7. **Fleet handle (per EOD ask):** seat `phiflow` has NO entry in `fleet_overrides.json`; this conversation is `devin -r dramatic-train` from `/mnt/d/Projects/PhiFlow` — reported to Hermes 10-22.
 
 *Boot order for the next agent: AGENTS.md → THIS FILE (RESUME.md) → QSOP/STATE.md → TASKS.md → inbox/ (none here — dispatches go to `/mnt/d/Devin/inbox/`)*
