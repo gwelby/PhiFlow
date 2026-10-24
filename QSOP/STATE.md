@@ -187,6 +187,20 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   alias memory offsets. `resolve_string` resolves negatives first;
   legacy bare-index/offset branches retained for old .wat. Test:
   `test_wasm_host_resolves_names_beyond_256` (recall of entry #300).
+- **Board cleared + sensor live (2026-10-24):** all three open PRs merged
+  and verified on master `ca9d9d6` — #75 falsification gate now ENFORCED
+  (`l_self <= 0.1`, no `#[ignore]`; verified green on the real fixture),
+  #74 trivial harvest, #69 claims-drift sensor. ClaimsDrift verified
+  end-to-end live: `sensor("claims_drift")` returned **6.0** through the
+  full phic evaluator path, matching `claims_verdict.json` exactly
+  (probe on `*/15` cron, drift went 5→6 as it caught another doc-vs-world
+  disagreement — the honesty organ is earning its keep). **R5 prereg
+  filed** `QSOP/EVIDENCE/type4_r5_actuate_prereg_2026-10-24.md` —
+  engineered closure via `actuate motor()` → `soma_motor_report` →
+  `sensor()`, with declared negative control and honest claim language
+  (engineered, NOT natural coupling — R4 falsified that). Consumer
+  contract dispatched to AntiGravity (the only blocker: their producer
+  must write the report field; `soma_state.json` stale since Oct 18).
 - **Same-family fix COMPLETED (2026-10-14, second reboot):** the whole
   bug family is now fixed, not just actuate. `intern_string()` helper
   in lowering.rs interns node-field names for Remember/Recall/
