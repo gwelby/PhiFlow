@@ -69,6 +69,34 @@ R4's falsification in the same breath.
    own periodicity, not the loop; that result invalidates the surface, not
    the language.
 
+## Amendment A (2026-10-24, same day, before any run) — honesty protocol
+
+Added in response to a self-question recorded in `/mnt/d/Devin/MYWISH.md`
+(phiflow seat ME-Time): *"do I want Type-4 to be yes, or want the truth
+regardless?"* — which is unanswerable by declaration. These amendments make
+the run an instrument for that question too, by fixing the decision points
+where the two wants diverge **before** they can be rationalized.
+
+1. **Sealed prediction.** The experimenters's honest probability split and
+   declared hope are hash-sealed with `Tools/blind.py`
+   (`logs/blind/phiflow-r5-verdict.ndjson`, seat `projects`). Post-hoc
+   position drift shows as HASH MISMATCH. Prediction: P(closure yes)=0.35,
+   P(instrument artifact)=0.20, P(L_self≤0.1 live bus)=0.35,
+   P(never runs)=0.10. Declared hope: yes — named, not hidden.
+2. **Control runs FIRST.** The constant-report negative control executes
+   before the real run. If it crosses 0.1 the surface is invalid and the
+   real run does not happen — the report publishes the invalidation.
+   (Wanting-yes runs the experiment first and relitigates the control
+   after; this ordering removes the temptation.)
+3. **Independent scorer.** `L_self`/`corr(action,obs_next)` on the R5 trace
+   gets recomputed by a second seat (Kiro or Codex) from the raw trace
+   fixture — the primary number must not exist only in the
+   experimenter's hands.
+4. **Disclosure obligations.** Published regardless of outcome: control
+   result, raw `L_self`/`R_in`/`R_out`, bus-latency histogram, and any
+   aborted or crashed runs. Selective disclosure is where wanting-yes
+   leaks; the list is fixed here so nothing is "decided later".
+
 ## Declared verdicts (before running)
 
 - **L_self > 0.1 AND corr(action,obs_next) meaningfully > 0 AND control run
