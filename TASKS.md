@@ -2,6 +2,19 @@
 *Last updated: 2026-04-30 Type 4 roadmap integration*
 *See also: `WORKSPACE.md` (technical state) · `QSOP/ACTIVE_PLAN.md` (active execution plan + evidence map) · `BUSINESS.md` (income state)*
 
+> **CURRENT-STATE HEADER (2026-10-24, Devin/Projects):** the per-row `ready`
+> labels below are historical — the Type 4 program has *run* since April:
+> R1 FAIL (0.029) · R2 FAIL (0.076) · R3 PASS (L_self=0.170) · R4 natural
+> coupling FALSIFIED · **R5 preregistered** (`QSOP/EVIDENCE/type4_r5_actuate
+> _prereg_2026-10-24.md`, engineered closure via `actuate motor()`, blocked
+> only on AntiGravity's `soma_motor_report` consumer). Metrics suite is
+> built (495 tests green on `ca9d9d6`), not "ready-to-start". The honest
+> per-row status lives in `QSOP/STATE.md` + the dated EVIDENCE files —
+> treat this file's rows as the roadmap skeleton, not the live board.
+> **Real open items:** R5 run (blocked: producer) · C-21/C-23 fresh real
+> trace (blocked: producer) · T-004/T-005 business rows below (parked,
+> Greg-side) · T-015 healing-bed verification.
+
 ## Active Tasks
 
 ### Type 4 Observer Implementation Block (T4-001 through T4-013)
