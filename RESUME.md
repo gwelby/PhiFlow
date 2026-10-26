@@ -219,6 +219,6 @@ cleanly → `~/.local/share/phiflow/RESONANCE.archive-2026-10-09.jsonl.zst` (6.4
 3. **R5 prereg filed** (`QSOP/EVIDENCE/type4_r5_actuate_prereg_2026-10-24.md`): engineered closure via `actuate motor()` → `soma_motor_report` → `sensor()`. Consumer contract dispatched to AntiGravity 10-24 — the ONLY blocker is their producer writing the report field.
 4. **`>256` string-table debt — RESOLVED `55c3cfe`** (negative-index encoding).
 5. SOMA producer stale since Oct 18 — C-21/C-23 real-trace capture also waits on it.
-6. **Fleet handle:** reported to Hermes 10-22 — `devin -r dramatic-train` from `/mnt/d/Projects/PhiFlow`; seat `phiflow` had no `fleet_overrides.json` entry at all.
+6. **Fleet handle:** reported to Hermes 10-22 — seat `phiflow` had no `fleet_overrides.json` entry at all. (Session-id detail moved to the internal handoff; public files carry research state, not seat ops — see QSOP/STATE.md 2026-10-24 entry.)
 
 *Boot order for the next agent: AGENTS.md → THIS FILE (RESUME.md) → QSOP/STATE.md → TASKS.md → inbox/ (none here — dispatches go to `/mnt/d/Devin/inbox/`)*

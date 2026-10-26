@@ -54,6 +54,8 @@ jobs:
           feed = {
               "schema": "phiflow-resonance-v1",
               "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+              "simulated": True,
+              "source": "examples/huggingface_space/phiflow_sim.py — deterministic Python simulation of the canonical examples, not live sensor measurement",
               "lambda": 0.618033988749895,
               "formula": "1 - phi^(-depth)",
               "programs": {

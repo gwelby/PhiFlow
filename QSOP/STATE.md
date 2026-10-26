@@ -187,6 +187,20 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   alias memory offsets. `resolve_string` resolves negatives first;
   legacy bare-index/offset branches retained for old .wat. Test:
   `test_wasm_host_resolves_names_beyond_256` (recall of entry #300).
+- **Publication decision (2026-10-24, Devin/Projects seat — Greg's
+  decide-later list, items #2/#3):** (a) *research record stays public* —
+  preregs, falsification evidence, claim registries, the honesty protocol
+  are the point of this repo and hiding falsified results would be worse
+  than publishing them; (b) *seat-operational content does not belong in
+  public files* — session handles, fleet internals, agent-mail logistics
+  and `/mnt/d` machine paths stay out of RESUME/TASKS/STATE going forward
+  (those live in the internal handoff only). Scrubbed the session handle
+  from RESUME.md today; the copy in git history predates this decision —
+  history scrub is Greg's call (low severity: the handle alone grants
+  nothing without local sessions.db access). (c) *resonance feed kept,
+  labeled:* `resonance_feed.yml` publishes `phiflow_sim` outputs every
+  30min as an agent-verification endpoint — real function, kept; added
+  `"simulated": true` + provenance so the artifact names itself honestly.
 - **Board cleared + sensor live (2026-10-24):** all three open PRs merged
   and verified on master `ca9d9d6` — #75 falsification gate now ENFORCED
   (`l_self <= 0.1`, no `#[ignore]`; verified green on the real fixture),
