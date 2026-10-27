@@ -215,6 +215,28 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   (engineered, NOT natural coupling — R4 falsified that). Consumer
   contract dispatched to AntiGravity (the only blocker: their producer
   must write the report field; `soma_state.json` stale since Oct 18).
+- **Lane A COMPLETED (2026-10-26/27, repo `743cd6f`):** the afferent half
+  of R5 is built and verified end-to-end. `SensorKind::SomaMotorReport`
+  (id 14, `Option<f64>` — absent channel reads None, never phantom 0.0;
+  fails closed through the existing SOMA freshness gate).
+  `scripts/soma_motor_report_consumer.py` is the reference consumer AND
+  the negative-control harness (`--constant` writes a fixed report
+  regardless of bus state). Fail-closed everywhere: dead/stale/malformed
+  bus → nothing written; consumer stamps a complete spec-valid
+  `SomaState` envelope (top-level fields have NO serde defaults — a
+  partial file silently fails deserialization → soma=None). Verified
+  loop: `actuate motor(0.42)` → MOTOR.jsonl → consumer →
+  `sensor("soma_motor_report")` → 0.42 through phic.
+  `scripts/score_type4_trace.py` is the independent L_self scorer the
+  prereg declared — pure-Python reimplementation of
+  `SelfCorrelation::from_type4_trace`, byte-identical on the canonical
+  575-cycle real trace (R_in=0.1762, R_out=0.004295, L_self=0.004295,
+  plus corr(action,obs_next)=-0.417654 diagnostic). Tests:
+  soma_motor_report_test.rs 6/6, consumer pytest 9/9, actuate 8/8,
+  lib 159/159, three-backend conformance no divergences.
+  **Remaining for a real R5 run:** AntiGravity deploys the consumer (or
+  their own producer writing the same field) on the SOMA host; then
+  control-first per Amendment A, then the real run.
 - **Same-family fix COMPLETED (2026-10-14, second reboot):** the whole
   bug family is now fixed, not just actuate. `intern_string()` helper
   in lowering.rs interns node-field names for Remember/Recall/
