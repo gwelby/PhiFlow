@@ -110,6 +110,10 @@ pub struct SomaSensors {
     pub ring_coherence_432: f64,
     pub ring_coherence_528: f64,
     pub ring_phase_delta: f64,
+    /// Written by the soma_motor_report consumer (R5 engineered closure).
+    /// Option, not f64: a fresh state file with the field absent means the
+    /// closure channel is absent — sensor() must read None, not 0.0.
+    pub soma_motor_report: Option<f64>,
 }
 
 impl Default for SomaSensors {
@@ -126,6 +130,7 @@ impl Default for SomaSensors {
             ring_coherence_432: 0.0,
             ring_coherence_528: 0.0,
             ring_phase_delta: 0.0,
+            soma_motor_report: None,
         }
     }
 }
@@ -550,6 +555,9 @@ pub fn read_sensor(sensor: SensorKind) -> Option<f64> {
         SensorKind::RingCoherence432 => data.soma.as_ref().filter(|s| is_soma_state_fresh(s)).map(|s| s.sensors.ring_coherence_432),
         SensorKind::RingCoherence528 => data.soma.as_ref().filter(|s| is_soma_state_fresh(s)).map(|s| s.sensors.ring_coherence_528),
         SensorKind::RingPhaseDelta => data.soma.as_ref().filter(|s| is_soma_state_fresh(s)).map(|s| s.sensors.ring_phase_delta),
+        // Option passthrough: a fresh file without the field reads None —
+        // the closure channel is absent, never a phantom 0.0.
+        SensorKind::SomaMotorReport => data.soma.as_ref().filter(|s| is_soma_state_fresh(s)).and_then(|s| s.sensors.soma_motor_report),
         SensorKind::QuantumT1 => data.quantum.as_ref().and_then(|q| q.metrics.as_ref()).map(|m| m.quantum_t1),
         SensorKind::QuantumT2 => data.quantum.as_ref().and_then(|q| q.metrics.as_ref()).map(|m| m.quantum_t2),
         SensorKind::QuantumReadoutError => data.quantum.as_ref().and_then(|q| q.metrics.as_ref()).map(|m| m.quantum_readout_error),

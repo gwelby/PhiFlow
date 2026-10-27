@@ -99,6 +99,7 @@ pub enum SensorKind {
     QuantumT2,
     QuantumReadoutError,
     ClaimsDrift,
+    SomaMotorReport,
 }
 
 impl SensorKind {
@@ -122,6 +123,7 @@ impl SensorKind {
             "quantum_t2" => Some(Self::QuantumT2),
             "quantum_readout_error" => Some(Self::QuantumReadoutError),
             "claims_drift" => Some(Self::ClaimsDrift),
+            "soma_motor_report" => Some(Self::SomaMotorReport),
             _ => None,
         }
     }
@@ -146,6 +148,7 @@ impl SensorKind {
             Self::QuantumT2 => "quantum_t2",
             Self::QuantumReadoutError => "quantum_readout_error",
             Self::ClaimsDrift => "claims_drift",
+            Self::SomaMotorReport => "soma_motor_report",
         }
     }
 
@@ -169,6 +172,7 @@ impl SensorKind {
             Self::QuantumT2 => 101,
             Self::QuantumReadoutError => 102,
             Self::ClaimsDrift => 300,
+            Self::SomaMotorReport => 14,
         }
     }
 
@@ -192,6 +196,7 @@ impl SensorKind {
             101 => Some(Self::QuantumT2),
             102 => Some(Self::QuantumReadoutError),
             300 => Some(Self::ClaimsDrift),
+            14 => Some(Self::SomaMotorReport),
             _ => None,
         }
     }
