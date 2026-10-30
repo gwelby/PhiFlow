@@ -1,22 +1,19 @@
 {
   "schema": "phiflow-resonance-v1",
-  "timestamp": "2026-10-30T08:24:26.985849Z",
+  "timestamp": "2026-10-30T15:14:03.054543Z",
   "simulated": true,
   "source": "examples/huggingface_space/phiflow_sim.py \u2014 deterministic Python simulation of the canonical examples, not live sensor measurement",
   "lambda": 0.618033988749895,
   "formula": "1 - phi^(-depth)",
   "programs": {
     "healing_bed": {
-      "cycles": 6,
-      "final_coherence": 0.6631215264,
+      "cycles": 3,
+      "final_coherence": 0.6259623875,
       "converged": true,
       "resonance_field": [
-        0.48732461063396565,
-        0.522701555823393,
-        0.5462070382884427,
-        0.5883092579785475,
-        0.6048482624946343,
-        0.6631215263582689
+        0.5462292850358574,
+        0.6067372837933331,
+        0.6259623874978676
       ]
     },
     "agent_handshake": {
