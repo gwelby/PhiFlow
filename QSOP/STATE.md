@@ -262,6 +262,25 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   coupling remains falsified (R4). Any variant program (e.g.
   presence-gated mean) is a NEW experiment requiring its own prereg —
   per the declared verdict, tuning stops at this surface.
+- **ENGINEERED-SIGNAL lane RUN — VERDICT: CLOSED at engineered weight
+  (2026-11-07, NoetGuru, seal `fbe51f9bd16281f1` revealed/held):**
+  `scripts/soma_signal_producer.py` (new — declared multi-period
+  waveforms → spec-valid SomaState envelope, `engineered_signal:true`
+  provenance marker) fed a 240-cycle Type-4 trace through the real
+  `sensor()` path. Control (`--constant 0.5`) produced the required
+  `degenerate:true` artifact — instrument refused to call a constant a
+  signal. Real `--wave` run: **L_self = 0.3167 → CLOSED**,
+  `degenerate:false`, r_in=0.317, r_out=0.913, corr(a,o')=0.277 — the
+  first non-degenerate live trace on a physically external surface, and
+  the model TRACKS a varying channel (the edge R5 collapsed on). Daemon
+  check: `phic --daemon soma_reality_bridge.phi` ticked varying
+  `Witness [bridge]: Coherence` values under the wave — T-015's
+  mechanism exercised at ENGINEERED-SIGNAL weight. Result doc:
+  `QSOP/EVIDENCE/engineered_signal_lane_result_2026-11-07.md`; raw
+  artifacts: `QSOP/EVIDENCE/esig_noetguru_2026-11-07/`. Remote-run
+  pattern packaged: `QSOP/REMOTE_RUN_KIT.md`. **Boundary: engineered
+  evidence is never pooled with natural traces; T-015's natural claim
+  stays open pending AntiGravity's producer.**
 - **Control rehearsal COMPLETED (2026-11-03, `f8170bc`/`9ffed29`):** the
   preregistered negative control ran end-to-end on fixture paths —
   `--constant 0.5` → scratch SomaState → control .phi (obs =

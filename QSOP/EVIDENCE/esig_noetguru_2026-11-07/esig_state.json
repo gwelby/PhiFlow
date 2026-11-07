@@ -1,0 +1,30 @@
+{
+  "schema_version": "soma.phiflow.v1",
+  "session_id": "ENGINEERED-SIGNAL-producer",
+  "updated_at": "2026-11-07T21:21:43.043547+00:00",
+  "runtime": {
+    "sensor_stack": "ENGINEERED-SIGNAL",
+    "ring_sensor_type": "ENGINEERED-SIGNAL",
+    "sample_rate_hz": 4.0,
+    "fusion_interval_hz": 4.0
+  },
+  "health": {
+    "fresh": true,
+    "age_ms": 0,
+    "baseline_locked": false
+  },
+  "sensors": {
+    "soma_schumann": 0.25669501513288995,
+    "soma_432": 0.6,
+    "soma_presence": 0.8432359676137402,
+    "soma_fan_hz": 0.0,
+    "soma_ac_60": 0.0,
+    "soma_peak_dbc": -40.04083222500077,
+    "ring_slope_1f": -1.2147504178829713,
+    "ring_jitter_ns": 3.99698049546127,
+    "ring_coherence_432": 0.5,
+    "ring_coherence_528": 0.5,
+    "ring_phase_delta": 0.04323132285130189
+  },
+  "engineered_signal": true
+}

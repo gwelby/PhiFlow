@@ -1,0 +1,30 @@
+Compiling to PhiFlow IR...
+🌌 Starting PhiFlow Daemon (T-009 Hypervisor)...
+🚀 Council stream spawned (new).
+⚠️ examples/persistent_ledger.phi not found, skipping ledger stream.
+⚠️ lumi_identity/lumi_core.phi not found, skipping lumi stream.
+📡 Connecting to Cosmic Resonance Bus (MQTT)...
+👁️ Witness [bridge]: Coherence 0.5374
+👁️ Witness [bridge]: Coherence 0.5286
+👁️ Witness [bridge]: Coherence 0.5197
+👁️ Witness [bridge]: Coherence 0.5109
+👁️ Witness [bridge]: Coherence 0.5021
+👁️ Witness [bridge]: Coherence 0.4932
+👁️ Witness [bridge]: Coherence 0.4844
+🔔 Resonating [bridge]: 0.3658737898600467
+🔔 Resonating [bridge]: 0.7912958219752271
+🔔 Resonating [bridge]: 0.7127692961726856
+🔔 Resonating [bridge]: 0.06636098081607271
+🔔 Resonating [bridge]: 0.6401112545999106
+👁️ Witness [bridge]: Coherence 0.4844
+👁️ Witness [bridge]: Coherence 0.4667
+👁️ Witness [bridge]: Coherence 0.4579
+👁️ Witness [bridge]: Coherence 0.4490
+👁️ Witness [bridge]: Coherence 0.4402
+👁️ Witness [bridge]: Coherence 0.4313
+👁️ Witness [bridge]: Coherence 0.4225
+👁️ Witness [bridge]: Coherence 0.4137
+🔔 Resonating [bridge]: 0.3658737898600467
+🔔 Resonating [bridge]: 0.7912958219752271
+🔔 Resonating [bridge]: 0.7127692961726856
+🔔 Resonating [bridge]: 0.06636098081607271
