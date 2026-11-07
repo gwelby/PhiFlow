@@ -44,9 +44,13 @@ The engineered limb worked (600/600 events, sub-cycle median latency, fail-close
 4. **Unpaced run degenerate** (second attempt): 600 bus events but only 2 consumer writes — interpreter ran ~500 cycles/s vs ~150 ms report path; channel couldn't track. Fixed with the prereg-declared spin-gate (~50 k spins ≈ 250 ms/cycle), then the scored run above.
 5. The real run used `examples/type4_r5_probe.phi` (reads `soma_motor_report`, the declared afferent) rather than `type4_soma_actuate.phi` (reads `soma_presence` — written before the sensor existed). Same model class and action value as held-constant; afferent channel is what the prereg's channel declarations specify. Disclosed for completeness.
 
-## Independent scoring (Amendment A §3)
+## Independent scoring (Amendment A §3) — COMPLETE
 
-Independent Python scorer `scripts/score_type4_trace.py` produced the numbers above on the raw trace. **Second-seat re-score (Kiro/Codex) still required** — dispatched with the raw fixtures in `r5_noetguru_2026-11-07/`.
+Independent Python scorer `scripts/score_type4_trace.py` produced the numbers above on the raw trace.
+
+**Kiro second-seat rescore: AGREES (2026-11-07).** Independently reimplemented the metric from `self_correlation.rs` (not a rerun of my scorer) — all five quantities match on both real and control traces: L_self=R_in=R_out=corr=0.0. Kiro's sharpening, verified at source: **the 0.0 is a degenerate zero-variance artifact, not a measurement** — obs/model/action carry one distinct value each across all 600 cycles; the guards (`pearson_correlation` den==0 → 0.0; `mutual_information` constant channel → MI 0.0) return 0.0 mechanically. "Live bus + degenerate channel" confirmed — the physical limb worked; the declared program self-extinguished. Report: `/mnt/d/Kiro/.agents/tasks/phiflow-r5-rescore/FINDINGS.md`.
+
+**Post-result tool fix (does not change the verdict):** Kiro recommended the scorer flag degeneracy so a zero-variance 0.0 can never silently equal a measured 0.0. Implemented: scorer now emits `degenerate: true` + `degenerate_channels` + note when any scored channel is constant. Verified: both R5 traces flag `degenerate:true`; the canonical 575-cycle fixture (L_self=0.004295) correctly flags `degenerate:false` — a measured small value vs an artifact, now distinguishable.
 
 ## Sealed-position accounting
 

@@ -143,7 +143,16 @@ def score(path, threshold=0.1, bins=5):
     # R5 engineered-edge diagnostic: does action[t] reach obs[t+1]?
     corr_act_obs = pearson(action[:-1], obs[1:])
 
-    return {
+    # Degeneracy flag (Kiro second-seat rescore, 2026-11-07): when a scored
+    # channel has zero variance the metric guards return 0.0 mechanically —
+    # "no variation present to measure", NOT "variation present, no
+    # self-correlation". A zero-variance 0.0 must never silently equal a
+    # measured 0.0; name which channels collapsed.
+    degenerate = [name for name, ch in
+                  (("obs", obs), ("model", model), ("action", action))
+                  if max(ch) == min(ch)]
+
+    res = {
         "trace": path,
         "cycles": len(tuples),
         "r_in": round(r_in, 6),
@@ -152,9 +161,18 @@ def score(path, threshold=0.1, bins=5):
         "threshold": threshold,
         "loop_closed": l_self > threshold,
         "corr_action_obsnext": round(corr_act_obs, 6),
+        "degenerate": bool(degenerate),
         "scorer": "score_type4_trace.py (independent Python reimpl of "
                   "self_correlation::from_type4_trace)",
     }
+    if degenerate:
+        res["degenerate_channels"] = degenerate
+        res["note"] = ("zero-variance artifact: constant channel(s) "
+                       + ",".join(degenerate)
+                       + " — metrics return 0.0 mechanically; this is "
+                         "'no variation to measure', not a measured "
+                         "absence of self-correlation")
+    return res
 
 
 def main():
