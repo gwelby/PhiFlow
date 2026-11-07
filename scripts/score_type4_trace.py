@@ -29,7 +29,15 @@ import sys
 
 
 def parse_trace(path):
-    """Parse trace file -> list of (step, obs, model, action) tuples."""
+    """Parse trace file -> list of (step, obs, model, action) tuples.
+
+    Accepts every emission shape the pipeline has produced:
+      "Resonating obs: 0.52"        (named fixture lines)
+      "Resonating Field: 0.5200Hz"  (phic stdout — `as "name"` tags don't
+                                     print, values arrive in emit order)
+      "0.52"                        (bare numerics)
+    Values group into 4-tuples in emit order regardless of names.
+    """
     vals = []
     with open(path) as f:
         for line in f:
@@ -41,7 +49,8 @@ def parse_trace(path):
                     tok = line[colon + 1:].split()
                     if tok:
                         try:
-                            vals.append(float(tok[0]))
+                            # tolerate a unit suffix like "0.5200Hz"
+                            vals.append(float(tok[0].removesuffix("Hz")))
                             continue
                         except ValueError:
                             pass

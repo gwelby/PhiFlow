@@ -1,0 +1,8 @@
+{
+  "agent": "phiflow",
+  "acquired_at": "2026-11-07T01:48:14Z",
+  "pid": 2921090,
+  "session": "dramatic-train",
+  "ttl_hours": 4.0,
+  "file": "/mnt/d/Projects/PhiFlow/scripts/score_type4_trace.py"
+}
