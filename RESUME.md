@@ -213,12 +213,12 @@ cleanly → `~/.local/share/phiflow/RESONANCE.archive-2026-10-09.jsonl.zst` (6.4
 
 ---
 
-## Next Step  *(refresh 2026-10-27 — repo at `743cd6f`, PR board EMPTY)*
-1. **Lane A COMPLETE:** the full R5 loop exists and was verified end-to-end — `actuate motor(0.42)` → MOTOR.jsonl → `scripts/soma_motor_report_consumer.py` → `soma_state.json` → `sensor("soma_motor_report")` → 0.42 through phic. `SensorKind::SomaMotorReport` = id 14, Option (absent/stale → None, never 0.0).
-2. **Independent scorer:** `scripts/score_type4_trace.py` reproduces the Rust `from_type4_trace` byte-identical on the real fixture (L_self=0.004295) — a second seat can score any R5 trace without trusting my pipeline.
-3. **Negative control harness is `--constant`:** `consumer.py --constant 0.5` writes a fixed report with a dead bus — Amendment A says run this FIRST; if it crosses 0.1 the surface is invalid, no real run.
-4. **Only remaining blocker:** AntiGravity deploys the consumer on the SOMA host (or their producer writes the same field). `soma_state.json` stale since Oct 18 — C-21/C-23 waits on the same producer.
-5. R5 run order when unblocked: control run → score it → if clean, real run → `score_type4_trace.py` → Kiro/Codex independent re-score → disclose per prereg (incl. invalidations/aborts). Sealed prediction in `/mnt/d/Devin/logs/blind/phiflow-r5-verdict.ndjson` (hash `cac44b819bdf9c46`).
-6. **Fleet handle:** reported to Hermes 10-22 — seat `phiflow` had no `fleet_overrides.json` entry at all. (Session-id detail moved to the internal handoff; public files carry research state, not seat ops — see QSOP/STATE.md 2026-10-24 entry.)
+## Next Step  *(refresh 2026-11-07 — R5 CLOSED, verdict OPEN)*
+1. **R5 RUN COMPLETE — VERDICT: OPEN (NoetGuru surface, 2026-11-07).** Control clean on the surface (constant 0.5 read through the full remote loop → L_self=0.0). Real run: 600/600 bus events, 1820 consumer writes, 0.1s median report latency — and **L_self=0.0** on a live engineered bus. Mechanism: the declared running-mean model hits an absorbing zero state on a cold channel (obs[0] absent→0.0 → mean=0.0 before the first actuate → only zeros emitted). Per prereg: filed, sealed prediction revealed (`cac44b819bdf9c46` — blind pass held, outcome was a P=0.35 bucket), **tuning stops at this surface.** Full disclosure: `QSOP/EVIDENCE/type4_r5_noetguru_result_2026-11-07.md`; raw fixtures: `QSOP/EVIDENCE/r5_noetguru_2026-11-07/`.
+2. **Outstanding:** Kiro independent re-score (Amendment A §3) — dispatched `/mnt/d/Kiro/inbox/2026-11-07-phiflow-r5-independent-rescore.md`, seat notified via seat.py (submit UNVERIFIED — pane may be idle).
+3. **Remote surfaces:** NoetGuru (fabric IP, R720) ran phic+consumer+scorer cleanly — proven phic surface; mgmt path dead. 8086K (inference box, 2060+1070) live, untested as a phic surface. Connection details/keys: `/mnt/d/System/MACHINES.md` (canonical registry — keep them there, not here). Roles: NoetGuru=batch, 8086K=inference; coordination state stays on Guru-P1.
+4. **Remote-run scar:** `cd /tmp && export … && nohup prog &` backgrounds the whole `&&` chain — exports die in the subshell (phic wrote bus to default path, read no state). Put exports on separate lines. The compromised "control" still scored 0.0 — a verdict can coincide with a broken mechanism; check the mechanism, not just the number.
+5. **AntiGravity producer still dead** (`soma_state.json` stale since Oct 18) — no longer gates R5 (closed); still gates C-21/C-23 fresh-trace calibration.
+6. **Fleet handle:** reported to Hermes 10-22 — seat `phiflow` now resolves via `fleet_overrides.json` in `cascade_hooks.py` (hook fix landed 2026-11-04).
 
 *Boot order for the next agent: AGENTS.md → THIS FILE (RESUME.md) → QSOP/STATE.md → TASKS.md → inbox/ (none here — dispatches go to `/mnt/d/Devin/inbox/`)*

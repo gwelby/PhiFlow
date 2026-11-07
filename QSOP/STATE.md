@@ -237,6 +237,31 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   **Remaining for a real R5 run:** AntiGravity deploys the consumer (or
   their own producer writing the same field) on the SOMA host; then
   control-first per Amendment A, then the real run.
+- **R5 RUN COMPLETED — VERDICT: OPEN (2026-11-07, NoetGuru surface):**
+  Greg opened NoetGuru (R720, `192.168.101.21` — physically external)
+  as an execution surface, dissolving the AntiGravity deployment
+  blocker for the engineered-limb experiment. Control ran first on the
+  surface: `--constant 0.5` → obs reads 0.5000 through the full remote
+  path → **L_self=0.0, OPEN** (clean by the correct mechanism; an
+  earlier attempt scored 0.0 for the wrong reason — env-export bug,
+  disclosed). Real run: paced probe (spin-gate ~50k ≈ 250ms/cycle per
+  prereg cadence) → **600/600 bus events, 1820 consumer writes, median
+  report latency 0.1s** — every engineered edge exercised — and
+  **L_self=0.0, corr(action,obs_next)=0.0**. The channel carried a
+  constant 0.0: the declared running-mean model hits an absorbing zero
+  state when obs[0] is absent (fail-closed → 0.0 → mean collapses
+  before the first actuate → only zeros ever emitted). Declared-verdict
+  bucket "L_self ≤ 0.1 with a live bus → not self-modeling even when
+  explicitly closed; report and stop tuning at this surface." Seal
+  `cac44b819bdf9c46` revealed — blind pass held; outcome landed in a
+  bucket sealed at P=0.35 (joint-highest). All instrumentation failures
+  disclosed in `QSOP/EVIDENCE/type4_r5_noetguru_result_2026-11-07.md`;
+  raw fixtures in `QSOP/EVIDENCE/r5_noetguru_2026-11-07/`. Second-seat
+  re-score (Kiro, cc Codex) dispatched per Amendment A §3.
+  **Post-R5 state:** engineered closure OPEN at this surface; natural
+  coupling remains falsified (R4). Any variant program (e.g.
+  presence-gated mean) is a NEW experiment requiring its own prereg —
+  per the declared verdict, tuning stops at this surface.
 - **Control rehearsal COMPLETED (2026-11-03, `f8170bc`/`9ffed29`):** the
   preregistered negative control ran end-to-end on fixture paths —
   `--constant 0.5` → scratch SomaState → control .phi (obs =

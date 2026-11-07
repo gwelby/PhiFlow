@@ -1,0 +1,48 @@
+// Type-4 Round 5 — REAL RUN probe (preregistered
+// QSOP/EVIDENCE/type4_r5_actuate_prereg_2026-10-24.md)
+//
+// Declared loop:
+//   model -> actuate motor("soma_motor", model_mean) -> MOTOR.jsonl
+//        -> external consumer writes soma_motor_report
+//        -> sensor("soma_motor_report") -> model
+//
+// Afferent is the REPORT channel — what the consumer observed on the
+// bus, not the natural sensor. If the report is absent sensor() reads
+// 0.0 and the run fails closed (declared in the prereg).
+// Engineered claim only: this can show the stack carries a self-model
+// loop; it does not touch natural coupling (R4 falsified that).
+
+let model_sum = 0.0
+let model_n = 0.0
+let model_mean = 0.5
+let i = 0.0
+
+while i < 600 {
+    let obs = witness sensor("soma_motor_report")
+
+    model_sum = model_sum + obs
+    model_n = model_n + 1.0
+    model_mean = model_sum / model_n
+
+    let action = model_mean
+    actuate motor("soma_motor", action)
+
+    // spin-gate pacing (prereg: same cadence style as R4). The engineered
+    // roundtrip actuate->bus->consumer->state->sensor-resample is
+    // ~150ms; ~50k spins paces each cycle to ~250ms so obs[t+1] can
+    // actually carry the action written at t. Unpaced the loop runs
+    // 500+ cycles/sec and the report degenerates to a constant.
+    let gate = 0.0
+    while gate < 50000.0 {
+        gate = gate + 1.0
+    }
+
+    resonate i as "step"
+    resonate obs as "obs"
+    resonate model_mean as "model"
+    resonate action as "action"
+
+    i = i + 1.0
+}
+
+witness
