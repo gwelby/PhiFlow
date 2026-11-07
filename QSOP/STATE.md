@@ -237,6 +237,21 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   **Remaining for a real R5 run:** AntiGravity deploys the consumer (or
   their own producer writing the same field) on the SOMA host; then
   control-first per Amendment A, then the real run.
+- **Control rehearsal COMPLETED (2026-11-03, `f8170bc`/`9ffed29`):** the
+  preregistered negative control ran end-to-end on fixture paths —
+  `--constant 0.5` → scratch SomaState → control .phi (obs =
+  `sensor("soma_motor_report")`, 600 cycles) → phic trace → independent
+  scorer → **L_self = 0.0, OPEN**. The instrument does not hallucinate
+  closure on a dead channel; zero-variance scores clean (no NaN).
+  Rehearsal caught two real bugs: (1) `type4_soma_actuate.phi` used `#`
+  comments — the prereg's own probe had NEVER RUN (lexer takes `//`);
+  a written probe is not a runnable probe. (2) the scorer expected
+  `Resonating <name>:` but phic prints `Resonating Field: <v>Hz` — a
+  real capture would have scored "0 tuples" silently. Both fixed and
+  the canonical fixture still scores identically. Evidence:
+  `QSOP/EVIDENCE/type4_r5_control_rehearsal_2026-11-03.md`. Caveat kept
+  honest: this validated the HARNESS — the on-surface control still
+  runs first once the real producer deploys.
 - **Same-family fix COMPLETED (2026-10-14, second reboot):** the whole
   bug family is now fixed, not just actuate. `intern_string()` helper
   in lowering.rs interns node-field names for Remember/Recall/
