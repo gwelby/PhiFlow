@@ -1,0 +1,26 @@
+// ENGINEERED-SIGNAL live trace — C-21/C-23 calibration lane
+// prereg: QSOP/EVIDENCE/engineered_signal_lane_prereg_2026-11-07.md
+// Declared model class (running mean, held constant from R2-R5).
+// obs = engineered presence channel; action = model_mean (model-driven).
+// 240 cycles x ~250ms spin-gate ~= one 60s presence-wave period.
+let model_sum = 0.0
+let model_n = 0.0
+let model_mean = 0.5
+let i = 0.0
+while i < 240 {
+    let obs = witness sensor("soma_presence")
+    model_sum = model_sum + obs
+    model_n = model_n + 1.0
+    model_mean = model_sum / model_n
+    let action = model_mean
+    let gate = 0.0
+    while gate < 50000.0 {
+        gate = gate + 1.0
+    }
+    resonate i as "step"
+    resonate obs as "obs"
+    resonate model_mean as "model"
+    resonate action as "action"
+    i = i + 1.0
+}
+witness

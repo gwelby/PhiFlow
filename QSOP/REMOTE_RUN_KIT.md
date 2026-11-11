@@ -12,7 +12,21 @@ there, NOT in this repo — the credential guard will block key paths)
   state NEVER lives there. CPU-only `phic` needs no GPU lease.
 - **8086K** (inference box, 12 cores / 45 GB / RTX 2060 + GTX 1070,
   dedicated key already installed): GPU jobs go through `gpu_gate.sh` +
-  a registered lease + blackboard announce.
+  a registered lease + blackboard announce. **Proven `phic` surface
+  2026-11-11** (`QSOP/EVIDENCE/esig_8086k_surface_validation_2026-11-11.md`).
+  Guest rules: it hosts kobold (1070) and other people's GPU jobs (e.g. a
+  hackathon on the 2060) — run `phic` with `CUDA_VISIBLE_DEVICES=""` and
+  `nice -n 19`, one job at a time, in `~/phiflow_surface/<date>/` (its
+  `/tmp` is RAM-backed tmpfs). Check `uptime` + `nvidia-smi` first.
+
+## Cross-surface comparison: pace by clock, not iterations
+
+Spin-gates (`while gate < 50000`) pace by CPU speed. The same probe ran
+240 cycles in ~65 s on NoetGuru and 19 s on 8086K, so it sampled a full
+60 s presence wave on one and a monotone quarter on the other (L_self
+0.317 vs 0.948 — the second is a trend artifact). Verdicts may transfer;
+magnitudes do not, until the probe paces by clock time. Never pipe a
+check (`pgrep`) into the same ssh stream as a `tar` artifact pull.
 
 ## Deploy contract
 
