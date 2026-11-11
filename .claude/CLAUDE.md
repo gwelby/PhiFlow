@@ -2,7 +2,7 @@
 
 **Project**: PhiFlow - Quantum-Consciousness Computing Platform  
 **Last Updated**: February 27, 2026  
-**Version**: v0.2.0 - Universal Resonance Architecture Complete
+**Version**: 0.4.0 (Cargo.toml)
 
 ---
 
@@ -50,13 +50,12 @@ The project uses **QSOP as a durable truth plane** + **MCP for synchronous ops**
 ## 🛠️ ARCHITECTURE & NAVIGATION
 
 ### **WORKSPACES**
-- `D:\Projects\PhiFlow-compiler\PhiFlow`: **The Runtime Engine.** (Compiler, IR, Evaluator, WASM).
-- `D:\Projects\PhiFlow`: **The Documented Vision.** (Specs, QSOP master docs, overarching architecture).
+- `D:\Projects\PhiFlow` (/mnt/d/Projects/PhiFlow): **the single canonical tree** — parser, PhiIR, evaluator, VM, WASM codegen, `phic` CLI, and the QSOP docs. The former `PhiFlow-compiler` worktree was merged into master (snapshot `D:\Projects\Archive\PhiFlow-compiler-PhiFlow-snapshot-20260418`); the `/mnt/d/PhiFlow` mirror was removed 2026-10-05 (see CHANGELOG.md).
 
 ### **CRITICAL FILES**
-1. **State**: `PhiFlow/QSOP/STATE.md` (Current verified state)
-2. **Patterns**: `PhiFlow/QSOP/PATTERNS.md` (Pitfalls to avoid)
-3. **Specs**: `D_PROJECTS_INTEGRATION_PLAYBOOK.md`
+1. **State**: `QSOP/STATE.md` (Current verified state)
+2. **Patterns**: `QSOP/PATTERNS.md` (Pitfalls to avoid)
+3. **Specs / claims**: `CLAIMS.md` (claim ledger with evidence rungs)
 4. **Reference**: `LANGUAGE.md` (Grammar and semantics)
 
 ---
@@ -66,7 +65,7 @@ The project uses **QSOP as a durable truth plane** + **MCP for synchronous ops**
 1. **Understand**: Read `QSOP/STATE.md` and `QSOP/PATTERNS.md` first.
 2. **Plan**: Build a coherent plan and verify with Greg.
 3. **Implement**: Rust for compiler, .phi for examples.
-4. **Verify**: All three backends must agree on `0.6180` at depth 2.
+4. **Verify**: All three backends (Evaluator, VM, WASM) must agree on `0.6180` (1 − φ⁻²) for `coherence` at intention depth 2. Note: `phi_ir_conformance_tests` asserts three-backend agreement at depth 1 (0.382) and in `three_backend_depth2_coherence`.
 5. **Finalize**: Update `QSOP/STATE.md` and `CHANGELOG.md` with evidence.
 
 ---

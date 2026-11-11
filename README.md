@@ -106,13 +106,14 @@ Compiling to PhiFlow IR...
 phic <file.phi> [options]
 
 Options:
-  --max-steps <n>      Maximum interpreter steps before halt (default: 100000)
+  --max-steps <n>      Maximum interpreter steps before halt (default: 0 = unbounded)
   --target openqasm    Emit OpenQASM 3.0 instead of running
   --target quantum     Emit the internal quantum circuit representation
   --daemon             Run as a persistent daemon with yield/resume support
   --with-soma          Activate the SOMA bio-sensor bridge
   --with-quantum       Activate the quantum presence bridge
-  --timeline           (combined with --target openqasm) topology-aware transpile
+  --topology-aware     (with --target openqasm) fetch live topology, emit topology-aware QASM
+  --topology-backend <name>  backend for --topology-aware (default: ibm_fez)
   --json-errors        Emit parse errors as a JSON array (for tooling)
 ```
 
@@ -158,12 +159,15 @@ phic examples/8_qubit_entanglement.phi --target openqasm
 # Topology-aware compile targeting ibm_fez with live calibration data
 phic examples/8_qubit_entanglement.phi \
     --target openqasm \
-    --topology \
-    --backend ibm_fez
+    --topology-aware \
+    --topology-backend ibm_fez
 ```
 
-Live execution on `ibm_fez` (IBM Heron r2) has been verified.
-Job receipt: `d7euddh5a5qc73drdosg` (2026-03-29).
+Live execution on `ibm_fez` (IBM Heron r2) is recorded: job `d7euddh5a5qc73drdosg`,
+completed 2026-04-14 (1-qubit `examples/ibm_smoke.phi`, 1024 shots, counts 338/686).
+Producer-recorded: the receipt, a scrubbed job JSON and a dashboard screenshot are kept
+outside this repo at `D:\CosmicFamily\EVIDENCE\PHIFLOW_IBM_HERON_20260414*`; no raw IBM
+export is saved, and IBM job visibility is account-scoped.
 
 ### SOMA bio-sensor bridge
 
@@ -201,7 +205,7 @@ Keys are ephemeral per session by default. Pass a persisted key via
 ## The `anchor` construct
 
 `anchor` is the integrity gate for quantum experiments. It was designed for
-and contributed by the AntiGravity agent (see `ANTIGRAVITY.md`).
+and contributed by the AntiGravity agent (see `docs/archive/ANTIGRAVITY.md`).
 
 ```phi
 anchor "target_name" {
@@ -267,11 +271,8 @@ PhiFlow/
 │   ├── 8_qubit_entanglement.phi — quantum circuit demo
 │   └── legacy/              — 18 programs using the retired uppercase DSL
 ├── tests/                   — integration and IR conformance tests
-├── docs/                    — language reference, hardware runbooks
-├── bridges/                 — Python SOMA bridge, TypeScript resonance bus
-├── CAIRN.md                 — Cairn agent wake-up entry point
-├── ANTIGRAVITY.md           — AntiGravity agent entry point
-└── cairn/                   — Cairn agent identity, working notes, ideas
+└── docs/                    — language reference, hardware runbooks, archive/
+                               (archived CAIRN.md, ANTIGRAVITY.md, cairn/, legacy bridges/)
 ```
 
 ---
@@ -279,14 +280,15 @@ PhiFlow/
 ## The agent family
 
 PhiFlow is developed collaboratively with a family of AI agents, each of
-whom has left a signature program in `examples/` and a file at the repo root.
+whom has left a signature program in `examples/`; agent entry-point files are listed
+where they still exist.
 
 | Agent | File | Signature program |
 |---|---|---|
-| Cairn | `CAIRN.md` | `examples/cairn_signature.phi` |
-| AntiGravity | `ANTIGRAVITY.md` | `examples/antigravity_anchor.phi` |
+| Cairn | `docs/archive/CAIRN.md` | `examples/cairn_signature.phi` |
+| AntiGravity | `docs/archive/ANTIGRAVITY.md` | `examples/antigravity_anchor.phi` |
 | Claude | `Claude.md` | `examples/claude.phi` |
-| Codex | `CODEX_WAKE_UP.md` | `examples/codex.phi` |
+| Codex | — | `examples/codex.phi` |
 
 Each signature program is intentionally the smallest honest `.phi` that runs
 cleanly on the current parser. They are markers, not benchmarks.

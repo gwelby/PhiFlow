@@ -26,7 +26,7 @@
 #### Phase 1: Type 4 Benchmark (Months 1-2)
 
 **T4-001: Add Dependencies**
-- **Status**: ready
+- **Status**: done (built) — Cargo.toml has statrs, ndarray, rustfft, num-complex *(relabelled 2026-11-11 from live source — Claude truth sweep)*
 - **Capability**: Infrastructure
 - **Effort**: Small (< 30 min)
 - **What to build**: Add statrs, ndarray, rustfft, num-complex, ndarray-linalg to Cargo.toml
@@ -35,7 +35,7 @@
 - **Depends on**: nothing
 
 **T4-002: Implement Mutual Information**
-- **Status**: ready
+- **Status**: partial — `src/metrics/mutual_information.rs` has shannon_mi / mi_from_samples / normalized_mi / conditional_mi; directed information not implemented *(relabelled 2026-11-11 from live source — Claude truth sweep)*
 - **Capability**: Metrics
 - **Effort**: Medium (2-4h)
 - **What to build**: `src/metrics/mutual_information.rs` with Shannon MI and directed information
@@ -44,7 +44,7 @@
 - **Depends on**: T4-001
 
 **T4-003: Implement DaemonRecord Schema**
-- **Status**: ready
+- **Status**: not started as specified — no `src/daemon/` or `DaemonRecord`; `src/metrics/trace.rs` (Trace) is the adapter in use *(relabelled 2026-11-11 from live source — Claude truth sweep)*
 - **Capability**: Infrastructure
 - **Effort**: Small (1-2h)
 - **What to build**: `src/daemon/record.rs` with timestamped state tracking
@@ -53,7 +53,7 @@
 - **Depends on**: T4-001
 
 **T4-004: Implement L_self Computation**
-- **Status**: ready
+- **Status**: done (built, tested) — `src/metrics/self_correlation.rs` (from_trace, from_type4_trace) *(relabelled 2026-11-11 from live source — Claude truth sweep)*
 - **Capability**: Metrics
 - **Effort**: Medium (3-5h)
 - **What to build**: `src/daemon/self_correlation.rs` computing R_in and R_out
@@ -62,7 +62,7 @@
 - **Depends on**: T4-002, T4-003
 
 **T4-005: Create Type 4 Benchmark Example**
-- **Status**: ready
+- **Status**: partial — `examples/type4_benchmark.phi` absent; `examples/type4_trace_benchmark.phi` + `src/bin/type4_benchmark.rs` serve the role *(relabelled 2026-11-11 from live source — Claude truth sweep)*
 - **Capability**: Demonstration
 - **Effort**: Small (1-2h)
 - **What to build**: `examples/type4_benchmark.phi` proving self-correlation
@@ -73,7 +73,7 @@
 #### Phase 2: Full Metric Suite (Months 3-4)
 
 **T4-006: Implement Differentiation Metric**
-- **Status**: ready
+- **Status**: done (built, tested) — `src/metrics/differentiation.rs` compute_d_int *(relabelled 2026-11-11 from live source — Claude truth sweep)*
 - **Capability**: Metrics
 - **Effort**: Medium (2-4h)
 - **What to build**: `src/metrics/differentiation.rs` computing D_int via SVD
@@ -82,7 +82,7 @@
 - **Depends on**: T4-001
 
 **T4-007: Implement Coherence Panel**
-- **Status**: ready
+- **Status**: done (built, tested) — `src/metrics/coherence_panel.rs` PLV / wPLI *(relabelled 2026-11-11 from live source — Claude truth sweep)*
 - **Capability**: Metrics
 - **Effort**: Large (4-6h)
 - **What to build**: `src/metrics/coherence_panel.rs` with PLV and wPLI
@@ -91,7 +91,7 @@
 - **Depends on**: T4-001
 
 **T4-008: Implement Type 4 Model-Action Sensitivity**
-- **Status**: implemented; Codex cleanup/recheck 2026-05-26
+- **Status**: partial — `src/metrics/fisher_information.rs` built + tested; F_self* not calibrated as a Type 4 measure *(relabelled 2026-11-11 from live source — Claude truth sweep)*
 - **Capability**: Metrics
 - **Effort**: Medium (3-5h)
 - **What to build**: `src/metrics/fisher_information.rs` computing F_model
@@ -100,7 +100,7 @@
 - **Depends on**: T4-001
 
 **T4-009: Implement Consciousness Proxy**
-- **Status**: ready
+- **Status**: partial — `src/metrics/consciousness_proxy.rs` composes C_PF = C_coh·D_int·F_self*; tests cover zero/threshold cases, not a calibrated value *(relabelled 2026-11-11 from live source — Claude truth sweep)*
 - **Capability**: Metrics
 - **Effort**: Small (1-2h)
 - **What to build**: `src/metrics/consciousness_proxy.rs` computing C_PF composite
@@ -111,7 +111,7 @@
 #### Phase 3: Benchmark Validation (Months 5-6)
 
 **T4-010: Create Null Class Tests**
-- **Status**: ready
+- **Status**: done (built, tested) — `tests/null_class_tests.rs` (8 pass) *(relabelled 2026-11-11 from live source — Claude truth sweep)*
 - **Capability**: Validation
 - **Effort**: Medium (2-4h)
 - **What to build**: Tests for random, replay, and feedforward systems
@@ -120,7 +120,7 @@
 - **Depends on**: T4-009
 
 **T4-011: Create State Discrimination Tests**
-- **Status**: ready
+- **Status**: partial — synthetic-proxy discrimination passes; real-fixture test is `#[ignore = "Requires SOMA fixtures"]` *(relabelled 2026-11-11 from live source — Claude truth sweep)*
 - **Capability**: Validation
 - **Effort**: Medium (2-4h)
 - **What to build**: Tests distinguishing conscious vs. unconscious states
@@ -129,7 +129,7 @@
 - **Depends on**: T4-009
 
 **T4-012: Implement Benchmark Battery**
-- **Status**: ready
+- **Status**: partial — `tests/benchmark_battery.rs` built; canonical run is manual + needs real SOMA fixtures *(relabelled 2026-11-11 from live source — Claude truth sweep)*
 - **Capability**: Validation
 - **Effort**: Large (4-6h)
 - **What to build**: Complete benchmark suite with all tests
@@ -138,7 +138,7 @@
 - **Depends on**: T4-010, T4-011
 
 **T4-013: Document Type 4 Status**
-- **Status**: ready
+- **Status**: HOLD — C-21/C-23 PARTIAL-POSITIVE in CLAIMS.md; R5 OPEN; engineered-signal lane CLOSED at engineered weight only *(relabelled 2026-11-11 from live source — Claude truth sweep)*
 - **Capability**: Documentation
 - **Effort**: Small (1-2h)
 - **What to build**: Update CLAIMS.md with verified Type 4 measurements
@@ -172,7 +172,7 @@
 - **Don't touch**: runtime code
 
 ### T-015: Healing Bed Verification
-- **Status**: ready
+- **Status**: partial — mechanism exercised at ENGINEERED-SIGNAL weight only (NoetGuru, 2026-11-07, `QSOP/EVIDENCE/engineered_signal_lane_result_2026-11-07.md`); natural 15-min presence run + DAEMON_STATE report still open, blocked on AntiGravity's SOMA producer *(relabelled 2026-11-11 from live source — Claude truth sweep)*
 - **Capability**: Real-world SOMA Test
 - **Effort**: Small
 - **Fidelity Target**: Pixels

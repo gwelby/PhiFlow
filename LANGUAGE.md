@@ -9,7 +9,7 @@
 
 ## Part 1: Guaranteed Semantics
 
-**These semantics are preserved across ALL backends (OpenQASM, WASM, VM).** Any PhiFlow implementation must preserve these guarantees.
+**These semantics are preserved across the backends named in each guarantee; see Part 2 for backend-specific exceptions (e.g. WASM ignores `toward` direction).** Any PhiFlow implementation must preserve these guarantees.
 
 ### 1.1: `resonate X toward TEAM_A/B` — Direction is Semantic
 
@@ -130,7 +130,7 @@ cargo test --test golden_integration_tests -- test_frequency
 
 **Fidelity:** 📐 Sketch (functional, warnings issued)
 
-### 2.3: VM Backend (`--target phivm`)
+### 2.3: VM Backend (standalone `phivm` binary, `src/bin/phivm.rs` — runs pre-emitted `.phivm` bytecode; not a `phic --target`)
 
 | PhiFlow Construct | VM Behavior | Notes |
 |-------------------|-------------|-------|

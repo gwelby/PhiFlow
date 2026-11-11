@@ -1,5 +1,18 @@
 # PhiFlow Changelog
 
+## 2026-11-11 | Truth sweep — docs brought back to what the repo shows
+
+Multi-agent sweep (Sonnet: tests + examples; Opus: doc-vs-code drift; Haiku: task labels; one Fable skeptic per high/medium finding — 13 of 14 survived, 1 refuted). Rungs stated per the family ladder.
+
+- **Full suite (producer-tested, HEAD `bcff85b`):** `cargo test` 501 passed, 0 failed, 5 ignored; Python 43 passed, 4 skipped. Replaces the stale 391 / 392 / 404 figures in CLAUDE.md.
+- **Self-correction loop (CLAUDE.md):** "CONFIRMED" → *structural plumbing only*; `run_self_correction_loop()` re-measures with hardcoded mocks, so the improvement is simulated. CLAIMS.md C-25 left unchanged and routed to Codex for a ruling.
+- **IBM hardware wording:** "verified" → *producer-recorded* (jobs `d7euddh5a5qc73drdosg` 2026-04-14 and `d941s54ql68s73c909fg` 2026-07-03; no raw IBM export saved). README's job date corrected from 2026-03-29 to 2026-04-14 — this entry also records that first live job, which this changelog had never logged (the 2026-04-12 "unconfirmed" line below is superseded). QSOP/STATE.md 2026-03-13 "Hardware Verified / Physical Entanglement Proven" annotated NOT SUPPORTED AS WRITTEN (original kept).
+- **CLI docs:** README `--topology/--backend` → `--topology-aware/--topology-backend`; `--timeline` removed (belongs to coherence_report); `--max-steps` default is 0 = unbounded; LANGUAGE.md `--target phivm` → standalone `phivm` binary; `--sacred-geometry > file` now strips log lines.
+- **Structure docs:** WASM imports 14 → 15 (`actuate`); dead PhiFlow-compiler workspace + missing playbook removed from `.claude/CLAUDE.md`; README tree/agent table point to `docs/archive/`.
+- **New test:** `three_backend_depth2_coherence` — Evaluator == VM == WASM on 1 − φ⁻² at intention depth 2 (the VM was never in the depth-2 check before); conformance target now 12/12 passing).
+- **Examples:** 91 run under `phic` with isolated state; `memory_demo.phi` fixed (ordering compare on Void). Remaining non-terminating examples are daemon/SOMA programs by design; `cognitive_dissonance.phi` calls a 2-arg `coherence()` plain phic does not have; 17 `examples/legacy/` files are the retired dialect.
+- **TASKS.md:** T4-001…013 and T-015 relabelled from live source (6 done, 6 partial, 1 not started as specified, T4-013 HOLD).
+
 ## 2026-10-06 | Live credential exposure closed at tip (`5c8cd2e`)
 
 Full-history secrets audit (all 6,482 pushed blobs vs every `~/.cascade_keys` value + entropy scan): the leak was already public — `ibm_quantum_config.env` (live `IBM_QUANTUM_TOKEN`), `_archive` deploy/SOP files carrying `NETWORK_SONICWALL_PASSWORD`, `NETWORK_PROXMOX_PASSWORD`, `ESXI_PASSWORD`, `SECURITY_ALERT_SMTP_HOST`, plus `deploy_password.ps1` (plaintext password, not in cascade_keys — caught by shape scan). Removed from tip and pushed `5c8cd2e`. `.gitignore` already covered the env/key files. History still contains the values — **rotation is the fix** (IBM token rotated same day; network passwords Greg's call). Also surfaced: `docs/fonts/*.ttf` files that are actually saved GitHub HTML pages (dead CSRF tokens — cosmetic oddity, not a leak).

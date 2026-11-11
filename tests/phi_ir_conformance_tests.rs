@@ -255,6 +255,25 @@ fn conformance_resonate_then_coherence() {
 }
 
 #[test]
+fn three_backend_depth2_coherence() {
+    // The .claude/CLAUDE.md verify rule: Evaluator == VM == WASM on 0.6180 at intention depth 2.
+    // Before this test, the 0.618 checks used user-defined functions, which the legacy VM cannot run,
+    // so the VM was never part of the depth-2 assertion.
+    let expected = 1.0 - 1.618033988749895_f64.powi(-2);
+    assert_program_matches(
+        r#"
+        intention "outer" {
+            intention "inner" {
+                coherence
+            }
+        }
+        "#,
+        PhiIRValue::Number(expected),
+        "three_backend_depth2_coherence",
+    );
+}
+
+#[test]
 fn conformance_sensor_witness_all_kinds() {
     let cases = [
         ("cpu_usage", 42.0),
