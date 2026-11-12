@@ -28,6 +28,13 @@ Spin-gates (`while gate < 50000`) pace by CPU speed. The same probe ran
 magnitudes do not, until the probe paces by clock time. Never pipe a
 check (`pgrep`) into the same ssh stream as a `tar` artifact pull.
 
+**Measured 2026-11-11:** with `sensor("clock_s")` deadline pacing
+(`examples/type4_esig_clock_trace.phi`, `scripts/run_esig_clock.sh`), both
+surfaces ran 240 cycles in 60.25 s and agreed to 0.0002 (L_self 0.681).
+Use that pattern for any time-sensitive probe. State an L_self magnitude
+together with its window **in signal time**, because the value depends on
+how much of the signal's period was sampled.
+
 ## Deploy contract
 
 ```bash

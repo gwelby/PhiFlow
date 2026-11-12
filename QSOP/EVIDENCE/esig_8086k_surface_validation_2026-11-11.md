@@ -45,6 +45,13 @@ Both traces re-scored on Guru-P1 from the pulled files: identical numbers.
 
 ## Do not compare the two L_self values (0.948 here vs 0.317 on NoetGuru)
 
+> **Correction and follow-up (same day):** the clock-paced re-run
+> (`esig_clock_paced_result_2026-11-11.md`) confirmed that pacing explains
+> the gap: both surfaces give L_self 0.681 over one full period. Neither
+> 0.948 nor 0.317 is the full-period value. Also, the obs path below was
+> not strictly monotone: the trace runs 0.61 → 0.90 → 0.85 (it passed the
+> peak). "Rising quarter" is approximately right; "monotone" was not.
+
 The probe paces itself by a 50,000-iteration spin-gate, not by clock time.
 8086K's faster cores ran 240 cycles in **19 s**; NoetGuru took ~65 s. The
 declared presence wave has a 60 s period, so here the probe sampled only its

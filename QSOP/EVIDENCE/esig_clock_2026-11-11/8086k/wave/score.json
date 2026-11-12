@@ -1,0 +1,12 @@
+{
+  "trace": "/home/greg/phiflow_surface/2026-11-11/clock/wave/trace.txt",
+  "cycles": 240,
+  "r_in": 0.680903,
+  "r_out": 0.912001,
+  "l_self": 0.680903,
+  "threshold": 0.1,
+  "loop_closed": true,
+  "corr_action_obsnext": 0.645925,
+  "degenerate": false,
+  "scorer": "score_type4_trace.py (independent Python reimpl of self_correlation::from_type4_trace)"
+}

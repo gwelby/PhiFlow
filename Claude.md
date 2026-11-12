@@ -21,7 +21,7 @@ Four constructs that exist in no other language:
 .phi file -> Parser (PhiToken -> AST) -> PhiIR Lowering -> Evaluator/VM/WASM -> Output + Coherence Report
 ```
 
-Backend equivalence: `tests/phi_ir_conformance_tests.rs` has 12 tests (12/12 pass, 2026-11-11). 8 compare Evaluator == VM == WASM by value on core constructs (incl. `three_backend_depth2_coherence` = 1 − φ⁻²); 2 compare Evaluator == WASM only (the legacy VM returns Void for user-defined functions); 1 runs shared examples on Evaluator + WASM without comparing values; 1 is a WASM NaN guard. `tests/phi_ir_full_conformance_probe.rs` is a *diagnostic* over 8 v0.3+ constructs that never fails on divergence — it currently prints 0 divergences (observed, not asserted). Self-correction loop: **structural plumbing only** — `run_self_correction_loop()` (src/quantum_feedback.rs) re-measures with hardcoded mocks (Decoherent 0.0 → Coherent 1.0), so the "improvement" is simulated and does not depend on the correction; no real-hardware correction run is recorded. CLI output tests: 5 tests verify what the user sees. Full suite: **501 passed, 0 failed, 5 ignored** (`cargo test`, 2026-11-11, HEAD `bcff85b`, producer-tested; +1 conformance test added after that run) + 43 Python tests passed. Codex audit 2026-07-31 found and fixed the coherence reporting bug (every program reported 0.0000 while tests passed green).
+Backend equivalence: `tests/phi_ir_conformance_tests.rs` has 12 tests (12/12 pass, 2026-11-11). 8 compare Evaluator == VM == WASM by value on core constructs (incl. `three_backend_depth2_coherence` = 1 − φ⁻²); 2 compare Evaluator == WASM only (the legacy VM returns Void for user-defined functions); 1 runs shared examples on Evaluator + WASM without comparing values; 1 is a WASM NaN guard. `tests/phi_ir_full_conformance_probe.rs` is a *diagnostic* over 8 v0.3+ constructs that never fails on divergence — it currently prints 0 divergences (observed, not asserted). Self-correction loop: **structural plumbing only** — `run_self_correction_loop()` (src/quantum_feedback.rs) re-measures with hardcoded mocks (Decoherent 0.0 → Coherent 1.0), so the "improvement" is simulated and does not depend on the correction; no real-hardware correction run is recorded. CLI output tests: 5 tests verify what the user sees. Full suite: **501 passed, 0 failed, 5 ignored** (`cargo test`, 2026-11-11, HEAD `bcff85b`, producer-tested; +2 tests added since: `three_backend_depth2_coherence` and the `clock_s` unit test, both passing in targeted runs) + 43 Python tests passed. Codex audit 2026-07-31 found and fixed the coherence reporting bug (every program reported 0.0000 while tests passed green).
 
 Key files:
 - `src/parser/mod.rs` - Lexer + Parser
@@ -42,7 +42,7 @@ Legacy modules archived in `src/_archive/` (compiler, vm, interpreter, main.rs).
 ```bash
 cargo build --release
 cargo run --release --bin phic -- examples/code_that_resonates.phi
-cargo test                                    # 501 passed, 0 failed, 5 ignored at bcff85b (2026-11-11); +1 test since
+cargo test                                    # 501 passed, 0 failed, 5 ignored at bcff85b (2026-11-11); +2 tests since
 cargo test --test phi_ir_full_conformance_probe -- --nocapture  # prints per-construct backend comparison table (diagnostic; does not fail on divergence)
 cargo run --release --bin phic -- --measure examples/type4_trace_benchmark.phi
 cargo run --release --bin phic -- --sacred-geometry flower_of_life | sed -n '/<svg/,$p' > pattern.svg   # stdout has log lines before the SVG

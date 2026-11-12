@@ -1,5 +1,12 @@
 # PhiFlow Changelog
 
+## 2026-11-11 | `sensor("clock_s")`, clock-paced cross-surface probe, example fixes
+
+- **Language:** new sensor channel `clock_s`, monotonic seconds since the process first read it (`SensorKind::ClockS`, id 400). It is the first time source a program can read. `Sleep` still has no syntax and is a no-op on every backend. Unit test `clock_s_is_monotonic_and_advances`; conformance 12/12. LANGUAGE.md now lists every sensor channel.
+- **Clock-paced probe (prereg sealed at `7a9b796`):** NoetGuru and 8086K both give L_self 0.681 over one full 60 s period (Δ 0.0002), and both controls are degenerate. Verdict: PACING NOT THE ONLY ISSUE. Pacing explains the cross-surface gap, and the full-period value shows both earlier numbers (0.317, 0.948) were window artifacts. ENGINEERED-SIGNAL weight. `QSOP/EVIDENCE/esig_clock_paced_result_2026-11-11.md`.
+- **Examples:** `field_guardian_v2.phi` never terminated because a `let count` inside the stream reset every tick (fixed). `cognitive_dissonance.phi` replaces the nonexistent 2-arg `coherence()` with a user `agreement()` function (fixed). `examples/README.md` lists long-running programs with their real stop conditions.
+- **Docs:** PATTERNS.md P-3…P-6 (stream `let` reset, bare `coherence`, pace by clock, silent 0.0 sensors). Stale "What Works" lines corrected. `.agent/` and VISION.md point at the single canonical tree.
+
 ## 2026-11-11 | Truth sweep — docs brought back to what the repo shows
 
 Multi-agent sweep (Sonnet: tests + examples; Opus: doc-vs-code drift; Haiku: task labels; one Fable skeptic per high/medium finding — 13 of 14 survived, 1 refuted). Rungs stated per the family ladder.

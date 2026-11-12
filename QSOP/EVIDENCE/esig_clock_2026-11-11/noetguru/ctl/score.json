@@ -1,0 +1,18 @@
+{
+  "trace": "/tmp/esig_clock_2026-11-11/ctl/trace.txt",
+  "cycles": 240,
+  "r_in": 0.0,
+  "r_out": 0.0,
+  "l_self": 0.0,
+  "threshold": 0.1,
+  "loop_closed": false,
+  "corr_action_obsnext": 0.0,
+  "degenerate": true,
+  "scorer": "score_type4_trace.py (independent Python reimpl of self_correlation::from_type4_trace)",
+  "degenerate_channels": [
+    "obs",
+    "model",
+    "action"
+  ],
+  "note": "zero-variance artifact: constant channel(s) obs,model,action \u2014 metrics return 0.0 mechanically; this is 'no variation to measure', not a measured absence of self-correlation"
+}

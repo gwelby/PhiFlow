@@ -281,6 +281,17 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   pattern packaged: `QSOP/REMOTE_RUN_KIT.md`. **Boundary: engineered
   evidence is never pooled with natural traces; T-015's natural claim
   stays open pending AntiGravity's producer.**
+- **Clock-paced cross-surface probe — VERDICT: PACING NOT THE ONLY ISSUE
+  (2026-11-11, NoetGuru + 8086K, seal = prereg commit `7a9b796`):** new
+  `sensor("clock_s")` (monotonic seconds) lets the probe pace by time.
+  Same probe/producer, 60.25 s per run on both machines: wave L_self
+  **0.6811 (NoetGuru) vs 0.6809 (8086K)**, both controls `degenerate:true`.
+  Pacing fully explains the 0.317 / 0.948 gap, but the full-period value
+  is 0.68, so both earlier numbers were window artifacts. Post-hoc (not
+  sealed): L_self for the running-mean model seems to depend on the share
+  of the signal period the window covers. An L_self magnitude needs its
+  window stated in signal time. ENGINEERED-SIGNAL weight; lane verdict
+  unchanged. `QSOP/EVIDENCE/esig_clock_paced_result_2026-11-11.md`.
 - **Control rehearsal COMPLETED (2026-11-03, `f8170bc`/`9ffed29`):** the
   preregistered negative control ran end-to-end on fixture paths —
   `--constant 0.5` → scratch SomaState → control .phi (obs =

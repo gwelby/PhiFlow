@@ -1,0 +1,12 @@
+{
+  "trace": "/tmp/esig_clock_2026-11-11/wave/trace.txt",
+  "cycles": 240,
+  "r_in": 0.681087,
+  "r_out": 0.911935,
+  "l_self": 0.681087,
+  "threshold": 0.1,
+  "loop_closed": true,
+  "corr_action_obsnext": 0.646029,
+  "degenerate": false,
+  "scorer": "score_type4_trace.py (independent Python reimpl of self_correlation::from_type4_trace)"
+}
