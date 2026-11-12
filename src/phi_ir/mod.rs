@@ -100,6 +100,9 @@ pub enum SensorKind {
     QuantumReadoutError,
     ClaimsDrift,
     SomaMotorReport,
+    /// Monotonic wall-clock seconds since the process first read this sensor.
+    /// Lets a program pace itself by time instead of by loop iterations.
+    ClockS,
 }
 
 impl SensorKind {
@@ -124,6 +127,7 @@ impl SensorKind {
             "quantum_readout_error" => Some(Self::QuantumReadoutError),
             "claims_drift" => Some(Self::ClaimsDrift),
             "soma_motor_report" => Some(Self::SomaMotorReport),
+            "clock_s" => Some(Self::ClockS),
             _ => None,
         }
     }
@@ -149,6 +153,7 @@ impl SensorKind {
             Self::QuantumReadoutError => "quantum_readout_error",
             Self::ClaimsDrift => "claims_drift",
             Self::SomaMotorReport => "soma_motor_report",
+            Self::ClockS => "clock_s",
         }
     }
 
@@ -173,6 +178,7 @@ impl SensorKind {
             Self::QuantumReadoutError => 102,
             Self::ClaimsDrift => 300,
             Self::SomaMotorReport => 14,
+            Self::ClockS => 400,
         }
     }
 
@@ -197,6 +203,7 @@ impl SensorKind {
             102 => Some(Self::QuantumReadoutError),
             300 => Some(Self::ClaimsDrift),
             14 => Some(Self::SomaMotorReport),
+            400 => Some(Self::ClockS),
             _ => None,
         }
     }

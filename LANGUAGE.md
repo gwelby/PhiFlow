@@ -354,6 +354,41 @@ import `phi_actuate(offset: i32, value: f64) -> f64`.
 Only `motor` is a valid actuator class today; the syntax leaves room for
 future classes (`actuate relay(...)`, `actuate servo(...)`).
 
+### Sensor channels
+
+`sensor("name")` (with or without `witness`) reads one of a closed set of
+channels, defined in `SensorKind` (src/phi_ir/mod.rs). An unknown name is a
+lowering error. An unavailable or stale channel reads `0.0` (except
+`claims_drift`, which reads `-1.0`), so a dead channel looks like a quiet one.
+
+| Group | Channels |
+|---|---|
+| Host | `cpu_usage`, `cpu_temp`, `memory_usage` |
+| SOMA (state file, freshness-gated) | `soma_schumann`, `soma_432`, `soma_presence`, `soma_fan_hz`, `soma_ac_60`, `soma_peak_dbc`, `soma_motor_report` |
+| Ring (SOMA) | `ring_slope_1f`, `ring_jitter_ns`, `ring_coherence_432`, `ring_coherence_528`, `ring_phase_delta` |
+| Quantum | `quantum_t1`, `quantum_t2`, `quantum_readout_error` |
+| Ledger | `claims_drift` |
+| Clock | `clock_s` |
+
+`clock_s` (added 2026-11-11) is monotonic seconds since the process first read
+it, so the first read returns about `0.0`. Use it to pace a loop by time
+instead of by iteration count, which depends on CPU speed:
+
+```phi
+let t0 = sensor("clock_s")
+let i = 0.0
+while i < 240 {
+    // ... one cycle of work ...
+    while sensor("clock_s") < t0 + 0.25 * (i + 1.0) {
+        let spin = 0.0
+    }
+    i = i + 1.0
+}
+```
+
+The wait is a busy loop: PhiFlow has no working `sleep` yet (the `Sleep` IR
+node has no surface syntax and is a no-op on every backend).
+
 ## Comparison With Other Languages
 
 ### Python

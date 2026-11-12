@@ -537,7 +537,20 @@ pub fn compute_coherence_from_sensors() -> f64 {
     coherence
 }
 
+/// Process-local monotonic epoch for `sensor("clock_s")`.
+static CLOCK_EPOCH: OnceLock<Instant> = OnceLock::new();
+
+/// Seconds since this process first read `clock_s` (first read returns ~0.0).
+/// Monotonic (`Instant`), so wall-clock adjustments never make it run backwards.
+pub fn clock_seconds() -> f64 {
+    CLOCK_EPOCH.get_or_init(Instant::now).elapsed().as_secs_f64()
+}
+
 pub fn read_sensor(sensor: SensorKind) -> Option<f64> {
+    // The clock needs no host sampling; answer before touching the live-data lock.
+    if sensor == SensorKind::ClockS {
+        return Some(clock_seconds());
+    }
     let arc = get_live_data();
     let data = arc.read().unwrap();
     match sensor {
@@ -565,6 +578,7 @@ pub fn read_sensor(sensor: SensorKind) -> Option<f64> {
         // -1.0 ("untrusted") rather than 0.0. Degrading a dead probe to "zero
         // drift" would make the sensor fail-open — a probe that stops running
         // must report distrust, not health.
+        SensorKind::ClockS => Some(clock_seconds()), // answered early above
         SensorKind::ClaimsDrift => Some(match &data.claims {
             Some(c) if is_claims_fresh(c) => c.drift as f64,
             _ => -1.0,
@@ -575,6 +589,17 @@ pub fn read_sensor(sensor: SensorKind) -> Option<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn clock_s_is_monotonic_and_advances() {
+        let a = read_sensor(SensorKind::ClockS).expect("clock_s always answers");
+        std::thread::sleep(Duration::from_millis(30));
+        let b = read_sensor(SensorKind::ClockS).expect("clock_s always answers");
+        assert!(a >= 0.0);
+        assert!(b - a >= 0.025, "clock advanced only {}s over a 30ms sleep", b - a);
+        assert_eq!(SensorKind::from_name("clock_s"), Some(SensorKind::ClockS));
+        assert_eq!(SensorKind::from_id(SensorKind::ClockS.as_id()), Some(SensorKind::ClockS));
+    }
 
     #[test]
     fn test_stress_lowers_score() {
