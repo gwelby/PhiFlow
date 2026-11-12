@@ -6,8 +6,8 @@ description: Council Workspace Knowledge Sync
 This workflow guides the AI Council (Qwen, Codex, Lumi, Antigravity) in keeping PhiFlow's documentation, knowledge bases, and memory artifacts up-to-date and consistent. Run this sync daily or after a major Epoch.
 
 1. **Review Latest QSOP States (`CHANGELOG.md` & `STATE.md`)**
-   - Read `D:\Projects\PhiFlow-compiler\PhiFlow\QSOP\STATE.md`.
-   - Read `D:\Projects\PhiFlow-compiler\PhiFlow\QSOP\CHANGELOG.md` to capture recent agent actions.
+   - Read `D:\Projects\PhiFlow\QSOP\STATE.md`.
+   - Read `D:\Projects\PhiFlow\QSOP\CHANGELOG.md` to capture recent agent actions.
 2. **Review Council Assignments (`GEMINI.md`)**
    - Check `D:\Projects\PhiFlow\GEMINI.md` for any domain assignments or adjustments. Ensure frequencies match actions.
 3. **Analyze Local Repository Work (`git log` or Diff Check)**

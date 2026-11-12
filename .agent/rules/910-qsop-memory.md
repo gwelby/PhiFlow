@@ -11,8 +11,8 @@ After your normal startup, read:
 
 1. `D:\Claude\QSOP\STATE.md`
 2. `D:\Claude\QSOP\PATTERNS.md`
-3. `D:\Projects\PhiFlow-compiler\PhiFlow\QSOP\STATE.md`
-4. `D:\Projects\PhiFlow-compiler\PhiFlow\QSOP\CHANGELOG.md`
+3. `D:\Projects\PhiFlow\QSOP\STATE.md`
+4. `D:\Projects\PhiFlow\QSOP\CHANGELOG.md`
 
 Confirm bootstrap with a 3-bullet current-state summary.
 

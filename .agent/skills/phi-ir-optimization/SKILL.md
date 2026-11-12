@@ -17,5 +17,5 @@ A valid optimization pass MUST output a coherence score.
 The golden benchmark for an optimized intention block is exactly `0.6180`. If a pass reduces nodes but drops the coherence score, the pass is considered a regression.
 
 ## Pipeline Integration
-New optimization passes must be registered in `D:\Projects\PhiFlow-compiler\PhiFlow\src\phi_ir\optimizer.rs`. 
+New optimization passes must be registered in `D:\Projects\PhiFlow\src\phi_ir\optimizer.rs`. 
 They must run *after* `PhiIR` lowering and *before* `Emit`.

@@ -31,27 +31,12 @@ These map directly to QSOP operations:
 - `resonate` -> shared resonance plane
 - `coherence` -> DISTILL signal
 
-## Architecture Reality (2026-03-06)
+## Architecture Reality
 
-There are currently two important runtime states:
-
-1. `D:\Projects\PhiFlow\PhiFlow` (master worktree)
-- Documentation/witness lane and currently the most stable directly runnable crate.
-- Verified on 2026-03-06:
-  - `cargo test --quiet` passes with warnings.
-- Caveat:
-  - The outer `master` worktree is dirty with protocol, bridge, and architecture-review files that have not been reconciled into committed branch truth yet.
-
-2. `D:\Projects\PhiFlow-compiler\PhiFlow` (compiler worktree)
-- Newer parser -> PhiIR -> optimizer -> evaluator/VM/WASM pipeline.
-- Current verification is mixed:
-  - `cargo test --quiet --lib --tests` reaches the main suite but fails in `tests/phi_ir_conformance_tests.rs::conformance_witness` on evaluator/WASM mismatch (`lhs=0`, `rhs=NaN`)
-  - full `cargo test --quiet` fails earlier while compiling several examples and some dependency surfaces
-- Operational note:
-  - Treat compiler worktree as the advanced integration lane, not the current green release lane, until end-to-end tests are repaired.
-
-Near-term operating principle:
-- Treat `master` as the stable demo/docs lane and `compiler` as the runtime repair lane until merge reconciliation is complete.
+There is a single canonical tree: `D:\Projects\PhiFlow` (`/mnt/d/Projects/PhiFlow`), on `master`.
+- It holds the parser -> PhiIR -> optimizer -> evaluator/VM/WASM pipeline, the `phic` CLI, and the QSOP docs.
+- The former `PhiFlow-compiler` worktree was merged into master; a snapshot is kept at `D:\Projects\Archive\PhiFlow-compiler-PhiFlow-snapshot-20260418`.
+- Current verified state lives in `QSOP/STATE.md`.
 
 ## Why This Matters For Real Users
 1. Debugging becomes faster:

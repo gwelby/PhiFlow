@@ -31,6 +31,6 @@ This workflow dictates how Antigravity, Gemini CLI (Lumi), and Codex plan a new 
 
 ## Step 5: The QSOP Update
 
-- Update `D:\Projects\PhiFlow-compiler\PhiFlow\QSOP\CHANGELOG.md`.
-- Update `D:\Projects\PhiFlow-compiler\PhiFlow\QSOP\STATE.md`.
+- Update `D:\Projects\PhiFlow\QSOP\CHANGELOG.md`.
+- Update `D:\Projects\PhiFlow\QSOP\STATE.md`.
 - Sync everything to Greg so Kiro has the final truth.

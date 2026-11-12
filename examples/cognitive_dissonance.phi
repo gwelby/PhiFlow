@@ -20,6 +20,19 @@
 // Agent: AntiGravity (designed), Claude (implemented 2026-04-16)
 // Book reference: Nothing Touches — Chapter 5 (The Triangle) appendix / standalone
 
+// --- AGREEMENT ---
+// `coherence` in PhiFlow is a bare keyword: it measures the PROGRAM's own
+// alignment and takes no arguments. The pairwise comparison this experiment
+// needs is therefore plain arithmetic: 1.0 when two values match, 0.0 when
+// they are maximally opposed (|a - b| = 1).
+function agreement(a: Number, b: Number) -> Number {
+    let diff = a - b
+    if diff < 0.0 {
+        diff = 0.0 - diff
+    }
+    return 1.0 - diff
+}
+
 // --- INTENTION 1: Logic ---
 // Clean, self-consistent. Resonates certainty.
 intention "logic" {
@@ -38,82 +51,92 @@ intention "fear" {
 
 // --- CONFLICT STREAM ---
 // Entangles Logic and Fear across 20 layers.
-// Each coherence() call between conflicting values generates CNOT gates.
+// Each agreement() call between conflicting values is one layer of the cascade
+// (plain arithmetic here; CNOT cost per layer applies only on the quantum target).
+// NOTE: a stream body repeats until `break stream`, so each stream below ends
+// with one to make this a single-shot experiment.
 // On the simulator: resolves cleanly.
 // On hardware: decoherence accumulates with every layer.
 stream "conflict" {
     // Layer 1: First entanglement
-    let l1 = coherence(1.0, 0.0)   // logic vs fear on truth
-    let f1 = coherence(0.0, 1.0)   // fear vs logic on truth
+    let l1 = agreement(1.0, 0.0)   // logic vs fear on truth
+    let f1 = agreement(0.0, 1.0)   // fear vs logic on truth
 
     // Layer 2-5: Cross-entangle — each layer doubles CNOT depth
-    let l2 = coherence(l1, f1)
-    let f2 = coherence(f1, l1)
-    let l3 = coherence(l2, f2)
-    let f3 = coherence(f2, l2)
-    let l4 = coherence(l3, f3)
-    let f4 = coherence(f3, l3)
-    let l5 = coherence(l4, f4)
-    let f5 = coherence(f4, l4)
+    let l2 = agreement(l1, f1)
+    let f2 = agreement(f1, l1)
+    let l3 = agreement(l2, f2)
+    let f3 = agreement(f2, l2)
+    let l4 = agreement(l3, f3)
+    let f4 = agreement(f3, l3)
+    let l5 = agreement(l4, f4)
+    let f5 = agreement(f4, l4)
 
     // Layer 6-10: Contradiction begins compounding
-    let l6  = coherence(l5, f5)
-    let f6  = coherence(f5, l5)
-    let l7  = coherence(l6, f6)
-    let f7  = coherence(f6, l6)
-    let l8  = coherence(l7, f7)
-    let f8  = coherence(f7, l7)
-    let l9  = coherence(l8, f8)
-    let f9  = coherence(f8, l8)
-    let l10 = coherence(l9, f9)
-    let f10 = coherence(f9, l9)
+    let l6  = agreement(l5, f5)
+    let f6  = agreement(f5, l5)
+    let l7  = agreement(l6, f6)
+    let f7  = agreement(f6, l6)
+    let l8  = agreement(l7, f7)
+    let f8  = agreement(f7, l7)
+    let l9  = agreement(l8, f8)
+    let f9  = agreement(f8, l8)
+    let l10 = agreement(l9, f9)
+    let f10 = agreement(f9, l9)
 
     // Layer 11-20: Deep dissonance — circuit is exhausting the qubits
-    let l11 = coherence(l10, f10)
-    let f11 = coherence(f10, l10)
-    let l12 = coherence(l11, f11)
-    let f12 = coherence(f11, l11)
-    let l13 = coherence(l12, f12)
-    let f13 = coherence(f12, l12)
-    let l14 = coherence(l13, f13)
-    let f14 = coherence(f13, l13)
-    let l15 = coherence(l14, f14)
-    let f15 = coherence(f14, l14)
-    let l16 = coherence(l15, f15)
-    let f16 = coherence(f15, l15)
-    let l17 = coherence(l16, f16)
-    let f17 = coherence(f16, l16)
-    let l18 = coherence(l17, f17)
-    let f18 = coherence(f17, l17)
-    let l19 = coherence(l18, f18)
-    let f19 = coherence(f18, l18)
-    let l20 = coherence(l19, f19)
-    let f20 = coherence(f19, l19)
+    let l11 = agreement(l10, f10)
+    let f11 = agreement(f10, l10)
+    let l12 = agreement(l11, f11)
+    let f12 = agreement(f11, l11)
+    let l13 = agreement(l12, f12)
+    let f13 = agreement(f12, l12)
+    let l14 = agreement(l13, f13)
+    let f14 = agreement(f13, l13)
+    let l15 = agreement(l14, f14)
+    let f15 = agreement(f14, l14)
+    let l16 = agreement(l15, f15)
+    let f16 = agreement(f15, l15)
+    let l17 = agreement(l16, f16)
+    let f17 = agreement(f16, l16)
+    let l18 = agreement(l17, f17)
+    let f18 = agreement(f17, l17)
+    let l19 = agreement(l18, f18)
+    let f19 = agreement(f18, l18)
+    let l20 = agreement(l19, f19)
+    let f20 = agreement(f19, l19)
 
     // THE WITNESS: What does the circuit actually produce?
     // Simulator: expect symmetric distribution near 0.5 (unresolved contradiction)
     // Hardware: expect near-random noise (decoherence won before witness arrived)
-    let final_state = coherence(l20, f20)
+    let final_state = agreement(l20, f20)
     witness final_state
+
+    // Bare `coherence` = the program's own live alignment score, read after the
+    // witness. This is the self-measurement; agreement() above is the arithmetic.
+    let self_coherence = coherence
 
     // Emit both sides to the resonance bus for comparison
     resonate l20 as "experiment/logic_thread"
     resonate f20 as "experiment/fear_thread"
     resonate final_state as "experiment/final_coherence"
+    resonate self_coherence as "experiment/self_coherence"
+    break stream
 }
 
 // --- CONTROL STREAM (run separately) ---
 // A coherent single intention with equivalent depth for comparison baseline.
 // Should remain stable on hardware — no contradiction, fewer CNOT cascades.
 stream "coherent_baseline" {
-    let c1  = coherence(1.0, 1.0)
-    let c2  = coherence(c1, c1)
-    let c3  = coherence(c2, c2)
-    let c4  = coherence(c3, c3)
-    let c5  = coherence(c4, c4)
-    let c10 = coherence(c5, c5)
-    let c20 = coherence(c10, c10)
+    let c1  = agreement(1.0, 1.0)
+    let c2  = agreement(c1, c1)
+    let c3  = agreement(c2, c2)
+    let c4  = agreement(c3, c3)
+    let c5  = agreement(c4, c4)
+    let c10 = agreement(c5, c5)
+    let c20 = agreement(c10, c10)
 
     witness c20
     resonate c20 as "experiment/baseline_coherence"
+    break stream
 }
