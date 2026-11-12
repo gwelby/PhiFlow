@@ -949,6 +949,8 @@ intention "data_analysis" {
                     broadcast: (channelIdx, value) => { channels.set(channelIdx, value); },
                     listen: (channelIdx) => { return channels.has(channelIdx) ? channels.get(channelIdx) : 0.0; },
                     void_depth: () => 0.0,
+                    // The browser main thread cannot block; sleep is a no-op here.
+                    sleep: (_ms) => {},
                 },
             };
 

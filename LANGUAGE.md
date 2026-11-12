@@ -358,8 +358,15 @@ future classes (`actuate relay(...)`, `actuate servo(...)`).
 
 `sensor("name")` (with or without `witness`) reads one of a closed set of
 channels, defined in `SensorKind` (src/phi_ir/mod.rs). An unknown name is a
-lowering error. An unavailable or stale channel reads `0.0` (except
-`claims_drift`, which reads `-1.0`), so a dead channel looks like a quiet one.
+lowering error. On the evaluator (what `phic` runs), an unavailable or stale
+channel reads `0.0` (except `claims_drift`, which reads `-1.0`), so a dead
+channel looks like a quiet one. The backends differ here: the VM reads `0.0`
+only for the six `soma_*` audio channels and errors on any other absent
+channel; the WASM host errors on every absent channel.
+
+**Strict sensor mode** (`phic --strict-sensors`, or `PHIFLOW_STRICT_SENSORS=1`)
+makes every absent channel an error on the evaluator and the VM. Use it for any
+run whose result depends on a sensor actually being live.
 
 | Group | Channels |
 |---|---|
@@ -380,14 +387,47 @@ let i = 0.0
 while i < 240 {
     // ... one cycle of work ...
     while sensor("clock_s") < t0 + 0.25 * (i + 1.0) {
-        let spin = 0.0
+        sleep(5)
     }
     i = i + 1.0
 }
 ```
 
-The wait is a busy loop: PhiFlow has no working `sleep` yet (the `Sleep` IR
-node has no surface syntax and is a no-op on every backend).
+### `sleep(ms)`
+
+`sleep(ms)` (added 2026-11-11) blocks the program for `ms` milliseconds
+without using CPU, on all three backends (evaluator, VM, WASM via the
+`phi.sleep` host import). It has no value. A negative, NaN or infinite
+duration sleeps 0 ms, so `sleep((deadline - sensor("clock_s")) * 1000)`
+returns at once when the deadline has passed. One call sleeps at most one
+hour. In the browser demo host the main thread cannot block, so `sleep` is a
+no-op there.
+
+Pace by deadline (`clock_s`) plus a short `sleep`, as above, rather than by
+`sleep` alone: a fixed `sleep(250)` per cycle drifts by however long the
+cycle's own work took.
+
+### Machine-readable output
+
+By default `phic` prints each resonance as `🔔 Resonating Field: 0.6139Hz`
+(4 decimals, a `Hz` suffix on every number, no label). For scoring and
+tooling, `phic --resonance-tsv` prints instead, one line per event:
+
+```
+RESONATE<TAB>index<TAB>scope<TAB>label<TAB>value
+```
+
+`label` is the `as "name"` of the `resonate` statement (`-` if none) and
+`value` is full precision with no unit. Labels are output-only: they never
+change coherence, metrics or quantum lowering.
+
+### Warnings
+
+`phic` prints static warnings to stderr before running. Current check:
+`warning[stream-reset]` when a variable is set to a constant at the top of a
+`stream` body and later updated from its own value (`count = count + 1`). The
+body re-runs from its first line every tick, so the variable resets each
+tick (QSOP/PATTERNS.md P-3).
 
 ## Comparison With Other Languages
 

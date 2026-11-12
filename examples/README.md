@@ -109,6 +109,13 @@ will not return promptly. Stop them with Ctrl-C, or bound the run with
 | [`type4_soma_daemon.phi`](type4_soma_daemon.phi) | Type-4 daemon trace: samples live `soma_presence` (fallback `soma_peak_dbc`) at ~1 Hz and keeps the model in agent state (`--state-path`). Breaks after 600 samples (~10 min). |
 | [`type4_soma_expressive.phi`](type4_soma_expressive.phi) | Same as the daemon variant, but the action is the published model mean. Breaks after 600 samples at ~1 Hz. |
 | [`type4_soma_motor.phi`](type4_soma_motor.phi) | Sensorimotor variant: samples `soma_peak_dbc` at ~1 Hz and burns CPU in proportion to the model. Breaks after 600 samples; its header shows a run with `--measure --max-steps 15000000000`. |
+| [`type4_esig_trace.phi`](type4_esig_trace.phi) | ENGINEERED-SIGNAL probe, 240 cycles paced by a CPU spin-gate: ~19 s on a fast machine, ~65 s on a slow or loaded one. Reads `soma_presence` from a producer; without one it reads `0.0`. |
+| [`type4_esig_clock_trace.phi`](type4_esig_clock_trace.phi) | Same probe paced by `sensor("clock_s")`: always 60 s (240 cycles × 0.25 s). |
+
+`tests/examples_smoke.rs` runs every example on each `cargo test`: finite
+ones must exit 0 within 45 s; the programs in this table must not fail in
+their first 4 s. A new long-running example must be added both here and to
+`LONG_RUNNING` in that test.
 
 Programs whose own header says they need SOMA (`SOMA_STATE_PATH=...`) or the
 hypervisor will read `0.0` from absent sensors, so a bare run mostly tests the loop, not the data.

@@ -104,6 +104,12 @@ async function main() {
         return channels.has(channelIdx) ? channels.get(channelIdx) : 0.0;
       },
       void_depth: () => 0.0,
+      sleep: (ms) => {
+        // Synchronous sleep, matching the Rust host (NaN/negative -> 0 ms).
+        if (Number.isFinite(ms) && ms > 0) {
+          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Math.min(ms, 3600000));
+        }
+      },
     },
   };
 

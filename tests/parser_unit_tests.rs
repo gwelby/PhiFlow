@@ -357,7 +357,7 @@ fn parse_resonate_bare() {
     let exprs = parse_phi_program("resonate").unwrap();
     assert_eq!(exprs.len(), 1);
     match &exprs[0] {
-        PhiExpression::Resonate { expression, direction } => {
+        PhiExpression::Resonate { expression, direction, .. } => {
             assert!(expression.is_none());
             assert!(matches!(direction, ResonateDirection::TeamA));
         }

@@ -1,5 +1,18 @@
 # PhiFlow Changelog
 
+## 2026-11-11 (later) | `sleep(ms)`, strict sensors, labelled output, VM functions, examples in CI
+
+- **`sleep(ms)`:** real on all three backends (evaluator, VM, WASM via a new `phi.sleep` host import; 16 imports now). NaN, negative and infinite durations sleep 0 ms; one call is capped at 1 h (`sensors::host_sleep_ms`). Checked on a copy of the clock probe: the same 60 s run and the same L_self (0.6676 vs 0.6677), CPU 56 s → 0.8 s. The browser demo host makes it a no-op (main thread cannot block).
+- **Strict sensor mode:** `phic --strict-sensors` / `PHIFLOW_STRICT_SENSORS=1` makes an absent sensor an error on the evaluator and VM instead of a silent 0.0. Also documented: the backends already differed (evaluator 0.0 always; VM 0.0 only for six `soma_*` channels; WASM errors).
+- **Labelled output:** `resonate x as "name"` keeps its label through AST and IR (output-only; no effect on coherence, metrics or QASM). `phic --resonance-tsv` prints `RESONATE<TAB>index<TAB>scope<TAB>label<TAB>value` at full precision. `score_type4_trace.py` pairs TSV values by label (step/obs/model/action) and errors on unequal channels; legacy stdout scores byte-identically (re-checked on all four committed clock-probe traces).
+- **Lint:** `phic` warns `warning[stream-reset]` when a stream-top constant is later updated from itself (P-3). It catches the pre-fix `field_guardian_v2.phi` (`count`) and no current example.
+- **VM user functions:** the legacy VM ran `Call` as a stub returning Void. It now binds parameters and runs the body (bytecode v2: `OP_FUNC_DEF` carries parameter names). `conformance_nested_function_regression` is now Evaluator == VM == WASM.
+- **Full conformance probe asserts** (was print-only): 10 constructs incl. new `sleep_then_value` and `field_bare_statement`, 0 divergences.
+- **Parser:** bare `field` parses as a statement (was "Unexpected token"). The `void_depth` parser OOM recorded in REPORTS/CODEX_AUDIT_RESULTS.md no longer reproduces (2 GB cap, three positions).
+- **Correction to the entry below:** replacing 2-arg `coherence()` in `cognitive_dissonance.phi` broke 8 `topology_transpiler_tests`: on the quantum overlay path `coherence(a, b)` is a real construct and that file is their fixture. Original restored byte-for-byte; the interpreter version is now `examples/cognitive_dissonance_classical.phi`. The full suite had not been run after that commit.
+- **Examples in CI:** `tests/examples_smoke.rs` runs all 69 `examples/*.phi` under `phic` (finite: exit 0 within 45 s; the 13 long-running ones: no failure in their first 4 s). `field_guardian_v2.phi`'s 105 resonance lines = 101 ticks + 4 "Early Warning" strings, not a bug.
+- **Tests (producer-tested):** `cargo test --no-fail-fast` 509 passed, 0 failed, 5 ignored (501 at `bcff85b` + `three_backend_depth2_coherence`, `clock_s`, `host_sleep_blocks_and_clamps`, `strict_mode_sources`, 3 lint tests, `every_example_runs`). Python 66 passed, 4 skipped (`--ignore=tests/_archive`; the old "43" figure used a different path). `phivm` disassembly now says `bytecode v2`.
+
 ## 2026-11-11 | `sensor("clock_s")`, clock-paced cross-surface probe, example fixes
 
 - **Language:** new sensor channel `clock_s`, monotonic seconds since the process first read it (`SensorKind::ClockS`, id 400). It is the first time source a program can read. `Sleep` still has no syntax and is a no-op on every backend. Unit test `clock_s_is_monotonic_and_advances`; conformance 12/12. LANGUAGE.md now lists every sensor channel.

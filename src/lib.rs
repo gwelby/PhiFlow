@@ -29,6 +29,7 @@ pub mod quantum_feedback;
 pub mod motor_bus;
 pub mod resonance_bus;
 pub mod sensors;
+pub mod lint;
 pub mod system_host;
 pub mod security;
 pub mod wasm_host;

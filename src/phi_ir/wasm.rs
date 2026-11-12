@@ -175,6 +175,7 @@ impl<'a> WatEmitter<'a> {
         self.line(r#"(import "phi" "actuate" (func $phi_actuate (param i32 f64) (result f64)))"#);
         self.line(r#"(import "phi" "listen" (func $phi_listen (param i32) (result f64)))"#);
         self.line(r#"(import "phi" "void_depth" (func $phi_void_depth (result f64)))"#);
+        self.line(r#"(import "phi" "sleep" (func $phi_sleep (param f64)))"#);
     }
 
     fn emit_main_function(&mut self) {
@@ -433,7 +434,7 @@ impl<'a> WatEmitter<'a> {
 
             PhiIRNode::CoherenceCheck => "call $phi_coherence".to_string(),
 
-            PhiIRNode::Sleep { .. } => ";; sleep — no-op in WASM".to_string(),
+            PhiIRNode::Sleep { duration } => format!("local.get $r{}\ncall $phi_sleep", duration),
 
             PhiIRNode::Call { name, .. } => {
                 if let Some(PhiIRValue::Number(n)) = inferred {

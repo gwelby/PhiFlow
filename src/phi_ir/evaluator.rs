@@ -126,6 +126,10 @@ pub struct Evaluator<'a> {
     shared_resonance: Option<Arc<Mutex<HashMap<String, Vec<PhiIRValue>>>>>,
     /// Ordered resonance events (scope, value) for CLI/diagnostic output.
     resonance_events: Vec<(String, PhiIRValue)>,
+    /// `as "name"` label per resonance event, index-aligned with
+    /// `resonance_events` (shorter when trailing events are unlabelled).
+    /// Output-only; not part of the persisted snapshot.
+    resonance_labels: Vec<Option<String>>,
     /// Stream names that exited via StreamPop.
     ended_streams: Vec<String>,
 
@@ -190,6 +194,7 @@ impl<'a> Evaluator<'a> {
             resonance_field: HashMap::new(),
             shared_resonance: None,
             resonance_events: Vec::new(),
+            resonance_labels: Vec::new(),
             ended_streams: Vec::new(),
             witness_log: Vec::new(),
             current_block: program.entry,
@@ -375,6 +380,7 @@ impl<'a> Evaluator<'a> {
         self.active_streams = state.active_streams;
         self.resonance_field = state.resonance_field;
         self.resonance_events = state.resonance_events;
+        self.resonance_labels.clear(); // labels are not persisted; re-pad from here
         self.ended_streams = state.ended_streams;
         self.witness_log = state.witness_log;
         self.current_block = state.current_block;
@@ -436,6 +442,11 @@ impl<'a> Evaluator<'a> {
     /// Ordered resonance events produced during execution.
     pub fn resonance_events(&self) -> &[(String, PhiIRValue)] {
         self.resonance_events.as_slice()
+    }
+
+    /// The `as "name"` label of resonance event `index`, if it had one.
+    pub fn resonance_label(&self, index: usize) -> Option<&str> {
+        self.resonance_labels.get(index).and_then(|l| l.as_deref())
     }
 
     /// Stream names that completed execution.
@@ -692,6 +703,7 @@ impl<'a> Evaluator<'a> {
             PhiIRNode::Resonate {
                 value,
                 direction: _,
+                label,
                 ..
             } => {
                 let key = self
@@ -705,6 +717,11 @@ impl<'a> Evaluator<'a> {
                         let val = val.clone();
                         let val_str = self.value_to_string(&val);
                         self.resonance_events.push((key.clone(), val.clone()));
+                        // Keep labels aligned with events (pads after a snapshot restore
+                        // or after unlabelled pushes elsewhere).
+                        let n = self.resonance_events.len();
+                        self.resonance_labels.resize(n - 1, None);
+                        self.resonance_labels.push(label.clone());
 
                         // --- Pipe 3: MQTT Resonance Bus ---
                         let json_val = match &val {
@@ -1008,7 +1025,19 @@ impl<'a> Evaluator<'a> {
                 }
             }
             PhiIRNode::CreatePattern { .. } => Some(PhiIRValue::Void),
-            PhiIRNode::Sleep { .. } => Some(PhiIRValue::Void),
+            PhiIRNode::Sleep { duration } => {
+                let ms = match self.get_reg(*duration)? {
+                    PhiIRValue::Number(n) => *n,
+                    other => {
+                        return Err(EvalError::InvalidOperation(format!(
+                            "sleep(ms) needs a number, got {:?}",
+                            other
+                        )))
+                    }
+                };
+                crate::sensors::host_sleep_ms(ms);
+                Some(PhiIRValue::Void)
+            }
 
             PhiIRNode::Branch { .. }
             | PhiIRNode::Jump(_)
@@ -1306,9 +1335,15 @@ impl<'a> Evaluator<'a> {
 
         // Host and SOMA sensors are optional environmental enrichment.
         // When a sensor is unavailable on this specific host or the SOMA bridge is offline,
-        // degrade gracefully to 0.0 (no signal) rather than aborting the program.
+        // degrade gracefully to 0.0 (no signal) rather than aborting the program —
+        // unless strict sensor mode is on, where a dead channel must not pass
+        // for a quiet one (the R5 invalid-run scar).
         match value {
             Some(v) => Ok(v),
+            None if crate::sensors::strict_sensors() => Err(EvalError::InvalidOperation(format!(
+                "sensor(\"{}\") is unavailable (strict sensor mode: absent sensors are errors, not 0.0)",
+                sensor.as_name()
+            ))),
             None => Ok(0.0),
         }
     }

@@ -28,8 +28,45 @@ import math
 import sys
 
 
+CHANNELS = ("step", "obs", "model", "action")
+
+
+def parse_tsv(lines):
+    """Parse `phic --resonance-tsv` lines (2026-11-11) by label, not position.
+
+    Line: RESONATE<TAB>index<TAB>scope<TAB>label<TAB>value. When every value
+    carries one of the labels step/obs/model/action, the k-th step is paired
+    with the k-th obs, model and action, so an extra or missing emission is
+    an error instead of a silent shift. Unlabelled TSV (label "-") falls back
+    to emit-order 4-tuples like the legacy format.
+    """
+    rows = []
+    for line in lines:
+        parts = line.rstrip("\n").split("\t")
+        if len(parts) == 5 and parts[0] == "RESONATE":
+            try:
+                rows.append((parts[3], float(parts[4])))
+            except ValueError:
+                pass  # non-numeric resonance (a string), not part of the trace
+    labels = {lab for lab, _ in rows}
+    if labels == set(CHANNELS):
+        series = {c: [v for lab, v in rows if lab == c] for c in CHANNELS}
+        n = {c: len(series[c]) for c in CHANNELS}
+        if len(set(n.values())) != 1:
+            raise ValueError(f"labelled channels have unequal lengths: {n}")
+        return list(zip(*(series[c] for c in CHANNELS)))
+    if labels - {"-"}:
+        raise ValueError(
+            f"TSV labels {sorted(labels)} are not exactly {list(CHANNELS)}; "
+            "refusing to guess which value is which")
+    vals = [v for _, v in rows]
+    return [tuple(vals[i:i + 4]) for i in range(0, len(vals) - 3, 4)]
+
+
 def parse_trace(path):
     """Parse trace file -> list of (step, obs, model, action) tuples.
+
+    `phic --resonance-tsv` output is parsed by label (see parse_tsv).
 
     Accepts every emission shape the pipeline has produced:
       "Resonating obs: 0.52"        (named fixture lines)
@@ -38,27 +75,30 @@ def parse_trace(path):
       "0.52"                        (bare numerics)
     Values group into 4-tuples in emit order regardless of names.
     """
-    vals = []
     with open(path) as f:
-        for line in f:
-            line = line.strip()
-            pos = line.find("Resonating")
-            if pos >= 0:
-                colon = line.find(":", pos)
-                if colon >= 0:
-                    tok = line[colon + 1:].split()
-                    if tok:
-                        try:
-                            # tolerate a unit suffix like "0.5200Hz"
-                            vals.append(float(tok[0].removesuffix("Hz")))
-                            continue
-                        except ValueError:
-                            pass
-            else:
-                try:
-                    vals.append(float(line))
-                except ValueError:
-                    pass
+        lines = f.readlines()
+    if any(line.startswith("RESONATE\t") for line in lines):
+        return parse_tsv(lines)
+    vals = []
+    for line in lines:
+        line = line.strip()
+        pos = line.find("Resonating")
+        if pos >= 0:
+            colon = line.find(":", pos)
+            if colon >= 0:
+                tok = line[colon + 1:].split()
+                if tok:
+                    try:
+                        # tolerate a unit suffix like "0.5200Hz"
+                        vals.append(float(tok[0].removesuffix("Hz")))
+                        continue
+                    except ValueError:
+                        pass
+        else:
+            try:
+                vals.append(float(line))
+            except ValueError:
+                pass
     return [tuple(vals[i:i + 4]) for i in range(0, len(vals) - 3, 4)]
 
 

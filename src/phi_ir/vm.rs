@@ -8,7 +8,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 const MAGIC: &[u8; 4] = b"PHIV";
-const VERSION: u8 = 1;
+// v2 (2026-11-11): OP_FUNC_DEF carries parameter names. Must match emitter.rs.
+const VERSION: u8 = 2;
 const PHI: f64 = 1.618_033_988_749_895;
 
 // --- Opcodes (must match emitter.rs) ---
@@ -209,6 +210,7 @@ pub enum BytecodeNode {
     FuncDef {
         name: String,
         body: BlockId,
+        params: Vec<String>,
     },
     Witness {
         target: Option<Operand>,
@@ -302,6 +304,20 @@ pub struct PhiVm {
     pub witness_log: Vec<WitnessSnapshot>,
     pub max_steps: Option<usize>,
     pub step_count: usize,
+    /// User-defined functions: name -> (parameter names, body block).
+    functions: HashMap<String, (Vec<String>, BlockId)>,
+}
+
+fn index_functions(program: &BytecodeProgram) -> HashMap<String, (Vec<String>, BlockId)> {
+    let mut map = HashMap::new();
+    for block in &program.blocks {
+        for instr in &block.instructions {
+            if let BytecodeNode::FuncDef { name, body, params } = &instr.node {
+                map.insert(name.clone(), (params.clone(), *body));
+            }
+        }
+    }
+    map
 }
 
 impl PhiVm {
@@ -333,7 +349,56 @@ impl PhiVm {
             witness_log: Vec::new(),
             max_steps: None,
             step_count: 0,
-        })
+            functions: HashMap::new(),
+        }
+        .with_indexed_functions())
+    }
+
+    fn with_indexed_functions(mut self) -> Self {
+        self.functions = index_functions(&self.program);
+        self
+    }
+
+    /// Call a user-defined function (mirrors `Evaluator::execute_function`):
+    /// fresh variable scope with parameters bound, run the body until its
+    /// `Return`, then restore the caller's block, ip, variables and value stack.
+    /// Unknown names keep the legacy behaviour and return Void.
+    fn execute_function(&mut self, name: &str, args: Vec<PhiIRValue>) -> VmResult<PhiIRValue> {
+        let (params, body) = match self.functions.get(name) {
+            Some(f) => f.clone(),
+            None => return Ok(PhiIRValue::Void),
+        };
+        let saved_block = self.current_block;
+        let saved_ip = self.instruction_ptr;
+        let saved_variables = std::mem::take(&mut self.variables);
+        let saved_stack = self.value_stack.len();
+
+        for (idx, param) in params.iter().enumerate() {
+            let value = args.get(idx).cloned().unwrap_or(PhiIRValue::Void);
+            self.variables.insert(param.clone(), value);
+        }
+        self.current_block = body;
+        self.instruction_ptr = 0;
+
+        let result = loop {
+            let block = self.get_block(self.current_block)?;
+            if self.instruction_ptr < block.instructions.len() {
+                let instr = block.instructions[self.instruction_ptr].clone();
+                self.instruction_ptr += 1;
+                self.execute_instruction(&instr)?;
+                continue;
+            }
+            let terminator = block.terminator.clone();
+            if let Some(value) = self.execute_terminator(&terminator)? {
+                break value;
+            }
+        };
+
+        self.variables = saved_variables;
+        self.current_block = saved_block;
+        self.instruction_ptr = saved_ip;
+        self.value_stack.truncate(saved_stack);
+        Ok(result)
     }
 
     /// Attach a custom host provider. Call before `run()`.
@@ -462,6 +527,7 @@ impl PhiVm {
         for (idx, block) in self.program.blocks.iter().enumerate() {
             self.block_index.insert(block.id, idx);
         }
+        self.functions = index_functions(&self.program);
         self.run_or_yield()
     }
 
@@ -525,11 +591,12 @@ impl PhiVm {
             }
             BytecodeNode::BinOp { op, left, right } => Some(self.eval_binop(op, *left, *right)?),
             BytecodeNode::UnaryOp { operand } => Some(self.eval_unop(*operand)?),
-            BytecodeNode::Call { args, .. } => {
+            BytecodeNode::Call { name, args } => {
+                let mut values = Vec::with_capacity(args.len());
                 for op in args {
-                    let _ = self.get_reg(*op)?;
+                    values.push(self.get_reg(*op)?.clone());
                 }
-                Some(PhiIRValue::Void)
+                Some(self.execute_function(name, values)?)
             }
             BytecodeNode::ListNew(ops) => {
                 for op in ops {
@@ -675,7 +742,9 @@ impl PhiVm {
             }
             BytecodeNode::CoherenceCheck => Some(PhiIRValue::Number(self.compute_coherence())),
             BytecodeNode::Sleep { duration } => {
-                let _ = self.get_reg(*duration)?;
+                if let PhiIRValue::Number(ms) = self.get_reg(*duration)? {
+                    crate::sensors::host_sleep_ms(*ms);
+                }
                 None
             }
             BytecodeNode::CreatePattern { frequency, params } => {
@@ -899,6 +968,7 @@ impl PhiVm {
 
         match value {
             Some(v) => Ok(v),
+            None if crate::sensors::strict_sensors() => Err(VmError::UnavailableSensor(sensor)),
             None => match sensor {
                 SensorKind::SomaSchumann
                 | SensorKind::Soma432
@@ -1081,10 +1151,16 @@ fn parse_node(reader: &mut ByteReader<'_>, string_table: &[String]) -> VmResult<
             list: reader.read_u32()?,
             index: reader.read_u32()?,
         },
-        OP_FUNC_DEF => BytecodeNode::FuncDef {
-            name: read_string_ref(reader, string_table)?,
-            body: reader.read_u32()?,
-        },
+        OP_FUNC_DEF => {
+            let name = read_string_ref(reader, string_table)?;
+            let body = reader.read_u32()?;
+            let count = reader.read_u32()?;
+            let mut params = Vec::with_capacity(count as usize);
+            for _ in 0..count {
+                params.push(read_string_ref(reader, string_table)?);
+            }
+            BytecodeNode::FuncDef { name, body, params }
+        }
         OP_WITNESS => BytecodeNode::Witness {
             target: read_optional_operand(reader, OP_WITNESS)?,
         },
@@ -1313,7 +1389,7 @@ mod tests {
     fn build_native_consciousness_opcode_program() -> Vec<u8> {
         let mut out = Vec::new();
         out.extend_from_slice(b"PHIV");
-        out.push(1); // version
+        out.push(super::VERSION); // version (tracks the decoder)
 
         emit_u32(&mut out, 1); // string table count
         emit_string(&mut out, "healing");
@@ -1366,7 +1442,7 @@ mod tests {
     fn build_invalid_witness_flag_program(flag: u8) -> Vec<u8> {
         let mut out = Vec::new();
         out.extend_from_slice(b"PHIV");
-        out.push(1); // version
+        out.push(super::VERSION); // version (tracks the decoder)
 
         emit_u32(&mut out, 0); // string table count
         emit_u32(&mut out, 1); // block count
@@ -1499,6 +1575,7 @@ mod tests {
                         value: Some(0),
                         frequency_relationship: None,
                         direction: crate::phi_ir::ResonateDirection::TeamA,
+                        label: None,
                     },
                 },
                 PhiInstruction {
@@ -1643,6 +1720,7 @@ mod tests {
                         value: Some(0),
                         frequency_relationship: None,
                         direction: crate::phi_ir::ResonateDirection::TeamB,
+                        label: None,
                     },
                 },
             ],
@@ -1701,6 +1779,7 @@ mod tests {
                         value: Some(0),
                         frequency_relationship: None,
                         direction: crate::phi_ir::ResonateDirection::TeamA,
+                        label: None,
                     },
                 },
                 PhiInstruction {
@@ -1713,6 +1792,7 @@ mod tests {
                         value: Some(1),
                         frequency_relationship: None,
                         direction: crate::phi_ir::ResonateDirection::TeamA,
+                        label: None,
                     },
                 },
                 PhiInstruction {
@@ -1814,6 +1894,7 @@ mod tests {
                         value: Some(1),
                         frequency_relationship: None,
                         direction: crate::phi_ir::ResonateDirection::TeamA,
+                        label: None,
                     },
                 },
                 PhiInstruction {

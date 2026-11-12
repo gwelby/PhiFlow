@@ -758,6 +758,7 @@ mod tests {
                 value: None,
                 frequency_relationship: None,
                 direction: ResonateDirection::TeamA,
+                label: None,
             },
         });
         block.instructions.push(PhiInstruction {
@@ -912,6 +913,7 @@ mod tests {
                 value: Some(0),
                 frequency_relationship: None,
                 direction: ResonateDirection::TeamA,
+                label: None,
             },
         });
         ir.blocks.push(block);
@@ -939,6 +941,7 @@ mod tests {
                 value: Some(0),
                 frequency_relationship: None,
                 direction: ResonateDirection::TeamA,
+                label: None,
             },
         });
         block.instructions.push(PhiInstruction {
@@ -953,6 +956,7 @@ mod tests {
                 value: Some(1),
                 frequency_relationship: None,
                 direction: ResonateDirection::TeamB,
+                label: None,
             },
         });
         ir.blocks.push(block);

@@ -35,6 +35,20 @@ Use that pattern for any time-sensitive probe. State an L_self magnitude
 together with its window **in signal time**, because the value depends on
 how much of the signal's period was sampled.
 
+**For new probes (phic built after 2026-11-11):**
+- Wait with `sleep(5)` inside the deadline loop instead of spinning. Checked
+  locally on the clock probe: the same 60 s run and the same L_self (0.6676
+  vs 0.6677), CPU 56 s → 0.8 s. This matters on a shared surface (8086K's
+  hackathon GPU host).
+- Run with `--strict-sensors`, so a dead producer stops the run instead of
+  scoring a channel of 0.0 (the R5 invalid-run scar).
+- Run with `--resonance-tsv`. `score_type4_trace.py` then pairs values by their
+  `as "step"/"obs"/"model"/"action"` labels at full precision, and a missing
+  or extra emission is an error instead of a silent shift. Legacy stdout still
+  scores exactly as before.
+- Sealed probes (`type4_esig_clock_trace.phi` at `7a9b796`) stay byte-identical;
+  apply these in a new probe file under a new prereg.
+
 ## Deploy contract
 
 ```bash

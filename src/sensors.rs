@@ -546,6 +546,42 @@ pub fn clock_seconds() -> f64 {
     CLOCK_EPOCH.get_or_init(Instant::now).elapsed().as_secs_f64()
 }
 
+/// Upper bound for one `sleep(ms)` call (1 hour). Guards against a runaway
+/// expression parking the process for days.
+pub const MAX_SLEEP_MS: f64 = 3_600_000.0;
+
+/// Block the calling thread for `ms` milliseconds (the `sleep(ms)` builtin,
+/// shared by every backend). NaN, infinities and negatives sleep 0 ms, so a
+/// deadline already in the past (`sleep((deadline - now) * 1000)`) returns at
+/// once. Values above `MAX_SLEEP_MS` are clamped.
+pub fn host_sleep_ms(ms: f64) {
+    if !ms.is_finite() || ms <= 0.0 {
+        return;
+    }
+    thread::sleep(Duration::from_secs_f64(ms.min(MAX_SLEEP_MS) / 1000.0));
+}
+
+static STRICT_SENSORS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Turn strict sensor mode on for this process (`phic --strict-sensors`).
+pub fn set_strict_sensors(on: bool) {
+    STRICT_SENSORS.store(on, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Strict sensor mode: reading an absent sensor is an error instead of a
+/// silent 0.0. On when `set_strict_sensors(true)` was called or the
+/// environment has `PHIFLOW_STRICT_SENSORS=1`.
+pub fn strict_sensors() -> bool {
+    strict_from(
+        STRICT_SENSORS.load(std::sync::atomic::Ordering::Relaxed),
+        std::env::var("PHIFLOW_STRICT_SENSORS").ok().as_deref(),
+    )
+}
+
+fn strict_from(flag: bool, env: Option<&str>) -> bool {
+    flag || matches!(env, Some("1") | Some("true") | Some("yes"))
+}
+
 pub fn read_sensor(sensor: SensorKind) -> Option<f64> {
     // The clock needs no host sampling; answer before touching the live-data lock.
     if sensor == SensorKind::ClockS {
@@ -599,6 +635,31 @@ mod tests {
         assert!(b - a >= 0.025, "clock advanced only {}s over a 30ms sleep", b - a);
         assert_eq!(SensorKind::from_name("clock_s"), Some(SensorKind::ClockS));
         assert_eq!(SensorKind::from_id(SensorKind::ClockS.as_id()), Some(SensorKind::ClockS));
+    }
+
+    #[test]
+    fn host_sleep_blocks_and_clamps() {
+        let t = Instant::now();
+        host_sleep_ms(40.0);
+        assert!(t.elapsed() >= Duration::from_millis(38), "slept only {:?}", t.elapsed());
+        // Past deadlines, NaN and infinities return at once.
+        let t = Instant::now();
+        host_sleep_ms(-500.0);
+        host_sleep_ms(f64::NAN);
+        host_sleep_ms(f64::INFINITY);
+        host_sleep_ms(f64::NEG_INFINITY);
+        assert!(t.elapsed() < Duration::from_millis(20), "took {:?}", t.elapsed());
+    }
+
+    #[test]
+    fn strict_mode_sources() {
+        // Pure helper: never toggles the process-wide flag, so parallel tests
+        // that read absent sensors are unaffected.
+        assert!(!strict_from(false, None));
+        assert!(!strict_from(false, Some("0")));
+        assert!(strict_from(false, Some("1")));
+        assert!(strict_from(false, Some("true")));
+        assert!(strict_from(true, None));
     }
 
     #[test]

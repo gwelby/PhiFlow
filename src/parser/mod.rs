@@ -289,6 +289,7 @@ pub enum PhiExpression {
     Resonate {
         expression: Option<Box<PhiExpression>>, // what to share (None = share all)
         direction: ResonateDirection,
+        label: Option<String>, // `as "name"` channel label, carried to output
     },
 
     // Persistence & Dialogue
@@ -1046,7 +1047,9 @@ impl PhiParser {
             | PhiToken::LeftParen
             | PhiToken::Minus
             | PhiToken::Not
-            | PhiToken::Coherence => self.parse_expression_statement(),
+            | PhiToken::Coherence
+            // `field` (aggregate field coherence) as a bare statement, like `coherence`.
+            | PhiToken::Field => self.parse_expression_statement(),
             _ => Err(format!(
                 "Unexpected token in statement: {:?}",
                 self.current_token
@@ -1943,17 +1946,19 @@ impl PhiParser {
             ResonateDirection::TeamA
         };
 
-        // Accept optional channel annotations like:
+        // Optional channel label:
         //   resonate 1.0 as "logic/truth"
-        // The current IR does not preserve the channel label, so we consume and discard it
-        // to keep example scripts parseable without changing evaluator / VM semantics.
+        // The label is carried through the IR to output (`phic --resonance-tsv`).
+        // It never changes evaluator / VM / WASM semantics.
+        let mut label = None;
         if matches!(
             &self.current_token,
             PhiToken::Identifier(name) if name.eq_ignore_ascii_case("as")
         ) {
             self.advance();
             match &self.current_token {
-                PhiToken::String(_) | PhiToken::Identifier(_) => {
+                PhiToken::String(s) | PhiToken::Identifier(s) => {
+                    label = Some(s.clone());
                     self.advance();
                 }
                 _ => {
@@ -1968,6 +1973,7 @@ impl PhiParser {
         Ok(PhiExpression::Resonate {
             expression,
             direction,
+            label,
         })
     }
 

@@ -431,6 +431,15 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
                 }
             }
 
+            // `sleep(ms)`: block this program for `ms` milliseconds without
+            // spinning a core. Lowers to the existing Sleep node; it has no value.
+            if name == "sleep" && arguments.len() == 1 {
+                let lowered = lower_expr(ctx, &arguments[0]);
+                let duration = unwrap_val(ctx, lowered);
+                ctx.emit(PhiIRNode::Sleep { duration });
+                return LowerResult::None;
+            }
+
             let mut args = Vec::with_capacity(arguments.len());
             for arg in arguments {
                 let lowered = lower_expr(ctx, arg);
@@ -613,6 +622,7 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
         PhiExpression::Resonate {
             expression,
             direction,
+            label,
         } => {
             let val = if let Some(e) = expression {
                 let res = lower_expr(ctx, e);
@@ -628,6 +638,7 @@ fn lower_expr(ctx: &mut LoweringContext, expr: &PhiExpression) -> LowerResult {
                     AstResonateDirection::TeamA => IrResonateDirection::TeamA,
                     AstResonateDirection::TeamB => IrResonateDirection::TeamB,
                 },
+                label: label.clone(),
             });
             LowerResult::None
         }

@@ -7,10 +7,9 @@
 //! dissonance, coherence_of, agent) are NOT covered for three-backend equivalence.
 //!
 //! This probe runs each such construct through all three backends with a DEFAULT
-//! host (no callbacks) and records what each backend returns or how it fails. It is
-//! diagnostic: it prints a comparison table and only fails if a backend that is
-//! expected to agree with the Evaluator diverges. The point is to make the current
-//! equivalence gap measurable and reproducible, not to assert a claim.
+//! host (no callbacks) and records what each backend returns or how it fails. It
+//! prints a comparison table and FAILS if a backend that is expected to agree with
+//! the Evaluator diverges (asserting since 2026-11-11; before that it only printed).
 //!
 //! Run with:
 //!   cargo test --test phi_ir_full_conformance_probe -- --nocapture
@@ -159,10 +158,16 @@ fn probe_all_constructs_three_backend() {
             vm_expected: true,
             source: "broadcast \"c\" 123.0\nlisten \"c\"\n",
         },
-        // NOTE: `void_depth` (in any scope) is intentionally omitted: it triggers a
-        // parser runaway allocation (OOM) in `parse_phi_program`. `field` as a bare
-        // statement fails to parse ("Unexpected token in statement: Field"). Both are
-        // documented as findings in REPORTS/CODEX_AUDIT_RESULTS.md.
+        // NOTE: `void_depth` is omitted because its value is wall-clock time since the
+        // last yield, so backends cannot be compared by value. (The parser OOM recorded
+        // in REPORTS/CODEX_AUDIT_RESULTS.md no longer reproduces: checked 2026-11-11
+        // under a 2 GB cap, `void_depth` parses and runs in statement, `let` and
+        // intention position.)
+        Case {
+            name: "field_bare_statement",
+            vm_expected: true,
+            source: "field\n",
+        },
         Case {
             name: "dissonance",
             vm_expected: true,
@@ -187,6 +192,11 @@ fn probe_all_constructs_three_backend() {
             name: "agent_scope_return",
             vm_expected: false,
             source: "agent \"A\" version \"1.0.0\" {\n    42.0\n}\n",
+        },
+        Case {
+            name: "sleep_then_value",
+            vm_expected: true,
+            source: "sleep(1)\n5.0\n",
         },
         Case {
             name: "remember_recall_in_intention",
@@ -282,7 +292,13 @@ fn probe_all_constructs_three_backend() {
     }
     println!();
 
-    // This probe is diagnostic. It documents the current equivalence surface for
-    // v0.3+ constructs; it does not hard-fail on divergence so it can run in CI as
-    // a living record. The divergence list above is the audit evidence.
+    // Asserting since 2026-11-11: the probe printed 0 divergences for months, so
+    // a new divergence is a regression, not a known gap. Known non-equivalences are
+    // encoded per case (`vm_expected: false`), not tolerated here.
+    assert!(
+        divergences.is_empty(),
+        "{} backend divergence(s): {:?}",
+        divergences.len(),
+        divergences
+    );
 }

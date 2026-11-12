@@ -491,6 +491,13 @@ pub fn run_wat_with_host(
         },
     )?;
 
+    // phi.sleep(f64)
+    // Blocks for the given milliseconds (the `sleep(ms)` builtin). Shares the
+    // evaluator's clamping: NaN/negative -> 0 ms, capped at MAX_SLEEP_MS.
+    linker.func_wrap("phi", "sleep", |_caller: Caller<'_, RuntimeState>, ms: f64| {
+        crate::sensors::host_sleep_ms(ms);
+    })?;
+
     let mut store = Store::new(&engine, RuntimeState::new(hooks, string_table.to_vec()));
     let instance = linker.instantiate(&mut store, &module)?;
     let func = instance

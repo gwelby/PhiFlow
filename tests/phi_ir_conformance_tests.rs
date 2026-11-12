@@ -364,7 +364,9 @@ fn conformance_shared_fixture_examples() {
 /// Pre-fix: evaluator returned phi^(-2) = 0.38197 (one loop iteration, not two).
 /// Post-fix: returns 0.618... (correct — VM while-loop comparison fixed).
 ///
-/// Only evaluator + WASM: the legacy PhiVm does not support user-defined functions.
+/// Three backends since 2026-11-11 (bytecode v2: the legacy PhiVm now runs
+/// user-defined functions; before that it returned Void and this test was
+/// Evaluator == WASM only).
 #[test]
 fn conformance_nested_function_regression() {
     let phi: f64 = 1.618033988749895;
@@ -387,8 +389,9 @@ fn conformance_nested_function_regression() {
         }
         "#;
 
-    let (eval_result, wasm_result) = run_eval_and_wasm(source);
+    let (eval_result, vm_result, wasm_result) = run_all_paths(source);
 
+    assert_values_close(&eval_result, &vm_result, "nested_function_regression evaluator-vm");
     let eval_n = match eval_result {
         PhiIRValue::Number(n) => n,
         other => panic!("nested_function_regression: evaluator returned {:?}", other),

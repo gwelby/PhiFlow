@@ -108,6 +108,18 @@ struct Args {
     /// visualizers can render each step. Default: 0 (no delay, run at full speed).
     #[arg(long, default_value_t = 0)]
     osc_delay: u64,
+
+    /// Strict sensor mode: reading an absent sensor (dead SOMA bridge, missing
+    /// state file, unknown host metric) is an error instead of a silent 0.0.
+    /// Same as PHIFLOW_STRICT_SENSORS=1.
+    #[arg(long, default_value_t = false)]
+    strict_sensors: bool,
+
+    /// Print resonance events as machine-readable TSV instead of the
+    /// "Resonating Field" lines: `RESONATE<TAB>index<TAB>scope<TAB>label<TAB>value`,
+    /// full precision, no unit, label "-" when the resonate had no `as "name"`.
+    #[arg(long, default_value_t = false)]
+    resonance_tsv: bool,
 }
 
 struct SomaManager {
@@ -187,6 +199,7 @@ enum CliError {
 struct RunReport {
     final_coherence: f64,
     resonance_events: Vec<(String, PhiIRValue)>,
+    resonance_labels: Vec<Option<String>>,
     ended_streams: Vec<String>,
     consciousness_metrics: Option<ConsciousnessMetrics>,
     self_correlation: Option<SelfCorrelation>,
@@ -197,6 +210,10 @@ struct RunReport {
 async fn main() {
     let args = Args::parse();
     let json_errors = args.json_errors;
+    let resonance_tsv = args.resonance_tsv;
+    if args.strict_sensors {
+        phiflow::sensors::set_strict_sensors(true);
+    }
 
     // --poll-ibm <job_id>: Poll an IBM Quantum job and analyze coherence.
     // Use "mock" for a demo run without credentials.
@@ -328,7 +345,23 @@ async fn main() {
                 std::process::exit(0);
             }
 
-            for (_scope, value) in &report.resonance_events {
+            if resonance_tsv {
+                for (i, (scope, value)) in report.resonance_events.iter().enumerate() {
+                    let label = report
+                        .resonance_labels
+                        .get(i)
+                        .and_then(|l| l.as_deref())
+                        .unwrap_or("-");
+                    let v = match value {
+                        PhiIRValue::Number(n) => format!("{}", n),
+                        PhiIRValue::String(s) => format!("{:?}", s),
+                        PhiIRValue::Boolean(b) => format!("{}", b),
+                        PhiIRValue::Void => "void".to_string(),
+                    };
+                    println!("RESONATE\t{}\t{}\t{}\t{}", i, scope, label, v);
+                }
+            }
+            for (_scope, value) in report.resonance_events.iter().filter(|_| !resonance_tsv) {
                 match value {
                     PhiIRValue::Number(n) => {
                         println!("🔔 Resonating Field: {:.4}Hz", n);
@@ -435,6 +468,10 @@ async fn run(
 
     let ast = parse_phi_program_with_diagnostics(&source).map_err(CliError::Parse)?;
 
+    for warning in phiflow::lint::lint_program(&ast) {
+        eprintln!("{}", warning);
+    }
+
     println!("Compiling to PhiFlow IR...");
     let ir_program = lower_program_checked(&ast).map_err(|e| CliError::Lower(e.to_string()))?;
     let session_signing_key = Arc::new(phiflow::security::anchor::AnchorSigningKey::generate());
@@ -443,6 +480,7 @@ async fn run(
         return Ok(Some(RunReport {
             final_coherence: 0.0,
             resonance_events: Vec::new(),
+            resonance_labels: Vec::new(),
             ended_streams: Vec::new(),
             consciousness_metrics: None,
             self_correlation: None,
@@ -730,6 +768,9 @@ async fn run(
     Ok(Some(RunReport {
         final_coherence: evaluator.resolved_coherence(),
         resonance_events: evaluator.resonance_events().to_vec(),
+        resonance_labels: (0..evaluator.resonance_events().len())
+            .map(|i| evaluator.resonance_label(i).map(str::to_string))
+            .collect(),
         ended_streams: evaluator.ended_streams().to_vec(),
         consciousness_metrics,
         self_correlation,

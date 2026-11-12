@@ -70,7 +70,8 @@ const OP_FALLTHROUGH: u8 = 0xE3;
 const OP_BREAK_STREAM: u8 = 0xE4;
 
 const MAGIC: &[u8; 4] = b"PHIV";
-const VERSION: u8 = 1;
+// v2 (2026-11-11): OP_FUNC_DEF carries parameter names.
+const VERSION: u8 = 2;
 
 struct StringInterner {
     table: Vec<String>,
@@ -232,7 +233,6 @@ fn collect_node_strings(node: &PhiIRNode, interner: &mut StringInterner) {
     match node {
         PhiIRNode::LoadVar(name)
         | PhiIRNode::Call { name, .. }
-        | PhiIRNode::FuncDef { name, .. }
         | PhiIRNode::StreamPush(name, _)
         | PhiIRNode::IntentionPush { name, .. }
         | PhiIRNode::Remember { key: name, .. }
@@ -247,6 +247,13 @@ fn collect_node_strings(node: &PhiIRNode, interner: &mut StringInterner) {
         PhiIRNode::AgentDecl { name, version } => {
             interner.intern(name);
             interner.intern(version);
+        }
+
+        PhiIRNode::FuncDef { name, params, .. } => {
+            interner.intern(name);
+            for p in params {
+                interner.intern(&p.name);
+            }
         }
 
         PhiIRNode::Handoff {
@@ -393,10 +400,15 @@ fn emit_node(out: &mut Vec<u8>, node: &PhiIRNode, ctx: &EmitContext<'_>) {
             emit_u32(out, *index);
         }
 
-        PhiIRNode::FuncDef { name, body, .. } => {
+        PhiIRNode::FuncDef { name, params, body } => {
             out.push(OP_FUNC_DEF);
             emit_string_ref(out, name, ctx);
             emit_u32(out, *body);
+            // v2: parameter names, so the VM can bind call arguments.
+            emit_u32(out, params.len() as u32);
+            for p in params {
+                emit_string_ref(out, &p.name, ctx);
+            }
         }
 
         PhiIRNode::Witness { target, .. } => {

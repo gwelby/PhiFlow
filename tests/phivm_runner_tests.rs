@@ -129,7 +129,7 @@ fn phivm_can_disassemble_before_execution() {
     );
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("PhiVM bytecode v1"));
+    assert!(stdout.contains("PhiVM bytecode v2"));
     assert!(stdout.contains("Blocks: 1"));
     assert!(stdout.ends_with("true\n"));
 }

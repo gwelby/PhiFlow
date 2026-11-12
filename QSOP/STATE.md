@@ -292,6 +292,18 @@ honesty organ v5) lived in RESUME/AGENTS/CHANGELOG only. Recorded here now.*
   of the signal period the window covers. An L_self magnitude needs its
   window stated in signal time. ENGINEERED-SIGNAL weight; lane verdict
   unchanged. `QSOP/EVIDENCE/esig_clock_paced_result_2026-11-11.md`.
+- **Language/tooling fixes (2026-11-11, Claude, producer-tested):** `sleep(ms)`
+  is real on evaluator/VM/WASM (new `phi.sleep` import; a sleep-paced copy of
+  the clock probe ran the same 60 s with CPU 56 s → 0.8 s). `phic
+  --strict-sensors` makes absent sensors errors. `resonate … as "name"` labels
+  survive to `phic --resonance-tsv`, and the scorer pairs TSV by label (legacy
+  output re-scores identically). `warning[stream-reset]` lint (P-3). Legacy VM
+  runs user functions (bytecode v2). Full conformance probe asserts (10
+  constructs, 0 divergences). `tests/examples_smoke.rs` runs all examples.
+  Suite 509/0/5. Also corrected: `cognitive_dissonance.phi` is a
+  quantum-target fixture (2-arg `coherence` is real there); the earlier
+  interpreter rewrite broke 8 transpiler tests and was reverted, with the
+  rewrite kept as `cognitive_dissonance_classical.phi`.
 - **Control rehearsal COMPLETED (2026-11-03, `f8170bc`/`9ffed29`):** the
   preregistered negative control ran end-to-end on fixture paths —
   `--constant 0.5` → scratch SomaState → control .phi (obs =

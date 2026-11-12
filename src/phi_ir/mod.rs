@@ -372,6 +372,10 @@ pub enum PhiIRNode {
         value: Option<Operand>,
         frequency_relationship: Option<f64>, // phi-harmonic ratio, e.g. 528/432
         direction: ResonateDirection,
+        /// Channel label from `resonate x as "name"` (None when unlabelled).
+        /// Output-only: never affects coherence, metrics or quantum lowering.
+        #[serde(default)]
+        label: Option<String>,
     },
 
     /// Enter a continuous stream loop. Acts like IntentionPush but sets stream context

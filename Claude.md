@@ -21,7 +21,7 @@ Four constructs that exist in no other language:
 .phi file -> Parser (PhiToken -> AST) -> PhiIR Lowering -> Evaluator/VM/WASM -> Output + Coherence Report
 ```
 
-Backend equivalence: `tests/phi_ir_conformance_tests.rs` has 12 tests (12/12 pass, 2026-11-11). 8 compare Evaluator == VM == WASM by value on core constructs (incl. `three_backend_depth2_coherence` = 1 − φ⁻²); 2 compare Evaluator == WASM only (the legacy VM returns Void for user-defined functions); 1 runs shared examples on Evaluator + WASM without comparing values; 1 is a WASM NaN guard. `tests/phi_ir_full_conformance_probe.rs` is a *diagnostic* over 8 v0.3+ constructs that never fails on divergence — it currently prints 0 divergences (observed, not asserted). Self-correction loop: **structural plumbing only** — `run_self_correction_loop()` (src/quantum_feedback.rs) re-measures with hardcoded mocks (Decoherent 0.0 → Coherent 1.0), so the "improvement" is simulated and does not depend on the correction; no real-hardware correction run is recorded. CLI output tests: 5 tests verify what the user sees. Full suite: **501 passed, 0 failed, 5 ignored** (`cargo test`, 2026-11-11, HEAD `bcff85b`, producer-tested; +2 tests added since: `three_backend_depth2_coherence` and the `clock_s` unit test, both passing in targeted runs) + 43 Python tests passed. Codex audit 2026-07-31 found and fixed the coherence reporting bug (every program reported 0.0000 while tests passed green).
+Backend equivalence: `tests/phi_ir_conformance_tests.rs` has 12 tests (12/12 pass, 2026-11-11). 9 compare Evaluator == VM == WASM by value (incl. `three_backend_depth2_coherence` = 1 − φ⁻² and, since bytecode v2 on 2026-11-11, the user-function `conformance_nested_function_regression`); 1 compares Evaluator == WASM only (`claude.phi` resonated lambda); 1 runs shared examples on Evaluator + WASM without comparing values; 1 is a WASM NaN guard. `tests/phi_ir_full_conformance_probe.rs` covers 10 v0.3+ constructs (incl. `sleep`, bare `field`) and has asserted 0 divergences since 2026-11-11. `tests/examples_smoke.rs` runs every `examples/*.phi` under `phic`. Self-correction loop: **structural plumbing only** — `run_self_correction_loop()` (src/quantum_feedback.rs) re-measures with hardcoded mocks (Decoherent 0.0 → Coherent 1.0), so the "improvement" is simulated and does not depend on the correction; no real-hardware correction run is recorded. CLI output tests: 5 tests verify what the user sees. Full suite: **509 passed, 0 failed, 5 ignored** (`cargo test --no-fail-fast`, 2026-11-11, producer-tested on the working tree committed after `0fcebf4`) + Python 66 passed, 4 skipped (`pytest tests --ignore=tests/_archive`). Codex audit 2026-07-31 found and fixed the coherence reporting bug (every program reported 0.0000 while tests passed green).
 
 Key files:
 - `src/parser/mod.rs` - Lexer + Parser
@@ -42,8 +42,9 @@ Legacy modules archived in `src/_archive/` (compiler, vm, interpreter, main.rs).
 ```bash
 cargo build --release
 cargo run --release --bin phic -- examples/code_that_resonates.phi
-cargo test                                    # 501 passed, 0 failed, 5 ignored at bcff85b (2026-11-11); +2 tests since
-cargo test --test phi_ir_full_conformance_probe -- --nocapture  # prints per-construct backend comparison table (diagnostic; does not fail on divergence)
+cargo test                                    # 509 passed, 0 failed, 5 ignored (2026-11-11)
+cargo test --test phi_ir_full_conformance_probe -- --nocapture  # per-construct backend table; fails on any divergence
+cargo run --release --bin phic -- --strict-sensors --resonance-tsv examples/type4_esig_clock_trace.phi  # absent sensor = error; labelled full-precision output
 cargo run --release --bin phic -- --measure examples/type4_trace_benchmark.phi
 cargo run --release --bin phic -- --sacred-geometry flower_of_life | sed -n '/<svg/,$p' > pattern.svg   # stdout has log lines before the SVG
 cargo run --release --bin phic -- --consciousness-info | jq .
@@ -69,8 +70,8 @@ Four specialized agents defined in `.claude/agents/`:
 ## What's Done
 
 - ✅ PhiIR (intermediate representation) — lowering, evaluator, VM, WASM codegen
-- ✅ Backend equivalence — 12/12 core conformance tests (8 three-backend, 2 Evaluator==WASM only); full probe diagnostic shows 0 divergences over 8 constructs
-- ✅ WASM codegen — all 15 phi namespace imports (incl. `actuate`, added da61589) defined in the Rust wasmtime host and the JS test runner; the JS runner's `actuate` only records in memory (no motor-bus write)
+- ✅ Backend equivalence — 12/12 core conformance tests (9 three-backend, 1 Evaluator==WASM only); full probe asserts 0 divergences over 10 constructs
+- ✅ WASM codegen — all 16 phi namespace imports (incl. `actuate`, added da61589, and `sleep`, 2026-11-11) defined in the Rust wasmtime host and the JS test runner; the JS runner's `actuate` only records in memory (no motor-bus write)
 - ✅ OpenQASM 3.0 codegen — phic-emitted QASM run on IBM Heron r2 per project records (job `d7euddh5a5qc73drdosg`, ibm_fez, 1 qubit, 2026-04-14; job `d941s54ql68s73c909fg`, ibm_marrakesh, 3 qubits, 2026-07-03; CLAIMS.md C-10/C-24). **Producer-recorded, not independently confirmed:** no raw IBM job export is saved (receipt outside the repo: `D:\CosmicFamily\EVIDENCE\PHIFLOW_IBM_HERON_20260414.md`)
 - ✅ Consciousness metrics — L_self, C_PF, R_in, R_out, D_int, C_coh
 - ✅ SOMA sensor bridge — live telemetry
